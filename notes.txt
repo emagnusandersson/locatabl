@@ -1,0 +1,25 @@
+Redis variables
+
+_Main
+_Login
+_CSRFCode+caller
+
+_Main contains
+ userInfoFrIP
+ userInfoFrDB
+
+_Login contains
+ fun
+ state
+ caller
+ IP
+
+
+caller:
+ pubKeyStore
+ index
+
+sessionMain is used by
+ BE
+ loginBack
+ 

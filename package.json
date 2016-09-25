@@ -1,0 +1,37 @@
+{
+  "name": "tracker",
+  "version": "0.0.0",
+  "description": "Tracking and comparisson tool for people in different commercial roles",
+  "main": "script.js",
+  "scripts": {
+    "start": "node script.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Magnus Andersson",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "request": "2.79.x",
+    "mysql": "2.12.x",
+    "gm": "1.23.x",
+    "through": "2.3.x",
+    "concat-stream": "1.6.x",
+    "formidable": "1.1.1",
+    "async": "2.1.x",
+    "node-rsa": "0.4.x",
+    "atob": "2.0.x",
+    "node-zip": "1.1.x",
+    "fibers": "1.0.15",
+    "uglify-js": "2.7.x",
+    "redis": "2.6.x"
+  },
+  "devDependencies": {},
+  "private": true,
+  "repository" :{
+    "type" : "git",
+    "url" : "http://github.com/"
+  },
+  "engines": {
+    "node": "6.x",
+    "npm": ""
+  }
+}
