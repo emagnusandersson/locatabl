@@ -1,0 +1,9 @@
+{
+  "asi": true,
+  "shadow": true,
+  "maxerr": 500,
+  "multistr": true,
+  "funcscope": true,
+  "sub": true,
+  "unused": true
+}
