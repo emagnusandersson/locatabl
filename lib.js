@@ -65,7 +65,7 @@ rtrim=function(str,charlist){
 
 //pad2=function(n){ return ('0'+n).slice(-2);}
 pad2=function(n){return (n<10?'0':'')+n;}
-calcLabel=function(Label,strName){ var strLabel=ucfirst(strName); if(strName in Label) strLabel=Label[strName]; return strLabel;}
+calcLabel=function(Label,strName){ return Label[strName]||ucfirst(strName); }
 
 
 //
@@ -332,6 +332,8 @@ gauss_ms=function(m,s){  // returns random number with normal distribution: N(m,
 isNumber=function(n){ return !isNaN(parseFloat(n)) && isFinite(n);}
 sign=function(val){if(val<0) return -1; else if(val>0) return 1; else return 0;}
 
+round=Math.round; sqrt=Math.sqrt;
+log2=function(x){return Math.log(x)/Math.log(2);}
 twoPi=2*Math.PI;
 if(typeof(Number.prototype.toRad) === "undefined"){  Number.prototype.toRad = function(){  return this * Math.PI / 180; }   }
 Math.log2=function(val) {  return Math.log(val) / Math.LN2; }
@@ -410,14 +412,16 @@ MercatorProjection=function(){
 MercatorProjection.prototype.fromLatLngToPoint = function(latLng, opt_point){
   var point = opt_point || new google.maps.Point(0, 0);
   var xOrg=this.pOrg[0], yOrg=this.pOrg[1];
-  point.x = xOrg + latLng.lng() * this.pixelsPerLonDegree_;
+  var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else if(typeof latLng.lat=='function') {lat=latLng.lat(); lng=latLng.lng();} else { lat=latLng.lat; lng=latLng.lng;}
+  point.x = xOrg + lng * this.pixelsPerLonDegree_;
 
-  var siny = bound(Math.sin(degreesToRadians(latLng.lat())), -0.9999, 0.9999);
+  var siny = bound(Math.sin(degreesToRadians(lat)), -0.9999, 0.9999);
   point.y = yOrg + 0.5 * Math.log((1 + siny) / (1 - siny)) * -this.pixelsPerLonRadian_;
   return point;
 };
 MercatorProjection.prototype.fromLatLngToPointV=function(latLng){
-  var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else { lat=latLng.lat(); lng=latLng.lng();}
+  //var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else { lat=latLng.lat(); lng=latLng.lng();}
+  var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else if(typeof latLng.lat=='function') {lat=latLng.lat(); lng=latLng.lng();} else { lat=latLng.lat; lng=latLng.lng;}
   var pOut=Array(2);
   var xOrg=this.pOrg[0], yOrg=this.pOrg[1];
   pOut[0]=xOrg+lng*this.pixelsPerLonDegree_;

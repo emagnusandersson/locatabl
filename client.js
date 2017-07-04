@@ -135,7 +135,8 @@ CreatorPlugin.general=function(){
       //var rT=MTab[iMTab],  tmpPoint = new google.maps.Point(rT.x, rT.y),   tmpLatLng=merProj.fromPointToLatLng(tmpPoint); 
       var rT=MTab[iMTab],  tmpPoint = [rT.x, rT.y],   tmpLatLng=merProj.fromPointToLatLngV(tmpPoint); 
       //var dist=distCalc(tmpLatLng.lng(),tmpLatLng.lat(),$mapDiv.latLngMe.lng(),$mapDiv.latLngMe.lat());  if(distUnit=='mile') dist=dist/1.609;
-      var dist=distCalc(tmpLatLng[1],tmpLatLng[0],$mapDiv.latLngMe.lng(),$mapDiv.latLngMe.lat());  if(distUnit=='mile') dist=dist/1.609;
+      //var dist=distCalc(tmpLatLng[1],tmpLatLng[0],$mapDiv.latLngMe.lng(),$mapDiv.latLngMe.lat());  if(distUnit=='mile') dist=dist/1.609;
+      var dist=distCalc(tmpLatLng[1],tmpLatLng[0],$mapDiv.latLngMe.lng,$mapDiv.latLngMe.lat);  if(distUnit=='mile') dist=dist/1.609;
       return Number(dist.toFixed(1));
     };
     var tmpSetDistOther=function(iMTab,$c){return tmpSetDist(iMTab,$c)+' '+distUnit;};
@@ -1275,8 +1276,8 @@ popUpExtend=function($el){
 var toastExtend=function($el){
   var hideToast=function(){  $el.fadeOut(400);  }
   $el.showToast=function(){
-	  $el.fadeIn(0);
-	  t=setTimeout(hideToast, 4000);
+    $el.fadeIn(0);
+    t=setTimeout(hideToast, 4000);
   }
   var t;
   $el.click(function(){clearTimeout(t); hideToast();});
@@ -1993,7 +1994,7 @@ var quickDivExtend=function($el){
 
   var tmpf=function(pos){
     if(boVideo) pos=posDebug;
-    $mapDiv.set(pos);
+    $mapDiv.setPos(pos);
     //$mapDiv.latLngMe = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
     uploadPosNLoadTabStart();
     //$mapDiv.curMarker.setPosition($mapDiv.latLngMe);
@@ -2780,18 +2781,18 @@ var updateTableThumb=function($el,iRow){
   canvas.width=widthBox;   canvas.height=nMTab*heightRow-1;
   for(var i=0;i<nMTab;i++){
     ctx.beginPath();
-	  ctx.moveTo(0, i*heightRow);
-	  ctx.lineTo(widthBox,i*heightRow);
-	  ctx.lineTo(widthBox, (i+1)*heightRow);
-	  ctx.lineTo(0, (i+1)*heightRow);
-	  ctx.closePath();
+    ctx.moveTo(0, i*heightRow);
+    ctx.lineTo(widthBox,i*heightRow);
+    ctx.lineTo(widthBox, (i+1)*heightRow);
+    ctx.lineTo(0, (i+1)*heightRow);
+    ctx.closePath();
     var col='white'; //if(i%2) col='lightgrey';
     if(i==iRow) col='red';
-	  ctx.fillStyle=col;  ctx.fill();    
+    ctx.fillStyle=col;  ctx.fill();    
 
     ctx.beginPath();
-	  ctx.moveTo(0, i*heightRow-0.5);
-	  ctx.lineTo(widthBox,i*heightRow-0.5);
+    ctx.moveTo(0, i*heightRow-0.5);
+    ctx.lineTo(widthBox,i*heightRow-0.5);
     ctx.strokeStyle = "grey";   ctx.stroke();
   }
 
@@ -2824,13 +2825,13 @@ var mapThumbDivExtend=function($el){
       cx=cx*thumbFac+widthBox/2;cy=cy*thumbFac+heightBox/2;
       var tmp=1; if(itmp==iMTab) tmp=dotSizeH;
       ctx.beginPath(); //so start going clockwise from upper left corner
-	    ctx.moveTo(cx-tmp,cy-tmp);
-	    ctx.lineTo(cx+tmp,cy-tmp);
-	    ctx.lineTo(cx+tmp,cy+tmp);
-	    ctx.lineTo(cx-tmp,cy+tmp);
-	    ctx.closePath();
+      ctx.moveTo(cx-tmp,cy-tmp);
+      ctx.lineTo(cx+tmp,cy-tmp);
+      ctx.lineTo(cx+tmp,cy+tmp);
+      ctx.lineTo(cx-tmp,cy+tmp);
+      ctx.closePath();
       var col='black'; if(itmp==iMTab) col='red';
-	    ctx.fillStyle=col;  ctx.fill();    
+      ctx.fillStyle=col;  ctx.fill();    
     }
 
     $el.css({width:widthBox+'px',height:heightBox+'px'});
@@ -3063,7 +3064,7 @@ var filterInfoSpanExtend=function($el){
 
 
 
-var MyOverlay=function( options )	{
+var MyOverlay=function( options )  {
 "use strict"
   //this.latLng_=options.position;
   //this.setValues( options );
@@ -3085,13 +3086,13 @@ var MyOverlay=function( options )	{
 var makeMyOverlay=function(){
   MyOverlay.prototype = new google.maps.OverlayView();
 
-  MyOverlay.prototype.onAdd = function()	{
+  MyOverlay.prototype.onAdd = function()  {
     //var $pane = $(this.getPanes().overlayImage); // Pane 4
     //$pane.append( this.$div );
     var panes = this.getPanes();   panes.overlayImage.appendChild(this.$div[0]);
   };
 
-  MyOverlay.prototype.onRemove = function()	{ 	this.$div.detach();	};
+  MyOverlay.prototype.onRemove = function()  {   this.$div.detach();  };
   
   /*MyOverlay.prototype.myBounds=function(){
     var projection = this.getProjection();
@@ -3100,7 +3101,7 @@ var makeMyOverlay=function(){
     var w=pointNE.x-pointSW.x, h=pointSW.y-pointNE.y;
     var arrT=$el.calcOverlayBounds(w,h); this.widthCanvas=arrT[0]; this.heightCanvas=arrT[1];
   }*/
-  MyOverlay.prototype.draw = function()	{
+  MyOverlay.prototype.draw = function()  {
     var projection = this.getProjection();
     var zoom=$mapDiv.map.getZoom(),   zoomFac=Math.pow(2,zoom);
     //var pointMer=merProj.fromLatLngToPoint(this.latLng_);        x=pointMer.x*zoomFac,   y=pointMer.y*zoomFac;
@@ -3139,7 +3140,7 @@ var makeMyOverlay=function(){
     //this.$div.css({left:0,top:0,width:widthCanvas,height:heightCanvas,background:'green'});
   };
 
-  //groupOverlay = new MyOverlay( { map: map, 'position': map.getCenter() } );	
+  //groupOverlay = new MyOverlay( { map: map, 'position': map.getCenter() } );  
 }
 
 
@@ -3151,11 +3152,11 @@ var doNothing=function(){};
  */
 
 window.zoomLevel=-2;
-var mapDivExtend=function($el){
+var mapDivExtendGoogle=function($el){
 "use strict"
   $el.toString=function(){return 'mapDiv';}
   var markers=[], markerOn=[];
-  var groupOverlay, groupMarkers=[];
+  var groupOverlay, groupMarkers=[]; // "groupOverlay" used when boImgCreationOK==TRUE, "groupMarkers" otherwise.
   var maxZ=google.maps.Marker.MAX_ZINDEX;
   var markerZ=[];
   $el.markers=markers;
@@ -3167,8 +3168,7 @@ var mapDivExtend=function($el){
   }
   $el.hideGroupMarkers=function(){
     for (var i=0;i<groupMarkers.length; i++) {  groupMarkers[i].setVisible(false);  } 
-    //groupMarkers=[];
-    //groupMarkers.length = 0;
+    //groupMarkers=[];   groupMarkers.length = 0;
   }
   $el.calcOverlayBounds=function(w,h,arr){
     if(typeof arr=='undefined') arr=Array(2);
@@ -3222,8 +3222,7 @@ var mapDivExtend=function($el){
     }
   }
   
-  $el.setMarkers=function(){
-    //$mapDiv.hideGroupMarkers();  
+  $el.setMarkers=function(){ 
     if(boImgCreationOK) {    if(typeof groupOverlay!='undefined') groupOverlay.setMap(null);  }
     else { $mapDiv.hideGroupMarkers(); } 
 
@@ -3247,14 +3246,15 @@ var mapDivExtend=function($el){
     if(boImgCreationOK) $el.setGroupOverlay(); else $el.setGroupMarkers();
   }
   
+    // For browsers where boImgCreationOK==false
   $el.setGroupMarkers=function(){
     $mapDiv.hideMarkers();
     $mapDiv.hideGroupMarkers();
-    var lenMGroupTab=$tableDiv.MGroupTab.length;
+    var lenMGroupTab=$mapDiv.MGroupTab.length;
     for(var i = 0; i < lenMGroupTab; i++) {
-      //var tmpPoint = new google.maps.Point($tableDiv.MGroupTab[i][0], $tableDiv.MGroupTab[i][1]);
-      var tmpPoint = [$tableDiv.MGroupTab[i][0], $tableDiv.MGroupTab[i][1]];
-      var nD=$tableDiv.MGroupTab[i][2];
+      //var tmpPoint = new google.maps.Point($mapDiv.MGroupTab[i][0], $mapDiv.MGroupTab[i][1]);
+      var tmpPoint = [$mapDiv.MGroupTab[i][0], $mapDiv.MGroupTab[i][1]];
+      var nD=$mapDiv.MGroupTab[i][2];
       var imgUri; if(boImgCreationOK) {  imgUri=makeMarker(nD); }
       else {
         if(nD>=100000) nD=100000; else if(nD>=10000) nD=10000; else if(nD>=1000) nD=1000;  else if(nD>=100) nD=100;  else if(nD>=10) nD=10;
@@ -3267,9 +3267,6 @@ var mapDivExtend=function($el){
         groupMarkers[i] = new google.maps.Marker({ map: $el.map, position: tmpLatLng, visible:true, icon:imgUri, zIndex:i, clickable:false });
       }
       else { groupMarkers[i].setOptions({ map: $el.map, position: tmpLatLng, icon:imgUri, zIndex:i, visible:true }); }
-      
-      
-      
     }
     var lenGroupMarkers=groupMarkers.length;
     //setMess(lenMGroupTab+' '+lenGroupMarkers);
@@ -3277,6 +3274,7 @@ var mapDivExtend=function($el){
   }
 
 
+    // For browsers where boImgCreationOK==true
   $el.setGroupOverlay=function(){
     $mapDiv.hideMarkers();
     var zoom=$el.map.getZoom(), latLng=$el.map.getCenter();
@@ -3286,7 +3284,7 @@ var mapDivExtend=function($el){
 
     var pointMerZ={x:pointMer.x*zoomFac,y:pointMer.y*zoomFac};
     
-    if(typeof groupOverlay=='undefined') groupOverlay = new MyOverlay();	
+    if(typeof groupOverlay=='undefined') groupOverlay = new MyOverlay();  
     groupOverlay.latLng_=latLng;
     
     var arrT=$el.calcOverlayBounds($el.width(),$el.height()); var widthCanvas=arrT[0], heightCanvas=arrT[1];
@@ -3309,17 +3307,17 @@ var mapDivExtend=function($el){
     //pointXMin=Math.round(pointXMin/xDiv)*xDiv; pointXMax=Math.round(pointXMax/xDiv)*xDiv; pointYMin=Math.round(pointYMin/yDiv)*yDiv; pointYMax=Math.round(pointYMax/yDiv)*yDiv;
     
 
-    var lenMGroupTab=$tableDiv.MGroupTab.length;
+    var lenMGroupTab=$mapDiv.MGroupTab.length;
     for(var i = 0; i < lenMGroupTab; i++) {
-      //var tmpPoint = new google.maps.Point($tableDiv.MGroupTab[i][0], $tableDiv.MGroupTab[i][1]);
-      var xZ=$tableDiv.MGroupTab[i][0]*zoomFac, yZ=$tableDiv.MGroupTab[i][1]*zoomFac;
-      var nD=$tableDiv.MGroupTab[i][2], str=nD+'';
+      //var tmpPoint = new google.maps.Point($mapDiv.MGroupTab[i][0], $mapDiv.MGroupTab[i][1]);
+      var xZ=$mapDiv.MGroupTab[i][0]*zoomFac, yZ=$mapDiv.MGroupTab[i][1]*zoomFac;
+      var nD=$mapDiv.MGroupTab[i][2], str=nD+'';
       var cx=xZ-pointMerZ.x+widthCanvasH, cy=yZ-pointMerZ.y+heightCanvasH;
       var widthText=groupOverlay.ctxMeas.measureText(str).width;  
-  	  var widthBox=widthText+4, heightBox=10,  widthBoxHalf=widthBox/2, heightBoxHalf=heightBox/2,  wTH=widthBox/2, hTH=heightBox/2;
+      var widthBox=widthText+4, heightBox=10,  widthBoxHalf=widthBox/2, heightBoxHalf=heightBox/2,  wTH=widthBox/2, hTH=heightBox/2;
 
       ctx.beginPath(); ctx.moveTo(cx-wTH, cy-hTH); ctx.lineTo(cx+wTH,cy-hTH);  ctx.lineTo(cx+wTH, cy+hTH); ctx.lineTo(cx-wTH, cy+hTH);   ctx.closePath();   ctx.fillStyle="#FF7777"; ctx.fill();
-    	ctx.fillStyle = "black";     ctx.fillText(str, cx-widthText/2, cy+heightBoxHalf-1 );    // Write text
+      ctx.fillStyle = "black";     ctx.fillText(str, cx-widthText/2, cy+heightBoxHalf-1 );    // Write text
     }
    
     if(boImgCreationOK) {  
@@ -3353,15 +3351,14 @@ var mapDivExtend=function($el){
     }
   }
   
-
+    // Store values for times when the map is not visible.
   $el.storeVar=function(){
-    if($el.is(':visible')) {
+    if($el.is(':visible')) { 
       $el.storedLatLngCent=$el.map.getCenter(); 
       $el.storedZoom=$el.map.getZoom();
       $el.storedVPSize=$el.getVPSize();
     }
   } 
-  //var boReloadOnIdle=0;
   $el.boGeoStatSucc=0;
   $el.set1=function() {
     var myOptions = {
@@ -3403,17 +3400,17 @@ var mapDivExtend=function($el){
     */
     
      
-    var reloadOnIdle=function(){ 
+    var reloadFunc=function(){ 
       $el.storeVar();
       loadTabStart(); $el.idleEventFunc=$el.storeVar;
     }
     $el.idleEventFunc=$el.storeVar;
 
+      // On user drag/zoom, set $el.idleEventFunc=reloadFunc
     google.maps.event.addListener($el.map, 'zoom_changed', function() {
-      zoomLevel=$el.map.getZoom(); $el.idleEventFunc=reloadOnIdle;
-    });
+      zoomLevel=$el.map.getZoom(); $el.idleEventFunc=reloadFunc;   });
     google.maps.event.addListener($el.map, 'drag', function() {  
-		  $el.idleEventFunc=reloadOnIdle;    });
+      $el.idleEventFunc=reloadFunc;    });
 
     google.maps.event.addListener($el.map, 'idle', function(){
       $el.idleEventFunc();});
@@ -3433,7 +3430,7 @@ var mapDivExtend=function($el){
     //setTimeout(IRet2,100);
      
   }
-  $el.set=function(position) {
+  $el.setPos=function(position) {
     if(boVideo) position=posDebug;
     
     $el.latLngMe = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
@@ -3442,6 +3439,7 @@ var mapDivExtend=function($el){
     $el.storedLatLngCent=$el.latLngMe;
     //$el.storeVar();
   }
+  $el.set=$el.setPos; // for backward compatibility
   $el.getVPSize=function() {
     var $d=$($el.map.getDiv());
     return [Number(String($d.width())), Number(String($d.height()))];
@@ -3460,6 +3458,418 @@ var mapDivExtend=function($el){
 }
 
 
+
+
+pixMult=function(pixT,fac){pixT.x*=fac; pixT.y*=fac;}
+var mapDivExtend=function($el){
+  $el.toString=function(){return 'mapDiv';}
+  var markers=[], markerOn=[];
+  var groupOverlay, groupMarkers=[]; // "groupOverlay" used when boImgCreationOK==TRUE, "groupMarkers" otherwise.
+  var maxZ=intMax;
+  var markerZ=[];
+  $el.markers=markers;
+  
+  $el.curMarker;
+  
+  var touchesOld=[];
+  var getStoredTouch=function(identifier) {
+    for (var i=0; i<touchesOld.length; i++) {
+      if(touchesOld[i].identifier == identifier) { return touchesOld[i]; }
+    }
+    alert('Touch not found, touchesOld.length:'+touchesOld.length+', touchesOld[0].identifier: '+touchesOld[0].identifier+', idNew:'+identifier);
+    return -1;
+  }
+
+  var handleStart=function(evt) {
+    evt.preventDefault();
+    var Tou = evt.targetTouches, mode=Tou.length;
+          
+    storeTouches(Tou);
+    //setMess(mode);
+  }
+  var storeTouches=function(Tou){
+    touchesOld=[];
+    for(var i=0; i<Tou.length; i++) { var t=Tou[i]; touchesOld[i]={pageX:t.pageX, pageY:t.pageY, identifier:t.identifier};}
+  }
+  var calcD=function(tA,tB){  var xD=tB.pageX-tA.pageX, yD=tB.pageY-tA.pageY;  return Math.sqrt(xD*xD +yD*yD);  }
+  var getCorresponingTouchesOld=function(Tou){return [getStoredTouch(Tou[0].identifier), getStoredTouch(Tou[1].identifier)];}
+  var calcTwoTouchCenterNDist=function(Tou){
+    var tA=Tou[0], tB=Tou[1], xA=tA.pageX, xB=tB.pageX, xavg=(xA+xB)/2,     yA=tA.pageY, yB=tB.pageY, yavg=(yA+yB)/2;
+    var d=calcD(tA,tB);
+    return {x:xavg,y:yavg,d:d};
+  }
+
+  var zCur,leftCur,topCur;
+  var panNZoom=function(Tou,boEnd){
+    var mode=Tou.length;
+    if(mode==1){
+      var tAL=getStoredTouch(Tou[0].identifier), xavgL=xAL=tAL.pageX, yavgL=yAL=tAL.pageY;
+      var tA=Tou[0], xavg=xA=tA.pageX, yavg=yA=tA.pageY;
+      var dXScreen=xavg-xavgL;    leftCur+=dXScreen;
+      var dYScreen=yavg-yavgL;    topCur+=dYScreen;
+      var tmp=boundY(zCur,leftCur,topCur),  zCurT=tmp.z, leftCurT=tmp.left, topCurT=tmp.top;
+      $board.css({'transform':'matrix('+zCurT+',0,0,'+zCurT+','+leftCurT+','+topCurT+')'});
+    }else if(mode==2){
+
+      var doub=calcTwoTouchCenterNDist(Tou);
+      var TouL=getCorresponingTouchesOld(Tou);
+      var doubL=calcTwoTouchCenterNDist(TouL);
+
+      var rat=doub.d/doubL.d;
+      var zL=zCur;
+      zCur=rat*zL;       
+      var leftContainer=$el.offset().left,  topContainer=$el.offset().top;
+      var widthBox=$mapDiv.width(), heightBox=$mapDiv.height();
+
+
+      var brdTilePiv=calcBrdTilePiv(doubL.x-leftContainer, doubL.y-topContainer, zL, leftCur, topCur);
+      var tmp=calcLeftTop(doub.x-leftContainer, doub.y-topContainer, zCur, brdTilePiv); leftCur=tmp.left; topCur=tmp.top;
+
+      //var brdTilePivX=(doubL.x-leftContainer-leftCur)/zL,  brdTilePivY=(doubL.y-topContainer-topCur)/zL;
+      //var tmp=calcLeftTop(doub.x-leftContainer, doub.y-topContainer, zCur, {x:brdTilePivX,y:brdTilePivY}); leftCur=tmp.left; topCur=tmp.top;
+
+      var tmp=boundY(zCur,leftCur,topCur),  zCurT=tmp.z, leftCurT=tmp.left, topCurT=tmp.top;
+
+      $board.css({'transform':'matrix('+zCurT+',0,0,'+zCurT+','+leftCurT+','+topCurT+')'});
+      $divPiv.css({left:brdTilePiv.x+'px',top:brdTilePiv.y+'px'}); // little black square
+    }
+    else if(mode==0){ // boEnd   
+
+      var zL=zCur;
+      var zCurLev=round(log2(zCur)); zCur=Math.pow(2,zCurLev); 
+      var leftContainer=$el.offset().left,  topContainer=$el.offset().top;
+      var widthBox=$mapDiv.width(), heightBox=$mapDiv.height();
+
+      var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zL, leftCur, topCur);
+      var tmp=calcLeftTop(widthBox/2, heightBox/2, zCur, brdTilePiv); leftCur=tmp.left; topCur=tmp.top;
+
+      //var brdTilePivX=(widthBox/2-leftCur)/zL,  brdTilePivY=(heightBox/2-topCur)/zL;
+      //var tmp=calcLeftTop(widthBox/2, heightBox/2, zCur, {x:brdTilePivX,y:brdTilePivY}); leftCur=tmp.left; topCur=tmp.top;
+
+      var tmp=boundY(zCur,leftCur,topCur);  zCur=tmp.z; leftCur=tmp.left; topCur=tmp.top;
+
+      $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+
+        // Converting to pixC; (might seem unnecessary, in a future version the amount of statevariables might be reduced) See comment below on state variables
+      var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
+      pixC={x:pixBoardX*zCur+brdTilePiv.x*zCur, y:pixBoardY*zCur+brdTilePiv.y*zCur};
+
+      //var brdTilePivX=(widthBox/2-leftCur)/zCur,  brdTilePivY=(heightBox/2-topCur)/zCur;
+      //pixC={x:pixBoardX*zCur+brdTilePivX*zCur, y:pixBoardY*zCur+brdTilePivY*zCur};
+
+      var zoomFacRTmp=zCur*zoomFacRW, zoomLevT=round(log2(zoomFacRTmp));//, zFacNew=Math.pow(2,zoomLevT);
+      $el.setTile(zoomLevT);
+
+    }
+    storeTouches(Tou);
+  }
+  $divPiv=$('<div>').css({position:'absolute',background:'black',width:'5px',height:'5px','z-index':5});
+
+
+
+  var pixBoardX, pixBoardY
+  
+
+  var handleMove=function(evt) {
+    evt.preventDefault();
+    panNZoom(evt.targetTouches,0);
+  }
+
+  var handleEnd=function(evt) {
+    evt.preventDefault(); 
+    panNZoom(evt.targetTouches,1); 
+    return false;
+  }
+
+  var handleCancel=function(evt) {
+    evt.preventDefault(); 
+    panNZoom(evt.targetTouches,1); 
+    strMess=' C'+evt.targetTouches.length;
+    setMess(strMess);
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////
+
+  var myMousewheel=function(e) {
+    var rat; if(boFF) rat=e.detail>=0?0.5:2; else  rat=e.originalEvent.wheelDelta>=0?2:0.5;
+    var xavg=e.pageX, yavg=e.pageY;
+
+    zL=zCur;
+    zCur=rat; 
+    var leftContainer=$el.offset().left,  topContainer=$el.offset().top;
+    var widthBox=$mapDiv.width(), heightBox=$mapDiv.height();
+
+
+    var brdTilePiv=calcBrdTilePiv(xavg-leftContainer, yavg-topContainer, zL, leftCur, topCur);
+    var tmp=calcLeftTop(xavg-leftContainer, yavg-topContainer, zCur, brdTilePiv); leftCur=tmp.left; topCur=tmp.top;
+
+    //var brdTilePivX=(xavg-leftContainer-leftCur)/zL,  brdTilePivY=(yavg-topContainer-topCur)/zL;
+    //var tmp=calcLeftTop(xavg-leftContainer, yavg-topContainer, zCur, {x:brdTilePivX,y:brdTilePivY}); leftCur=tmp.left; topCur=tmp.top;
+
+    var tmp=boundY(zCur,leftCur,topCur);  zCur=tmp.z; leftCur=tmp.left; topCur=tmp.top;
+    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+
+
+      // Converting to pixC; (might seem unnecessary, in a future version the amount of statevariables might be reduced) See comment below on state variables
+    var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
+    pixC={x:pixBoardX*zCur+brdTilePiv.x*zCur, y:pixBoardY*zCur+brdTilePiv.y*zCur};
+
+    //var brdTilePivX=(widthBox/2-leftCur)/zCur,  brdTilePivY=(heightBox/2-topCur)/zCur;
+    //pixC={x:pixBoardX*zCur+brdTilePivX*zCur, y:pixBoardY*zCur+brdTilePivY*zCur};
+
+    var zoomFacRTmp=zCur*zoomFacRW, zoomLevT=round(log2(zoomFacRTmp));//, zFacNew=Math.pow(2,zoomLevT);
+    $el.setTile(zoomLevT);
+
+  }
+  var panF=function(e){
+    var xavg=e.pageX, yavg=e.pageY;
+    var dXScreen=xavg-xavgL;    leftCur=leftCur+dXScreen;
+    var dYScreen=yavg-yavgL;    topCur=topCur+dYScreen;
+    var tmp=boundY(zCur,leftCur,topCur); var leftCurT=tmp.left, topCurT=tmp.top;
+    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCurT+','+topCurT+')'});
+    setMess('topCur: '+round(topCur-dYScreen)+', dYScreen: '+round(dYScreen)+', topCur: '+round(topCur));
+    xavgL=xavg; yavgL=yavg;
+  }
+  var myMousedown=function(e){
+    var e = e || window.event; if(e.which==3) return;
+    xavgL=e.pageX; yavgL=e.pageY;
+    $(document).on('mousemove',myMousemove).on('mouseup',myMouseup);
+    $glas.css({cursor:'move'});
+    e.preventDefault();
+  }
+  var myMouseup=function(e){ 
+    panF(e);
+    $(document).off('mousemove').off('mouseup');
+    $glas.css({cursor:''});
+    e.preventDefault();
+    var tmp=boundY(zCur,leftCur,topCur);  zCur=tmp.z; leftCur=tmp.left; topCur=tmp.top;
+    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    pixC=calcPixC();
+    //var zFac=round(zCur)*zoomFacRW, zLev=log2(zFac);
+    var zoomLevT=log2(zoomFacRW);
+    $el.setTile(zoomLevT);
+  }
+  var myMousemove=function(e){
+    panF(e);
+    e.preventDefault();
+  };
+
+
+
+  var calcBrdTilePiv=function(framePivX, framePivY, z, left, top){ 
+    var brdTilePivX=framePivX/z  -left/z ;
+    var brdTilePivY=framePivY/z  -top/z ;
+    return {x:brdTilePivX,y:brdTilePivY};
+  }
+
+  var calcLeftTop=function(framePivX, framePivY, z, brdTilePiv){
+    var left=framePivX  -brdTilePiv.x*z ;
+    var top=framePivY  -brdTilePiv.y*z ;
+    return {left:left,top:top};
+  }
+
+
+  var regExpTransform=RegExp('matrix\\(([^,]*),[^,]*,[^,]*,[^,]*,([^,]*),([^,]*)\\)');
+  var getTransform=function(){
+    var str=$board.css('transform');
+    var Match=regExpTransform.exec(str);
+    if(typeof Match!='array') new Error("typeof Match!='array'");
+    if(Match.length!=4) new Error("Match.length!=4");
+    return {z:Number(Match[1]),left:Number(Match[2]),top:Number(Match[3])};
+    
+  }
+  var calcPixC=function(){
+    var trans=getTransform(); var zCur=trans.z, leftCur=trans.left, topCur=trans.top;
+    var widthBox=$mapDiv.width(), heightBox=$mapDiv.height();
+    var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
+    var pixCN={x:pixBoardX+brdTilePiv.x, y:pixBoardY+brdTilePiv.y};    
+    //var brdTilePivX=(widthBox/2-leftCur)/zCur,  brdTilePivY=(heightBox/2-topCur)/zCur;
+    //var pixCN={x:pixBoardX+brdTilePivX, y:pixBoardY+brdTilePivY}; 
+    return pixCN;
+  }
+  var calcPC=function(){ var tmp=calcPixC();  pixMult(tmp,1/zoomFacRW);  return tmp;}
+
+
+  boundY=function(zCur,leftCur,topCur){
+    var zL=zCur;
+    var zoomFac=zCur*zoomFacRW;
+    var widthBox=$mapDiv.width(), heightBox=$mapDiv.height(), minDim=Math.min(widthBox,heightBox);
+    var zoomFacWorld=minDim/WCMAX;  // If zoomFac is smaller than this then the whole world will fit in $mapDiv
+    var zoomLevCenter=Math.floor(log2(zoomFacWorld)), zoomFacCenter=Math.pow(2,zoomLevCenter);  // Smallest allowed zoom; "The world" will be centered if below this level  
+    
+    var brdTilePiv=calcBrdTilePiv(0, 0, zCur, leftCur, topCur);
+    var pixFrameNorth=pixBoardY +brdTilePiv.y,   pixFrameSouth=pixFrameNorth+heightBox/zCur;
+
+    //var brdTilePivY=-topCur/zCur ;
+    //var pixFrameNorth=pixBoardY +brdTilePivY,   pixFrameSouth=pixFrameNorth+heightBox/zCur;
+
+    var zCurN=zCur,leftCurN=leftCur,topCurN=topCur;
+    var boBound=0;
+    if(zoomFac<=zoomFacWorld) {
+      if(zoomFac<=zoomFacCenter){ 
+        zoomFac=zoomFacCenter; zCurN=zoomFac/zoomFacRW;
+      } 
+      boBound=1;
+
+      leftCurN=-WCMID*zoomFac +pixBoardX*zCurN +widthBox/2;
+      topCurN=-WCMID*zoomFac +pixBoardY*zCurN  +heightBox/2;
+    }else {
+      var boSpaceAbove=pixFrameNorth<0;
+      var boSpaceBelow=pixFrameSouth>WCMAX*zoomFacRW;
+      if(boSpaceAbove) {
+        boBound=1;
+ 
+        topCurN=pixBoardY*zCur +(zCur-1)*heightBox/2; 
+        topCurN=pixBoardY*zCur; 
+      }
+      else if(boSpaceBelow) {
+        boBound=1;
+
+        topCurN=-WCMAX*zoomFac +pixBoardY*zCur +heightBox  +(zCur-1)*heightBox/2; 
+        topCurN=-WCMAX*zoomFac +pixBoardY*zCur +heightBox; 
+      }
+    }
+    return {boBound:boBound, z:zCurN, left:leftCurN, top:topCurN};
+  }
+
+  $el.setPos=function(position,zoomLev){
+    var latLng={lat:position.coords.latitude, lng:position.coords.longitude};
+    var pMerCent=merProj.fromLatLngToPoint(latLng);
+    var zoomFac=Math.pow(2,zoomLev);
+    pixC={x:pMerCent.x*zoomFac, y:pMerCent.y*zoomFac};  
+    //pixC={x:0, y:0};  
+    $el.setTile(zoomLev);
+  }
+  $el.set1=function() {
+  }
+  $el.setTile=function(zoomLev){
+    var widthBox=$mapDiv.width(), heightBox=$mapDiv.height();
+
+    var boRefresh=1;
+    if(widthBox!=widthBoxLast || heightBox!=heightBoxLast || zoomLev!=zoomLevLast) { boRefresh=1; widthBoxLast=widthBox; heightBoxLast=heightBox; zoomLevLast=zoomLev;}
+
+    var zoomFac=Math.pow(2,zoomLev);
+    var pixCX=pixC.x,pixCY=pixC.y;
+    var pixFrameX=pixCX-widthBox/2, tileXRFirst=pixFrameX/TILESIZE, tileXFirst=Math.floor(tileXRFirst);  leftCur=-(tileXRFirst-tileXFirst)*TILESIZE;
+    var pixFrameY=pixCY-heightBox/2, tileYRFirst=pixFrameY/TILESIZE, tileYFirst=Math.floor(tileYRFirst); topCur=-(tileYRFirst-tileYFirst)*TILESIZE;
+    pixBoardX=pixFrameX+leftCur; pixBoardY=pixFrameY+topCur;
+      var nTileX=Math.ceil(widthBox/TILESIZE)+1, nTileY=Math.ceil(heightBox/TILESIZE)+1;
+
+    zoomFacRW=zoomFac;
+    if(boRefresh){
+      var zoomLevPlusDRLev=zoomLev+drLev;
+      var $tileTmp=$board.children('img').detach(); $TileStack.push($tileTmp);
+      var tileXZ=tileXFirst, tileYZ=tileYFirst;
+      for(var i=0;i<nTileX;i++){ 
+        var tileX=tileXZ+i, left=i*TILESIZE;
+        for(var j=0;j<nTileY;j++){   
+          var tileY=tileYZ+j, top=j*TILESIZE;
+          var tmp=normalizeAng(tileX, zoomFac/2*dr, zoomFac*dr); tileX=tmp[0];
+          var boBlue=0, tmp=normalizeAng(tileY, zoomFac/2*dr, zoomFac*dr); nCorrectionY=tmp[1];
+
+          var wTmp;
+          if(nCorrectionY<0) wTmp='northPole.png';
+          else if(nCorrectionY>0) wTmp='southPole.png';
+          else {
+            if(zoomLevPlusDRLev>=0) wTmp=uMapSourceDir+'/'+zoomLevPlusDRLev+'/'+tileX+'/'+tileY+'.png';  
+            else wTmp='mapm'+(-zoomLevPlusDRLev)+'.png';
+            //else if(zoomLev==-1) wTmp='mapm1.png';
+            //else if(zoomLev==-2) wTmp='mapm2.png';
+            //else if(zoomLev==-3) wTmp='mapm3.png';
+          }
+          var $tile; if($TileStack.length) $tile=$($TileStack.pop()); else $tile=$('<img>').css({position:'absolute',opacity:0.7}); //,border:'solid 1px grey'
+          $tile.prop({src:wTmp}).css({left:left+'px',top:top+'px', 'transform-origin':'left top', transform:'scale('+1/dr+')'});
+          $board.append($tile);
+        }
+      }
+      $el.drawMarkers();
+      $board.append($glas);
+    }else{
+    }
+    zCur=1;
+    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+  }
+  $el.drawMarkers=function(){  
+    var $arr=$markers;
+    $arr.each(function(i){
+      var $t=$(this), left=this.x*zoomFacRW-pixBoardX, top=this.y*zoomFacRW-pixBoardY;
+       $t.css({left:left,top:top});      
+    });
+  }
+  //$el.setMarkers=function($arr){
+    //$markers=$arr;
+    //$glas.append($arr);
+  //}
+  $el.setMarkers=function(){ 
+    if(boImgCreationOK) {    if(typeof groupOverlay!='undefined') groupOverlay.setMap(null);  }
+    else { $mapDiv.hideGroupMarkers(); } 
+
+    // reads globals: $el.map, markerZ, MTab, ColsShow, colOneMark
+
+    for(var i=0; i<nMTab; i++) {
+      markerZ[i]=nMTab-i; //first mark on top (highest Z)
+      //var tmpPoint = new google.maps.Point(MTab[i].x, MTab[i].y);
+      var tmpPoint = [MTab[i].x, MTab[i].y];
+      var ico=''; 
+      //if(boImgCreationOK) { ico=makeOneRowIcon(i); } else ico=uImageFolder+'numbers/'+(i+1)+'.png';
+      ico=makeOneRowIcon(i);
+      markers[i].setOptions({ position: merProj.fromPointToLatLng(tmpPoint), icon:ico, zIndex:markerZ[i], visible:true })
+      markerOn[i]=0;
+    }
+    for(var i=nMTab;i<maxVendor; i++) { markers[i].setVisible(false);}
+    
+  }
+
+  var widthBoxLast=-1, heightBoxLast=-1, zoomLevLast=-20;
+  var $TileStack=$([]);
+  var arrInd=[];
+  $board=$('<div>').css({position:'absolute','box-sizing': 'border-box'})
+  //$board.css({width:2*256,height:2*256}); //,border:'solid 3px red' ,'zoom':0.5
+  $board.css({width:'100%',height:'100%'}); //,border:'solid 3px red' ,'zoom':0.5
+  $board.css({'transform-origin':'left top'}); //,border:'solid 3px red' ,'zoom':0.5
+  //$board.css({width:50,height:50}); //,border:'solid 3px red' ,'zoom':0.5
+  //var $pinDiv=$('<div>').css({position:'relative', width:'100%',height:'100%'});
+  
+  var $Img=$([]);//.push($img1).push($img2).css({transform:'translate(-50%, 0)', position:'absolute','z-index':1});
+  $glas=$('<div>').css({position:'absolute', top:0, left:0, width:'512',height:'512'});
+  //$glas=$('<div>').css({position:'absolute', top:0, left:0, width:"calc(100% + 256px)",height:"calc(100% + 256px)"});
+  $glas.css({border:'pink solid','box-sizing': 'border-box'});
+  $glas.css({width:"calc(200% + 512px)",height:"calc(200% + 512px)"});
+  //for(var i=0;i<20;i++){
+    //var x=20*(i%5), y=20*(i/5);
+    //$img=$('<img>').attr({src:'num1/1.png'}).css({ left:256+x,top:256+y});
+    //$Img.push($img);
+    //$glas.append($img);
+  //}
+  //$Img.css({transform:'translate(-50%, 0)', position:'absolute','z-index':1});
+
+  
+  $board.append($divPiv,$glas);
+  var $markers=$([]); 
+  
+
+  if(!boTouch){
+    if(boFF) $glas[0].addEventListener("DOMMouseScroll", myMousewheel, false); else   $glas.bind('mousewheel', myMousewheel);
+    $glas.on('mousedown','',myMousedown);
+    //$Img.on('mouseover',function(){$(this).attr({src:'num1/1.png'}); return 0;});
+    //$Img.on('mouseout',function(){$(this).attr({src:'num1/2.png'}); return 0;});
+    //$Img.on('mousedown',function(){console.log('gg'); return false;});
+  }
+
+
+  var el = $glas[0];
+  el.addEventListener("touchstart", handleStart, false);
+  el.addEventListener("touchend", handleEnd, false);
+  el.addEventListener("touchcancel", handleCancel, false);
+  //el.addEventListener("touchleave", handleEnd, false);
+  el.addEventListener("touchmove", handleMove, false);
+
+  $el.append($board); 
+  $el.css({position: 'relative',overflow:'hidden'}); 
+  $el.$board=$board;
+  return $el;
+}
 
 /*******************************************************************************************************************
  *******************************************************************************************************************
@@ -3647,7 +4057,7 @@ var dragSorterExtend=function($el){
     var e = e || window.event; if(e.which==3) return;
     $movedSpan=$(this);
     $movedRow=$movedSpan.parent().css({position:'relative',opacity:0.55,'z-index':'auto'});  
-  	//if(boTouch){      $(document).on('touchmove',myMousemove).on('touchend',$el.myMouseup);  }
+    //if(boTouch){      $(document).on('touchmove',myMousemove).on('touchend',$el.myMouseup);  }
     //else{   $(document).on('mousemove',myMousemove).on('mouseup',$el.myMouseup);    }
     $(document).on(strMoveEv,myMousemove).on(strEndEv,$el.myMouseup);  
     //setMess('Down');
@@ -3666,7 +4076,7 @@ var dragSorterExtend=function($el){
     else {mouseX=e.pageX; mouseY=e.pageY;}
 
     var iCur=$movedRow.index();
-	  var hCur=$movedRow.css('height').slice(0,-2);
+    var hCur=$movedRow.css('height').slice(0,-2);
     var yCurOff=mouseY-hCur/2;
 
     var len=$el.children('div').length;
@@ -4029,7 +4439,7 @@ var tableDivExtend=function($el){
   
   $el.$toManyMess=$('<div>').html(langHtml.toManyMess).hide();
   
-  var $table=$('<table>').css({display:'inline-table',background:'#fff'});
+  var $table=$('<table>').css({background:'#fff', margin:'1em auto 0em'}); //display:'inline-table',
   var $tBody=$("<tbody>");  
  
   $table.append($tBody); 
@@ -4049,8 +4459,9 @@ var tableHeadExtend=function($el){
   //var $settingButtonClone=$settingButton.clone(); $settingButtonClone.on('click',function(){settingButtonClick();});
 
   //$el.$filterButton=$('<button>').append(langHtml.Filtered,': ').click(function(){  filterButtonClick();  }).css({'float':'right','clear':'both'});
+  var $span=$('<span>').append(langHtml.ComparisonTable).css({'float':'right',margin:'0.2em 0 0 0'});
   $el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
-  var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton).css({'margin-top':'1em',overflow:'hidden','text-align':'left'}); $el.$topDivA=$topDivA;   // $buttonBack,
+  var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton, $span).css({'margin-top':'1em',overflow:'hidden','text-align':'left'}); $el.$topDivA=$topDivA;   // $buttonBack,
   //var $topDivB=$('<div>').append($buttShowSelect).css({'margin-top':'1em','text-align':'left'});
   
   $el.append($topDivA); //,$topDivB
@@ -4115,7 +4526,8 @@ var firstAJAXCall=function(pos){
 
   clearTimeout(startPopTimer);  $startPop.closeFunc();
   if(boVideo) pos=posDebug;
-  $mapDiv.latLngMe = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+  //$mapDiv.latLngMe = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+  $mapDiv.latLngMe={lat:pos.coords.latitude, lng:pos.coords.longitude}
   
   var point=merProj.fromLatLngToPointV($mapDiv.latLngMe);
   var zoomT=-1, VPSizeT=[$mapDiv.width(),$mapDiv.height()];
@@ -4212,11 +4624,11 @@ var IRet=function(data){
   tmp=data.zoom;   if(typeof tmp!="undefined") zoomLevel=tmp; 
   tmp=data.Hist;   if(typeof tmp=="undefined") tmp=[];     HistPHP=tmp;
   tmp=data.NVendor;   if(typeof tmp!="undefined") { $filterInfoSpan.setNVendor(tmp); }
-  tmp=data.groupTab;   if(typeof tmp =='undefined') tmp=[];  $tableDiv.MGroupTab=tmp;
+  tmp=data.groupTab;   if(typeof tmp =='undefined') tmp=[];  $mapDiv.MGroupTab=tmp;
   //tmp=data.boSpur;   if(typeof tmp =='undefined') tmp=0; boSpur=tmp;
    
 
-  var boGroupTmp=Boolean($tableDiv.MGroupTab.length);
+  var boGroupTmp=Boolean($mapDiv.MGroupTab.length);
   $tableDiv.$toManyMess.toggle(boGroupTmp);
   $buttShowSelect.toggle(!boGroupTmp);
   $tableButton.prop({disabled:boGroupTmp});  $tableButton.children('img').css({opacity:boGroupTmp?0.4:1});
@@ -4257,31 +4669,47 @@ var IRet=function(data){
   $filterDiv.update();  
 
   
-
   //setMess(vt.join(', '));
-  if(boFirstLoadTab) $mapDiv.set1();  else IRet2();
-  
+  if(boMapGoogle){
+    if(boFirstLoadTab) $mapDiv.set1();  else IRet2();
+  }else{
+    if(boFirstLoadTab) {
+      var latLng=$mapDiv.latLngMe;
+      var pos={coords:{latitude:latLng.lat, longitude:latLng.lng}};
+      $mapDiv.setPos(pos, zoomLevel);
+    }
+    IRet2();
+  }
 }
 
 var IRet2=function(){
 "use strict"
-  if(zoomLevel!=$mapDiv.map.getZoom() && boFirstLoadTab) { 
-    $mapDiv.map.setZoom(zoomLevel); $mapDiv.idleEventFunc=$mapDiv.storeVar;  } // Since the "zoom_changed"-event-handler will be called within "setZoom" (and change "$mapDiv.idleEventFunc"), then one has to assign "$mapDiv.idleEventFunc" afterwards.
+
+  if(boMapGoogle){
+      // Since the "zoom_changed"-event-handler will be called within "setZoom" (and change "$mapDiv.idleEventFunc"), then one has to assign "$mapDiv.idleEventFunc" afterwards.
+    if(zoomLevel!=$mapDiv.map.getZoom() && boFirstLoadTab) {
+      $mapDiv.map.setZoom(zoomLevel); $mapDiv.idleEventFunc=$mapDiv.storeVar;
+    }
+  }
   
   //if(nMTab){    $mapDiv.setMarkers();  }  else {    $mapDiv.setGroupMarkers();  }
   if(nMTab){   $mapDiv.setMarkers();   }  
-  else {    
-    if(boFirstLoadTab) {
-      google.maps.event.addListenerOnce($mapDiv.map, 'bounds_changed', function(){ 
-        $mapDiv.setGroupOverlayW();  }); // Need to wait, since get_bounds will be called within $mapDiv.setGroupOverlay();
-    }else{ $mapDiv.setGroupOverlayW();  }
+  else {  
+    if(boMapGoogle){  
+      if(boFirstLoadTab) {
+        google.maps.event.addListenerOnce($mapDiv.map, 'bounds_changed', function(){ 
+          $mapDiv.setGroupOverlayW();  }); // Need to wait, since get_bounds will be called within $mapDiv.setGroupOverlay();
+      }else{ $mapDiv.setGroupOverlayW();  }
+    }else{
+      $mapDiv.setGroupOverlayW();
+    }
   }
 
   if(boFirstLoadTab)  $footDiv.css({visibility:''});
   //$mapDiv.curMarker.setPosition($mapDiv.latLngMe);
   //$mapDiv.map.setOptions({center: $mapDiv.latLngMe});
 
-  if(boFirstLoadTab && $tableDiv.MGroupTab.length==0 && nMTab==0) {
+  if(boFirstLoadTab && $mapDiv.MGroupTab.length==0 && nMTab==0) {
     //if(siteName=='taxi') {if($mapDiv.is(':visible'))    $seeUnActivePop.openFunc(); }
   }
 
@@ -4476,7 +4904,7 @@ var teamDivExtend=function($el){
     var vec=[['teamSave',{idUser:idUser,boOn:this.checked}]];   majax(oAJAX,vec);  
   }
   var saveName=function(){
-    var link=$el.$link.val().trim(); 	
+    var link=$el.$link.val().trim();   
     var vec=[['teamSaveName',{link:link}]];   majax(oAJAX,vec);  
   }
   var calcTeamImageUrl=function(){
@@ -4705,8 +5133,10 @@ setUp1=function(){
       if(dr>=2) {
         sc=1;
       }
-      //alert(sc);
-      $('#viewportMy').prop('content','initial-scale='+sc);
+      //alert(dr);
+      //$('#viewportMy').prop('content','initial-scale='+sc);
+      //$bodyNHtml.css({"overflow-x":"hidden"});
+      $bodyNHtml.css({"height":"100%", "overflow-y":"scroll", "-webkit-overflow-scrolling":"touch"});
  
     } else if(boFF){
       dr=window.devicePixelRatio;  
@@ -4725,6 +5155,17 @@ setUp1=function(){
     }
     //if(boIOS) {  dr=window.devicePixelRatio;  sc=1/dr;} else {  sc=1; }
   }  
+
+  dr=window.devicePixelRatio; // dr=Math.round(dr); //dr=2; //alert(dr);  //Settings text: "Use hardware resolution for the map"
+  drLev=log2(dr);
+  drLev=Math.floor(drLev); //drLev=0;
+  dr=Math.pow(2,drLev);
+
+  WCMIN=0; WCMAX=256; WCMID=WCMAX/2;
+  TILESIZE=256/dr; TILESIZEHALF=TILESIZE/2;
+  
+  //uMapSourceDir='http://otile1.mqcdn.com/tiles/1.0.0/map';
+  uMapSourceDir='http://c.tile.openstreetmap.org';
 
 
   var boHistoryOK=1, tmp='';
@@ -4931,14 +5372,14 @@ setUp1=function(){
   }
 
   $H1=$('h1:eq(0)').detach()
-  $H1.css({background:'#ff0',border:'solid 1px',color:'black','font-size':'1.6em','font-weight':'bold','text-align':'center',
+  $H1.css({background:'#ff0', "box-sizing":"border-box", border:'solid 1px',color:'black','font-size':'1.6em','font-weight':'bold','text-align':'center',
       padding:'0.4em 0em 0.4em 0em',margin:'0.3em 0em 0em 0em'}); 
   //$divH1=$('<div>').append($H1); //$divH1.css({}); 
   
   //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
   var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
   $infoLink=$('<a>').prop({href:uWikiT}).append(langHtml.OtherJobs);
-  $footDiv=$('<div>').css({background:'#ee8',border:'solid 1px',color:'black','font-size':'1.2em','font-weight':'bold','text-align':'center',
+  $footDiv=$('<div>').css({background:'#ee8', "box-sizing":"border-box", border:'solid 1px',color:'black','font-size':'1.2em','font-weight':'bold','text-align':'center',
       padding:'0.2em 0em 0.2em 0em',margin:'1px 0em 0em 0em'}); 
   $footDiv.css({visibility:'hidden'});
 
@@ -5087,8 +5528,10 @@ var setUp2=function(){
   $paymentListDiv=paymentListDivExtend($('<div>'));
 
   makeMyOverlay();
-  $mapDiv=mapDivExtend($("<div>"));  $mapDiv.css({'margin-top':'0.9em'});  //,display:'inline-block','margin-top':'1px'
-  
+  boMapGoogle=1
+  if(boMapGoogle) $mapDiv=mapDivExtendGoogle($("<div>")); else $mapDiv=mapDivExtend($("<div>"));
+  $mapDiv.css({'margin-top':'0.9em'});  //,display:'inline-block','margin-top':'1px'
+  $mapDiv.css({overflow:'hidden'});
 
     //filter colors
   colButtAllOn='#9f9', colButtOn='#0f0', colButtOff='#ddd', colFiltOn='#bfb', colFiltOff='#ddd', colFontOn='#000', colFontOff='#777', colActive='#65c1ff', colStapleOn='#f70', colStapleOff='#bbb';
@@ -5100,7 +5543,7 @@ var setUp2=function(){
   $filterInfoWrap=$('<span>').append($filterInfoSpan);
   //$filterButton=$('<button>').append(langHtml.Filter,': (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','clear':'both'});//.css({background:colMenuOff});
   var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $filterButton=$('<button>').append($tmpImg,' (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','clear':'both'}).prop('title',langHtml.FilterTitle);//.css({background:colMenuOff});
+  $filterButton=$('<button>').append($tmpImg,' (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','clear':'both','margin-left':'1em'}).prop('title',langHtml.FilterTitle);//.css({background:colMenuOff});
   //$filterDiv=filterDivExtend($('<div>'),StrOrderFilt);  
   $filterDiv=new FilterDiv(Prop, $.extend({},langHtml.label), StrOrderFilt, loadTabStart);
   $filterDiv.css({'background-color':'#eee','padding-bottom':'0.6em'});
@@ -5171,11 +5614,9 @@ var setUp2=function(){
   $markSelectorDiv.createTable();
 
 
-  //if(boTouch) $H1=$([]);
-  if(boTouch) $H1.css({'font-size':'0.9em'});
+  //if(boTouch) $H1.css({'font-size':'0.9em'});
+  if(boTouch) $H1=$([]);
   
-
-
 
 
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
@@ -5193,11 +5634,6 @@ var setUp2=function(){
 
 
   history.StateMy[history.state.ind]={$view:$mapDiv};
-
-
-
-
-
 
 
   $MainDiv.hide();
@@ -5273,6 +5709,7 @@ var setUp2=function(){
     //if(boResizePending) {setMapDivHeight();}
     if(boUCBrowser) { nResizeTries=0; setMapDivHeight(); }
     if(boCenteringNeeded && boGotMap) {      $mapDiv.map.setCenter($mapDiv.latLngMe); boCenteringNeeded=0;}
+    google.maps.event.trigger($mapDiv.map, 'resize');
     $('meta[name=viewport]').prop({'user-scalable':'false'});
     return true;
   }
@@ -5404,7 +5841,7 @@ var setUp2=function(){
   $mainDivsNonFixWidth=$([]);
   if(!boTouch) {$mainDivsNonFixWidth.push($tableDiv, $paymentListDiv);}
   $mainDivsFixWidth=$MainDiv.not($mainDivsNonFixWidth).css({'max-width':'800px'});
-  $H1.add($footDiv).css({'width':'800px'});
+  //$H1.add($footDiv).css({'width':'800px'});
 
   $mainDivsNonFixWidth.css({display:'inline-block','text-align':'left'});
   $tableDiv.children('table').css({'margin-top':'1em'});
@@ -5441,7 +5878,7 @@ var setUp2=function(){
     boFirstPosOK=1;
     boGeoOK=true; setItem('boGeoOK',boGeoOK);
     //if(!boApproxCalled ) firstAJAXCall(pos); else {if(boFirstLoadTab==0) {$mapDiv.set(pos); loadTabStart(1);}} 
-    if(!boApproxCalled ) firstAJAXCall(pos); else {$mapDiv.set(pos); } 
+    if(!boApproxCalled ) firstAJAXCall(pos); else {$mapDiv.setPos(pos); } 
   }
   
   if(boEmulator){ tmpFGeoSuccess(posDebug); }else{ navigator.geolocation.getCurrentPosition(function(pos){tmpFGeoSuccess(pos);}, geoError,{timeout:20000,maximumAge:60000});  }  

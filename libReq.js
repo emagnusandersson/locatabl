@@ -127,8 +127,10 @@ app.ReqPubKeyStore.prototype.go=function(){
 
   //var uCommon='http://'+wwwCommon;
   var uCommon=req.strSchemeLong+wwwCommon;
-  var uJQuery='https://code.jquery.com/jquery-latest.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-latest.js";      Str.push("<script src='"+uJQuery+"'></script>");
-
+  //var uJQuery='https://code.jquery.com/jquery-latest.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-latest.js";      Str.push("<script src='"+uJQuery+"'></script>");
+  var uJQuery='https://code.jquery.com/jquery-3.2.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.2.1.min.js";
+  Str.push('<script src="'+uJQuery+'" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>');
+ 
 
           // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
   var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<link rel="stylesheet" href="'+uCommon+pathTmp+'?v='+vTmp+'" type="text/css">');
@@ -203,12 +205,14 @@ app.ReqIndex.prototype.go=function() {
   var strTmp="0,0";
   var Match=/^(.*),(.*)$/.exec(strTmp);
   var boOK=Boolean(Match.length);
-  if(!boOK) coordApprox=[0,0]; else coordApprox=Match.slice(1);
+  //if(!boOK) coordApprox=[0,0]; else coordApprox=Match.slice(1);
+  if(!boOK) coordApprox=[0,0]; else coordApprox=[Number(Match[1]),Number(Match[2])];
 
 
   var strLangBrowser=getBrowserLang(req); if(!checkIfLangIsValid(strLangBrowser)){ strLangBrowser='en'; }
 
   var ua=req.headers['user-agent']||''; ua=ua.toLowerCase();
+  var boMSIE=RegExp('/msie/').test(ua), boAndroid=RegExp('/android/').test(ua), boFireFox=RegExp('/firefox/').test(ua), boIOS= RegExp('/iPhone|iPad|iPod/i').test(ua);
   if(/facebookexternalhit/.test(ua)) {
     objQS.lang='en'; 
   }
@@ -248,10 +252,6 @@ app.ReqIndex.prototype.go=function() {
 
 
   //<meta name="apple-mobile-web-app-capable" content="yes" /> 
-  var boMSIE=RegExp('/msie/').test(ua);
-  var boAndroid=RegExp('/android/').test(ua);
-  var boFireFox=RegExp('/firefox/').test(ua);
-  var boIOS= RegExp('/iPhone|iPad|iPod/i').test(ua);
 
 
   var tmpIcon=wwwIcon16; if('wwwIcon16' in site) tmpIcon=site.wwwIcon16;  var uIcon16=req.strSchemeLong+tmpIcon;  //+'?v='+strBootTime
@@ -269,6 +269,7 @@ app.ReqIndex.prototype.go=function() {
 
   Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1"+strTmp+strTmpB+"'/>");
 
+  Str.push('<meta name="theme-color" content="#ff0">');
 
   require('./lang/'+strLang+'.js');  langServerFunc();
   site.langSetup();
@@ -330,17 +331,20 @@ app.ReqIndex.prototype.go=function() {
 
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
 
+    // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
+  var boDbgT=boDbg; if(boIOS) boDbgT=0;
+  
     // Include stylesheets
-  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<link rel="stylesheet" href="'+uCommon+pathTmp+'?v='+vTmp+'" type="text/css">');
+  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<link rel="stylesheet" href="'+uCommon+pathTmp+'?v='+vTmp+'" type="text/css">');
 
     // Include site specific JS-files
-  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'"></script>');
+  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbgT) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'"></script>');
 
 
     // Include JS-files
   var StrTmp=['filter.js', 'lib.js', 'libClient.js', 'client.js', 'lang/en.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
   }
 
     // Include plugins
@@ -348,7 +352,7 @@ app.ReqIndex.prototype.go=function() {
   var StrPlugIn=site.StrPlugIn;
   for(var i=0;i<StrPlugIn.length;i++){
     var Name=ucfirst(StrPlugIn[i]); 
-    var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
+    var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
   }
 
 
@@ -449,10 +453,13 @@ var ReqLoginBack=app.ReqLoginBack=function(req, res){
 ReqLoginBack.prototype.go=function(){
   var self=this, req=this.req, res=this.res, objQS=req.objQS;
   var wwwLoginScopeTmp=null; if('wwwLoginScope' in this.site) wwwLoginScopeTmp=this.site.wwwLoginScope;
+  var uSite=req.strSchemeLong+req.wwwSite;
 
   var Str=[];
   Str.push("\n\
-<html><head><meta name='robots' content='noindex'></head>\n\
+<html><head><meta name='robots' content='noindex'>\n\
+<link rel='canonical' href='"+uSite+"'/>\n\
+</head>\n\
 <body>\n\
 <script>\n\
 var wwwLoginScope="+JSON.stringify(wwwLoginScopeTmp)+";\n\
@@ -469,6 +476,7 @@ window.close();\n\
 ");
   var str=Str.join('\n');  this.res.end(str);
 }
+
 
 
 
@@ -1440,7 +1448,10 @@ app.SetupSql.prototype.dummies=function(SiteName){
   //var nData=10000;
 
   //if(siteName=='demo') nData=500;
-  if(boLocal) nData=5;
+  if(boLocal) {
+    nData=5;
+    if(site.wwwSite.substr(0,4)=='taxi') nData=50;
+  }
   if(site.wwwSite.substr(0,4)=='demo') nData=50;
 
   var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'distUnit', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang'];
