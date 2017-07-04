@@ -68,7 +68,16 @@ detectIE=function() {
 //
 // JQuery extentions
 //
-
+$.fn.pop = function(){
+  var top = this.get(-1);
+  this.splice(this.length-1,1);
+  return top;
+};
+$.fn.shift = function(){
+  var bottom = this.get(0);
+  this.splice(0,1);
+  return bottom;
+};
 $.fn.pushOne = function(selector){
     Array.prototype.push.apply(this, $.makeArray($(selector)));
     return this;
@@ -258,96 +267,96 @@ cloneCanvas=function(oldCanvas){
 makeMarker=function(strText){
 "use strict"
   if(typeof strText !='string') strText=strText.toString();
-	var strFont="8pt Arial", leading=10;
-	var arrText=strText.split('\n');
-	
-		//Calculate dimensions of the bubble
-	var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
-	var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
-	var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
-	
-		//Reseting canvas with new dimensions
-	canvas.width=widthBox;   canvas.height=heightImg;    ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
-	
-		// Draw bubble
-	ctx.beginPath(); //so start going clockwise from upper left corner
-	ctx.moveTo(0, 0);
-	ctx.lineTo(widthBox,0);
-	ctx.lineTo(widthBox, heightBox);
-	ctx.lineTo(0, heightBox);
-	ctx.closePath();
-	ctx.fillStyle="#FF7700";  ctx.fill();    
-		
-		// Write text
-	ctx.fillStyle = "white";     for(var i in arrText){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
-	return canvas.toDataURL("image/png");
+  var strFont="8pt Arial", leading=10;
+  var arrText=strText.split('\n');
+  
+    //Calculate dimensions of the bubble
+  var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
+  var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
+  var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
+  
+    //Reseting canvas with new dimensions
+  canvas.width=widthBox;   canvas.height=heightImg;    ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
+  
+    // Draw bubble
+  ctx.beginPath(); //so start going clockwise from upper left corner
+  ctx.moveTo(0, 0);
+  ctx.lineTo(widthBox,0);
+  ctx.lineTo(widthBox, heightBox);
+  ctx.lineTo(0, heightBox);
+  ctx.closePath();
+  ctx.fillStyle="#FF7700";  ctx.fill();    
+    
+    // Write text
+  ctx.fillStyle = "white";     for(var i in arrText){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
+  return canvas.toDataURL("image/png");
 }
 
 
 makeMarkerBubble=function(strText){
 "use strict"
   if(typeof strText !='string') strText=strText.toString();
-	var strFont="8pt Arial", leading=10;
-	var arrText=strText.split('\n');
-	
-		//Calculate dimensions of the bubble
-	var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
-	var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
-	var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
-	
-		//Reseting canvas with new dimensions
-	canvas.width=widthBox;   canvas.height=heightImg;    ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
-	
-		// Draw bubble
-	var center=widthBox/2;
-	ctx.beginPath(); //so start going clockwise from upper left corner
-	ctx.moveTo(0, 0);
-	ctx.lineTo(widthBox,0);
-	ctx.lineTo(widthBox, heightBox);
-	ctx.lineTo(center+3, heightBox);
-	ctx.lineTo(center, heightBox+3);  //tip of arrow
-	ctx.lineTo(center-3, heightBox);
-	ctx.lineTo(0, heightBox);
-	ctx.closePath();
-	ctx.fillStyle="#FFFF00";    ctx.fill();    ctx.strokeStyle = "orange";   ctx.stroke();
-		
+  var strFont="8pt Arial", leading=10;
+  var arrText=strText.split('\n');
+  
+    //Calculate dimensions of the bubble
+  var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
+  var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
+  var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
+  
+    //Reseting canvas with new dimensions
+  canvas.width=widthBox;   canvas.height=heightImg;    ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
+  
+    // Draw bubble
+  var center=widthBox/2;
+  ctx.beginPath(); //so start going clockwise from upper left corner
+  ctx.moveTo(0, 0);
+  ctx.lineTo(widthBox,0);
+  ctx.lineTo(widthBox, heightBox);
+  ctx.lineTo(center+3, heightBox);
+  ctx.lineTo(center, heightBox+3);  //tip of arrow
+  ctx.lineTo(center-3, heightBox);
+  ctx.lineTo(0, heightBox);
+  ctx.closePath();
+  ctx.fillStyle="#FFFF00";    ctx.fill();    ctx.strokeStyle = "orange";   ctx.stroke();
+    
   ctx.font = "Symbol";
-		// Write text
-	ctx.fillStyle = "black";     for(var i in arrText){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
-	return canvas.toDataURL("image/png");
+    // Write text
+  ctx.fillStyle = "black";     for(var i in arrText){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
+  return canvas.toDataURL("image/png");
 }
 
 
 makeTextCanvas=function(strText,rot){
-	if(typeof rot=='undefined'){rot=0;}
-	var fontHeight=12;
-	var strFont=fontHeight+"pt Arial", leading=fontHeight+6;
-	var arrText=strText.split('\n');
-	
-		//Calculate dimensions of the bubble
-	var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
-	var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
-	var widthBox=widthText+4, heightBox=arrText.length*leading+3;
-	if(rot==1 || rot==-1){ var tmp=heightBox; heightBox=widthBox; widthBox=tmp; }
-	
-		//Reseting canvas with new dimensions
-	canvas.width=widthBox;   canvas.height=heightBox;   var ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
-	
-		// Translate and rotate context
-	//ctx.strokeStyle="#000000"; ctx.strokeRect(0,0,widthBox,heightBox);
-	ctx.save();
-	if(rot==-1) ctx.translate(0, heightBox);
-	else if(rot==1) ctx.translate(widthBox, 0);
-	else if(rot==2) ctx.translate(widthBox, heightBox);
-	
-	ctx.rotate(rot*Math.PI/2);
-	ctx.textAlign = "left";
-	ctx.fillStyle = "black";     for(var i in arrText){   ctx.fillText(arrText[i], 2, fontHeight+i*leading );    }
-	ctx.restore();
-	
-	return canvas;
-	//return canvas.toDataURL("image/png");
-	//var uri=canvas.toDataURL();  return $('<img>').attr(src,uri);
+  if(typeof rot=='undefined'){rot=0;}
+  var fontHeight=12;
+  var strFont=fontHeight+"pt Arial", leading=fontHeight+6;
+  var arrText=strText.split('\n');
+  
+    //Calculate dimensions of the bubble
+  var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
+  var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
+  var widthBox=widthText+4, heightBox=arrText.length*leading+3;
+  if(rot==1 || rot==-1){ var tmp=heightBox; heightBox=widthBox; widthBox=tmp; }
+  
+    //Reseting canvas with new dimensions
+  canvas.width=widthBox;   canvas.height=heightBox;   var ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
+  
+    // Translate and rotate context
+  //ctx.strokeStyle="#000000"; ctx.strokeRect(0,0,widthBox,heightBox);
+  ctx.save();
+  if(rot==-1) ctx.translate(0, heightBox);
+  else if(rot==1) ctx.translate(widthBox, 0);
+  else if(rot==2) ctx.translate(widthBox, heightBox);
+  
+  ctx.rotate(rot*Math.PI/2);
+  ctx.textAlign = "left";
+  ctx.fillStyle = "black";     for(var i in arrText){   ctx.fillText(arrText[i], 2, fontHeight+i*leading );    }
+  ctx.restore();
+  
+  return canvas;
+  //return canvas.toDataURL("image/png");
+  //var uri=canvas.toDataURL();  return $('<img>').attr(src,uri);
 }
 
 
