@@ -3027,11 +3027,12 @@ var FilterDiv=function(Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst, Str
   //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
  
   $el.$filterInfoWrap=$('<span>');
-  var $filterInfoWrap2=$('<span>').append(langHtml.Filter,' (',$el.$filterInfoWrap,')').css({'float':'right',margin:'0.2em 0 0 0.2em'});  //,'clear':'both'
+  var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
+  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').css({'float':'right',margin:'0.2em 0 0 0.2em'});  //,'clear':'both'
   
-  var $buttClear=$('<button>').append(langHtml.Reset).click(function(){$el.Filt.filtClear(); loadTabStart();}).css({'float':'right'});  //,'clear':'both'
+  var $buttClear=$('<button>').append(langHtml.All).click(function(){$el.Filt.filtClear(); loadTabStart();}).css({'float':'right', 'margin-left':'0.5em'});  //,'clear':'both'
   
-  var $topDivA=$('<div>').append($filterInfoWrap2,$buttClear).css({padding:'0','margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $topDivA=$('<div>').append($buttClear, $filterInfoWrap2).css({padding:'0','margin-top':'1em',overflow:'hidden'});  //$buttonBack,
   $el.prepend($topDivA);
 
   $el.addClass('unselectable');    $el.prop({unselectable:"on"}); //class: needed by firefox, prop: needed by opera, firefox and ie
@@ -3151,7 +3152,7 @@ var doNothing=function(){};
  * mapDiv
  */
 
-window.zoomLevel=-2;
+//window.zoomLevel=-2;
 var mapDivExtendGoogle=function($el){
 "use strict"
   $el.toString=function(){return 'mapDiv';}
@@ -3360,7 +3361,7 @@ var mapDivExtendGoogle=function($el){
     }
   } 
   $el.boGeoStatSucc=0;
-  $el.set1=function() {
+  $el.set1=function(zoomLevel) {
     var myOptions = {
       zoom: zoomLevel,  
       center: $el.latLngMe,  
@@ -3392,29 +3393,22 @@ var mapDivExtendGoogle=function($el){
       var tmp=merProj.fromLatLngToPointV($el.latLngMe);
     });
 
-    /*
-    google.maps.event.addListener($el.map, 'bounds_changed', function() {
-      $el.latLngSW=$el.map.getBounds().getSouthWest();
-      $el.latLngNE=$el.map.getBounds().getNorthEast();
-    });
-    */
+
     
-     
+    
+    $el.map.addListener('idle', $el.storeVar);
+    
+      // On user drag/zoom, temporarly add reloadFunc
+    var h=null;
     var reloadFunc=function(){ 
-      $el.storeVar();
-      loadTabStart(); $el.idleEventFunc=$el.storeVar;
+      loadTabStart();
+      google.maps.event.removeListener(h); h=null;
     }
-    $el.idleEventFunc=$el.storeVar;
-
-      // On user drag/zoom, set $el.idleEventFunc=reloadFunc
-    google.maps.event.addListener($el.map, 'zoom_changed', function() {
-      zoomLevel=$el.map.getZoom(); $el.idleEventFunc=reloadFunc;   });
-    google.maps.event.addListener($el.map, 'drag', function() {  
-      $el.idleEventFunc=reloadFunc;    });
-
-    google.maps.event.addListener($el.map, 'idle', function(){
-      $el.idleEventFunc();});
-    //google.maps.event.addListener($el.map, 'resize', function(){   console.log('t');});
+    var addReloadFunc=function() {
+      if(!h) h=$el.map.addListener('idle', reloadFunc);
+    }
+    $el.map.addListener('zoom_changed', addReloadFunc);    $el.map.addListener('drag', addReloadFunc);
+  
   
     /*
     var contentString = 'abc';
@@ -3425,7 +3419,7 @@ var mapDivExtendGoogle=function($el){
       google.maps.event.addListener($el.curMarker, 'mouseout', function() {  infowindow.close();  });
     }
     */
-    IRet2();
+    //IRet2();
     boGotMap=1;
     //setTimeout(IRet2,100);
      
@@ -3991,7 +3985,7 @@ var columnSelectorDivExtend=function($el){
     }
   }
   $el.createTable=function(){
-    var $ha=$('<th>').append(langHtml.Column),$hb=$('<th>').append(langHtml.Visible), $rh=$('<tr>').append($ha,$hb); $table.append($rh);
+    var $ha=$('<th>').append(langHtml.Column),$hb=$('<th>'), $rh=$('<tr>').append($ha,$hb); $table.append($rh);  //.append(langHtml.Visible)
     for(var i=0;i<StrPropMain.length;i++){ 
       var strName=StrPropMain[i]; 
       var $cb=$('<input>').prop({"type":"checkbox"}).val(strName);
@@ -4039,10 +4033,12 @@ var columnSelectorDivExtend=function($el){
   var $table=$('<table>').css({'margin':'0.3em 0em 0.8em',border:'1px'});
   $table.append();
 
-  var $span=$('<span>').append(langHtml.SelectColumns).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
+  var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).css({'float':'right',margin:'0.2em 0 0 0'});
    
   var $topDivA=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
-  var $topDivB=$('<div>').append($buttDefault,$buttAll,$buttNone,$buttSort).css({'margin-top':'1em',overflow:'hidden'});
+  var $spanRightB=$('<span>').append($buttAll,$buttDefault, $buttNone).css({'float':'right',margin:'0 0 0 0'});
+  var $topDivB=$('<div>').append($buttSort,$spanRightB).css({'margin-top':'1em',overflow:'hidden'});
   $el.append($topDivA,$topDivB,$table);
 
   $el.css({'text-align':'left'});
@@ -4459,7 +4455,8 @@ var tableHeadExtend=function($el){
   //var $settingButtonClone=$settingButton.clone(); $settingButtonClone.on('click',function(){settingButtonClick();});
 
   //$el.$filterButton=$('<button>').append(langHtml.Filtered,': ').click(function(){  filterButtonClick();  }).css({'float':'right','clear':'both'});
-  var $span=$('<span>').append(langHtml.ComparisonTable).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $tmpImg=$('<img>').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
+  var $span=$('<span>').append($tmpImg,langHtml.ComparisonTable).css({'float':'right',margin:'0.4em 0 0 0'});
   $el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
   var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton, $span).css({'margin-top':'1em',overflow:'hidden','text-align':'left'}); $el.$topDivA=$topDivA;   // $buttonBack,
   //var $topDivB=$('<div>').append($buttShowSelect).css({'margin-top':'1em','text-align':'left'});
@@ -4620,7 +4617,7 @@ var errFunc=function(data){ resetMess(10);  }
 
 var IRet=function(data){   
 "use strict"
-  var tmp,HistPHP;
+  var tmp,HistPHP, zoomLevel;
   tmp=data.zoom;   if(typeof tmp!="undefined") zoomLevel=tmp; 
   tmp=data.Hist;   if(typeof tmp=="undefined") tmp=[];     HistPHP=tmp;
   tmp=data.NVendor;   if(typeof tmp!="undefined") { $filterInfoSpan.setNVendor(tmp); }
@@ -4671,26 +4668,15 @@ var IRet=function(data){
   
   //setMess(vt.join(', '));
   if(boMapGoogle){
-    if(boFirstLoadTab) $mapDiv.set1();  else IRet2();
+    if(boFirstLoadTab) $mapDiv.set1(zoomLevel);
   }else{
     if(boFirstLoadTab) {
       var latLng=$mapDiv.latLngMe;
       var pos={coords:{latitude:latLng.lat, longitude:latLng.lng}};
       $mapDiv.setPos(pos, zoomLevel);
     }
-    IRet2();
   }
-}
 
-var IRet2=function(){
-"use strict"
-
-  if(boMapGoogle){
-      // Since the "zoom_changed"-event-handler will be called within "setZoom" (and change "$mapDiv.idleEventFunc"), then one has to assign "$mapDiv.idleEventFunc" afterwards.
-    if(zoomLevel!=$mapDiv.map.getZoom() && boFirstLoadTab) {
-      $mapDiv.map.setZoom(zoomLevel); $mapDiv.idleEventFunc=$mapDiv.storeVar;
-    }
-  }
   
   //if(nMTab){    $mapDiv.setMarkers();  }  else {    $mapDiv.setGroupMarkers();  }
   if(nMTab){   $mapDiv.setMarkers();   }  
@@ -4957,7 +4943,8 @@ var settingDivExtend=function($el){
   $vendorDiv.css({'margin':'1em 0.6em 1em 0.6em'}); 
 
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em'});
-  var $span=$('<span>').append(langHtml.Settings).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
+  var $span=$('<span>').append($tmpImg, langHtml.Settings).css({'float':'right',margin:'0.2em 0 0 0'});
   var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
   $el.append($topDiv,$opt);   
   
@@ -5413,7 +5400,7 @@ setUp1=function(){
       //$obj.setVis();       $body.scrollTop(tmpObj.scroll);
 
       var stateMy=history.StateMy[history.state.ind];
-      if(typeof stateMy!='object' ) {var tmpStr="Error: typeof stateMy: "+(typeof stateMy); if(!boEpiphany) alert(tmpStr); else  console.log(tmpStr); return; }
+      if(typeof stateMy!='object' ) {var tmpStr=window.location.href +" Error: typeof stateMy: "+(typeof stateMy); if(!boEpiphany) alert(tmpStr); else  console.log(tmpStr); return; }
       var $view=stateMy.$view;
       $view.setVis();
       if(typeof $view.getScroll=='function') {
