@@ -133,8 +133,8 @@ button.fixWidth{width:2em;height:1.8em}
 
 .popUpDiv {
   position:absolute;
-	background-color:#eeeeee;
-	z-index: 9002; 
+  background-color:#eeeeee;
+  z-index: 9002; 
   border:1px solid
 }
 
@@ -172,25 +172,25 @@ button.fixWidth{width:2em;height:1.8em}
 }
 
 .toast{
-	position: fixed;
-	bottom: 20px;
-	margin:auto;
+  position: fixed;
+  bottom: 20px;
+  margin:auto;
   border: 1px solid #666;
-	background-color: #B1BCCF;
-	padding: 10px 0 ;
-	text-align:center;
-	opacity: .9;
+  background-color: #B1BCCF;
+  padding: 10px 0 ;
+  text-align:center;
+  opacity: .9;
   border-radius: 0.5em;
   z-index:4;
-	
-	/*
-	margin-left: -100px;
-	-webkit-transition: opacity 0.5s ease-out;  
-	-moz-transition: opacity 0.5s ease-out;  
-	-ms-transition: opacity 0.5s ease-out;  
-	-o-transition: opacity 0.5s ease-out;  
-	transition: opacity 0.5s ease-out;	*/
-	
+  
+  /*
+  margin-left: -100px;
+  -webkit-transition: opacity 0.5s ease-out;  
+  -moz-transition: opacity 0.5s ease-out;  
+  -ms-transition: opacity 0.5s ease-out;  
+  -o-transition: opacity 0.5s ease-out;  
+  transition: opacity 0.5s ease-out;  */
+  
 }
 
 

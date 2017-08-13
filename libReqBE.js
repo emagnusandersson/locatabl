@@ -343,7 +343,7 @@ ReqBE.prototype.mesO=function(str){
   if(str) this.Str.push(str);
   this.GRet.strMessageText=this.Str.join(', ');
   this.GRet.userInfoFrIP=this.sessionMain.userInfoFrIP;
-  this.res.end(JSON.stringify(this.Out));	
+  this.res.end(JSON.stringify(this.Out));  
 }
 ReqBE.prototype.mesEO=function(err){
   var error=new MyError(err); console.log(error.stack);
@@ -353,7 +353,7 @@ ReqBE.prototype.mesEO=function(err){
   //var tmp=err.syscal||''; this.Str.push('E: '+tmp+' '+err.code);
   this.GRet.strMessageText=this.Str.join(', ');
   this.GRet.userInfoFrIP=this.sessionMain.userInfoFrIP;
-  this.res.end(JSON.stringify(this.Out));	
+  this.res.end(JSON.stringify(this.Out));  
 }
 
 
@@ -681,7 +681,7 @@ ReqBE.prototype.VShow=function(callback,inObj){  // writing needSession
   var Ou={};
   if(this.checkIfUserInfoFrIP()==0) {  self.mes('No session'); callback(null, [Ou,'errFunc']); return;  }
   var idUser=this.sessionMain.userInfoFrDB.vendor.idUser; 
-	var coordinatePrecisionM=this.sessionMain.userInfoFrDB.vendor.coordinatePrecisionM;
+  var coordinatePrecisionM=this.sessionMain.userInfoFrDB.vendor.coordinatePrecisionM;
   var tmp=roundXY(coordinatePrecisionM,inObj[0],inObj[1]); inObj[0]=tmp[0]; inObj[1]=tmp[1];
 
   var Sql=[], Val=[];
@@ -834,7 +834,7 @@ ReqBE.prototype.reportUpdateComment=function(callback,inObj){
   Sql.push("INSERT INTO "+reportTab+" (idVendor,idReporter,comment,created) VALUES (?,@idReporter,?,now()) ON DUPLICATE KEY UPDATE comment=?, modified=now();");
   Val.push(idVendor,comment,comment);
   Sql.push("DELETE FROM "+reportTab+" WHERE comment IS NULL AND answer IS NULL;");
-  Sql.push("SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=@idReporter;");	
+  Sql.push("SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=@idReporter;");  
   var sql=Sql.join('\n');
   myQueryF(sql, Val, this.pool, function(err, results) {
     if(err){self.mesEO(err); callback('exited');  return; } 
