@@ -7,7 +7,7 @@ mesOMake=function(glue){ return function(str){
 mesEOMake=function(glue){ return function(err){
   var error=new MyError(err); console.log(error.stack);
   this.Str.push('E: '+err.syscal+' '+err.code);
-  var str=this.Str.join(glue); this.res.end(str);	
+  var str=this.Str.join(glue); this.res.end(str);  
 }}
 mesOMakeJSON=function(glue){ return function(str){
   if(str) this.Str.push(str);
@@ -16,7 +16,7 @@ mesOMakeJSON=function(glue){ return function(str){
 mesEOMakeJSON=function(glue){ return function(err){
   var error=new MyError(err); console.log(error.stack);
   var tmp=err.syscal||''; this.Str.push('E: '+tmp+' '+err.code);
-  var str=this.Str.join(glue); this.res.end(JSON.stringify(str));	
+  var str=this.Str.join(glue); this.res.end(JSON.stringify(str));  
 }}
 
 
@@ -748,7 +748,7 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
   var strIPEnum="ENUM('"+Prop.IP.Enum.join("', '")+"')";
   var strIPDefault=Prop.IP.Enum[0];
 
-	  // Create users
+    // Create users
   SqlTab.push("CREATE TABLE "+userTab+" ( \n\
   idUser int(4) NOT NULL auto_increment, \n\
   IP "+strIPEnum+" CHARSET utf8 NOT NULL DEFAULT '"+strIPDefault+"', \n\
@@ -759,8 +759,19 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
   UNIQUE KEY (IP,idIP) \n\
   ) AUTO_INCREMENT = "+auto_increment+", ENGINE="+engine+" COLLATE "+collate+""); 
 
+    // Create users
+  //SqlTab.push("CREATE TABLE "+userTab+" ( \n\
+  //idUser int(4) NOT NULL auto_increment, \n\
+  //idFB varchar(128) CHARSET utf8 NOT NULL, \n\
+  //idIdPlace varchar(128) CHARSET utf8 NOT NULL, \n\
+  //imageFB varchar(256) CHARSET utf8 NULL, \n\
+  //imageIdPlace varchar(256) CHARSET utf8 NULL, \n\
+  //PRIMARY KEY (idUser), \n\
+  //UNIQUE KEY idFB, \n\
+  //UNIQUE KEY idIdPlace \n\
+  //) AUTO_INCREMENT = "+auto_increment+", ENGINE="+engine+" COLLATE "+collate+""); 
 
-	  // Create vendorTab
+    // Create vendorTab
   var arrCols=[];
   for(var i=0;i<site.StrOrderDB.length;i++){
     var name=site.StrOrderDB[i];
@@ -845,7 +856,7 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
   ) ENGINE="+engine+" COLLATE "+collate+"");
 
 
-	  // Create admin
+    // Create admin
   SqlTab.push("CREATE TABLE "+adminTab+" ( \n\
   idUser int(4) NOT NULL, \n\
   boApproved tinyint(1) NOT NULL DEFAULT 0, \n\
@@ -856,7 +867,7 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
 
 
 
-	  // Create reportTab
+    // Create reportTab
   SqlTab.push("CREATE TABLE "+reportTab+" ( \n\
   idVendor  int(4) NOT NULL, \n\
   idReporter int(4) NOT NULL, \n\
@@ -871,7 +882,7 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
 
 
 
-	  // Create teamTab
+    // Create teamTab
   SqlTab.push("CREATE TABLE "+teamTab+" ( \n\
   idUser int(4) NOT NULL, \n\
   link varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
@@ -885,7 +896,7 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
   //name varchar(64) CHARSET utf8 NOT NULL,
   //boFB tinyint(1) NOT NULL,
 
-	  // Create marketers
+    // Create marketers
   SqlTab.push("CREATE TABLE "+marketerTab+" ( \n\
   idUser int(4) NOT NULL, \n\
   boApproved tinyint(1) NOT NULL default 0, \n\
@@ -896,7 +907,7 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
 
 
 
-	  // Create rebateCodeTab
+    // Create rebateCodeTab
   SqlTab.push("CREATE TABLE "+rebateCodeTab+" ( \n\
   id int(4) NOT NULL auto_increment, \n\
   idUser  int(4) NOT NULL, \n\
@@ -911,7 +922,7 @@ app.SetupSql.prototype.table=function(SiteName,boDropOnly){
   UNIQUE KEY (code) \n\
   ) ENGINE="+engine+" COLLATE "+collate+"");
 
-	  // Create pubKeyTab
+    // Create pubKeyTab
   SqlTab.push("CREATE TABLE "+pubKeyTab+" ( \n\
   idUser  int(4) NOT NULL, \n\
   pubKey  varchar(256) NOT NULL default '', \n\
@@ -1031,7 +1042,7 @@ app.SetupSql.prototype.fun=function(SiteName,boDropOnly){
       arrCol.push(tmp);
     }
   }
-  var strColTmp=arrCol.join(', ');	
+  var strColTmp=arrCol.join(', ');  
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
   SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IIP "+strIPEnum+", IidIP varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboReporter INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
@@ -1744,19 +1755,19 @@ CREATE DATABASE ip2location;
 USE ip2location;
 
 CREATE TABLE `ip2location_db1`(
-	`ip_from` INT(10) UNSIGNED,
-	`ip_to` INT(10) UNSIGNED,
-	`country_code` CHAR(2),
-	`country_name` VARCHAR(64),
-	INDEX `idx_ip_from` (`ip_from`),
-	INDEX `idx_ip_to` (`ip_to`),
-	INDEX `idx_ip_from_to` (`ip_from`, `ip_to`)
+  `ip_from` INT(10) UNSIGNED,
+  `ip_to` INT(10) UNSIGNED,
+  `country_code` CHAR(2),
+  `country_name` VARCHAR(64),
+  INDEX `idx_ip_from` (`ip_from`),
+  INDEX `idx_ip_to` (`ip_to`),
+  INDEX `idx_ip_from_to` (`ip_from`, `ip_to`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 LOAD DATA LOCAL
-	INFILE '/home/magnus/Downloads/IP2LOCATION-LITE-DB1.CSV/IP2LOCATION-LITE-DB1.CSV'
+  INFILE '/home/magnus/Downloads/IP2LOCATION-LITE-DB1.CSV/IP2LOCATION-LITE-DB1.CSV'
 INTO TABLE
-	`ip2location_db1`
+  `ip2location_db1`
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n'
@@ -1765,19 +1776,19 @@ IGNORE 0 LINES;
 
 
 CREATE TABLE `countries`(
-	`country_code` CHAR(2),
-	`longitude` float,
-	`latitude` float,
-	`name` VARCHAR(128),
+  `country_code` CHAR(2),
+  `longitude` float,
+  `latitude` float,
+  `name` VARCHAR(128),
    
-	INDEX `idx_country_code` (`country_code`)
+  INDEX `idx_country_code` (`country_code`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin
 
 
 LOAD DATA LOCAL
-	INFILE '/home/magnus/Downloads/IP2LOCATION-LITE-DB1.CSV/countries.txt'
+  INFILE '/home/magnus/Downloads/IP2LOCATION-LITE-DB1.CSV/countries.txt'
 INTO TABLE
-	`countries`
+  `countries`
 FIELDS TERMINATED BY '\t'
 ENCLOSED BY ''
 LINES TERMINATED BY '\n'

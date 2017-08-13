@@ -1381,9 +1381,9 @@ var adminDivExtend=function($el){
 
 
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $buttonSave=$('<button>').click(saveFunc).append(langHtml.Save);
-  var $span=$('<span>').append('Admin settings').css({'float':'right',margin:'0.2em 0 0 0'});
-  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden'}); //$buttonBack,
+  var $buttonSave=$('<button>').click(saveFunc).append(langHtml.Save).addClass('flexWidth').css({'float':'left',margin:'0 0.2em 0 0'});
+  var $span=$('<span>').append('Admin settings').css({'vertical-align':'-0.4em'}); // 'float':'right',margin:'0.2em 0 0 0'
+  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'}); //$buttonBack,
 
   $el.append($topDiv,$pPayLev,$pBoTerm,$pBoShowTeam);
  
@@ -1616,12 +1616,11 @@ var payDivExtend=function($el){
   var $deleteButt=$deleteDiv.children('button').click(function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
 
 
-
    
-  var $span=$('<span>').append(langHtml.Deadline).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $span=$('<span>').append(langHtml.Deadline); //.css({'float':'right',margin:'0.2em 0 0 0'});
 
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em'});
-  var $topDiv=$('<div>').append($span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden'}); // $buttonBack,
+  var $topDiv=$('<div>').append($span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'}); // $buttonBack,
   $el.prepend($topDiv);
 
   return $el;
@@ -1854,11 +1853,11 @@ var vendorSettingDivExtend=function($el){
   var $divCont=$('<div>'), $divs=$([]);
   $el.append($divCont);
 
-  var $span=$('<span>').append(langHtml.DriverSettings).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $span=$('<span>').append(langHtml.DriverSettings).css({'vertical-align':'-0.4em'}); // 'float':'right',margin:'0.2em 0 0 0'
  
-  var $buttonSave=$("<button>").text(langHtml.Save).click(save);
+  var $buttonSave=$("<button>").text(langHtml.Save).click(save).addClass('flexWidth').css({'float':'left',margin:'0 0.2em 0 0'});
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden','text-align':'center'});  //$buttonBack,
   $el.prepend($topDiv);
   return $el;
 }
@@ -1942,11 +1941,12 @@ var priceSettingDivExtend=function($el){
   var $divCont=$('<div>'), $divs=$([]);
   $el.append($divCont);
   
-  var $span=$('<span>').append(langHtml.Prices).css({'float':'right',margin:'0.2em 0 0 0'});
   
-  var $buttonSave=$("<button>").text(langHtml.Save).click(save);
+  var $span=$('<span>').append(langHtml.Prices).css({'vertical-align':'-0.4em'}); // 'float':'right',margin:'0.2em 0 0 0'
+  
+  var $buttonSave=$("<button>").text(langHtml.Save).click(save).addClass('flexWidth').css({'float':'left',margin:'0 0.2em 0 0'});
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'});  //$buttonBack,
   $el.prepend($topDiv);
   return $el;
 }
@@ -3028,9 +3028,10 @@ var FilterDiv=function(Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst, Str
  
   $el.$filterInfoWrap=$('<span>');
   var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').css({'vertical-align':'-0.4em'});  //,'clear':'both'
+  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')');// .css({'vertical-align':'-0.4em'});  //,'clear':'both'
   
-  var $buttClear=$('<button>').append(langHtml.All).click(function(){$el.Filt.filtClear(); loadTabStart();}).css({'float':'right', 'margin-left':'0.5em'});  //,'clear':'both'
+  var $buttClear=$('<a>').prop({href:''}).append(langHtml.All).click(function(){$el.Filt.filtClear(); loadTabStart(); return false;}).css({'float':'right', 'margin-left':'0.5em', 'font-size':'80%'});  //,'clear':'both'
+  //var $buttClear=$('<a>').prop({href:''}).text(langHtml.All).css({'font-size':'80%'}).click(function(){allOnButtClick();return false;});
   
   var $topDivA=$('<div>').append($buttClear, $filterInfoWrap2).css({padding:'0','margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
   $el.prepend($topDivA);
@@ -4920,9 +4921,10 @@ var teamDivExtend=function($el){
   var $hImg0=$imgHelp.clone(), $hImg1=$imgHelp.clone(), $hImg2=$imgHelp.clone(); $hImg0.add($hImg1).add($hImg2).css({'margin-left':'1em'});
   popupHoverM($hImg0,$hId);   popupHoverM($hImg1,$hLink);   popupHoverM($hImg2,$hList);
   
+  
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Team settings').css({'float':'right',margin:'0.2em 0 0 0'});
-  var $topDiv=$('<div>').append($span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $span=$('<span>').append('Team settings'); //.css({'float':'right',margin:'0.2em 0 0 0'});
+  var $topDiv=$('<div>').append($span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'});  //$buttonBack,
 
  
   $el.append($topDiv,'Team-Id: ',$el.$id,',',$hImg0,'<br>',
@@ -5690,16 +5692,26 @@ var setUp2=function(){
   $mainDivsTogglable=$MainDiv.not($loginInfo.add($H1));
 
   
-  
+  scalableTog=function(boOn){
+    if(typeof boOn=='undefined') boOn=document.body.style.opacity!=.9999;
+    var floatOpacity=boOn?1:0.9999;
+    var strVPContent='width=device-width, initial-scale=1, '+(boOn?'maximum-scale=4':'maximum-scale=1, user-scalable=no');
+    $('meta[name=viewport]').attr('content', strVPContent);
+    document.body.style.opacity=floatOpacity;
+    //setTimeout(function(){ document.body.style.opacity = 1;  }, 1);
+  }
+
   $mapDiv.setVis=function(){
     $tableButton.add($filterButton).css({background:colMenuOff}); 
     var $tmp=$mapDiv.add($mainMenuDiv).add($quickDivOuter).add($footDiv);
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     //$bodyNHtml.css({height:'100%',overflow:'hidden'});
     $bodyNHtml.addClass('fillScreen');
+    $filterInfoWrap.append($filterInfoSpan);
     //$moreButton.after($filterButton);
+    //$('meta[name=viewport]').prop({'user-scalable':'false'});
+    scalableTog(0);
     google.maps.event.trigger($mapDiv.map, 'resize');
-    $('meta[name=viewport]').prop({'user-scalable':'false'});
     return true;
   }
   $tableDiv.setVis=function(){
@@ -5709,7 +5721,8 @@ var setUp2=function(){
     $bodyNHtml.removeClass('fillScreen');
     //$tableHead.$topDivA.append($filterButton);
     $tableHead.$filterButton.children('span').append($filterInfoSpan);
-    $('meta[name=viewport]').prop({'user-scalable':'true'});
+    //$('meta[name=viewport]').prop({'user-scalable':'true'});
+    scalableTog(1);
     return true;
   }
   $filterDiv.setVis=function(){
@@ -5718,6 +5731,7 @@ var setUp2=function(){
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
     $filterDiv.$filterInfoWrap.append($filterInfoSpan);
+    scalableTog(1);
     return true;
   }
   $vendorSettingDiv.setVis=function(){
@@ -5725,6 +5739,7 @@ var setUp2=function(){
     $vendorSettingDiv.setUp(); 
     var $tmp=$vendorSettingDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $priceSettingDiv.setVis=function(){
@@ -5732,6 +5747,7 @@ var setUp2=function(){
     $priceSettingDiv.setUp(); 
     var $tmp=$priceSettingDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $payDiv.setVis=function(){
@@ -5739,6 +5755,7 @@ var setUp2=function(){
     $payDiv.setUp(); 
     var $tmp=$payDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $vendorInfoDiv.setVis=function(){
@@ -5747,6 +5764,7 @@ var setUp2=function(){
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $vendorInfoDiv.$menuDiv.append($vendorListCtrlDiv);
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $reportVDiv.setVis=function(){
@@ -5754,70 +5772,82 @@ var setUp2=function(){
     var $tmp=$reportVDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $reportVDiv.$topDiv.append($vendorListCtrlDiv);
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $reportRDiv.setVis=function(){
     if($reportRDiv.boLoaded==0) return false;
     var $tmp=$reportRDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $adminDiv.setVis=function(){
     var $tmp=$adminDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $moreDiv.setVis=function(){
     var $tmp=$moreDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $moreDiv.setUp();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $convertIDDiv.setVis=function(){
     var $tmp=$convertIDDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $convertIDDiv.setUp();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $settingDiv.setVis=function(){
     var $tmp=$settingDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $columnSelectorDiv.setVis=function(){
     if($columnSelectorDiv.boLoaded==0) return false;
     var $tmp=$columnSelectorDiv; $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $columnSorterDiv.setVis=function(){
     if($columnSorterDiv.boLoaded==0) return false;
     var $tmp=$columnSorterDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $markSelectorDiv.setVis=function(){
     if($markSelectorDiv.boLoaded==0) return false;
     var $tmp=$markSelectorDiv; $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $paymentListDiv.setVis=function(){
     if($paymentListDiv.boLoaded==0) return false;
     var $tmp=$paymentListDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
   $teamDiv.setVis=function(){
     if($teamDiv.boLoaded==0) return false;
     var $tmp=$teamDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
 
   $loginDiv.setVis=function(){
     var $tmp=$loginDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
     return true;
   }
 

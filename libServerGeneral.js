@@ -107,7 +107,7 @@ getBrowserLang=function(req){
   var strLang='en';
   for(var i=0; i<Lang.length; i++){
     var lang=Lang[i][0];
-	  if(lang.substr(0,2)=='sv'){  strLang='sv';  } 
+    if(lang.substr(0,2)=='sv'){  strLang='sv';  } 
   }
   return strLang;
 }
