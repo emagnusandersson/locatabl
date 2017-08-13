@@ -3028,11 +3028,11 @@ var FilterDiv=function(Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst, Str
  
   $el.$filterInfoWrap=$('<span>');
   var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').css({'float':'right',margin:'0.2em 0 0 0.2em'});  //,'clear':'both'
+  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').css({'vertical-align':'-0.4em'});  //,'clear':'both'
   
   var $buttClear=$('<button>').append(langHtml.All).click(function(){$el.Filt.filtClear(); loadTabStart();}).css({'float':'right', 'margin-left':'0.5em'});  //,'clear':'both'
   
-  var $topDivA=$('<div>').append($buttClear, $filterInfoWrap2).css({padding:'0','margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $topDivA=$('<div>').append($buttClear, $filterInfoWrap2).css({padding:'0','margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
   $el.prepend($topDivA);
 
   $el.addClass('unselectable');    $el.prop({unselectable:"on"}); //class: needed by firefox, prop: needed by opera, firefox and ie
@@ -3420,7 +3420,6 @@ var mapDivExtendGoogle=function($el){
     }
     */
     //IRet2();
-    boGotMap=1;
     //setTimeout(IRet2,100);
      
   }
@@ -3946,9 +3945,9 @@ var markSelectorDivExtend=function($el){
 
   var $table=$('<table>').css({'margin':'0.3em 0em 0.8em',border:'1px'});
 
-  var $span=$('<span>').append(langHtml.ChangeMapMarker).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $span=$('<span>').append(langHtml.ChangeMapMarker);//.css({'float':'right',margin:'0.2em 0 0 0'});
    
-  var $topDivA=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $topDivA=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
   $el.append($topDivA,$table);
 
   $el.css({'text-align':'left'});
@@ -4034,9 +4033,9 @@ var columnSelectorDivExtend=function($el){
   $table.append();
 
   var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).css({'vertical-align':'-0.4em'});
    
-  var $topDivA=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $topDivA=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
   var $spanRightB=$('<span>').append($buttAll,$buttDefault, $buttNone).css({'float':'right',margin:'0 0 0 0'});
   var $topDivB=$('<div>').append($buttSort,$spanRightB).css({'margin-top':'1em',overflow:'hidden'});
   $el.append($topDivA,$topDivB,$table);
@@ -4159,9 +4158,9 @@ var columnSorterDivExtend=function($el){
   var arrLabel=[];  
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
 
-  var $span=$('<span>').append(langHtml.SortColumns).css({'float':'right',margin:'0.2em 0 0 0'});
+  var $span=$('<span>').append(langHtml.SortColumns).css({'vertical-align':'-0.4em'});
  
-  var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
   $el.append($topDiv,$dragSorter);
    
   $el.css({'text-align':'left'});
@@ -4456,9 +4455,15 @@ var tableHeadExtend=function($el){
 
   //$el.$filterButton=$('<button>').append(langHtml.Filtered,': ').click(function(){  filterButtonClick();  }).css({'float':'right','clear':'both'});
   var $tmpImg=$('<img>').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  var $span=$('<span>').append($tmpImg,langHtml.ComparisonTable).css({'float':'right',margin:'0.4em 0 0 0'});
+  //var $span=$('<span>').append($tmpImg,langHtml.ComparisonTable).css({'float':'right',margin:'0.4em 0 0 0'});
+  //$el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
+  //var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton, $span).css({'margin-top':'1em',overflow:'hidden','text-align':'left'}); $el.$topDivA=$topDivA;   // $buttonBack,
+ 
+  var $span=$('<span>').append($tmpImg,langHtml.ComparisonTable).css({'vertical-align':'-0.4em'});
   $el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
-  var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton, $span).css({'margin-top':'1em',overflow:'hidden','text-align':'left'}); $el.$topDivA=$topDivA;   // $buttonBack,
+  var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton, $span).css({'margin-top':'1em',overflow:'hidden','text-align':'center'}); $el.$topDivA=$topDivA;   // $buttonBack,
+  
+
   //var $topDivB=$('<div>').append($buttShowSelect).css({'margin-top':'1em','text-align':'left'});
   
   $el.append($topDivA); //,$topDivB
@@ -4944,8 +4949,12 @@ var settingDivExtend=function($el){
 
   //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em'});
   var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  var $span=$('<span>').append($tmpImg, langHtml.Settings).css({'float':'right',margin:'0.2em 0 0 0'});
-  var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  //var $span=$('<span>').append($tmpImg, langHtml.Settings).css({'float':'right',margin:'0.2em 0 0 0'});
+  //var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  
+  var $span=$('<span>').append($tmpImg, langHtml.Settings);//.css({'float':'right',margin:'0.2em 0 0 0'});
+  var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden','text-align':'center'});  //$buttonBack,
+  
   $el.append($topDiv,$opt);   
   
   return $el;
@@ -5530,7 +5539,7 @@ var setUp2=function(){
   $filterInfoWrap=$('<span>').append($filterInfoSpan);
   //$filterButton=$('<button>').append(langHtml.Filter,': (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','clear':'both'});//.css({background:colMenuOff});
   var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $filterButton=$('<button>').append($tmpImg,' (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','clear':'both','margin-left':'1em'}).prop('title',langHtml.FilterTitle);//.css({background:colMenuOff});
+  $filterButton=$('<button>').append($tmpImg,' (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','margin-left':'1em'}).prop('title',langHtml.FilterTitle);// ,'clear':'both'  .css({background:colMenuOff});
   //$filterDiv=filterDivExtend($('<div>'),StrOrderFilt);  
   $filterDiv=new FilterDiv(Prop, $.extend({},langHtml.label), StrOrderFilt, loadTabStart);
   $filterDiv.css({'background-color':'#eee','padding-bottom':'0.6em'});
@@ -5538,10 +5547,10 @@ var setUp2=function(){
 
     // tableDivs
   var $tmpImg=$('<img>').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $tableButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'margin-right':'1em'}).prop('title',langHtml.ComparisonTable);
+  $tableButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-right':'1em'}).prop('title',langHtml.ComparisonTable);
 
   var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $settingButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'margin-left':'0.8em', 'margin-right':'1em'}).prop('title',langHtml.Settings);
+  $settingButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-left':'0.8em', 'margin-right':'1em'}).prop('title',langHtml.Settings);
 
   $columnSelectorDiv=columnSelectorDivExtend($('<div>'));
   $columnSorterDiv=columnSorterDivExtend($('<div>'));
@@ -5555,7 +5564,7 @@ var setUp2=function(){
     doHistPush({$view:$columnSelectorDiv});
   };
   var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $buttShowSelect=$('<button>').append($tmpImg).addClass('fixWidth').css({'margin-right':'1em'}).click(tmpf).prop('title',langHtml.AddRemoveColumns);
+  $buttShowSelect=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-right':'1em', 'float':'left'}).click(tmpf).prop('title',langHtml.AddRemoveColumns);
 
   $tableHead=tableHeadExtend($("<div>")).css({padding:'0','text-align':'left'});
 
@@ -5630,9 +5639,6 @@ var setUp2=function(){
   //$mapDivs=$H1.add($mainMenuDiv).add($mapDiv).add($footDiv);  $mapDivs.show();
   $H1.add($mainMenuDiv).add($mapDiv).add($footDiv).show();
 
-  boCenteringNeeded=0;
-  if(boUCBrowser) boResizePending=0;
-
   $filterDiv.hide();
 
 
@@ -5692,10 +5698,6 @@ var setUp2=function(){
     //$bodyNHtml.css({height:'100%',overflow:'hidden'});
     $bodyNHtml.addClass('fillScreen');
     //$moreButton.after($filterButton);
-    $filterInfoWrap.append($filterInfoSpan);
-    //if(boResizePending) {setMapDivHeight();}
-    if(boUCBrowser) { nResizeTries=0; setMapDivHeight(); }
-    if(boCenteringNeeded && boGotMap) {      $mapDiv.map.setCenter($mapDiv.latLngMe); boCenteringNeeded=0;}
     google.maps.event.trigger($mapDiv.map, 'resize');
     $('meta[name=viewport]').prop({'user-scalable':'false'});
     return true;
@@ -5843,14 +5845,10 @@ var setUp2=function(){
   $MainDiv.css({flex:"none", width:"100%"});
   $mapDiv.css({flex:"auto"});  // "overflow-y":"scroll", "-webkit-overflow-scrolling":"touch", 
 
-  if(boUCBrowser){
-    if(boIOS) $(window).bind('orientationchange', orientationChangeMy);
-    else $(window).bind('resize', orientationChangeMy);
-    orientationChangeMy();
-  }
+  
   $busyLarge.show(); 
 
-  boFirstLoadTab=1; boGotMap=0;  
+  boFirstLoadTab=1;
 
   if(boEmulator || boVideo) posDebug={coords:{latitude:59.330454370984235,longitude:18.059076067697106}};
   
@@ -5886,90 +5884,6 @@ var setUp2=function(){
   boGeoOK=false;  setItem('boGeoOK',boGeoOK);
   //timerGeoNotOK=setTimeout(tmpFGeoNotOK,20*1000);
   
-
-  
-}
-
-
-//debugger
-
-
-var setWidth=function(w){
-  var maxWidth=800;  if(w>maxWidth) w=maxWidth;
-  $mainDivsFixWidth.css({'width':(w-10)+'px'});
-  var tmpMarg=10; if(boAndroid) tmpMarg=20;
-  $mainMenuDiv.css({'width':(w-tmpMarg)+'px'});
-}
-
-var nResizeTries=NaN;
-var setMapDivHeight=function(){
-  var w=window.innerWidth, h=window.innerHeight;
-  
-  //alert(window.innerHeight+' '+window.innerWidth+' '+$body.innerHeight()+' '+$body.innerWidth()+' '+window.orientation);
-  var h=$body.innerHeight();
-  if(typeof window.orientation!=='undefined'){
-     var wb=$body.innerWidth(),hb=$body.innerHeight();
-     //if(Math.abs(window.orientation)==90 ) h=Math.min(hb,wb); else h=Math.max(hb,wb);  
-     //alert(wb+' '+hb);
-       // If dimensions aren't what expected then assume a slow device, and try later. (A Workaround for budget andriods)
-     if(Math.abs(window.orientation)==90 ) {  
-       if(hb<wb || nResizeTries>=2) h=hb; else {setTimeout(setMapDivHeight,500); nResizeTries++; return;}
-     }else {  
-       if(hb>wb || nResizeTries>=2) h=hb; else {setTimeout(setMapDivHeight,500); nResizeTries++; return;}
-     } 
-  }
-  
-  var hInfo=($loginInfo.css('display')!='none')*($loginInfo.outerHeight(true));
-  var hH=($H1.css('display')!='none')*($H1.outerHeight(true)); 
-  var hMain=$mainMenuDiv.outerHeight(true);
-  var hQ=$quickDivOuter.outerHeight(true); // Should be quickDivOuter
-  var hFoot=$footDiv.outerHeight(true);
-  var hMarginTop=parseFloat($mapDiv.css('margin-top')); if(isNaN(hMarginTop)) hMarginTop=0;
-  var hBorderTop=parseFloat($mapDiv.css('border-top')); if(isNaN(hBorderTop)) hBorderTop=0;
-  //alert('h:'+h+' hInfo:'+hInfo+' hH:'+hH+' hMain:'+hMain+' hQ:'+hQ+' hFoot:'+hFoot+' hMarginTop:'+hMarginTop+' hBorderTop:'+hBorderTop);
-  var hMapDiv=h-hInfo-hH-hMain-hQ-hFoot- hMarginTop-hBorderTop;//-4;
-  //hMapDiv=h-$mapDiv.offset().top -parseFloat($mapDiv.css('margin-bottom'))
-
-  //hMapDiv=$mapDiv.parent().innerHeight();
-  hMapDiv=bound(hMapDiv, 100, 800);  
-  $mapDiv.css({height:hMapDiv+'px'});
-  google.maps.event.trigger($mapDiv.map, 'resize');
-  boResizePending=0;
-
-}
-
-var orientationChangeMy=function(event){  
-"use strict"
-  
-  /*
-  var tmpArr=[];
-  var w=screen.width, h=screen.height;    tmpArr.push('screen.width='+w+', '+h);
-  var w=screen.availWidth, h=screen.availHeight;    tmpArr.push('screen.availWidth='+w+', '+h);
-  var w=$(window).width(), h=$(window).height();    tmpArr.push('$(window).width='+w+', '+h);
-  var w=window.innerWidth, h=window.innerHeight;    tmpArr.push('window.innerWidth='+w+', '+h);
-  var w=$body.innerWidth(), h=$body.innerHeight();    tmpArr.push('$body.innerWidth='+w+', '+h);
-  alert(tmpArr.join('\n'));
-  */
-  //var boPortrait=0;  if(typeof window.orientation!=='undefined' && Math.abs(window.orientation)!=90 ) boPortrait=1; 
-  
-  //alert('p'+window.orientation+' '+w+'x'+h);
-
-  var maxWidth=800, wTab; if($body.innerWidth()>maxWidth)  {wTab=maxWidth+'px'; } else {wTab='';}  $mainDivsNonFixWidth.css({'min-width':wTab}); 
-
-
-  if(boAndroid && boFF==0) {   
-  
-  }  
-  if(boIOS) {   
-    //$('#viewportMy').prop('content','width='+w+'px, height='+h+'px, initial-scale='+sc+',minimum-scale='+sc+',maximum-scale='+sc); 
-  }
-  if(boFF) {
-    //var w=screen.availWidth, h=screen.availHeight;
-    //setMess(sc+' '+w+' '+h);
-    //$('#viewportMy').prop('content','width='+w); 
-  }
-  if(boUCBrowser) {     if($mapDiv.css('display')!='none')  {nResizeTries=0; setMapDivHeight(); } else boResizePending=1;       }
-  //if($mapDiv.css('display')!='none')  {setTimeout(function(){setMapDivHeight(); },500);} else boResizePending=1;
 }
 
 };
