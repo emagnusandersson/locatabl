@@ -19,8 +19,6 @@ tls=require('tls');
 atob = require('atob');
 childProcess = require('child_process');
 zlib = require('zlib');
-Fiber = require('fibers');
-Future = require('fibers/future');
 NodeZip=require('node-zip');
 //redis = require("then-redis");
 redis = require("redis");
@@ -82,9 +80,8 @@ if(  (urlRedis=process.env.REDISTOGO_URL)  || (urlRedis=process.env.REDISCLOUD_U
 }
 
 
-Fiber( function(){
 
-  var fiber = Fiber.current;
+var flow=( function*(){
 
     // Default config variables
   UriDB={};
@@ -109,17 +106,17 @@ Fiber( function(){
     fs.readFile('./config.js', function(errT, bufT) { //, this.encRead
       if(errT){  console.log(errT); }
       strConfig=bufT.toString();
-      fiber.run();
+      flow.next();
     });
-    Fiber.yield();
+    yield;
     //require('./config.js');    //require('./config.example.js');
   } 
   var strMd5Config=md5(strConfig);
   eval(strConfig);
   var redisVar='str'+ucfirst(strAppName)+'Md5Config';
-  var tmp=wrapRedisSendCommand('get',[redisVar]);
+  var tmp=yield *wrapRedisSendCommand(flow, 'get',[redisVar]);
   var boNewConfig=strMd5Config!==tmp; 
-  if(boNewConfig) { var tmp=wrapRedisSendCommand('set',[redisVar,strMd5Config]);  }
+  if(boNewConfig) { var tmp=yield *wrapRedisSendCommand(flow, 'set',[redisVar,strMd5Config]);  }
 
   if('levelMaintenance' in process.env) levelMaintenance=process.env.levelMaintenance;
   SiteName=Object.keys(Site);
@@ -130,7 +127,7 @@ Fiber( function(){
   require('./libReqBE.js');
   require('./libReq.js'); 
 
-  reqOffer=new ReqOffer(); reqOffer.filesToRam();
+  reqOffer=new ReqOffer(); yield *reqOffer.filesToRam(flow);
 
   DBExtend(DB={});
 
@@ -142,7 +139,7 @@ Fiber( function(){
     // Do db-query if --sqlXXXX was set in the argument
   if(typeof strCreateSql!='undefined'){
     var tTmp=new Date().getTime();
-    var objSetupSql=new SetupSql(); objSetupSql.doQuery(strCreateSql);
+    var objSetupSql=new SetupSql(); yield *objSetupSql.doQuery(flow, strCreateSql);
     console.log('Time elapsed: '+(new Date().getTime()-tTmp)/1000+' s'); 
     process.exit(0);
   }
@@ -156,9 +153,9 @@ Fiber( function(){
         //console.log(filename+' changed: '+ev);
       if(StrFile.indexOf(filename)!=-1){
         console.log(filename+' changed: '+ev);
-        Fiber( function(){ 
-          var err=readFileToCache(filename); if(err) console.log(err.message);
-        }).run();
+        var flowWatch=( function*(){ 
+          var err=yield* readFileToCache(flowWatch, filename); if(err) console.log(err.message);
+        })(); flowWatch.next();
       }
     });
     fs.watch('stylesheets',function (ev,filename) {
@@ -166,9 +163,9 @@ Fiber( function(){
         //console.log(filename+' changed: '+ev);
       if(StrFile.indexOf(filename)!=-1){
         console.log(filename+' changed: '+ev);
-        Fiber( function(){ 
-          var err=readFileToCache('stylesheets/'+filename); if(err) console.log(err.message);
-        }).run();
+        var flowWatch=( function*(){ 
+          var err=yield* readFileToCache(flowWatch, 'stylesheets/'+filename); if(err) console.log(err.message);
+        })(); flowWatch.next();
       }
     });
   }
@@ -178,9 +175,9 @@ Fiber( function(){
   CacheUri=new CacheUriT();
   for(var i=0;i<StrFilePreCache.length;i++) {
     var filename=StrFilePreCache[i];
-    var err=readFileToCache(filename); if(err) {  console.log(err.message);  return;}
+    var err=yield *readFileToCache(flow, filename); if(err) {  console.log(err.message);  return;}
   }
-  createSiteSpecificClientJSAll();
+  yield *createSiteSpecificClientJSAll(flow);
   
 
   bootTime=new Date();  strBootTime=bootTime.toISOStringMy();
@@ -204,33 +201,40 @@ Fiber( function(){
   }
 
   handler=function(req, res){
-    if(typeof isRedirAppropriate!='undefined'){ 
-      var tmpUrl=isRedirAppropriate(req); if(tmpUrl) { res.out301(tmpUrl); return; }
-    }
-    var boTLS=false;
-    if(boHeroku || boAF) boTLS=req.headers['x-forwarded-proto']=='https';
-    else if(boLocal) boTLS=Boolean('encrypted' in req.connection); 
-    else if(boDO) { boTLS=true; }
-
-
-    var cookies = parseCookies(req);
-    var sessionID;  if('sessionID' in cookies) sessionID=cookies.sessionID; else { sessionID=randomHash();   res.setHeader("Set-Cookie", "sessionID="+sessionID+"; SameSite=Lax"); }  //+ " HttpOnly" 
-
+    req.flow=(function*(){
     
-    var ipClient=getIP(req);
-    var redisVarSession=sessionID+'_Main';
-    var redisVarCounter=sessionID+'_Counter', redisVarCounterIP=ipClient+'_Counter'; 
-    //var tmp=redisClient.send('eval',[luaCountFunc, 3, redisVarSession, redisVarCounter, redisVarCounterIP, tDDOSBan]).then(function(intCount){
-    var tmp=redisClient.send_command('eval',[luaCountFunc, 3, redisVarSession, redisVarCounter, redisVarCounterIP, tDDOSBan], function(err,intCount){
-      //console.log(intCount);
+      if(typeof isRedirAppropriate!='undefined'){ 
+        var tmpUrl=isRedirAppropriate(req); if(tmpUrl) { res.out301(tmpUrl); return; }
+      }
+      var boTLS=false;
+      if(boHeroku || boAF) boTLS=req.headers['x-forwarded-proto']=='https';
+      else if(boLocal) boTLS=Boolean('encrypted' in req.connection); 
+      else if(boDO) { boTLS=true; }
+
+
+      var cookies = parseCookies(req);
+      var sessionID;  if('sessionID' in cookies) sessionID=cookies.sessionID; else { sessionID=randomHash();   res.setHeader("Set-Cookie", "sessionID="+sessionID+"; SameSite=Lax"); }  //+ " HttpOnly" 
+
+      
+      var ipClient=getIP(req);
+      var redisVarSession=sessionID+'_Main';
+      var redisVarCounter=sessionID+'_Counter', redisVarCounterIP=ipClient+'_Counter'; 
+      
+        // get intCount
+      var semY=0, semCB=0, err, intCount;
+      var tmp=redisClient.send_command('eval',[luaCountFunc, 3, redisVarSession, redisVarCounter, redisVarCounterIP, tDDOSBan], function(errT,intCountT){
+        err=errT; intCount=intCountT; if(semY) { req.flow.next(); } semCB=1;
+      });
+      if(!semCB) { semY=1; yield;}
+      if(err) {console.log(err); return;}
       if(intCount>intDDOSMax) {res.outCode(429,"Too Many Requests, wait "+tDDOSBan+"s\n"); return; }
 
 
       var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=querystring.parse(qs),  pathNameOrg=objUrl.pathname;
       var wwwReq=req.headers.host+pathNameOrg;
-      var tmp=Site.getSite(wwwReq);  
-      if(!tmp){ res.out404("404 Nothing at that url\n"); return; }
-      var siteName=tmp.siteName, wwwSite=tmp.wwwSite, pathName=wwwReq.substr(wwwSite.length); if(pathName.length==0) pathName='/';
+      var {siteName,wwwSite}=Site.getSite(wwwReq);  
+      if(!siteName){ res.out404("404 Nothing at that url\n"); return; }
+      var pathName=wwwReq.substr(wwwSite.length); if(pathName.length==0) pathName='/';
       var site=Site[siteName];
 
       if(boDbg) console.log(pathName);
@@ -246,37 +250,38 @@ Fiber( function(){
       //req.app_id=req.rootDomain.fb.app_id;   req.app_secret=req.rootDomain.fb.app_secret;
 
 
-      Fiber( function(){ 
-        if(pathName.substr(0,5)=='/sql/'){
-          if(!boDbg && !boAllowSql){ res.out200('Set boAllowSql=1 (or boDbg=1) in the config.js-file');  return }
-          var reqSql=new ReqSql(req, res),  objSetupSql=new SetupSql();
-          req.pathNameWOPrefix=pathName.substr(5);
-          if(req.pathNameWOPrefix=='zip'){       reqSql.createZip(objSetupSql);     }
-          else {  reqSql.toBrowser(objSetupSql); }             
+      var objReqRes={req:req, res:res};
+      if(pathName.substr(0,5)=='/sql/'){
+        if(!boDbg && !boAllowSql){ res.out200('Set boAllowSql=1 (or boDbg=1) in the config.js-file');  return }
+        var reqSql=new ReqSql(req, res),  objSetupSql=new SetupSql();
+        req.pathNameWOPrefix=pathName.substr(5);
+        if(req.pathNameWOPrefix=='zip'){       reqSql.createZip(objSetupSql);     }
+        else {  reqSql.toBrowser(objSetupSql); }
+      }
+      else {
+        if(levelMaintenance){res.outCode(503, "Down for maintenance, try again in a little while."); return;}
+        if(pathName=='/'){
+          if("pubKey" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
+          else if("pubKey" in objQS){      yield* reqPubKeyStore.call(objReqRes);    }
+          else{      yield* reqIndex.call(objReqRes);      }
         }
-        else {
-          if(levelMaintenance){res.outCode(503, "Down for maintenance, try again in a little while."); return;}
-          if(pathName=='/'){
-            if("pubKey" in objQS && "data" in objQS) {      var reqCurlEnd=new ReqCurlEnd(req, res);      reqCurlEnd.go();    }
-            else if("pubKey" in objQS){      var reqPubKeyStore=new ReqPubKeyStore(req, res);      reqPubKeyStore.go();    }
-            else{      var reqIndex=new ReqIndex(req, res);      reqIndex.go();      }
-          }
-          //else if(pathName=='/'+leafAssign){    var reqAssign=new ReqAssign(req, res);    reqAssign.go();    }
-          else if(pathName.indexOf('/image/')==0){        var reqImage=new ReqImage(req, res);      reqImage.go();  return;  } //RegExp('^/image/').test(pathName)
-          else if(pathName=='/'+leafBE){        var reqBE=new ReqBE(req, res);  reqBE.go();    }
-          else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html'){    var reqStatic=new ReqStatic(req, res); reqStatic.go();   return; }
-          else if(pathName=='/'+leafLoginBack){    var reqLoginBack=new ReqLoginBack(req, res);  reqLoginBack.go();    }
-          else if(pathName=='/monitor.html'){        var reqMonitor=new ReqMonitor(req, res);      reqMonitor.go();     }
-          else if(pathName=='/stat.html'){        var reqStat=new ReqStat(req, res);      reqStat.go();  }
-          else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
-          //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
-          else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
-          else if(pathName=='/debug'){    debugger  }
-          else if(pathName=='/'+googleSiteVerification) res.end('google-site-verification: '+googleSiteVerification);
-          else {res.out404("404 Not Found\n"); return; }
-        }
-      }).run();
-    }); 
+        //else if(pathName=='/'+leafAssign){    var reqAssign=new ReqAssign(req, res);    reqAssign.go();    }
+        else if(pathName.indexOf('/image/')==0){      yield* reqImage.call(objReqRes);   } //RegExp('^/image/').test(pathName)
+        else if(pathName=='/'+leafBE){        var reqBE=new ReqBE(req, res);  yield* reqBE.go();    }
+        else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html'){   yield* reqStatic.call(objReqRes);  }
+        else if(pathName=='/'+leafLoginBack){   yield* reqLoginBack.call(objReqRes);   }
+        else if(pathName=='/monitor.html'){     yield* reqMonitor.call(objReqRes);     }
+        else if(pathName=='/stat.html'){        yield* reqStat.call(objReqRes);        }
+        else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
+        //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
+        else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
+        else if(pathName=='/debug'){    debugger  }
+        else if(pathName=='/'+googleSiteVerification) res.end('google-site-verification: '+googleSiteVerification);
+        else {res.out404("404 Not Found\n"); return; }
+      }
+      
+    
+    })(); req.flow.next();
   }
 
   /*
@@ -298,5 +303,5 @@ Fiber( function(){
   */
   http.createServer(handler).listen(port);   console.log("Listening to HTTP requests at port " + port);
 
-}).run();
+})(); flow.next();
 

@@ -1,36 +1,6 @@
 
 boBrowser=(typeof window != 'undefined' && window.document);
 
-thisChanged=function(func,selfT){return function(){return func.apply(selfT,arguments);}}
-
-thisChangedWArg=function(func,selfT,inObj){
-  return function(){ var Arg = Array.prototype.slice.call(arguments); Arg.push(inObj); return func.apply(selfT,Arg);}
-}
-
-
-
-MyAsync=function(Func,finF){
-  var self=this;
-  this.Func=Func;   this.iSeries=0; this.Res=[]; this.resLast=undefined, this.finF=finF; 
-  this.cb=function(err,res){ 
-    self.storeRes(err,res);
-    self.iSeries++; 
-    console.log(self.iSeries+'/'+self.Func.length);
-    if(err) console.log('Err '+err);
-    if(err || self.iSeries>=self.Func.length) { console.log('Exit');  self.finF(err,self.Res); return}
-    self.Func[self.iSeries](self.cb);
-  };
-}
-MyAsync.prototype.storeRes=function(err,res){ 
-  this.Res[this.iSeries]=res; this.resLast=res;
-};
-MyAsync.prototype.go=function(){
-  this.Func[this.iSeries](this.cb);
-}
-MyAsync.prototype.doneNTrunk=function(err,res){this.Res[this.iSeries]=res;  this.Func=[]; this.iSeries=0; this.finF(err,self.Res);}
-MyAsync.prototype.trunkNoFin=function(){}
-
-
 
 calcKeySel=function(Prop, KeyCol){
   var KeySel=[];  for(var i=0;i<KeyCol.length;i++) { var key=KeyCol[i], b=Prop[key].b;   if(Number(b[bFlip.DBSel])) KeySel.push(key);  }
@@ -288,7 +258,7 @@ UTC2ReadableDiff=function(tdiff,boLong,boArr){
   if(typeof boLong =='undefined' ) boLong=0;
   if(typeof boArr =='undefined' ) boArr=0;
   //var tmp;  tmp=approxTimeDuration(tdiff,boLong,boArr);
-  var tmp=getSuitableTimeUnit(tdiff), n=Math.round(tmp[0]), indA=tmp[1];
+  var [ttmp,indA]=getSuitableTimeUnit(tdiff), n=Math.round(ttmp);
   if(indA=='m') indA='min';
   var j1=0, j2=1; if(boLong==1){j1=2; j2=3;}
   var unit=langHtml.timeUnit, units=unit[indA][j1]; if(n!=1) units=unit[indA][j2];

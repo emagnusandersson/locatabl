@@ -10,54 +10,47 @@ parseCookies=function(req) {
   return list;
 }
 
-MyQuery=function(sql,Val,pool,callback){this.sql=sql; this.Val=Val; this.callback=callback; this.pool=pool; this.iCount=0;};
-MyQuery.prototype.go=function(){
-  var self=this;  //console.log(this.sql); 
-  //console.log('iCount '+this.iCount); 
-  this.iCount++;
-  this.pool.getConnection(function(err, connection) {
+
+
+myQueryGen=function*(flow, sql, Val, pool){ 
+  var err, connection, results, fields;
+  for(var i=0;i<nDBRetry;i++){
+    pool.getConnection(function(errT, connectionT) { err=errT; connection=connectionT; flow.next(); }); yield;
     if(err) {
-      console.log('Error when getting mysql connection: ');
+      console.log('Error when getting mysql connection, attemptCounter: '+i);
       if(typeof err=='object' && 'code' in err) {
         console.log('err.code: '+err.code);
         if(err.code=='PROTOCOL_CONNECTION_LOST' || err.code=='ECONNREFUSED' || err.code=='ECONNRESET'){
-          if(self.iCount<nDBRetry) { setTimeout(thisChanged(self.go,self),2000); return;  }
-          console.log('self.iCount=='+self.iCount+'>=nDBRetry');         
-        }
+          setTimeout(function(){ flow.next();}, 2000); yield;  continue;
+        } else { console.log('Can\'t handle: err.code: '+err.code); return {err:err}; }
       }
-      else if(typeof err=='object') { console.log('err has no property "code" in it: '+err); }
-      else if(typeof err=='string') {console.log('err: '+err); }
-      else {console.log('err is neither an object nor a string: '+err); }
-      self.callback(err); 
-      return;
+      else { console.log('No \'code\' in err'); return {err:err}; }
     }
-    connection.query(self.sql, self.Val, function(err, results, fields) {
-      connection.release();
-      if(err) {
-        console.log('Error when making mysql query: ');
-        if(typeof err=='object' && 'code' in err) {
-          console.log('err.code: '+err.code); debugger
-          if(err.code=='PROTOCOL_CONNECTION_LOST' || err.code=='ECONNREFUSED'){
-            if(self.iCount<nDBRetry) { setTimeout(thisChanged(self.go,self),2000); return;  }
-            console.log('self.iCount=='+self.iCount+'>=nDBRetry');  
-          }
-        }
-        else if(typeof err=='object') {console.log('err has no property "code" in it: '+err); }
-        else if(typeof err=='string') {console.log('err: '+err); }
-        else {console.log('err is neither an object nor a string: '+err); }
-        console.log('sql: '+self.sql);
-        console.log('Val.length: '+self.Val.length);
-        self.callback(err); 
-        return;
+  
+    connection.query(sql, Val, function(errT, resultsT, fieldsT) { err=errT; results=resultsT; fields=fieldsT; flow.next();}); yield;
+    connection.release();
+    if(err) {
+      console.log('Error when making mysql query, attemptCounter: '+i);
+      if(typeof err=='object' && 'code' in err) {
+        console.log('err.code: '+err.code); debugger
+        if(err.code=='PROTOCOL_CONNECTION_LOST' || err.code=='ECONNREFUSED'){
+          setTimeout(function(){ flow.next();}, 2000); yield;   continue;
+        } else { console.log('Can\'t handle: err.code: '+err.code); break; }
       }
-      self.callback(null,results, fields);
-    });
-  });
-}
-myQueryF=function(sql,Val,pool,callback){
-  var q=new MyQuery(sql,Val,pool,callback); q.go();
+      else { console.log('No \'code\' in err'); break; }
+    }
+    else {break;}
+  }
+  return {err:err, results:results, fields:fields};
+  
 }
 
+
+MyNeo4j=function(){
+  var chars = ['\\"', '\\\'', '\\\\'],   tmpStr='[' +chars.join("") +']';  this.regEscape=new RegExp(tmpStr, 'g');
+  this.funEscape=function(m){ return "\\"+m;  }
+}
+MyNeo4j.prototype.escape=function(str){  return str.replace(this.regEscape,this.funEscape);    }
 
 
 MyError=Error;
@@ -144,25 +137,26 @@ genRandomString=function(len) {
 }
 md5=function(str){return crypto.createHash('md5').update(str).digest('hex');}
 
-wrapRedisSendCommand=function(strCommand,arr){
-  var future=new Future;
-  //redisClient.send(strCommand,arr).then(function(value){ future.return(value);});
-  redisClient.send_command(strCommand,arr, function(err, value){ future.return(value);});
-  return future.wait();
+
+wrapRedisSendCommand=function*(flow, strCommand,arr){
+  var value;
+  redisClient.send_command(strCommand,arr, function(err, valueT){  value=valueT; flow.next();  }); yield;
+  return value;
 }
-getSessionMain=function(){ 
-  var redisVar=this.req.sessionID+'_Main', strTmp=wrapRedisSendCommand('get',[redisVar]);   this.sessionMain=JSON.parse(strTmp);
+
+  // Req... methods
+getSessionMain=function*(){
+  var req=this.req, flow=req.flow;
+  var redisVar=req.sessionID+'_Main', strTmp=yield* wrapRedisSendCommand(flow, 'get', [redisVar]);   this.sessionMain=JSON.parse(strTmp);
 }
-setSessionMain=function(){
-  var strA=JSON.stringify(this.sessionMain);
-  var redisVar=this.req.sessionID+'_Main', strTmp=wrapRedisSendCommand('set',[redisVar,strA]);   var tmp=wrapRedisSendCommand('expire',[redisVar,maxUnactivity]);
+setSessionMain=function*(){
+  var req=this.req, flow=req.flow,  strA=JSON.stringify(this.sessionMain);
+  var redisVar=req.sessionID+'_Main', strTmp=yield* wrapRedisSendCommand(flow, 'set',[redisVar,strA]);   var tmp=yield* wrapRedisSendCommand(flow, 'expire',[redisVar,maxUnactivity]);
 }
-resetSessionMain=function(){
-  var userInfoFrIPTmp={};
+resetSessionMain=function*(){
+  var req=this.req, flow=req.flow,  userInfoFrIPTmp={};
   this.sessionMain={userInfoFrDB:extend({},specialistDefault),   userInfoFrIP:userInfoFrIPTmp};
-  setSessionMain.call(this);
-  //var strA=JSON.stringify(this.sessionMain);
-  //var redisVar=this.req.sessionID+'_Main', tmp=wrapRedisSendCommand('set',[redisVar,strA]);     var tmp=wrapRedisSendCommand('expire',[redisVar,maxUnactivity]);
+  yield* setSessionMain.call(this);
 }
 
 
@@ -205,39 +199,29 @@ return c";
 
 
 var regFileType=RegExp('\\.([a-z0-9]+)$','i'),    regZip=RegExp('^(css|js|txt|html)$'),   regUglify=RegExp('^js$');
-readFileToCache=function(strFileName) {
+readFileToCache=function*(flow, strFileName) {
   var type, Match=regFileType.exec(strFileName);    if(Match && Match.length>1) type=Match[1]; else type='txt';
   var boZip=regZip.test(type),  boUglify=regUglify.test(type);
-  var buf, fiber=Fiber.current;
-  var err=null;
-  fs.readFile(strFileName, function(errT, bufT) { //, this.encRead
-    if(errT){  err=errT; }
-    buf=bufT;
-    fiber.run();
-  });
-  Fiber.yield();
-  if(!err) {    CacheUri.set('/'+strFileName, buf, type, boZip, boUglify);    }
+  var err, buf;
+  fs.readFile(strFileName, function(errT, bufT) {  err=errT; buf=bufT;  flow.next();   });  yield;
+  if(!err) {    yield* CacheUri.set(flow, '/'+strFileName, buf, type, boZip, boUglify);    }
   return err;
 }
 
 CacheUriT=function(){
   var self=this;
-  self.set=function(key,buf,type,boZip,boUglify){
+  this.set=function*(flow, key,buf,type,boZip,boUglify){
     var eTag=crypto.createHash('md5').update(buf).digest('hex'); 
     /*if(boUglify) {
       var objU; objU=UglifyJS.minify(bufO.toString(), {fromString: true});
       bufO=new Buffer(objU.code,'utf8');
     }*/
-    var fiber=Fiber.current;
     if(boZip){
       var bufI=buf;
-      var gzip = zlib.createGzip(), boDoExit=0;
-      zlib.gzip(bufI, function(err, bufT) {
-        if(err){ boDoExit=1;  console.log(err);    }
-        buf=bufT; //.toString();
-        fiber.run();
-      });
-      Fiber.yield();  if(boDoExit==1) {process.exit(); return;}
+      var gzip = zlib.createGzip();
+      var err;
+      zlib.gzip(bufI, function(errT, bufT) { err=errT; buf=bufT; flow.next(); });  yield; 
+      if(err){  console.log(err);  process.exit(); return;}
     }
     self[key]={buf:buf,type:type,eTag:eTag,boZip:boZip,boUglify:boUglify};
   }
