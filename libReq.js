@@ -25,20 +25,20 @@ mesEOMakeJSON=function(glue){ return function(err){
 
 
 /******************************************************************************
- * ReqCurlEnd
+ * reqCurlEnd
  ******************************************************************************/
-app.ReqCurlEnd=function(req, res){
-  this.req=req; this.res=res; this.site=req.site; this.pool=DB[this.site.db].pool; this.Str=[];
-}
-app.ReqCurlEnd.prototype.mes=function(str){ this.Str.push(str); }
-app.ReqCurlEnd.prototype.mesO=mesOMakeJSON('\n');
-app.ReqCurlEnd.prototype.mesEO=mesEOMakeJSON('\n');
-app.ReqCurlEnd.prototype.go=function(){  
-  var self=this, req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS;
-  var mes=this.mes, mesO=this.mesO;
+app.reqCurlEnd=function*(){  
+  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS; this.pool=DB[req.site.db].pool
+  var flow=req.flow;
+  
+  this.mes=function(str){ this.Str.push(str); }
+  this.mesO=mesOMakeJSON('\n');
+  this.mesEO=mesEOMakeJSON('\n');
+  var Str=this.Str=[];
+  
   res.setHeader("Content-type", "application/json");
   res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept");
-
+  
   //var http_origin = req.uDomain; 
   if('origin' in req.headers){ //if cross site
     var http_origin=req.headers.origin;
@@ -81,41 +81,36 @@ app.ReqCurlEnd.prototype.go=function(){
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
   }
   var sql=Sql.join('\n');
-  myQueryF(sql, Val, this.pool, function(err, results) {
-    if(err){self.mesEO(err); return; } 
-    if(inObj.boCheck){
-      var tmp=results[1][0];
-      if(!tmp.boOK) {self.mesO(tmp.mess); return;}
-      var str=tmp.boShow?'Visible':'Hidden';
-      if(tmp.boShow){     var tmp=getSuitableTimeUnit(tmp.tDiff), tDiffF=tmp[0].toFixed(0), u=tmp[1];    str+=" Hiding in "+tDiffF+" "+u;   }
-      self.mes(str);
-    }
-    else{  
-      var tmp=results[1][0];
-      if(!tmp.boOK) {self.mesO(tmp.mess); return;}
-      var str=inObj.boShow?'Visible':'Hidden'; self.mes(str);
-    }
-    self.mesO();
-  });
+  var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
+  if(err){this.mesEO(err); return; } 
+  var {boShow, tDiff, boOK, mess}=results[1][0];
+  if(inObj.boCheck){
+    if(!boOK) {this.mesO(mess); return;}
+    var str=boShow?'Visible':'Hidden';
+    if(boShow){     var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);    str+=" Hiding in "+tDiffF+" "+u;   }
+    this.mes(str);
+  }
+  else{
+    if(!boOK) {this.mesO(mess); return;}
+    var str=inObj.boShow?'Visible':'Hidden'; this.mes(str);
+  }
+  this.mesO();
 }
 
 
 
 /******************************************************************************
- * ReqPubKeyStore
+ * reqPubKeyStore
  ******************************************************************************/
-app.ReqPubKeyStore=function(req,res){
-  this.req=req; this.res=res; this.site=req.site; this.pool=DB[this.site.db].pool; this.Str=[]
-}
-app.ReqPubKeyStore.prototype.mesO=mesOMake('\n');
-//app.ReqPubKeyStore.prototype.mesEO=mesEOMake('\n');
-app.ReqPubKeyStore.prototype.go=function(){
-  var req=this.req, res=this.res, objQS=req.objQS, uSite=req.uSite;
-  var site=req.site, siteName=site.siteName;
+app.reqPubKeyStore=function*(){
+  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS, uSite=req.uSite; this.pool=DB[site.db].pool;
+  var flow=req.flow;
+  this.mesO=mesOMake('\n');
+  
   var pubKey=objQS.pubKey||'';
   var strLang='en';
 
-  var Str=this.Str;
+  var Str=this.Str=[];
   Str.push('<!DOCTYPE html> \n\
 <html><head> \n\
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> \n\
@@ -146,7 +141,7 @@ app.ReqPubKeyStore.prototype.go=function(){
 
   var caller="pubKeyStore";
   var CSRFCode=randomHash();
-  var redisVar=this.req.sessionID+'_'+'CSRFCode'+ucfirst(caller), tmp=wrapRedisSendCommand('set',[redisVar,CSRFCode]);    var tmp=wrapRedisSendCommand('expire',[redisVar,maxUnactivity]);
+  var redisVar=this.req.sessionID+'_'+'CSRFCode'+ucfirst(caller), tmp=yield *wrapRedisSendCommand(flow, 'set',[redisVar,CSRFCode]);    var tmp=yield *wrapRedisSendCommand(flow, 'expire',[redisVar,maxUnactivity]);
 
   Str.push("\n\
 <script>\n\
@@ -174,12 +169,9 @@ response_type="+JSON.stringify(response_type)+";\n\
 
 
 /******************************************************************************
- * ReqIndex
+ * reqIndex
  ******************************************************************************/
-app.ReqIndex=function(req, res){
-  this.req=req; this.res=res; this.site=req.site; this.pool=DB[this.site.db].pool;
-}
-app.ReqIndex.prototype.go=function() {
+app.reqIndex=function*() {
   var req=this.req, res=this.res;
   var objQS=req.objQS;
   var site=req.site, siteName=site.siteName, wwwSite=req.wwwSite, uSite=req.uSite;
@@ -396,18 +388,13 @@ response_type="+JSON.stringify(response_type)+";\n\
 }
 
 
-
-
-
-
 /******************************************************************************
- * ReqImage
+ * reqImage
  ******************************************************************************/
-app.ReqImage=function(req, res){
-  this.req=req; this.res=res; this.site=req.site; this.pool=DB[this.site.db].pool;
-}
-app.ReqImage.prototype.go=function() {
-  var self=this, req=this.req, res=this.res;
+app.reqImage=function*() {
+  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
+  var flow=req.flow;
+  
   var site=req.site, objQS=req.objQS, uSite=req.uSite, siteName=site.siteName, pathName=req.pathName, id, kind;
 
   this.eTagIn=getETag(req.headers);
@@ -422,37 +409,32 @@ app.ReqImage.prototype.go=function() {
 
   var tab;  if(kind=='v'){tab=site.TableName.vendorImageTab; }else tab=site.TableName.teamImageTab;
   var sql = "SELECT data FROM "+tab+" WHERE idUser=?", Val=[id];
-  myQueryF(sql, Val, this.pool, function(err, results) {
-    if(err) { res.out500(err); return;}
-    if(results.length>0){
-      var strData=results[0].data;
-      var eTag=crypto.createHash('md5').update(strData).digest('hex'); 
-      ETagImage[keyCache]=eTag;  if(eTag===this.eTagIn) { res.out304(); return; }
-      var maxAge=3600*8760, mimeType=MimeType.jpg;
-      res.writeHead(200, {"Content-Type": mimeType, "Content-Length":strData.length, ETag: eTag, "Cache-Control":"public, max-age="+maxAge}); // "Last-Modified": maxModTime.toUTCString(),
-      res.end(strData);
-    }else{
-      //res.setHeader("Content-type", "image/png");
-      id=id%32;
-      var tmp; if(kind=='v'){tmp='anonPng'; }else tmp='anonTeamPng';
-      var uNew=uSite+"/lib/image/"+tmp+"/a"+id+".png";
-      res.writeHead(302, {'Location': uNew});
-      res.end();
-    }
-  });
+  var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
+  if(err) { res.out500(err); return;}
+  if(results.length>0){
+    var strData=results[0].data;
+    var eTag=crypto.createHash('md5').update(strData).digest('hex'); 
+    ETagImage[keyCache]=eTag;  if(eTag===this.eTagIn) { res.out304(); return; }
+    var maxAge=3600*8760, mimeType=MimeType.jpg;
+    res.writeHead(200, {"Content-Type": mimeType, "Content-Length":strData.length, ETag: eTag, "Cache-Control":"public, max-age="+maxAge}); // "Last-Modified": maxModTime.toUTCString(),
+    res.end(strData);
+  }else{
+    //res.setHeader("Content-type", "image/png");
+    id=id%32;
+    var tmp; if(kind=='v'){tmp='anonPng'; }else tmp='anonTeamPng';
+    var uNew=uSite+"/lib/image/"+tmp+"/a"+id+".png";
+    res.writeHead(302, {'Location': uNew});
+    res.end();
+  }
 }
-
 
 
 /******************************************************************************
- * ReqLoginBack
+ * reqLoginBack
  ******************************************************************************/
-var ReqLoginBack=app.ReqLoginBack=function(req, res){
-  this.req=req; this.res=res; this.site=req.site; this.mess=[];  this.Str=[];
-}
-ReqLoginBack.prototype.go=function(){
-  var self=this, req=this.req, res=this.res, objQS=req.objQS;
-  var wwwLoginScopeTmp=null; if('wwwLoginScope' in this.site) wwwLoginScopeTmp=this.site.wwwLoginScope;
+app.reqLoginBack=function*(){
+  var req=this.req, res=this.res, site=req.site, objQS=req.objQS;
+  var wwwLoginScopeTmp=null; if('wwwLoginScope' in site) wwwLoginScopeTmp=site.wwwLoginScope;
   var uSite=req.strSchemeLong+req.wwwSite;
 
   var Str=[];
@@ -478,25 +460,18 @@ window.close();\n\
 }
 
 
-
-
-
-
 /******************************************************************************
- * ReqStatic
+ * reqStatic
  ******************************************************************************/
-var ReqStatic=app.ReqStatic=function(req, res){
-  this.req=req; this.res=res;  this.site=req.site; this.pool=DB[this.site.db].pool; this.Str=[];
-}
-ReqStatic.prototype.go=function() {
-  var self=this, req=this.req, res=this.res;
+app.reqStatic=function*() {
+  var req=this.req, res=this.res, flow=req.flow, site=req.site; this.pool=DB[site.db].pool;
   var site=req.site, objQS=req.objQS, siteName=site.siteName, pathName=req.pathName;
 
   var eTagIn=getETag(req.headers);
   var keyCache=pathName; if(pathName==='/'+leafSiteSpecific) keyCache=siteName+keyCache; 
   if(!(keyCache in CacheUri)){
     var filename=pathName.substr(1);
-    var err=readFileToCache(filename);
+    var err=yield *readFileToCache(flow, filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
       if('host' in req.headers) console.log('Faulty request from'+req.headers.host);
@@ -519,22 +494,15 @@ ReqStatic.prototype.go=function() {
 }
 
 
-
-
-
 /******************************************************************************
- * ReqMonitor
+ * reqMonitor
  ******************************************************************************/
-app.ReqMonitor=function(req, res){
-  this.req=req; this.res=res;  this.site=req.site; this.pool=DB[this.site.db].pool; this.Str=[];
-}
-
-app.ReqMonitor.prototype.go=function(){
-  var self=this, req=this.req, res=this.res,  site=req.site;
+app.reqMonitor=function*(){
+  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
   var timeCur=unixNow(); boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
   var site=req.site, siteName=site.siteName, objQS=req.objQS;
   var userTab=site.TableName.userTab, vendorTab=site.TableName.vendorTab;
-  var fiber = Fiber.current;
+  var flow=req.flow;
 
   if(boRefresh){ 
     var Sql=[];
@@ -543,18 +511,15 @@ app.ReqMonitor.prototype.go=function(){
     Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND "+where+";");
     Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser WHERE "+where+";");
 
-    var sql=Sql.join('\n'), Val=[], boDoExit=0;
-    myQueryF(sql, Val, this.pool, function(err, results) {
-      if(err){ res.out500(err); boDoExit=1; return; }
-      site.nVis=results[0][0].n;
-      site.nUser=results[1][0].n;
-      fiber.run();
-    });
-    Fiber.yield();  if(boDoExit==1) {  return; }
+    var sql=Sql.join('\n'), Val=[];
+    var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
+    if(err){ res.out500(err); return; }
+    site.nVis=results[0][0].n;
+    site.nUser=results[1][0].n;
   }
 
   var nVis=site.nVis, nUser=site.nUser;
-  var Str=this.Str;
+  var Str=[];
   Str.push('<!DOCTYPE html> \n\
 <html><head><meta name="robots" content="noindex"></head>');
   var strColor='';
@@ -573,7 +538,7 @@ app.ReqMonitor.prototype.go=function(){
 
 
 /******************************************************************************
- * ReqStat
+ * reqStat
  ******************************************************************************/
 var makeTHead=function(K){
   var strD=''; 
@@ -596,26 +561,11 @@ var makeTable=function(K,M){
   return "<table>"+makeTHead(K)+makeTBody(K,M)+"</table>";
 }
 
-app.ReqStat=function(req, res){
-  this.req=req; this.res=res; this.site=req.site; this.pool=DB[this.site.db].pool; this.Str=[];
-}
-app.ReqStat.prototype.go=function(){
-  var self=this, req=this.req, res=this.res,  site=req.site;
-  var fiber = Fiber.current;
+app.reqStat=function*(){
+  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
+  var flow=req.flow;
 
-  var  semY=0, semCB=0, boDoExit=0; 
-  this.getData(function(err, results) {
-    if(err){ boDoExit=1; res.out500(err);  }
-    if(semY) fiber.run(); semCB=1;
-  });
-  if(!semCB){semY=1; Fiber.yield();}  if(boDoExit==1) return;
-
-  this.writeData(function(err, results) {});  
-}
-
-app.ReqStat.prototype.getData=function(callback){
-  var self=this, req=this.req, res=this.res;
-  var site=req.site, siteName=site.siteName, objQS=req.objQS;
+  var siteName=site.siteName, objQS=req.objQS;
   var userTab=site.TableName.userTab, vendorTab=site.TableName.vendorTab;
 
   var Sql=[];
@@ -629,18 +579,13 @@ app.ReqStat.prototype.getData=function(callback){
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+vendorTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
-  myQueryF(sql, Val, this.pool, function(err, results) {
-    if(err){ res.out500(err); callback('exited'); return; }
-    self.nUser=results[0][0].n;
-    if('code' in objQS && objQS.code=='amfoen') {site.boGotNewVendors=0; site.nUser=self.nUser;}
-    self.matA=results[1];
-    self.matB=results[2];
-    callback(null,'getData');
-  });
-}
-app.ReqStat.prototype.writeData=function(callback){
-  var self=this, req=this.req, res=this.res, objQS=req.objQS;
-  var nVis=this.nVis, nUser=this.nUser;
+  var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
+  if(err){ res.out500(err); return {err:'exited'};  }
+  var nUser=results[0][0].n;
+  if('code' in objQS && objQS.code=='amfoen') {site.boGotNewVendors=0; site.nUser=nUser;}
+  var matA=results[1];
+  var matB=results[2];
+  
   var Str=[];
   Str.push('<!DOCTYPE html> \n\
 <html><head> \n\
@@ -649,23 +594,23 @@ app.ReqStat.prototype.writeData=function(callback){
 <style> table,td,tr {border: solid 1px;border-collapse:collapse}</style> \n\
 </head> \n\
 <body>');
-  var nA=this.matA.length;
+  var nA=matA.length;
   Str.push("user OUTER JOIN vendor ("+nA+")");
   if(nA>0){
-    var Keys=Object.keys(this.matA[0]);
-    for(var i=0;i<this.matA.length;i++){ var tmp=getSuitableTimeUnit(this.matA[i].timeAccumulated); this.matA[i].timeAccumulated=Math.round(tmp[0])+tmp[1]; }
-    Str.push(makeTable(Keys,this.matA));
+    var Keys=Object.keys(matA[0]);
+    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].timeAccumulated); matA[i].timeAccumulated=Math.round(ttmp)+u; }
+    Str.push(makeTable(Keys,matA));
   }
-  var nB=this.matB.length;
+  var nB=matB.length;
   Str.push("<hr>vendor.idUser with no user.idUser ("+nB+")");
   if(nB>0){
-    var Keys=Object.keys(this.matB[0]);
-    Str.push(makeTable(Keys,this.matB));
+    var Keys=Object.keys(matB[0]);
+    Str.push(makeTable(Keys,matB));
   }
   
   Str.push("</body></html>");
   var str=Str.join('\n');  res.end(str);
-  callback(null,1); 
+  return {err:null, result:1}; 
 }
 
 
@@ -674,20 +619,18 @@ app.ReqStat.prototype.writeData=function(callback){
  * ReqOffer
  ******************************************************************************/
 app.ReqOffer=function(){}
-app.ReqOffer.prototype.filesToRam=function(){
-  var self=this;
+app.ReqOffer.prototype.filesToRam=function*(flow){
   this.text={};
-  var makeDataWriter=function(strLang,payLev){ return function(err, data){
-    if(err){  console.log(err);  return;  }
-    self.text[strLang][payLev]=data;
-  }}
   for(var i=0;i<arrLangShort.length;i++){
     var strLang=arrLangShort[i];
     this.text[strLang]=[];
     for(var j=0;j<3;j++){
       var payLev=j;
       var strFile="lang/offer/"+strLang+payLev+".html"; 
-      fs.readFile(strFile, 'utf8', makeDataWriter(strLang,payLev) );
+      var err, buf;
+      fs.readFile(strFile, 'utf8', function(errT, bufT) { err=errT; buf=bufT;  flow.next();  }); yield;
+      if(err){ res.out500(err); return; }
+      this.text[strLang][payLev]=buf; 
     }
   }
 }
@@ -1414,7 +1357,7 @@ app.SetupSql.prototype.dummies=function(SiteName){
   var makeEnumRandF=function(name){  var enumT=Enum[name]; return enumT[randomInt(0, enumT.length-1)];  };
   var getRandomDate=function(diff){ var now=unixNow(), v0, v1; if(diff>0){t0=now; t1=now+diff;} else{t0=now+diff; t1=now;} return randomInt(t0, t1);}; // Random historic time in [now-diff,now]
   var makeDateRandF=function(name){ var dateSpan=DateSpan[name]; return getRandomDate(dateSpan);};
-  var makeRandSpanF=function(name){ var tmp=RandSpanData[name]; return randomInt(tmp[0],tmp[1]);};
+  var makeRandSpanF=function(name){ var [tmpl,tmpu]=RandSpanData[name]; return randomInt(tmpl,tmpu);};
   var makeRandSpanPriceF=function(name){ var tmp=makeRandSpanF(name), cur=this.currency, fac=SEK2CUR[cur];  tmp=tmp*fac; return tmp;};
   var makeFixedF=function(name){ return FixedData[name]; };
 
@@ -1545,8 +1488,7 @@ app.SetupSql.prototype.dummies=function(SiteName){
       if(name in person) value=person[name]; 
       else if(name in AddressT) value=AddressT[name];
       else if(name in MakeRandF){ value=MakeRandF[name].call(AddressT,name);  }
-      //if(name in VendorUpdF){ var tmp=VendorUpdF[name].call(site.Enum,name,value); QMark=tmp[0]; var trash=tmp[1];  }
-      if('vendorUpdF' in Prop[name]){ var tmp=Prop[name].vendorUpdF.call(Prop,name,value); QMark=tmp[0]; var trash=tmp[1];  }
+      if('vendorUpdF' in Prop[name]){ [QMark]=Prop[name].vendorUpdF.call(Prop,name,value);  }
       var valT=QMark.replace(/\?/,value);     
       if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
 
@@ -1644,10 +1586,10 @@ app.SetupSql.prototype.truncate=function(SiteName){
   return SqlTableTruncate;
 }
 
-app.SetupSql.prototype.StrValid=['table', 'dropTable', 'fun', 'dropFun', 'truncate', 'dummy', 'dummies'];
-app.SetupSql.prototype.doQuery=function(strCreateSql){
-  var fiber = Fiber.current;
-  //var StrValid=['table', 'dropTable', 'fun', 'dropFun', 'truncate', 'dummy', 'dummies'];
+
+  // Called when --sql command line option is used
+app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
+  var StrValid=['table', 'dropTable', 'fun', 'dropFun', 'truncate', 'dummy', 'dummies']
   var StrValidMeth=['table', 'fun', 'truncate', 'dummy', 'dummies'];
   var Match=RegExp("^(drop)?(.*?)(All)?$").exec(strCreateSql);
   //var Match=RegExp("^(drop)?(.*?)All$").exec(strCreateSql);
@@ -1658,22 +1600,20 @@ app.SetupSql.prototype.doQuery=function(strCreateSql){
     if(StrValidMeth.indexOf(strMeth)!=-1){
       //var SqlA=objProtT[strMeth].call(this, SiteName, boDropOnly); 
       var SqlA=this[strMeth](SiteName, boDropOnly); 
-      var strDelim=';', sql=SqlA.join(strDelim+'\n')+strDelim, Val=[], boDoExit=0;
+      var strDelim=';', sql=SqlA.join(strDelim+'\n')+strDelim, Val=[];
       //var keys=Object.keys(UriDB), poolTmp=DB[keys[0]].pool;
       if(!('default' in DB)) {console.log('no DB.default');}
-      var poolTmp=DB.default.pool; 
-      myQueryF(sql, Val, poolTmp, function(err, results){ 
-        var tmp=createMessTextOfMultQuery(SqlA, err, results);  console.log(tmp); 
-        if(err){            boDoExit=1;  debugger;         } 
-        fiber.run();
-      });
-      Fiber.yield();  if(boDoExit==1) return;
-
+      var poolTmp=DB.default.pool;
+      var {err, results}=yield* myQueryGen(flow, sql, Val, poolTmp);
+      var tmp=createMessTextOfMultQuery(SqlA, err, results);  console.log(tmp); 
+      if(err){ debugger;  return; }
       boErr=false;
     }
   }
-  if(boErr) {var tmp=strCreateSql+' is not valid input, try: '+this.StrValid+' (suffixed with "All")'; console.log(tmp); }
+  if(boErr) {var tmp=strCreateSql+' is not valid input, try: '+StrValid+' (suffixed with "All")'; console.log(tmp); }
 }
+
+
 
 var createMessTextOfMultQuery=function(Sql, err, results){
   var nSql=Sql.length, nResults='na'; if(results instanceof Array) nResults=results.length;

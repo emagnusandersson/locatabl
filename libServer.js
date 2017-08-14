@@ -14,89 +14,45 @@ roundXY=function(resM,x,y){
 }
 
 
-runIdIP=function(){ //check  idIP against the vendor-table and return diverse data
-"use strict"
-  var site=this.site, siteName=site.siteName; 
-  
-  var StrRole, callback, StrRoleAll=['vendor','team','marketer','admin','reporter'];
-  if(arguments.length==2){StrRole=arguments[0]; callback=arguments[1];}
-  else if(arguments.length==1) {StrRole=StrRoleAll; callback=arguments[0];}
-  StrRole=StrRole||StrRoleAll;   if(typeof StrRole=='string') StrRole=[StrRole];
-
-  var userInfoFrDBUpd={};
-  
-  var tmp=this.sessionMain.userInfoFrIP; 
-  var BoTest={};
-  for(var i=0;i<StrRoleAll.length;i++) { var strRole=StrRoleAll[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
-  var Sql=[], Val=[tmp.IP, tmp.idIP, BoTest.vendor, BoTest.team, BoTest.marketer, BoTest.admin, BoTest.reporter];
-  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, @OboOk, @Omess);");
-  var sql=Sql.join('\n');
-  
-  myQueryF(sql, Val, this.pool, function(err, results) {
-    if(err) {callback(err);}
-    else{
-      var res=results[0], c=res.length; 
-      if(c==1) {
-        var userInfoFrDBGen=res[0];
-        var res=results[1], c=res.length; if(BoTest.vendor) userInfoFrDBUpd.vendor=c==1?res[0]:null; //if(typeof userInfoFrDBUpd.vendor=='object') extend(userInfoFrDBUpd.vendor,userInfoFrDBU);
-        var res=results[2]; if(BoTest.vendor && res.length && 'n' in res[0]  &&  typeof userInfoFrDBUpd.vendor=='object') userInfoFrDBUpd.vendor.nPayment=res[0].n;  
-        var res=results[3], c=res.length; if(BoTest.team) userInfoFrDBUpd.team=c==1?res[0]:null; //if(typeof userInfoFrDBUpd.team=='object') extend(userInfoFrDBUpd.team,userInfoFrDBU);
-        var res=results[4], c=res.length; if(BoTest.marketer) userInfoFrDBUpd.marketer=c==1?res[0]:null; //if(typeof userInfoFrDBUpd.marketer=='object') extend(userInfoFrDBUpd.marketer,userInfoFrDBU); 
-        var res=results[5], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:null; //if(typeof userInfoFrDBUpd.admin=='object') extend(userInfoFrDBUpd.admin,userInfoFrDBU);
-        var res=results[6]; if(BoTest.reporter ) {   var  c=res[0].n;  userInfoFrDBUpd.reporter=c?{idUser:userInfoFrDBGen.idUser, c:c}:null;    }
-      } else extend(userInfoFrDBUpd, specialistDefault);
-      callback(null, userInfoFrDBUpd); 
-    }
-  });
-}
-
 
 //var text=fs.readFileSync(strFileName, 'utf8');
 
 SplitterPlugIn=function(){
   var regA=RegExp("\n(CreatorPlugin\\.(\\w+)[\\s\\S]*?)//0123456789abcdef",'g');
   var regB=RegExp("\n//0123456789abcdef client\\.js([\\s\\S]*?)$",'g');
-  this.goSplit=function(strFileName){
+  var goSplit=function*(flow, strFileName){
     var StrFile=[], Buf=[];
-    var text, err=null, fiber=Fiber.current;
-    fs.readFile(strFileName, 'utf8', function(errT, bufT) { //, this.encRead
-      if(errT){  err=errT; }
-      text=bufT;
-      fiber.run();
-    });
-    Fiber.yield();
-    if(!err) {    
-      text.replace(regA,function(m,n,o){
-        var tmp=ucfirst(o);
-        StrFile.push('plugin'+tmp+'.js');  Buf.push(n);   //obj[o]=n;
-      }); 
-      text.replace(regB,function(m,n,o){
-        StrFile.push('client.js');  Buf.push(n);   //obj.client=n;
-      }); 
-      return [err, {StrFile:StrFile, Buf:Buf}];
-    }
-    else return [err];
+    var text, err=null;
+    fs.readFile(strFileName, 'utf8', function(errT, bufT) { err=errT; text=bufT; flow.next(); });  yield;
+    if(err) return [err];
+    text.replace(regA,function(m,n,o){
+      var tmp=ucfirst(o);
+      StrFile.push('plugin'+tmp+'.js');  Buf.push(n);   //obj[o]=n;
+    }); 
+    text.replace(regB,function(m,n,o){
+      StrFile.push('client.js');  Buf.push(n);   //obj.client=n;
+    }); 
+    return [err, {StrFile:StrFile, Buf:Buf}];
   }
 
     //
     // modifiy readFileToCache
     //
   readFileToCache=(function(){
-    var tmpf=readFileToCache;
-    return function(strFileName){
+    var tmpgen=readFileToCache;
+    return function*(flow, strFileName){
       if(strFileName=='client.js'){ 
-        var tmp=splitterPlugIn.goSplit('client.js'), err=tmp[0];
+        var [err, tmpObj]= yield *goSplit(flow, strFileName);
         if(!err) {
-          var tmp=tmp[1], StrFile=tmp.StrFile, Buf=tmp.Buf;
+          var StrFile=tmpObj.StrFile, Buf=tmpObj.Buf;
           for(var i=0;i<StrFile.length;i++){ 
-            var tmp=lcfirst(StrFile[i]);
-            var uriT='/'+tmp; 
+            var uriT='/'+lcfirst(StrFile[i]); 
             var buf=new Buffer(Buf[i],'utf8');
-            CacheUri.set(uriT, buf, 'js', true, true);
+            yield *CacheUri.set(flow, uriT, buf, 'js', true, true);
           }
         } 
         return err;
-      } else {    var tmp=tmpf.apply(this, arguments); return tmp;     }
+      } else {    var tmp=yield *tmpgen(flow, strFileName); return tmp;     }
     };
   })();
 
@@ -104,12 +60,12 @@ SplitterPlugIn=function(){
 
 
 
-createSiteSpecificClientJSAll=function() {
+createSiteSpecificClientJSAll=function*(flow) {
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i];
     var buf=createSiteSpecificClientJS(siteName);
     var keyCache=siteName+'/'+leafSiteSpecific;
-    CacheUri.set(keyCache, buf, 'js', true, true);
+    yield *CacheUri.set(flow, keyCache, buf, 'js', true, true);
   }
 
 }
