@@ -17,15 +17,14 @@ messExtend=function($el){
 }
 
 
-
 var loginInfoExtend=function($el){
+"use strict"
   $el.setStat=function(){
-    //var boShow=0,arrKind=[]; if(userInfoFrIP) boShow=1;
     var arrKind=[];
-    for(var key in userInfoFrDB){   if(userInfoFrDB[key]) {  arrKind.push(langHtml.loginInfo[key]); }   }
-    var boShow=Boolean(userInfoFrIP && 'IP' in userInfoFrIP) && Boolean(arrKind.length);
+    for(var key in userInfoFrDB){   if(userInfoFrDB[key] && key!='user') {  arrKind.push(langHtml.loginInfo[key]); }   }
+    var boShow=Boolean(arrKind.length);
     if(boShow){
-      $spanName.html(userInfoFrIP.nameIP);
+      $spanName.html(userInfoFrDB.user.nameIP);
       var strTmp=arrKind.join(', '); if(strTmp) strTmp='('+strTmp+')';
       $spanKind.html(strTmp);
       $el.show();
@@ -36,7 +35,7 @@ var loginInfoExtend=function($el){
   var $spanName=$('<span>'), $spanKind=$('<span>'); 
   var $logoutButt=$('<a>').prop({href:''}).text(langHtml.loginInfo.logoutButt).css({'float':'right'});
   $logoutButt.click(function(){ 
-    userInfoFrIP={}; userInfoFrDB=$.extend({}, specialistDefault);;
+    userInfoFrIP={}; userInfoFrDB=$.extend({}, specialistDefault);
     var vec=[['logout',1, function(data){$yesDiv.setStat();}]];   majax(oAJAX,vec);
     return false;
   });
@@ -56,7 +55,7 @@ window.loginReturnC=function(data){
 
 window.loginReturn=function(strQS, strHash){
   var params=parseQS(strQS.substring(1));
-  if(!('state' in params) || params.state !== OAuth.nonce) {    alert('Invalid state.'); return;  } 
+  if(!('state' in params) || params.state !== OAuth.nonce) {    alert('Invalid state parameter.'); return;  } 
   OAuth.cb(params);
 }
 
@@ -66,12 +65,13 @@ var OAuthT=function(){
     $.extend(this, {IP:IP, fun:fun, caller:caller, cb:cb});
     this.nonce=randomHash(); //CSRF protection
     var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
-    if(IP=='fb')   arrQ.push( "display=popup");
+    if(IP=='fb')   arrQ.push("display=popup");
     else if(IP=='google')    arrQ.push("scope=profile");
     else if(IP=='idplace')    arrQ.push("scope=name");
     return this.urlOAuth[IP]+'?'+arrQ.join('&');
   }
 }
+
 
 loginDivExtend=function($el){
   var popupWin=function(IP) {
@@ -93,7 +93,7 @@ loginDivExtend=function($el){
     else{
       if('code' in params) { 
         var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller, code:params.code};
-        var vec=[ ['loginGetGraph', oT, function(data){
+        var vec=[ ['loginGetGraph', oT], ['setupById', null, , function(data){
           if(typeof loginReturnC!=='undefined' && loginReturnC) {loginReturnC(); loginReturnC=null;}
         }]];   majax(oAJAX,vec);
       } else setMess('no "code" parameter in response');
@@ -309,7 +309,7 @@ setUp=function(){
   $body.css({'text-align':'center'});
   $mainDivs.css({'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff','max-width':'800px'});
 
-  var vec=[['specSetup',1]];   majax(oAJAX,vec);
+  var vec=[['setupById']];   majax(oAJAX,vec);
 }
 
 window.onload=function(){  setUp(); };

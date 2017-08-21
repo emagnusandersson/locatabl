@@ -43,7 +43,7 @@ app.reqCurlEnd=function*(){
   if('origin' in req.headers){ //if cross site
     var http_origin=req.headers.origin;
     var boAllowDbg=boDbg && RegExp("^http\:\/\/(localhost|192\.168\.0)").test(http_origin);
-    if(boAllowDbg || http_origin == "https://control.closeby.market" || http_origin == "https://controlclosebymarket.herokuapp.com" || http_origin == "https://emandersson.github.io" ){
+    if(boAllowDbg || http_origin == "https://control.closeby.market" || http_origin == "https://controlclosebymarket.herokuapp.com" || http_origin == "https://emagnusandersson.github.io" ){
         res.setHeader("Access-Control-Allow-Origin", http_origin);
     }
     if(req.method=='OPTIONS'){  this.mesO(); return;}
@@ -987,24 +987,50 @@ app.SetupSql.prototype.fun=function(SiteName,boDropOnly){
   }
   var strColTmp=arrCol.join(', ');  
 
+
+
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IIP "+strIPEnum+", IidIP varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboReporter INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IIP "+strIPEnum+", IidIP varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboReporter INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
-      DECLARE Vc, Vn, intMax, VidUser INT; \n\
+      DECLARE Vc, Vn, intMax INT; \n\
       START TRANSACTION; \n\
-      SELECT SQL_CALC_FOUND_ROWS IP-1 AS IP, @idUserTmp:=idUser AS idUser, nameIP, image FROM "+userTab+" WHERE IP=IIP AND idIP=IidIP;\n\
-      IF FOUND_ROWS()=0 THEN ROLLBACK; LEAVE proc_label; END IF; \n\
-      SET VidUser=@idUserTmp; \n\
+      IF IIP IS NOT NULL THEN \n\
+        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, IP-1 AS IP, idIP, nameIP, image FROM "+userTab+" WHERE IP=IIP AND idIP=IidIP;\n\
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('IP / idIP not found: ', IIP, ' / ', IidIP) AS mess; LEAVE proc_label; END IF; \n\
+        SET IidUser=@idUserTmp; \n\
+      ELSE \n\
+        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, IP-1 AS IP, idIP, nameIP, image FROM "+userTab+" WHERE idUser=IidUser;\n\
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idUser not found: ', IidUser) AS mess; LEAVE proc_label; END IF; \n\
+      END IF;\n\
       IF IboVendor THEN \n\
-        SELECT "+strColTmp+" FROM ("+vendorTab+" v LEFT JOIN "+teamTab+" dis on dis.idUser=v.idTeam) WHERE v.idUser=VidUser; \n\
-        SELECT count(paymentNumber) AS n FROM "+paymentTab+" p WHERE idUser=VidUser; \n\
+        SELECT "+strColTmp+" FROM ("+vendorTab+" v LEFT JOIN "+teamTab+" dis on dis.idUser=v.idTeam) WHERE v.idUser=IidUser; \n\
+        SELECT count(paymentNumber) AS n FROM "+paymentTab+" p WHERE idUser=IidUser; \n\
       ELSE SELECT 1 FROM dual WHERE 0; SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboTeam THEN  SELECT * FROM "+teamTab+" WHERE idUser=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboMarketer THEN  SELECT * FROM "+marketerTab+" WHERE idUser=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboAdmin THEN SELECT * FROM "+adminTab+" WHERE idUser=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboReporter THEN SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      IF IboTeam THEN  SELECT * FROM "+teamTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      IF IboMarketer THEN  SELECT * FROM "+marketerTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      IF IboAdmin THEN SELECT * FROM "+adminTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      IF IboReporter THEN SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
       COMMIT; \n\
     END");
+
+  //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
+  //SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IIP "+strIPEnum+", IidIP varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboReporter INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
+    //proc_label:BEGIN \n\
+      //DECLARE Vc, Vn, intMax, VidUser INT; \n\
+      //START TRANSACTION; \n\
+      //SELECT SQL_CALC_FOUND_ROWS IP-1 AS IP, @idUserTmp:=idUser AS idUser, nameIP, image FROM "+userTab+" WHERE IP=IIP AND idIP=IidIP;\n\
+      //IF FOUND_ROWS()=0 THEN ROLLBACK; LEAVE proc_label; END IF; \n\
+      //SET VidUser=@idUserTmp; \n\
+      //IF IboVendor THEN \n\
+        //SELECT "+strColTmp+" FROM ("+vendorTab+" v LEFT JOIN "+teamTab+" dis on dis.idUser=v.idTeam) WHERE v.idUser=VidUser; \n\
+        //SELECT count(paymentNumber) AS n FROM "+paymentTab+" p WHERE idUser=VidUser; \n\
+      //ELSE SELECT 1 FROM dual WHERE 0; SELECT 1 FROM dual WHERE 0; END IF; \n\
+      //IF IboTeam THEN  SELECT * FROM "+teamTab+" WHERE idUser=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      //IF IboMarketer THEN  SELECT * FROM "+marketerTab+" WHERE idUser=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      //IF IboAdmin THEN SELECT * FROM "+adminTab+" WHERE idUser=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      //IF IboReporter THEN SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=VidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      //COMMIT; \n\
+    //END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"vendorSetup");
   SqlFunction.push("CREATE PROCEDURE "+siteName+"vendorSetup(IIP "+strIPEnum+", IidIP varchar(128), InameIP varchar(128), Iimage varchar(256), OUT OboInserted INT, OUT OidUser INT) \n\

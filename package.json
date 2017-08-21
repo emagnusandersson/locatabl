@@ -20,7 +20,6 @@
     "node-rsa": "0.4.x",
     "atob": "2.0.x",
     "node-zip": "1.1.x",
-    "fibers": "1.0.15",
     "uglify-js": "2.7.x",
     "redis": "2.6.x"
   },

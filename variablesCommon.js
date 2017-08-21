@@ -1,4 +1,8 @@
 
+//
+// Inconsequncies:
+// When IP is refered to in userInfoFrIP it is a string otherwise an enum
+//
 
 
 two31=Math.pow(2,31);  intMax=two31-1;  intMin=-two31;
@@ -49,7 +53,7 @@ sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
 
 
-specialistDefault={reporter:0,vendor:0,team:0,marketer:0,admin:0};
+specialistDefault={user:0,reporter:0,vendor:0,team:0,marketer:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
 p2m=1e5; m2p=1/p2m;  // p2m: Point (world coordinate) to meter... (Should be earthCircumference/256 = 4e7/256 = 156250 which I round to 1e5 [m])
 var len=arrCoordinatePrecisionM.length;
@@ -93,7 +97,7 @@ this.rewriteSite=function(site){
   var tmp={
   index:               {b:'000000000'},
   idUser:              {b:'011000110',type:'int(4)'},
-  IP:                  {b:'001011000'},
+  IP:                  {b:'001011000'}, 
   idIP:                {b:'001011000'},
   donatedAmount:       {b:'011111111',type:'DOUBLE', default:0},
   boShow:              {b:'110000110',type:'TINYINT', default:0},

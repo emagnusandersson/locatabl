@@ -199,10 +199,10 @@ CreatorPlugin.general=function(){
       var $c=$('<span>');
       var $thumb=$c[0].$thumb=$('<img>').css({'vertical-align':'middle'});
       $c[0].$butDeleteImg=$('<button>').append(langHtml.Delete).click(function(){
-        var vec=[['deleteImage',1,$vendorSettingDiv.setUp], ['specSetup',{Role:'vendor'}]];   majax(oAJAX,vec); 
+        var vec=[['deleteImage',1,$vendorSettingDiv.setUp], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec); 
       });
       var uploadCallback=function(){
-        var tmpF=function(){var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str});};  $c[0].$butDeleteImg.toggle(tmp.boImgOwn);  var vec=[ ['specSetup',{Role:'vendor'},tmpF]];   majax(oAJAX,vec);
+        var tmpF=function(){var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str});};  $c[0].$butDeleteImg.toggle(tmp.boImgOwn);  var vec=[ ['setupById',{Role:'vendor'},tmpF]];   majax(oAJAX,vec);
       }
       var $buttUploadImage=$('<button>').html(langHtml.uploadNewImg).click(function(){$uploadImageDiv.openFunc('v',uploadCallback);});
       $c.append($c[0].$thumb,$c[0].$butDeleteImg,$buttUploadImage);  //langHtml.YourImage+': ',
@@ -214,7 +214,7 @@ CreatorPlugin.general=function(){
       return tmp;
     };
     calcImageUrlW=function(iMTab){      return calcImageUrl(MTab[iMTab]);     };
-    calcImageUrlUser=function(){   var tmp=$.extend({image:userInfoFrIP.image}, userInfoFrDB.vendor);  return {str:calcImageUrl(tmp),    boImgOwn:Boolean(Number(tmp.boImgOwn))};     }
+    calcImageUrlUser=function(){   var tmp=$.extend({image:userInfoFrDB.user.image}, userInfoFrDB.vendor);  return {str:calcImageUrl(tmp),    boImgOwn:Boolean(Number(tmp.boImgOwn))};     }
 /*
     calcImageUrlUser=function(){
       var idUser=userInfoFrDB.vendor.idUser, tag=userInfoFrDB.vendor.imTag, boImgOwn=Boolean(Number(userInfoFrDB.vendor.boImgOwn));
@@ -1530,7 +1530,7 @@ var payDivExtend=function($el){
   }
   var sendRebateCode=function(){
     var tmp=$rebateCode.val(); //if(tmp.length!=rebateCodeLen ) {$messageText.html($lengthErrMess.html()); return false;}  
-    var vec=[['SUseRebateCode',{rebateCode:tmp.slice(0,10)}], ['specSetup',{Role:'vendor'}]];   majax(oAJAX,vec);
+    var vec=[['SUseRebateCode',{rebateCode:tmp.slice(0,10)}], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec);
   }
   $el.setUp=function(){
     $rebateCode.val('');
@@ -1633,7 +1633,7 @@ var deleteAccountPopExtend=function($el){
   //var $el=popUpExtend($el);
   var $yes=$('<button>').html(langHtml.Yes).click(function(){
     //var vec=[['VDelete',1,function(data){doHistBack();doHistBack();}]];   majax(oAJAX,vec);
-    userInfoFrIP={};  userInfoFrDB=specialistDefault;
+    userInfoFrIP={};  userInfoFrDB=$.extend({}, specialistDefault);
     var vec=[['VDelete',1], ['logout',1, function(data){
       //$mapDiv.setVis(); 
       history.fastBack($mapDiv,true);
@@ -1793,10 +1793,10 @@ var vendorSettingDivExtend=function($el){
     $inps.each(function(i){
       var $inp=$(this),  strName=$inp.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
       //if('saveInp' in tmpObj) {var tmp=tmpObj.saveInp($inp); if(tmp===false) boErr=1; else if(tmp===null); else o[strName]=tmp;} else o[strName]=$inp.val().trim();
-      if('saveInp' in tmpObj) {var tmp=tmpObj.saveInp($inp); if(tmp[0]) {setMess(tmp[0]); boErr=1; } else o[strName]=tmp[1];} else o[strName]=$inp.val().trim();
+      if('saveInp' in tmpObj) {var [err,val]=tmpObj.saveInp($inp); if(err) {setMess(err); boErr=1; } else o[strName]=val;} else o[strName]=$inp.val().trim();
     }); 
     if(boErr) return;
-    var vec=[['VUpdate',o,$el.setUp], ['specSetup',{Role:'vendor'}]];   majax(oAJAX,vec);
+    var vec=[['VUpdate',o,$el.setUp], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec);
     setMess('',null,true); 
   }
 
@@ -1898,7 +1898,7 @@ var priceSettingDivExtend=function($el){
     }); 
     if(boErr) return;
     o.boPrice=1;
-    var vec=[['VUpdate',o,$el.setUp], ['specSetup',{Role:'vendor'}]];   majax(oAJAX,vec);
+    var vec=[['VUpdate',o,$el.setUp], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec);
     setMess('',null,true); 
   }
 
@@ -1966,7 +1966,7 @@ var quickDivExtend=function($el){
   var myHide=function(){
     setMess('',null,true); //$imgBusyL.css({visibility:''});//show();
     var point=merProj.fromLatLngToPointV($mapDiv.latLngMe); 
-    var vec=[['VHide',{x:point[0],y:point[1]}], ['specSetup',{Role:'vendor'}]];  majax(oAJAX,vec);
+    var vec=[['VHide',{x:point[0],y:point[1]}], ['setupById',{Role:'vendor'}]];  majax(oAJAX,vec);
   }
 
   $el.setUp=function(){
@@ -2066,9 +2066,9 @@ var vendorIntroDivExtend=function($el){
     //if(!entryTestWMyName($el,arrMustBeSet,arrPosNum,arrPosNumOrEmpty)) return;
     //var o1=input2object($el);
     var strTel=$inpTel.val().trim(); $inpTel.val(strTel); if(strTel.length==0) {setMess('telephone number can not be empty'); return; }
-    var o1={tel:strTel,displayName:userInfoFrIP.nameIP,boInsert:1};
+    var o1={tel:strTel, displayName:userInfoFrIP.nameIP, boInsert:1};
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD'; o1.currency=curT;
-    var vec=[['VUpdate',o1,function(data){$el.closePop();}], ['specSetup','']];   majax(oAJAX,vec);
+    var vec=[['VUpdate',o1,function(data){$el.closePop();}], ['setupById','']];   majax(oAJAX,vec);
 
     var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
     $body.append($iframeConversion);
@@ -2208,35 +2208,6 @@ var toggleSpecialistButts=function(){
     var tmp=$agreementStart.compareLocalDates(1); if(tmp.boNew) {$agreementStart.setLocalDates(1); $agreementStart.openFunc(); }
   }*/  
 }
-var oAuthT=function(IP, uRedir, strFun, strCaller, cb){
-  var self=this;
-  this.IP=IP; this.strFun=strFun; this.strCaller=strCaller;
-  this.nonce=randomHash();
-
-  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
-  if(IP=='fb')   arrQ.push( "display=popup");
-  else if(IP=='google')    arrQ.push("scope=profile");
-  else if(IP=='idplace')    arrQ.push("scope=name,image");
-  //arrQ.push("auth_type=reauthenticate");
-  this.uPop=UrlOAuth[IP]+'?'+arrQ.join('&');
-
-  window.loginReturn=function(strQS, strHash){
-    var params=parseQS(strQS.substring(1));
-    if(!('state' in params) || params.state !== self.nonce) {    alert('Invalid state.'); return;  } 
-
-    if('error' in params) { setMess(params.error); }
-    else{
-      if('code' in params) { 
-        var oT={IP:IP, fun:strFun, caller:strCaller, code:params.code};
-        var vec=[ ['loginGetGraph', oT, cb]];   majax(oAJAX,vec);
-      } else setMess('no "code" parameter in response from IP');
-    }
-  };
-}
-
-
-
-
 
 
 
@@ -2264,8 +2235,32 @@ window.OAuth=new OAuthT();
 
 
 
+/*
+var oAuthT=function(IP, uRedir, strFun, strCaller, cb){  // This should be replaced with OAuthT
+  var self=this;
+  this.IP=IP; this.strFun=strFun; this.strCaller=strCaller;
+  this.nonce=randomHash();
 
+  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
+  if(IP=='fb')   arrQ.push( "display=popup");
+  else if(IP=='google')    arrQ.push("scope=profile");
+  else if(IP=='idplace')    arrQ.push("scope=name,image");
+  //arrQ.push("auth_type=reauthenticate");
+  this.uPop=UrlOAuth[IP]+'?'+arrQ.join('&');
 
+  window.loginReturn=function(strQS, strHash){
+    var params=parseQS(strQS.substring(1));
+    if(!('state' in params) || params.state !== self.nonce) {    alert('Invalid state.'); return;  } 
+
+    if('error' in params) { setMess(params.error); }
+    else{
+      if('code' in params) { 
+        var oT={IP:IP, fun:strFun, caller:strCaller, code:params.code};
+        var vec=[ ['loginGetGraph', oT], ['setupById', null, cb]];   majax(oAJAX,vec);
+      } else setMess('no "code" parameter in response from IP');
+    }
+  };
+}
 
 
 FuncLoginReturn={};
@@ -2356,19 +2351,19 @@ var loginDivExtend=function($el){ //popup for logging in as admin/sponsor...
   //$el.append($pAll,$cancel,$pendingMess,$cancelMess);  //
  
   $el.css({'text-align':'left'});
-/*
-  var $blanket=$('<div>').addClass("blanket");
-  var $centerDiv=$('<div>').append($pAll, $cancel,$pendingMess,$cancelMess);
-  $centerDiv.addClass("Center").css({'max-width':'25em', height:'16em', padding: '0.5em 0.5em 1.2em 1.2em'})
-  if(boIE) $centerDiv.css({'width':'25em'}); 
-  $el.addClass("Center-Container").append($centerDiv,$blanket); //
-*/
+
+  //var $blanket=$('<div>').addClass("blanket");
+  //var $centerDiv=$('<div>').append($pAll, $cancel,$pendingMess,$cancelMess);
+  //$centerDiv.addClass("Center").css({'max-width':'25em', height:'16em', padding: '0.5em 0.5em 1.2em 1.2em'})
+  //if(boIE) $centerDiv.css({'width':'25em'}); 
+  //$el.addClass("Center-Container").append($centerDiv,$blanket); //
+
   $el.append($pAll, $pendingMess, $cancelMess); //, $convertIDButton
 
 
   return $el;
 }
-
+*/
 
 
 var convertIDDivExtend=function($el){
@@ -2403,11 +2398,11 @@ var convertIDDivExtend=function($el){
     if(!boE){
       //var o1={tel:'000', displayName:'bla',boInsert:1, currency:'USD'};
       var o1={boInsert:1};
-      var vec=[['VUpdate',o1], ['specSetup','']];   majax(oAJAX,vec);
+      var vec=[['VUpdate',o1], ['setupById','']];   majax(oAJAX,vec);
     }
   }
   var loginReturnAlt=function(){
-    var vec=[['specSetup','']];   majax(oAJAX,vec);
+    var vec=[['setupById','']];   majax(oAJAX,vec);
   }
   var $pendingMess=$('<span>').hide().append(langHtml.pendingMessLogin,' ',$imgBusy.clone()).css({"margin-left":"0.3em"});
   var $cancelMess=$('<span>').hide().append(langHtml.cancelMessLogin);
@@ -2443,15 +2438,26 @@ var convertIDDivExtend=function($el){
  *
  * Reporter divs
  *
+ *  Summary:
+ *  $reportCommentPop   // Popup where a reporter can write a report
+ *  $reportAnswerPop    // Popup where a vendor can answer a report
+ *  $reportCommentButt  // Opens $reportCommentPop, placed in $reportVDiv
+ *  $reportAnswerButt   // Opens $reportAnswerPop, placed in $reportVDiv
+ *  $reportVDiv         // List of reporters reports on a certain Vendor
+ *  $reportRDiv         // List of reports from a certain Reporter
+ * 
  *******************************************************************************************************************
  *******************************************************************************************************************/
 
+  
+  
 var reportCommentPopExtend=function($el){
 "use strict"
   $el.toString=function(){return 'reportCommentPop';}
   $el.openFunc=function(idV){
-    idVendor=idV;  $idVendor.html(idV); 
-    if(!userInfoFrIP) {setMess('not logged in'); return;}
+    idVendor=idV;  $idVendor.html(idV);
+    
+    if(Object.keys(userInfoFrIP).length || typeof userInfoFrDB.user=='object'){} else {setMess('not logged in'); return;}
     var o1={idVendor:idVendor}, vec=[['reportOneGet',o1,reportCommentOneGet]];   majax(oAJAX,vec);
     $el.setVis();    
     $comment.focus();
@@ -2463,7 +2469,7 @@ var reportCommentPopExtend=function($el){
   $el.closeFunc=function(){    doHistBack();    }
   var sendFunc=function() { 
     var o1={idVendor:idVendor,comment:$comment.val().trim()};
-    var vec=[['reportUpdateComment',o1], $reportVDiv.getLoadObj(), ['specSetup',{Role:'reporter'}]];   majax(oAJAX,vec);
+    var vec=[['reportUpdateComment',o1], $reportVDiv.getLoadObj(), ['setupById',{Role:'reporter'}]];   majax(oAJAX,vec);
     doHistBack();
   }  
   var reportCommentOneGet=function(data){    
@@ -2500,6 +2506,7 @@ var reportCommentPopExtend=function($el){
 
   return $el;
 }
+  
   
 var reportAnswerPopExtend=function($el){
   $el.toString=function(){return 'reportAnswerPop';}
@@ -2556,23 +2563,26 @@ var reportAnswerPopExtend=function($el){
 
   return $el;
 }
-var reportCommentButtExtend=function($el,idV){
+
+var reportCommentButtExtend=function($el){    // Opens $reportCommentPop, placed in $reportVDiv
 "use strict"
   $el.click(function(e){
     e.stopPropagation();
-    if(userInfoFrIP && Object.keys(userInfoFrIP).length){
-      doHistPush({$view:$reportCommentPop});  $reportCommentPop.openFunc($el.idV);
+    var idVendor=$reportVDiv.idVendor;
+    var boGotUserInfoFrIP
+    if(Object.keys(userInfoFrIP).length || typeof userInfoFrDB.user=='object'){
+      doHistPush({$view:$reportCommentPop});  $reportCommentPop.openFunc(idVendor);
     }else{
       var strType='reporter';
       var cbGetGraph=function(){
-        doHistPush({$view:$reportCommentPop});   $reportCommentPop.openFunc($el.idV);
+        doHistPush({$view:$reportCommentPop});   $reportCommentPop.openFunc(idVendor);
       }
       var loginReturn=function(params){
         if('error' in params) { setMess(params.error); }
         else{
           if('code' in params) { 
             var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller}; oT.code=params.code;
-            var vec=[ ['loginGetGraph', oT, cbGetGraph]];   majax(oAJAX,vec);
+            var vec=[ ['loginGetGraph', oT], ['setupById', null, cbGetGraph]];   majax(oAJAX,vec);
           } else setMess('no code parameter in response from IdP');
         }
       }
@@ -2583,29 +2593,28 @@ var reportCommentButtExtend=function($el,idV){
       //$loginDiv.openFunc('reporter');
     }
   });
-  $el.idV=idV;
   return $el;
 }
 
 
-var reportAnswerButtExtend=function($el,idR){
+var reportAnswerButtExtend=function($el){    // Opens $reportAnswerPop, placed in $reportVDiv
 "use strict"
   $el.click(function(e){
     e.stopPropagation();
-    $reportAnswerPop.openFunc($el.idR);
+    var idReporter=$el.closest('tr').data('idReporter');
+    $reportAnswerPop.openFunc(idReporter);
   });
-  $el.idR=idR;
   return $el;
 }
 
 
-var reportVDivExtend=function($el){ // Reporters reports on a certain Vendor
+var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
 "use strict"
   $el.toString=function(){return 'reportVDiv';}
   $el.setUp=function(idV){
     var iMTab=$tableDiv.getMTabInd(idV);
     rowVendor=MTab[iMTab];
-    $reportCommentButt.idV=rowVendor.idUser; idVendor=rowVendor.idUser;
+    $el.idVendor=rowVendor.idUser;
     $nameSpan.html(rowVendor.displayName);
 
     var strTmp; var IPTmp=enumIP[Number(rowVendor.IP)];
@@ -2614,7 +2623,7 @@ var reportVDivExtend=function($el){ // Reporters reports on a certain Vendor
     $vendorListCtrlDiv.mySet(iMTab);
   }
   $el.getLoadObj=function(){
-    var oGet={offset:offset,rowCount:rowCount,idVendor:idVendor};  return ['reportVGet',oGet,$el.reportVGetRet];
+    var oGet={offset:offset,rowCount:rowCount,idVendor:$el.idVendor};  return ['reportVGet',oGet,$el.reportVGetRet];
   }
   $el.load=function(){ 
     setMess('... fetching reports on a vendor ... ',15,true);  majax(oAJAX,[$el.getLoadObj()]);
@@ -2650,15 +2659,15 @@ var reportVDivExtend=function($el){ // Reporters reports on a certain Vendor
       }
 
       var $butAns=''
-      if(userInfoFrDB.vendor && idVendor==userInfoFrDB.vendor.idUser){
+      if(userInfoFrDB.vendor && $el.idVendor==userInfoFrDB.vendor.idUser){
         var idR=tab[i].idReporter;
         var strtmp='';if(strAns) strtmp=langHtml.Change; else strtmp=langHtml.Answer;
-        $butAns=reportAnswerButtExtend($('<button>'),idR).html(strtmp).css({'float':'right'});
+        $butAns=reportAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'});
       }
   
-      var $td=$('<td>').append($img,$created,$comm,$ans,$butAns);
+      var $td=$('<td>').append($img,$created,$comm,$ans,$butAns); 
       if(strAns) $ans.append($butAns);
-      var $row=$('<tr>').append($td);    $tBody.append($row);
+      var $row=$('<tr>').data({idReporter:idR}).append($td);  $tBody.append($row);
     }
     
     
@@ -2668,11 +2677,11 @@ var reportVDivExtend=function($el){ // Reporters reports on a certain Vendor
     resetMess(10);
   }
   
-  $el.boLoaded=0;
-  var tab=[], idVendor, rowVendor, $imgVendor=$('<img>').css({'vertical-align':'middle'}), $nameSpan=$('<span>');
+  $el.boLoaded=0; $el.idVendor;
+  var tab=[], rowVendor, $imgVendor=$('<img>').css({'vertical-align':'middle'}), $nameSpan=$('<span>');
   var $vendorInfo=$('<div>').append(langHtml.Vendor,': ',$imgVendor,' ',$nameSpan).css({'margin':'0.5em',display:'inline-block'}); //,'float':'right'
   //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
-  var $reportCommentButt=reportCommentButtExtend($('<button>'),null).html(langHtml.vote.writeComment+' ('+langHtml.FacebookNeeded+')').css({'margin-right':'1em'});
+  var $reportCommentButt=reportCommentButtExtend($('<button>')).html(langHtml.vote.writeComment+' ('+langHtml.FacebookNeeded+')').css({'margin-right':'1em'});
   var $bub=$('<div>').html(langHtml.writeReportPopup);
   var $imgH=$imgHelp.clone();  popupHoverM($imgH,$bub); 
 
@@ -2728,12 +2737,12 @@ var reportRDivExtend=function($el){  // Reports from a certain Reporter
       var $butAns=''
       if(userInfoFrDB.vendor && tab[i].idUser==userInfoFrDB.vendor.idUser){
         var strtmp='';if(strAns) strtmp=langHtml.Change; else strtmp=langHtml.Answer;
-        var $butAns=reportAnswerButtExtend($('<button>'),idReporter).html(strtmp).css({'float':'right'}); 
+        var $butAns=reportAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'}); 
       }
   
       var $td=$('<td>').append($img,$created,$comm,$ans,$butAns);
       if(strAns) $ans.prepend($img,$butAns);
-      var $row=$('<tr>').append($td);    $tBody.append($row);
+      var $row=$('<tr>').data({idReporter:idReporter}).append($td);    $tBody.append($row);
     }
     
     
@@ -2949,12 +2958,11 @@ var vendorListCtrlDivExtend=function($el){ // The little map and up/down arrows
 var loginInfoExtend=function($el){
 "use strict"
   $el.setStat=function(){
-    //var boShow=0,arrKind=[];  if(userInfoFrIP) boShow=1;
     var arrKind=[];
-    for(var key in userInfoFrDB){   if(userInfoFrDB[key]) {  arrKind.push(langHtml.loginInfo[key]); }   }
-    var boShow=Boolean(userInfoFrIP) && Boolean(arrKind.length);
+    for(var key in userInfoFrDB){   if(userInfoFrDB[key] && key!='user') {  arrKind.push(langHtml.loginInfo[key]); }   }
+    var boShow=Boolean(arrKind.length);
     if(boShow){
-      $spanName.html(userInfoFrIP.nameIP);
+      $spanName.html(userInfoFrDB.user.nameIP);
       var strTmp=arrKind.join(', '); if(strTmp) strTmp='('+strTmp+')';
       $spanKind.html(strTmp);
       //$el.css({visibility:''});
@@ -2970,7 +2978,7 @@ var loginInfoExtend=function($el){
   //var $logoutButt=$('<a>').prop({href:''}).text(langHtml.loginInfo.logoutButt).css({'float':'right'});
   var $logoutButt=$('<button>').text(langHtml.loginInfo.logoutButt).css({'float':'right','font-size':'90%'});
   $logoutButt.click(function(){ 
-    userInfoFrIP={}; userInfoFrDB=specialistDefault; 
+    userInfoFrIP={}; userInfoFrDB=$.extend({}, specialistDefault); 
     var vec=[['logout',1, function(data){
       //$mapDiv.setVis();  changeHistNRefreshHash({$view:$mapDiv});
       history.fastBack($mapDiv,true);
@@ -4504,7 +4512,7 @@ loadTabStart=function(boFlexZoom){
   //var vec=[['IFun',o1,IRet]];   majax(oAJAX,vec);
   var o1={zoom:zoomT, pC:point, VPSize:VPSizeT},   oH=$filterDiv.gatherFiltData();
   var vec=[['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,IRet]];
-  if(userInfoFrDB.vendor) vec.unshift(['specSetup',{Role:'vendor'}]); 
+  if(userInfoFrDB.vendor) vec.unshift(['setupById',{Role:'vendor'}]); 
   majax(oAJAX,vec);
     
   setMess('... fetching vendors ... ',15,true);
@@ -4516,10 +4524,10 @@ var uploadPosNLoadTabStart=function(){
   var zoomT=$mapDiv.map.getZoom(), VPSizeT=$mapDiv.getVPSize();
   
   //var o1={zoom:zoomT, pC:pos, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();  $.extend(o1,oH);  
-  //var vec=[['VUpdate',{hideTimer:Number($quickDiv.$selHideTimer.val())}], ['VShow',pos], ['specSetup',{Role:'vendor'}], ['IFun',o1,IRet]];   majax(oAJAX,vec);  
+  //var vec=[['VUpdate',{hideTimer:Number($quickDiv.$selHideTimer.val())}], ['VShow',pos], ['setupById',{Role:'vendor'}], ['IFun',o1,IRet]];   majax(oAJAX,vec);  
   var o1={zoom:zoomT, pC:pos, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();  
   var vec=[['VUpdate',{hideTimer:Number($quickDiv.$selHideTimer.val())}], ['VShow',pos], 
-    ['specSetup',{Role:'vendor'}], ['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,IRet]];   majax(oAJAX,vec);  
+    ['setupById',{Role:'vendor'}], ['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,IRet]];   majax(oAJAX,vec);  
   setMess('... updating pos and fetching vendors ... ',15,true);
 }
 
@@ -4537,9 +4545,9 @@ var firstAJAXCall=function(pos){
   //if(boVideo) zoomT=14;
   
   //var o1={zoom:zoomT, pC:point, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();  $.extend(o1,oH);  
-  //var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['specSetup',1], ['VSetPosCond',point], ['IFun',o1,IRet]];   majax(oAJAX,vec);
+  //var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['setupById',1], ['VSetPosCond',point], ['IFun',o1,IRet]];   majax(oAJAX,vec);
   var o1={zoom:zoomT, pC:point, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();  
-  var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['specSetup',1], ['VSetPosCond',point], 
+  var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['setupById',1], ['VSetPosCond',point], 
     ['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,IRet]];   majax(oAJAX,vec);
   setMess('... fetching vendors ... ',15,true);
 }
@@ -4596,7 +4604,7 @@ window.GRet=function(data){
   tmp=data.userInfoFrIP; if(typeof tmp!="undefined") {userInfoFrIP=tmp;}
   //var WBD=[]; tmp=data.boSpecialistWannaBe; if(typeof tmp!="undefined") {
   //    for(var key in tmp){   if(boSpecialistWannaBe[key]==tmp[key]) {delete tmp[key];} else {boSpecialistWannaBe[key]=tmp[key]; }  } $loginInfo.setStat(); WBD=tmp; }
-  tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if('vendor' in tmp) $quickDiv.setUp(); }
+  tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if(tmp.vendor) $quickDiv.setUp(); }
   tmp=data.boShowDummy;   if(typeof tmp =='undefined') tmp=0;  window.boShowDummy=tmp;
   tmp=data.nUserReal;   if(typeof tmp =='undefined'){} else  window.nUserReal=tmp;
   
@@ -4908,7 +4916,7 @@ var teamDivExtend=function($el){
   //$el.$file=$('<input>').attr({type:'file'});
   var $thumb=$('<img>').css({'vertical-align':'middle'});
   var uploadCallback=function(){
-    var tmpF=function(){$thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['specSetup',{Role:'team'},tmpF]];   majax(oAJAX,vec);
+    var tmpF=function(){$thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['setupById',{Role:'team'},tmpF]];   majax(oAJAX,vec);
   }
   var $buttUploadImage=$('<button>').html('Upload image').click(function(){$uploadImageDiv.openFunc('t',uploadCallback);});
   var $buttSaveName=$('<button>').html('Save link').click(saveName);
@@ -5022,7 +5030,7 @@ var moreDivExtend=function($el){
       else{
         if('code' in params) { 
           var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller}; oT.code=params.code;
-          var vec=[ ['loginGetGraph', oT, cbGetGraph]];   majax(oAJAX,vec);
+          var vec=[['loginGetGraph', oT], ['setupById', null, cbGetGraph]];   majax(oAJAX,vec);
         } else setMess('no code parameter in response');
       }
     }
@@ -5045,7 +5053,7 @@ var moreDivExtend=function($el){
       else{
         if('code' in params) { 
           var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller}; oT.code=params.code;
-          var vec=[ ['loginGetGraph', oT, cbGetGraph]];   majax(oAJAX,vec);
+          var vec=[ ['loginGetGraph', oT], ['setupById', null, cbGetGraph]];   majax(oAJAX,vec);
         } else setMess('no code parameter in response');
       }
     }
@@ -5482,7 +5490,7 @@ var setUp2=function(){
   $dummyShowingToast=dummyShowingToastExtend($('<div>')).css({padding:'0.5em','text-align':'center',left:'50%',width:'12em','margin-left':'-6em','z-index':6});
   $body.append($dummyShowingToast);
 
-  $loginDiv=loginDivExtend($('<div>'));    //$loginDiv.css({border:'1px solid #000'});
+  //$loginDiv=loginDivExtend($('<div>'));    //$loginDiv.css({border:'1px solid #000'});
   $vendorIntroDiv=vendorIntroDivExtend($('<div>'));
 
   //$vendorButton=$('<button>').append('&equiv;');
@@ -5735,7 +5743,7 @@ var setUp2=function(){
     return true;
   }
   $vendorSettingDiv.setVis=function(){
-    if(!userInfoFrDB.vendor || !userInfoFrIP) return false;
+    if(!userInfoFrDB.vendor) return false;
     $vendorSettingDiv.setUp(); 
     var $tmp=$vendorSettingDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $bodyNHtml.removeClass('fillScreen');
@@ -5844,12 +5852,12 @@ var setUp2=function(){
     return true;
   }
 
-  $loginDiv.setVis=function(){
-    var $tmp=$loginDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
-    scalableTog(1);
-    return true;
-  }
+  //$loginDiv.setVis=function(){
+    //var $tmp=$loginDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    //$bodyNHtml.removeClass('fillScreen');
+    //scalableTog(1);
+    //return true;
+  //}
 
 
  
