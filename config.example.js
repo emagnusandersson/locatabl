@@ -16,6 +16,7 @@ tDDOSBan=5; // tDDOSBan: How long in seconds till the blocking is lifted
 
 googleSiteVerification="googleXXXXXXXXXXXXXXXX.html"; // Needed if you use Google Webmaster Tools  (www.google.com/webmasters)
 
+apiKeySendGrid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
 
 
 RegRedir=[];
@@ -132,6 +133,9 @@ urlAuthIdplace="https://idplace.org";
 urlAuthIdplace=rtrim(urlAuthIdplace,'/');
 
 
+UrlOAuth={fb:"https://www.facebook.com/v2.5/dialog/oauth", google:"https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace}
+UrlToken={fb:"https://graph.facebook.com/v2.5/oauth/access_token", google:"https://accounts.google.com/o/oauth2/token", idplace:urlAuthIdplace+"/access_token"}
+UrlGraph={fb:"https://graph.facebook.com/v2.5/me", google:"https://www.googleapis.com/plus/v1/people/me", idplace:urlAuthIdplace+"/me"};
 
   // If wwwCommon is not set then set it to the first "wwwSite" in "Site"
 if(!wwwCommon) {var keys=Object.keys(Site); wwwCommon=Site[keys[0]].wwwSite; }  

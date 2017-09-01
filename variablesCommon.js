@@ -123,6 +123,8 @@ this.rewriteSite=function(site){
   imTag:               {b:'011000110',type:'INT(4)', default:0},
   //image:               {b:'000000000'},
   image:               {b:'001000010'},
+  
+  displayEmail:        {b:'111110110',type:'VARCHAR(65)', default:''},
 
 
   imTagTeam:           {b:'011000000'},
@@ -195,7 +197,7 @@ this.rewriteSite=function(site){
 
 
 
-  site.StrPropContact=['tel', 'homeTown', 'link'];
+  site.StrPropContact=['tel', 'displayEmail', 'homeTown', 'link'];
   site.StrPropPos=['dist', 'posTime'];
   site.StrPropRep=['created', 'histActive', 'timeAccumulated', 'donatedAmount'];
 
