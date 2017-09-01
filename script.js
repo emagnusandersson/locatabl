@@ -23,6 +23,9 @@ NodeZip=require('node-zip');
 //redis = require("then-redis");
 redis = require("redis");
 UglifyJS = require("uglify-js");
+//sendgrid  = require('sendgrid');
+sgMail = require('@sendgrid/mail');
+ip = require('ip');
 require('./lib.js');
 require('./libServerGeneral.js');
 require('./libServer.js');
@@ -47,23 +50,26 @@ interpretArgv=function(){
       var tmp=Match[2][0];
       if(tmp=='p') port=Match[2].substr(1);
       else if(tmp=='h') helpTextExit();
+      else {console.log('Neglected option: '+myArg[i]); }
     }else if(Match[1]=='--') {
       var tmp=Match[2], tmpSql='sql';
-      if(tmp.slice(0,tmpSql.length)==tmpSql) strCreateSql=Match[2].substr(tmpSql.length).toLowerCase();
+      if(tmp.slice(0,tmpSql.length)==tmpSql) strCreateSql=Match[2].substr(tmpSql.length);
       else if(tmp=='help') helpTextExit();
       else if(tmp=='boVideo') boVideo=1;
+      else {console.log('Neglected option: '+myArg[i]); }
     }
   }
 }
 
+StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummy', 'createDummies'];
+  
 helpTextExit=function(){
   var arr=[];
   arr.push('USAGE script [OPTION]...');
   arr.push('\t-h, --help\t\tDisplay this text');
   arr.push('\t-p[PORT]\t\tPort number (default: 5000)');
   arr.push('\t--sql[SQL_ACTION]\tRun a sql action:');
-  var StrValid=['table', 'dropTable', 'fun', 'dropFun', 'truncate', 'dummy', 'dummies'];
-  arr.push('\t\tSQL_ACTION='+StrValid.join('|'));
+  arr.push('\t\tSQL_ACTION='+StrValidSqlCalls.join('|'));
   console.log(arr.join('\n'));
   process.exit(0);
 }
@@ -92,6 +98,7 @@ var flow=( function*(){
   payLev=0; boShowTeam=false; boTerminationCheck=1;
   intDDOSMax=100; tDDOSBan=5; 
   maxUnactivity=3600*24;
+  maxLoginUnactivity=10*60;
   leafLoginBack="loginBack.html"; 
   boVideo=0;
   interpretArgv();
@@ -121,6 +128,8 @@ var flow=( function*(){
   if('levelMaintenance' in process.env) levelMaintenance=process.env.levelMaintenance;
   SiteName=Object.keys(Site);
 
+  sgMail.setApiKey(apiKeySendGrid);
+  //objSendgrid  = sendgrid(sendgridName, sendgridPassword);
 
   require('./filterServer.js'); 
   require('./variablesCommon.js');
@@ -165,6 +174,16 @@ var flow=( function*(){
         console.log(filename+' changed: '+ev);
         var flowWatch=( function*(){ 
           var err=yield* readFileToCache(flowWatch, 'stylesheets/'+filename); if(err) console.log(err.message);
+        })(); flowWatch.next();
+      }
+    });
+    fs.watch('lang',function (ev,filename) {
+      var StrFile=['en.js', 'sv.js'];
+        //console.log(filename+' changed: '+ev);
+      if(StrFile.indexOf(filename)!=-1){
+        console.log(filename+' changed: '+ev);
+        var flowWatch=( function*(){ 
+          var err=yield* readFileToCache(flowWatch, 'lang/'+filename); if(err) console.log(err.message);
         })(); flowWatch.next();
       }
     });

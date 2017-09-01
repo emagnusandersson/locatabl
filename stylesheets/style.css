@@ -59,7 +59,18 @@ tbody,thead {border-width:inherit;border-style:inherit }
 
 input, textarea, keygen, select, button, isindex  {	font-family:arial, verdana, helvetica;font-size:inherit}
 
-
+.footDiv {margin: 0em auto;
+    max-width: 800px;
+    width: 100%;
+    padding: 1.1em 0 1em;
+    border-top: solid 1px;
+    box-sizing: border-box;
+    position:relative;
+    flex:0 0 auto;
+}
+.footDivLabel {
+  display:block; position:absolute; top:.0em; left:50%; transform:translate(-50%, 0);
+  }
 
 
 button {
@@ -100,8 +111,8 @@ table.sortable thead {
     cursor: default;
 }
 
-button.flexWidth{padding-left:0.7em;padding-right:0.7em;height:1.8em}
-button.fixWidth{width:2em;height:1.8em}
+button.flexWidth{padding-left:0.7em;padding-right:0.7em;height:1.8rem}
+button.fixWidth{width:2rem;height:1.8rem}
 .rowButtonFeat  span { vertical-align:bottom}
 .rowButtonFeat button, .rowButtonFeat select { box-sizing:border-box; min-height:1.5em; font-size:0.8em; margin:0.5 0.5; padding:0 0.2em; font-size: inherit;vertical-align:bottom;background-color:#eee;border-radius:0.4em}
 .rowButtonFeat button > span:first-child { vertical-align:baseline;line-height:2.3em}

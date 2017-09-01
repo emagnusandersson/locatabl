@@ -144,21 +144,34 @@ wrapRedisSendCommand=function*(flow, strCommand,arr){
   return value;
 }
 
-  // Req... methods
-getSessionMain=function*(){
-  var req=this.req, flow=req.flow;
-  var redisVar=req.sessionID+'_Main', strTmp=yield* wrapRedisSendCommand(flow, 'get', [redisVar]);   this.sessionMain=JSON.parse(strTmp);
-}
-setSessionMain=function*(){
-  var req=this.req, flow=req.flow,  strA=JSON.stringify(this.sessionMain);
-  var redisVar=req.sessionID+'_Main', strTmp=yield* wrapRedisSendCommand(flow, 'set',[redisVar,strA]);   var tmp=yield* wrapRedisSendCommand(flow, 'expire',[redisVar,maxUnactivity]);
-}
-resetSessionMain=function*(){
-  var req=this.req, flow=req.flow,  userInfoFrIPTmp={};
-  this.sessionMain={userInfoFrDB:extend({},specialistDefault),   userInfoFrIP:userInfoFrIPTmp};
-  yield* setSessionMain.call(this);
-}
 
+
+  // ReqBE methods / generators
+//getSessionVar=function*(strSuffix){
+  //var req=this.req, flow=req.flow;
+  //var redisVar=req.sessionID+'_'+strSuffix, strTmp=yield* wrapRedisSendCommand(flow, 'get', [redisVar]);   return JSON.parse(strTmp);
+//}
+//setSessionVar=function*(strSuffix, val, tExpire=maxUnactivity){
+  //var req=this.req, flow=req.flow,  strA=JSON.stringify(val);
+  //var redisVar=req.sessionID+'_'+strSuffix, strTmp=yield* wrapRedisSendCommand(flow, 'set',[redisVar,strA]);   var tmp=yield* wrapRedisSendCommand(flow, 'expire',[redisVar,tExpire]);
+//}
+//setExpireSessionVar=function*(strSuffix, tExpire=maxUnactivity){
+  //var req=this.req, flow=req.flow;
+  //var redisVar=req.sessionID+'_'+strSuffix, tmp=yield* wrapRedisSendCommand(flow, 'expire',[redisVar,tExpire]);
+//}
+
+
+  // ReqBE methods / generators
+getRedisVar=function*(flow, strVar){
+  var strTmp=yield* wrapRedisSendCommand(flow, 'get', [strVar]);   return JSON.parse(strTmp);
+}
+setRedisVar=function*(flow, strVar, val, tExpire=maxUnactivity){
+  var strA=JSON.stringify(val);
+  var strTmp=yield* wrapRedisSendCommand(flow, 'set',[strVar,strA]);   var tmp=yield* wrapRedisSendCommand(flow, 'expire',[strVar,tExpire]);
+}
+setExpireRedisVar=function*(flow, strVar, tExpire=maxUnactivity){
+  var tmp=yield* wrapRedisSendCommand(flow, 'expire',[strVar,tExpire]);
+}
 
 
 getIP=function(req){

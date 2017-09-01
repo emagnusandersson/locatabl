@@ -16,6 +16,7 @@ CreatorPlugin.general=function(){
   
   StrPropContact=site.StrPropContact; StrPropPos=site.StrPropPos; StrPropRep=site.StrPropRep;
 
+    // StrPropMain: rows in vendorInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, tableDiv
   StrPropMain=[].concat('image', 'idTeam', 'displayName', StrPropContact, 'currency', 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
   StrGroupFirstMain=['image','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
@@ -49,7 +50,7 @@ CreatorPlugin.general=function(){
   $distUnitChoise=distUnitChoiseExtend($('<span>'));  $distUnitChoise.setUp(); $distUnitChoise.children('br').remove(); $distUnitChoise.prepend(langHtml.DistanceUnit,': ');
   $distUnitChoiseB=distUnitChoiseExtend($('<span>'));  $distUnitChoiseB.setUp(); $distUnitChoiseB.addClass('smallButt').css({padding:'0.5em 0.1em'});
 
-  this.rewriteLang=function(){};
+  //this.rewriteLang=function(){};
 
 
   this.rewriteObj=function(){
@@ -156,6 +157,15 @@ CreatorPlugin.general=function(){
       strType:'tel',inpW:6,
       setInfo:tmpSetTel, crInfo:tmpCrTel,
       setTabF:tmpSetTel, crTabF:tmpCrTel
+    }); //,saveInp:mustBeSetF
+    
+      // displayEmail
+    var tmpSet=function(iMTab,$c){  var tmp=MTab[iMTab].displayEmail.trim();    $c.children('a').prop({href:'mailto:'+tmp}).text(tmp).toggle(tmp.length>0);  };
+    var tmpCr=function($c){   $c.append($('<a>'));  };
+    $.extend(Prop.displayEmail, {
+      strType:'email',inpW:6,
+      setInfo:tmpSet, crInfo:tmpCr,
+      setTabF:tmpSet, crTabF:tmpCr
     }); //,saveInp:mustBeSetF
 
       // link
@@ -319,18 +329,18 @@ CreatorPlugin.transportProt=function(){
   vehSpriteDummy=$.extend({},vehSpriteW); vehSpriteDummy.url=uVehicleTypeDummy;
 
   rewriteLangDriver=function(){
-    langHtml.loginInfo.vendor=langHtml.driver;
-    langHtml.Vendor=ucfirst(langHtml.driver);
-    langHtml.Vendors=ucfirst(langHtml.drivers);
-    langHtml.IndependentVendor=langHtml.IndependentDriver;
+    langHtml.vendorRewritten=langHtml.driver;
+    //langHtml.loginInfo.vendor=langHtml.driver;
+    //langHtml.Vendor=ucfirst(langHtml.driver);
+    //langHtml.Vendors=ucfirst(langHtml.drivers);
+    //langHtml.IndependentVendor=langHtml.IndependentDriver;
     
-    langHtml.vendor=langHtml.driver;   langHtml.vendors=langHtml.drivers;
-    langHtml.theVendor=langHtml.theDriver;  langHtml.theVendors=langHtml.theDrivers;
-    langHtml.theVendors0=langHtml.theDrivers0;
+    //langHtml.vendor=langHtml.driver;   langHtml.vendors=langHtml.drivers;
+    //langHtml.theVendor=langHtml.theDriver;  langHtml.theVendors=langHtml.theDrivers;
+    //langHtml.theVendors0=langHtml.theDrivers0;
   };
 
-  this.rewriteLang=function(){
-  };
+  //this.rewriteLang=function(){};
 
 
   this.rewriteObj=function(){ 
@@ -404,8 +414,7 @@ CreatorPlugin.transportPrice=function(){
       $el.setVis();
     };
     $el.setVis=function(){
-      $el.show();   
-      if(boAndroid && (boChrome || boOpera)) $bodyNHtml.addClass('fillScreen');
+      $el.show();
       return true;
     }
    
@@ -508,7 +517,7 @@ CreatorPlugin.transportPrice=function(){
   })();
 
 
-  this.rewriteLang=function(){  };
+  //this.rewriteLang=function(){  };
 
   this.rewriteObj=function(){ 
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName',StrPropContact, 'coordinatePrecisionM', 'vehicleType');
@@ -608,7 +617,7 @@ CreatorPlugin.transportUrgent=function(){
 
   //enumStandingByMethod=Enum.standingByMethod;
   enumStandingByMethod=Prop.standingByMethod.Enum;
-  this.rewriteLang=function(){};
+  //this.rewriteLang=function(){};
   this.rewriteObj=function(){
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName',StrPropContact, 'standingByMethod', 'coordinatePrecisionM', 'vehicleType');
 
@@ -633,7 +642,7 @@ CreatorPlugin.transportUrgent=function(){
 CreatorPlugin.night=function(){
   StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrPropContact, 'shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
   
-  this.rewriteLang=function(){};
+  //this.rewriteLang=function(){};
   this.rewriteObj=function(){
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'shiftEnd', 'coordinatePrecisionM', 'vehicleType');
 
@@ -790,14 +799,15 @@ CreatorPlugin.cleaner=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/'; 
 
   this.rewriteLang=function(){
-    langHtml.loginInfo.vendor=langHtml.cleaner;
-    langHtml.Vendor=ucfirst(langHtml.cleaner);
-    langHtml.Vendors=ucfirst(langHtml.cleaners);
-    langHtml.IndependentVendor=langHtml.IndependentCleaner;
+    langHtml.vendorRewritten=langHtml.cleaner;
+    //langHtml.loginInfo.vendor=langHtml.cleaner;
+    //langHtml.Vendor=ucfirst(langHtml.cleaner);
+    //langHtml.Vendors=ucfirst(langHtml.cleaners);
+    //langHtml.IndependentVendor=langHtml.IndependentCleaner;
     
-    langHtml.vendor=langHtml.cleaner;   langHtml.vendors=langHtml.cleaners;
-    langHtml.theVendor=langHtml.theCleaner;   langHtml.theVendors=langHtml.theCleaners;
-    langHtml.theVendors0=langHtml.theCleaners0;
+    //langHtml.vendor=langHtml.cleaner;   langHtml.vendors=langHtml.cleaners;
+    //langHtml.theVendor=langHtml.theCleaner;   langHtml.theVendors=langHtml.theCleaners;
+    //langHtml.theVendors0=langHtml.theCleaners0;
   };
   this.rewriteObj=function(){
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'shiftEnd', 'coordinatePrecisionM', 'vehicleType', StrBool);
@@ -852,7 +862,9 @@ CreatorPlugin.windowcleaner=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/'; 
 
   this.rewriteLang=function(){
+    langHtml.vendorRewritten=langHtml.windowcleaner;
   };
+  
   this.rewriteObj=function(){
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', 'vehicleType', StrBool);
     $vendorSettingDiv.StrGroupFirst=['displayName','boLadder'];
@@ -904,7 +916,9 @@ CreatorPlugin.lawnmower=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/'; 
   uDummy=uSpecImageFolder+'dummy.png';
 
-  this.rewriteLang=function(){  };
+  this.rewriteLang=function(){
+    langHtml.vendorRewritten=langHtml.lawnmower;
+  };
 
   this.rewriteObj=function(){
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', StrBool, 'cuttingWidth', 'vehicleType');
@@ -959,18 +973,16 @@ CreatorPlugin.snowremoval=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/'; 
   uDummy=uSpecImageFolder+'dummy.png';
 
-  this.rewriteLang=function(){  };
   this.rewriteLang=function(){
-/*
-    langHtml.loginInfo.vendor=langHtml.snowShoveler;
-    langHtml.Vendor=ucfirst(langHtml.snowShoveler);
-    langHtml.Vendors=ucfirst(langHtml.snowShovelers);
-    langHtml.IndependentVendor=langHtml.IndependentSnowShoveler;
+    langHtml.vendorRewritten=langHtml.snowRemovalWorker;
+    //langHtml.loginInfo.vendor=langHtml.snowShoveler;
+    //langHtml.Vendor=ucfirst(langHtml.snowShoveler);
+    //langHtml.Vendors=ucfirst(langHtml.snowShovelers);
+    //langHtml.IndependentVendor=langHtml.IndependentSnowShoveler;
     
-    langHtml.vendor=langHtml.snowShoveler;   langHtml.vendors=langHtml.snowShovelers;
-    langHtml.theVendor=langHtml.theSnowShoveler;  langHtml.theVendors=langHtml.theSnowShovelers;
-    langHtml.theVendors0=langHtml.theSnowShoveler0;
-*/
+    //langHtml.vendor=langHtml.snowShoveler;   langHtml.vendors=langHtml.snowShovelers;
+    //langHtml.theVendor=langHtml.theSnowShoveler;  langHtml.theVendors=langHtml.theSnowShovelers;
+    //langHtml.theVendors0=langHtml.theSnowShoveler0;
   };
 
   this.rewriteObj=function(){
@@ -1011,7 +1023,7 @@ CreatorPlugin.hourlyPrice=function(){
   var strPlugin='hourlyPrice';
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';  
 
-  this.rewriteLang=function(){  };
+  //this.rewriteLang=function(){  };
   this.rewriteObj=function(){
 
     var tmpSetComparePrice=function(boTryTwoLine){ return function(iMTab){
@@ -1049,14 +1061,15 @@ CreatorPlugin.fruitpicker=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/'; 
 
   this.rewriteLang=function(){
-    langHtml.loginInfo.vendor=langHtml.picker;
-    langHtml.Vendor=ucfirst(langHtml.picker);
-    langHtml.Vendors=ucfirst(langHtml.pickers);
-    langHtml.IndependentVendor=langHtml.IndependentPicker;
+    langHtml.vendorRewritten=langHtml.picker;
+    //langHtml.loginInfo.vendor=langHtml.picker;
+    //langHtml.Vendor=ucfirst(langHtml.picker);
+    //langHtml.Vendors=ucfirst(langHtml.pickers);
+    //langHtml.IndependentVendor=langHtml.IndependentPicker;
     
-    langHtml.vendor=langHtml.picker;     langHtml.vendors=langHtml.pickers;
-    langHtml.theVendor=langHtml.thePicker;   langHtml.theVendors=langHtml.thePickers;
-    langHtml.theVendors0=langHtml.thePickers0;
+    //langHtml.vendor=langHtml.picker;     langHtml.vendors=langHtml.pickers;
+    //langHtml.theVendor=langHtml.thePicker;   langHtml.theVendors=langHtml.thePickers;
+    //langHtml.theVendors0=langHtml.thePickers0;
   }
   this.rewriteObj=function(){
 
@@ -1086,14 +1099,15 @@ CreatorPlugin.programmer=function(){
   //uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    langHtml.loginInfo.vendor=langHtml.programmer;
-    langHtml.Vendor=ucfirst(langHtml.programmer);
-    langHtml.Vendors=ucfirst(langHtml.programmers);
-    langHtml.IndependentVendor=langHtml.IndependentProgrammer;
+    langHtml.vendorRewritten=langHtml.programmer;
+    //langHtml.loginInfo.vendor=langHtml.programmer;
+    //langHtml.Vendor=ucfirst(langHtml.programmer);
+    //langHtml.Vendors=ucfirst(langHtml.programmers);
+    //langHtml.IndependentVendor=langHtml.IndependentProgrammer;
     
-    langHtml.vendor=langHtml.programmer;    langHtml.vendors=langHtml.programmers;
-    langHtml.theVendor=langHtml.theProgrammer; langHtml.theVendors=langHtml.theProgrammers;
-    langHtml.theVendors0=langHtml.theProgrammers0;
+    //langHtml.vendor=langHtml.programmer;    langHtml.vendors=langHtml.programmers;
+    //langHtml.theVendor=langHtml.theProgrammer; langHtml.theVendors=langHtml.theProgrammers;
+    //langHtml.theVendors0=langHtml.theProgrammers0;
   }
   this.rewriteObj=function(){
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', StrSpec);
@@ -1367,7 +1381,7 @@ var adminDivExtend=function($el){
   var $buttMonitorClear=$('<button>').html('Clear Monitor').css({display:'block','margin-top':'1em'}).click(function(){    var vec=[['adminMonitorClear',1]];   majax(oAJAX,vec);  });
   
     //set payLev  
-  var saveFunc=function(){    
+  $el.saveFunc=function(){    
     var data={payLev:Number($inpPayLev.val()),boTerminationCheck:Number($inpBoTerm[0].checked),boShowTeam:Number($inpBoShowTeam[0].checked)}; $el.setUp(data);
     //var vec=[['setSetting',data],['adminMakeOfferFiles',{payLev:data.payLev}]];   majax(oAJAX,vec);
     var vec=[['setSetting',data]];   majax(oAJAX,vec);
@@ -1379,21 +1393,30 @@ var adminDivExtend=function($el){
   var $pBoTerm=$('<p>').css({'margin-top':'1em'}).append('boTerminationCheck:',$inpBoTerm);
   var $pBoShowTeam=$('<p>').css({'margin-top':'1em'}).append('boShowTeam:',$inpBoShowTeam);
 
-
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $buttonSave=$('<button>').click(saveFunc).append(langHtml.Save).addClass('flexWidth').css({'float':'left',margin:'0 0.2em 0 0'});
-  var $span=$('<span>').append('Admin settings').css({'vertical-align':'-0.4em'}); // 'float':'right',margin:'0.2em 0 0 0'
-  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'}); //$buttonBack,
-
-  $el.append($topDiv,$pPayLev,$pBoTerm,$pBoShowTeam);
- 
+  $el.append($pPayLev,$pBoTerm,$pBoShowTeam);
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var adminFootExtend=function($el){
+"use strict"
+  var $buttonSave=$('<button>').click($adminDiv.saveFunc).append(langHtml.Save).addClass('flexWidth').css({'float':'left', 'margin-right':'.2em'});
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Admin settings').addClass('footDivLabel');
+  $el.append($buttonBack,$buttonSave, $span).addClass('footDiv'); 
   return $el;
 }
 
 
 var marketerDivExtend=function($el){
-  
   $el.removeClass().css({width:'100%'});
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var marketerFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Marketer settings').addClass('footDivLabel');
+  $el.append($buttonBack, $span).addClass('footDiv'); 
   return $el;
 }
 
@@ -1616,13 +1639,15 @@ var payDivExtend=function($el){
   var $deleteButt=$deleteDiv.children('button').click(function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
 
 
-   
-  var $span=$('<span>').append(langHtml.Deadline); //.css({'float':'right',margin:'0.2em 0 0 0'});
 
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em'});
-  var $topDiv=$('<div>').append($span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'}); // $buttonBack,
-  $el.prepend($topDiv);
-
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var payFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.Deadline).addClass('footDivLabel');
+  $el.append($buttonBack, $span).addClass('footDiv'); 
   return $el;
 }
 
@@ -1656,7 +1681,7 @@ var deleteAccountPopExtend=function($el){
   $centerDiv.addClass("Center").css({'width':'20em', height:'7em', padding:'1.1em'})
   if(boIE) $centerDiv.css({'width':'20em'}); 
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
-
+  $el.css({'text-align':'left'});
   return $el;
 }
 
@@ -1787,7 +1812,7 @@ inpAsNum=function($inp){return [null, Number($inp.prop('checked'))]; }
 var vendorSettingDivExtend=function($el){
 "use strict"
   $el.toString=function(){return 'vendorSettingDiv';}
-  var save=function(){ 
+  $el.save=function(){ 
     resetMess();  
     var o={},boErr=0;
     $inps.each(function(i){
@@ -1817,7 +1842,7 @@ var vendorSettingDivExtend=function($el){
       $inps.push($inp);
     }
     $divCont.append($divs);
-    $divCont.find('input[type=text],[type=number],[type=tel],[type=url]').keypress( function(e){ if(e.which==13) {save();return false;}} );
+    $divCont.find('input[type=text],[type=number],[type=tel],[type=email],[type=url]').keypress( function(e){ if(e.which==13) {save();return false;}} );
     var $tmp=$divCont.find('input[type=number]').prop({min:0});
     $divCont.find('input,select').css({'float':'right',clear:'both'});
 
@@ -1853,12 +1878,15 @@ var vendorSettingDivExtend=function($el){
   var $divCont=$('<div>'), $divs=$([]);
   $el.append($divCont);
 
-  var $span=$('<span>').append(langHtml.DriverSettings).css({'vertical-align':'-0.4em'}); // 'float':'right',margin:'0.2em 0 0 0'
- 
-  var $buttonSave=$("<button>").text(langHtml.Save).click(save).addClass('flexWidth').css({'float':'left',margin:'0 0.2em 0 0'});
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden','text-align':'center'});  //$buttonBack,
-  $el.prepend($topDiv);
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var vendorSettingFootExtend=function($el){
+"use strict"
+  var $buttonSave=$('<button>').click($vendorSettingDiv.save).append(langHtml.Save).addClass('flexWidth').css({'float':'left', 'margin-right':'.2em'});
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.DriverSettings).addClass('footDivLabel');
+  $el.append($buttonBack, $buttonSave, $span).addClass('footDiv'); 
   return $el;
 }
 
@@ -1888,7 +1916,7 @@ spanIdTeamWantedExtend=function(el){
 var priceSettingDivExtend=function($el){
 "use strict"
   $el.toString=function(){return 'priceSettingDiv';}
-  var save=function(){ 
+  $el.save=function(){ 
     resetMess();  
     var o={},boErr=0;
     $inps.each(function(i){
@@ -1941,13 +1969,15 @@ var priceSettingDivExtend=function($el){
   var $divCont=$('<div>'), $divs=$([]);
   $el.append($divCont);
   
-  
-  var $span=$('<span>').append(langHtml.Prices).css({'vertical-align':'-0.4em'}); // 'float':'right',margin:'0.2em 0 0 0'
-  
-  var $buttonSave=$("<button>").text(langHtml.Save).click(save).addClass('flexWidth').css({'float':'left',margin:'0 0.2em 0 0'});
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $topDiv=$('<div>').append($buttonSave,$span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'});  //$buttonBack,
-  $el.prepend($topDiv);
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var priceSettingFootExtend=function($el){
+"use strict"
+  var $buttonSave=$('<button>').click($priceSettingDiv.save).append(langHtml.Save).addClass('flexWidth').css({'float':'left', 'margin-right':'.2em'});
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.Prices).addClass('footDivLabel');
+  $el.append($buttonBack, $buttonSave, $span).addClass('footDiv'); 
   return $el;
 }
 
@@ -2019,12 +2049,14 @@ var quickDivExtend=function($el){
   
   var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverM($imgH,$('<div>').append(langHtml.quickHelp));
 
-  var $spanDragMess=$('<span>').append(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',bottom:'-1.15em',left:'0em','white-space':'nowrap'}).hide();
+  //var $spanDragMess=$('<span>').append(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'0em','white-space':'nowrap'}).hide();
+  var $spanDragMess=$('<span>').append(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();
+  
 
-  $el.append($el.$selHideTimer,$divButts,$imgH,$spanDragMess);
+  $el.append($el.$selHideTimer,$divButts,$imgH); //,$spanDragMess
   //$el.append($divButts,$spanDragMess);
   $el.css({position:'relative'});
-
+  $el.css({'text-align':'left', position:'relative'});
   return $el;
 }
 
@@ -2056,10 +2088,9 @@ var input2object=function($el){
  * vendorIntroDiv
  */
 
-
+/*
 var vendorIntroDivExtend=function($el){
 "use strict"
-  
   var save=function(){ 
     resetMess();  
     //$el.find(':text').each(function(){var tmp=$(this).val().trim(); $(this).val(tmp); });
@@ -2068,7 +2099,7 @@ var vendorIntroDivExtend=function($el){
     var strTel=$inpTel.val().trim(); $inpTel.val(strTel); if(strTel.length==0) {setMess('telephone number can not be empty'); return; }
     var o1={tel:strTel, displayName:userInfoFrIP.nameIP, boInsert:1};
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD'; o1.currency=curT;
-    var vec=[['VUpdate',o1,function(data){$el.closePop();}], ['setupById','']];   majax(oAJAX,vec);
+    var vec=[['VUpdate',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
     var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
     $body.append($iframeConversion);
@@ -2094,8 +2125,79 @@ var vendorIntroDivExtend=function($el){
 
   return $el;
 }
+*/
 
+var vendorIntroDivExtend=function($el){
+"use strict"
+  var save=function(){ 
+    resetMess();  
+    var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('telephone number can not be empty'); return; }
+    var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
+    var o1={email:strEmail, displayName:userInfoFrIP.nameIP, currency:curT};
+    var vec=[['VIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
+    var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
+    $body.append($iframeConversion);
+
+    setMess('',null,true);  
+  }
+  $el.setUp=function(){  var  $tmp=$inpEmail.val(userInfoFrIP.email); $inpEmail.focus();  return true;  }
+  $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
+ 
+  $el=popUpExtend($el);  
+  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em'}); 
+
+  
+  var $helpPopup=$('<div>').html(langHtml.driverTextPopup.contactEmail);
+  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverM($imgH,$helpPopup);
+         
+  var $head=$('<h3>').append(langHtml.introHead);
+  var $pBread=$('<p>').append(langHtml.introBread);
+
+  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Contact email'}).css({width:'100%', 'box-sizing':'border-box'}).keypress( function(e){if(e.which==13) {save();return false;}} );
+  //var $divEmail=$('<div>').append($inpEmail,$imgH);
+  
+  var $saveButton=$('<button>').append(langHtml.Continue).click(save).css({display:'block', 'margin':'1em auto'});
+  $el.append($head,$pBread,$inpEmail,$saveButton).css({padding:'0.1em'}); 
+
+  return $el;
+}
+
+var reporterIntroDivExtend=function($el){
+"use strict"
+  var save=function(){ 
+    resetMess();  
+    var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('telephone number can not be empty'); return; }
+    var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
+    var o1={email:strEmail, displayName:userInfoFrIP.nameIP, currency:curT};
+    var vec=[['VIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
+
+    var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
+    $body.append($iframeConversion);
+
+    setMess('',null,true);  
+  }
+  $el.setUp=function(){  var  $tmp=$inpEmail.val(userInfoFrIP.email); $inpEmail.focus();  return true;  }
+  $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
+ 
+  $el=popUpExtend($el);  
+  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em'}); 
+
+  
+  var $helpPopup=$('<div>').html(langHtml.driverTextPopup.contactEmail);
+  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverM($imgH,$helpPopup);
+         
+  var $head=$('<h3>').append(langHtml.introHead);
+  var $pBread=$('<p>').append(langHtml.introBread);
+
+  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Contact email'}).css({width:'100%', 'box-sizing':'border-box'}).keypress( function(e){if(e.which==13) {save();return false;}} );
+  //var $divEmail=$('<div>').append($inpEmail,$imgH);
+  
+  var $saveButton=$('<button>').append(langHtml.Continue).click(save).css({display:'block', 'margin':'1em auto'});
+  $el.append($head,$pBread,$inpEmail,$saveButton).css({padding:'0.1em'}); 
+
+  return $el;
+}
 
 
 /*
@@ -2104,9 +2206,8 @@ var vendorIntroDivExtend=function($el){
 
 var vendorDivExtend=function($el){    
 "use strict"
-  //var $butts=$([]).push($vendorSettingButton, $priceSettingButton, $payButton).css({margin:'1em 0.1em'});
-  var $butts=$([]).push($vendorSettingButton, $priceSettingButton, $payButton).css({margin:'1em 0.1em'});
-  var $h=$('<p>').append(langHtml.VendorSettings).css({'font-weight':'bold'});
+  var $butts=$([]).push($userSettingButton, $vendorSettingButton, $priceSettingButton, $payButton).css({margin:'1em 0.1em'});
+  var $h=$('<p>').append(langHtml.UserSettings).css({'font-weight':'bold'});
   $el.append($h,$butts);
   return $el;
 }
@@ -2169,15 +2270,87 @@ var paymentListDivExtend=function($el){
   var $infoSpan=$('<span>').css({'white-space':'nowrap'});
   var $infoDiv=$('<div>').append($butPrev,$butNext,$infoSpan).css({'text-align':'left'});  //display:'inline-block'});
 
-  var $span=$('<span>').append(langHtml.PaymentList).css({'float':'right',margin:'0.2em 0 0 0'});
-
-  var $topDiv=$('<div>').append($span).css({padding:'0 0.3em 0 0','margin-top':'1em',overflow:'hidden'});  //$buttonBack,
-  $el.append($topDiv,$table,$infoDiv);
+  $el.append($table,$infoDiv);
 
   var offset=0,rowCount=20;
-
+  
+  $el.css({'text-align':'left'});
   return $el;
 }
+var paymentListFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.PaymentList).addClass('footDivLabel');
+  $el.append($buttonBack, $span).addClass('footDiv'); 
+  return $el;
+}
+
+
+
+
+
+/*
+ * userSettingDiv
+ */
+
+
+var userSettingDivExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'userSettingDiv';}
+
+  $el.setUp=function(){
+    var tmp=userInfoFrDB.user;
+    $spanIdUser.html(tmp.idUser);  $spanIP.html(Prop.IP.Enum[tmp.IP]);  $spanIdIP.html(tmp.idIP);
+    $imgImage.prop({src:tmp.image});
+    $spanNameIP.html(tmp.nameIP);  $inpEmail.val(tmp.email);
+        
+    return true; 
+  }
+  var saveEmail=function(){
+    var vec=[['UUpdate',{email:$inpEmail.val()}], ['setupById']];   majax(oAJAX,vec); 
+  }
+  
+  //var uImagePrim=window['u'+ucfirst(strIPPrim)];
+  var uImagePrim=window['u'+ucfirst(strIPPrim)+'22'];
+  var $buttRefresh=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
+    e.stopPropagation();
+    var flow=(function*(){
+      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var oT={IP:strIPPrim, fun:'refreshFun', caller:'index', code:code};
+      var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      $el.setUp();
+    })(); flow.next();
+    return false;
+  });
+  
+  
+  var $spanIdUser=$('<span>'), $spanIP=$('<span>').css({margin:'0 0.2em 0 0'}), $spanIdIP=$('<span>').css({margin:'0 0.2em 0 0'});
+  var $imgImage=$('<img>').css({'vertical-align':'middle'});
+  var $spanNameIP=$('<span>');
+  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {saveEmail();return false;}} );
+  var $butEmail=$('<button>').append('Save email').click(saveEmail);
+  
+  var $divIdUser=$('<div>').append('idUser (db): ', $spanIdUser);
+  var $divIdIP=$('<div>').append('IdP: ', $spanIP, $spanIdIP);
+  var $divImage=$('<div>').append('Image: ', $imgImage);
+  var $divNameIP=$('<div>').append('Name: ', $spanNameIP);
+  var $divEmail=$('<div>').append('Contact email: ', $inpEmail, $butEmail);
+  var $divRefresh=$('<div>').append('Refresh from Id-provider: ', $buttRefresh);
+  
+  var $divs=$([]).push($divRefresh, $divIdIP, $divImage, $divNameIP, $divEmail), $divCont=$('<div>').append($divs);
+  $el.append($divCont);
+  
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var userSettingFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('User info').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
+  return $el;
+}
+
 
 
 /*******************************************************************************************************************
@@ -2211,25 +2384,16 @@ var toggleSpecialistButts=function(){
 
 
 
-window.loginReturn=function(strQS, strHash){
-  var params=parseQS(strQS.substring(1));
-  if(!('state' in params) || params.state !== OAuth.nonce) {    alert('Invalid state parameter.'); return;  } 
-  OAuth.cb(params);
+
+var createUPop=function(IP, uRedir, nonce){
+  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+nonce, "response_type=code"];
+  if(IP=='fb')   arrQ.push("scope=email", "display=popup"); //
+  else if(IP=='google')    arrQ.push("scope=profile,email");
+  else if(IP=='idplace')    arrQ.push("scope=name,image,email");
+  //arrQ.push("auth_type=reauthenticate");
+  return UrlOAuth[IP]+'?'+arrQ.join('&');
 }
-var OAuthT=function(){
-  this.urlOAuth={fb:"https://www.facebook.com/v2.5/dialog/oauth", google: "https://accounts.google.com/o/oauth2/v2/auth"};
-  this.createUrlNSetStatVar=function(IP, uRedir, fun, caller, cb){
-    $.extend(this, {IP:IP, fun:fun, caller:"index", cb:cb});
-    this.nonce=randomHash(); //CSRF protection
-    var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
-    if(IP=='fb')   arrQ.push("display=popup"); //
-    else if(IP=='google')    arrQ.push("scope=profile");
-    else if(IP=='idplace')    arrQ.push("scope=name,image");
-    //arrQ.push("auth_type=reauthenticate");
-    return this.urlOAuth[IP]+'?'+arrQ.join('&');
-  }
-}
-window.OAuth=new OAuthT();
+
 
 
 
@@ -2398,11 +2562,11 @@ var convertIDDivExtend=function($el){
     if(!boE){
       //var o1={tel:'000', displayName:'bla',boInsert:1, currency:'USD'};
       var o1={boInsert:1};
-      var vec=[['VUpdate',o1], ['setupById','']];   majax(oAJAX,vec);
+      var vec=[['VUpdate',o1], ['setupById']];   majax(oAJAX,vec);
     }
   }
   var loginReturnAlt=function(){
-    var vec=[['setupById','']];   majax(oAJAX,vec);
+    var vec=[['setupById']];   majax(oAJAX,vec);
   }
   var $pendingMess=$('<span>').hide().append(langHtml.pendingMessLogin,' ',$imgBusy.clone()).css({"margin-left":"0.3em"});
   var $cancelMess=$('<span>').hide().append(langHtml.cancelMessLogin);
@@ -2429,7 +2593,14 @@ var convertIDDivExtend=function($el){
   $el.append($rows);  
 
 
-  
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var convertIDFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Convert ID').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -2469,7 +2640,7 @@ var reportCommentPopExtend=function($el){
   $el.closeFunc=function(){    doHistBack();    }
   var sendFunc=function() { 
     var o1={idVendor:idVendor,comment:$comment.val().trim()};
-    var vec=[['reportUpdateComment',o1], $reportVDiv.getLoadObj(), ['setupById',{Role:'reporter'}]];   majax(oAJAX,vec);
+    var vec=[['reportUpdateComment',o1], $reportVDiv.getLoadObj(), ['setupById']];   majax(oAJAX,vec);
     doHistBack();
   }  
   var reportCommentOneGet=function(data){    
@@ -2564,34 +2735,33 @@ var reportAnswerPopExtend=function($el){
   return $el;
 }
 
+getOAuthCode=function*(flow){
+  var strQS, nonce=randomHash(), uPop=createUPop(strIPPrim, strSchemeLong+site.wwwLoginRet, nonce);
+  window.loginReturn=function(strQST){ strQS=strQST; flow.next();}
+  if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
+  window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
+  yield;
+  
+  var params=parseQS(strQS.substring(1));
+  if(!('state' in params) || params.state !== nonce) {   return {err:'Invalid state parameter: '+params.state}; } 
+  if('error' in params) { return {err:params.error}; }
+  if(!('code' in params)) { return {err: 'No "code" parameter in response from IdP'}; }
+  return {err:null, code:params.code};
+}
+
+    //if(Object.keys(userInfoFrIP).length || typeof userInfoFrDB.user=='object'){
 var reportCommentButtExtend=function($el){    // Opens $reportCommentPop, placed in $reportVDiv
 "use strict"
   $el.click(function(e){
     e.stopPropagation();
-    var idVendor=$reportVDiv.idVendor;
-    var boGotUserInfoFrIP
-    if(Object.keys(userInfoFrIP).length || typeof userInfoFrDB.user=='object'){
-      doHistPush({$view:$reportCommentPop});  $reportCommentPop.openFunc(idVendor);
-    }else{
-      var strType='reporter';
-      var cbGetGraph=function(){
-        doHistPush({$view:$reportCommentPop});   $reportCommentPop.openFunc(idVendor);
+    var flow=(function*(){
+      if(Object.keys(userInfoFrIP).length==0 && typeof userInfoFrDB.user!='object'){
+        var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+        var oT={IP:strIPPrim, fun:'reporterFun', caller:'index', code:code};
+        var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       }
-      var loginReturn=function(params){
-        if('error' in params) { setMess(params.error); }
-        else{
-          if('code' in params) { 
-            var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller}; oT.code=params.code;
-            var vec=[ ['loginGetGraph', oT], ['setupById', null, cbGetGraph]];   majax(oAJAX,vec);
-          } else setMess('no code parameter in response from IdP');
-        }
-      }
-      var uPop=OAuth.createUrlNSetStatVar('fb', strSchemeLong+site.wwwLoginRet, strType+'Fun', "index", loginReturn);
-      if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
-      window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
-      
-      //$loginDiv.openFunc('reporter');
-    }
+      doHistPush({$view:$reportCommentPop});   $reportCommentPop.openFunc($reportVDiv.idVendor); 
+    })(); flow.next();
   });
   return $el;
 }
@@ -2681,7 +2851,7 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
   var tab=[], rowVendor, $imgVendor=$('<img>').css({'vertical-align':'middle'}), $nameSpan=$('<span>');
   var $vendorInfo=$('<div>').append(langHtml.Vendor,': ',$imgVendor,' ',$nameSpan).css({'margin':'0.5em',display:'inline-block'}); //,'float':'right'
   //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
-  var $reportCommentButt=reportCommentButtExtend($('<button>')).html(langHtml.vote.writeComment+' ('+langHtml.FacebookNeeded+')').css({'margin-right':'1em'});
+  var $reportCommentButt=reportCommentButtExtend($('<button>')).html(langHtml.vote.writeComment+' ('+langHtml.IdProviderNeeded+')').css({'margin-right':'1em'});
   var $bub=$('<div>').html(langHtml.writeReportPopup);
   var $imgH=$imgHelp.clone();  popupHoverM($imgH,$bub); 
 
@@ -2694,7 +2864,14 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
   $el.append($el.$topDiv,$vendorInfo,$table,$butPrev,$butNext,$infoSpan);
 
   var offset=0,rowCount=20;
-
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var reportVFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Vendor reports').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -2766,7 +2943,14 @@ var reportRDivExtend=function($el){  // Reports from a certain Reporter
   $el.append($topDiv,$reporterInfo,$table,$butPrev,$butNext,$infoSpan);
 
   var offset=0,rowCount=20;
-
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var reportRFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Reports from reporter').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -2918,6 +3102,14 @@ var vendorInfoDivExtend=function($el){
   //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});   
   $el.$menuDiv=$('<div>').css({'margin-top':'1em','padding':'0'}); // .append($buttonBack)
   $el.append($el.$menuDiv,$el.$divCont,'<br>');
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var vendorInfoFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Vendor info').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv');
   return $el;
 }
 
@@ -2967,11 +3159,9 @@ var loginInfoExtend=function($el){
       $spanKind.html(strTmp);
       //$el.css({visibility:''});
       $el.show();
-      //if(boTouch) {$mainMenuDiv.add($vendorInfoDiv.$menuDiv).css({'margin-top':'0.2em'}); }
     }else {
       //$el.css({visibility:'hidden'});
-      $el.hide(); 
-      //if(boTouch) {$mainMenuDiv.add($vendorInfoDiv.$menuDiv).css({'margin-top':'1em'}); }
+      $el.hide();
     } 
   }
   var $spanName=$('<span>'), $spanKind=$('<span>'); 
@@ -2989,7 +3179,7 @@ var loginInfoExtend=function($el){
   
   //$el.append($spanName,' ',$spanKind,' ',$logoutButt,'<br clear=all>');
   $el.append($spanName,' ',$spanKind,' ',$logoutButt);
-  //$el.css({visibility:'hidden'});
+  $el.css({'text-align':'left'});
   $el.hide();
   return $el;
 }
@@ -3032,26 +3222,28 @@ var FilterDiv=function(Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst, Str
   var $el=$('<div>'); $.extend($el,FilterDivProt);
   $el.Prop=Prop; $el.Label=Label; $el.StrOrderFilt=StrOrderFilt; $el.changeFunc=changeFunc; $el.StrGroupFirst=StrGroupFirst; $el.StrGroup=StrGroup;
 
-  //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
- 
-  $el.$filterInfoWrap=$('<span>');
-  var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')');// .css({'vertical-align':'-0.4em'});  //,'clear':'both'
-  
-  var $buttClear=$('<a>').prop({href:''}).append(langHtml.All).click(function(){$el.Filt.filtClear(); loadTabStart(); return false;}).css({'float':'right', 'margin-left':'0.5em', 'font-size':'80%'});  //,'clear':'both'
-  //var $buttClear=$('<a>').prop({href:''}).text(langHtml.All).css({'font-size':'80%'}).click(function(){allOnButtClick();return false;});
-  
-  var $topDivA=$('<div>').append($buttClear, $filterInfoWrap2).css({padding:'0','margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
-  $el.prepend($topDivA);
-
   $el.addClass('unselectable');    $el.prop({unselectable:"on"}); //class: needed by firefox, prop: needed by opera, firefox and ie
 
   $el.$divCont=$el;
+  $el.css({'text-align':'left'});
   return $el;
 }
-
-
-
+var filterFootExtend=function($el){
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+ 
+  $el.$filterInfoWrap=$('<span>');
+  var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
+  //var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').css({'vertical-align':'-0.4em', display:'inline-block'});
+  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').addClass('footDivLabel');
+  
+  var $buttClear=$('<a>').prop({href:''}).append(langHtml.All).click(function(){$filterDiv.Filt.filtClear(); loadTabStart(); return false;}).css({'float':'right', 'margin-left':'0.5em', 'font-size':'80%'});
+  
+  //var $buttClear=$('<a>').prop({href:''}).text(langHtml.All).css({'font-size':'80%'}).click(function(){allOnButtClick();return false;});
+  
+  $el.append($buttonBack, $buttClear, $filterInfoWrap2).addClass('footDiv');  // , 'text-align':'center' ,overflow:'hidden'
+  
+  return $el;
+}
 
 
 var filterInfoSpanExtend=function($el){
@@ -3948,18 +4140,17 @@ var markSelectorDivExtend=function($el){
   
   $el.strImageSel=":radio:not([value='image'],[value='idTeam'])";
 
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-
-  //var $td=$('<td>').append(langHtml.MapMarker,':');
-
   var $table=$('<table>').css({'margin':'0.3em 0em 0.8em',border:'1px'});
-
-  var $span=$('<span>').append(langHtml.ChangeMapMarker);//.css({'float':'right',margin:'0.2em 0 0 0'});
-   
-  var $topDivA=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
-  $el.append($topDivA,$table);
+  $el.append($table);
 
   $el.css({'text-align':'left'});
+  return $el;
+}
+var markSelectorFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.ChangeMapMarker).addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -3969,13 +4160,13 @@ var columnSelectorDivExtend=function($el){
 "use strict"
   $el.toString=function(){return 'columnSelectorDiv';}
   $el.setUp=function() {  $checkBoxes.each(function(i,el){ var strName=$(el).val(), boOn=ColsShow.indexOf(strName)!=-1;  $(el).prop({checked:boOn}); });  }
-  var defaultFunc=function() { 
+  $el.defaultFunc=function() { 
     myCopy(ColsShowLoc,ColsShowDefault); saveCB(); $el.setUp(); 
   }  
   var StrColsByTypeTmp=[];
-  var allFunc=function() {  myCopy(StrColsByTypeTmp,StrPropMain); if(!boShowTeam) arrValRemove(StrColsByTypeTmp,'idTeam'); myCopy(ColsShowLoc,StrColsByTypeTmp); saveCB(); $el.setUp(); }
-  //var allFunc=function() {  myCopy(ColsShowLoc,StrPropMain); saveCB(); $el.setUp(); }
-  var noneFunc=function() {  ColsShowLoc.length=0; saveCB(); $el.setUp();  } 
+  $el.allFunc=function() {  myCopy(StrColsByTypeTmp,StrPropMain); if(!boShowTeam) arrValRemove(StrColsByTypeTmp,'idTeam'); myCopy(ColsShowLoc,StrColsByTypeTmp); saveCB(); $el.setUp(); }
+  //$el.allFunc=function() {  myCopy(ColsShowLoc,StrPropMain); saveCB(); $el.setUp(); }
+  $el.noneFunc=function() {  ColsShowLoc.length=0; saveCB(); $el.setUp();  } 
    
   $el.getCurrentInd=function(ColsShowOut){  // Capture the checked checkboxes to ColsShowOut in a way that keeps the order of ColsShow
     myCopy(ColsShowOut,ColsShow);
@@ -3993,7 +4184,7 @@ var columnSelectorDivExtend=function($el){
     }
   }
   $el.createTable=function(){
-    var $ha=$('<th>').append(langHtml.Column),$hb=$('<th>'), $rh=$('<tr>').append($ha,$hb); $table.append($rh);  //.append(langHtml.Visible)
+    var $ha=$('<th>').append(langHtml.Column),$hb=$('<th>').append(langHtml.Show), $rh=$('<tr>').append($ha,$hb); $table.append($rh);  //.append(langHtml.Visible)
     for(var i=0;i<StrPropMain.length;i++){ 
       var strName=StrPropMain[i]; 
       var $cb=$('<input>').prop({"type":"checkbox"}).val(strName);
@@ -4027,33 +4218,34 @@ var columnSelectorDivExtend=function($el){
   var ColsShowLoc=[];
   var $checkBoxes;
 
-  var $buttDefault=$('<button>').click(defaultFunc).append(langHtml.Default);
-  var $buttAll=$('<button>').click(allFunc).append(langHtml.All);
-  var $buttNone=$('<button>').click(noneFunc).append(langHtml.None);
-  var $buttSort=$('<button>').append(langHtml.Sort).click(function(){ 
-    $columnSorterDiv.setUp();
-    $columnSorterDiv.setVis();
-    doHistPush({$view:$columnSorterDiv});
-  });
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
+  var $table=$('<table>').css({'margin':'0.3em auto 0.8em',border:'1px'});
 
-
-  var $table=$('<table>').css({'margin':'0.3em 0em 0.8em',border:'1px'});
-  $table.append();
-
-  var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).css({'vertical-align':'-0.4em'});
-   
-  var $topDivA=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
-  var $spanRightB=$('<span>').append($buttAll,$buttDefault, $buttNone).css({'float':'right',margin:'0 0 0 0'});
-  var $topDivB=$('<div>').append($buttSort,$spanRightB).css({'margin-top':'1em',overflow:'hidden'});
-  $el.append($topDivA,$topDivB,$table);
+  $el.append($table);
 
   $el.css({'text-align':'left'});
   return $el;
 }
 
+var columnSelectorFootExtend=function($el){
+"use strict"
+  var $buttDefault=$('<button>').click($columnSelectorDiv.defaultFunc).append(langHtml.Default);
+  var $buttAll=$('<button>').click($columnSelectorDiv.allFunc).append(langHtml.All);
+  var $buttNone=$('<button>').click($columnSelectorDiv.noneFunc).append(langHtml.None);
+  var $buttSort=$('<button>').append('Column<br>order').click(function(){ 
+    $columnSorterDiv.setUp();
+    $columnSorterDiv.setVis();
+    doHistPush({$view:$columnSorterDiv});
+  }).addClass('flexWidth').css({'float':'left','margin-right':'0.4em', 'font-size':'0.72rem'});
+  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left','margin-left':'0.8em','margin-right':'1em'});
 
+  var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
+  //var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).css({'vertical-align':'-0.4em', 'text-align':'center', display:'inline-block'});
+  var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).addClass('footDivLabel');
+  var $ButPre=$([]).push($buttAll,$buttDefault, $buttNone).css({'font-size':'80%','float':'right'});
+  //var $spanRightB=$('<span>').append().css({'float':'right',margin:'0 0 0 0'});
+  $el.append($buttonBack, $buttSort, $span, $buttNone, $buttDefault, $buttAll).addClass('footDiv'); //,overflow:'hidden'
+  return $el;
+}
 
 var dragSorterExtend=function($el){
 "use strict"
@@ -4065,6 +4257,7 @@ var dragSorterExtend=function($el){
     //else{   $(document).on('mousemove',myMousemove).on('mouseup',$el.myMouseup);    }
     $(document).on(strMoveEv,myMousemove).on(strEndEv,$el.myMouseup);  
     //setMess('Down');
+    e.preventDefault(); // to prevent mobile crome from reloading page
   } 
   $el.myMouseup= function(e){ 
     $movedRow.css({position:'relative',opacity:1,'z-index':'auto',top:'0px'});
@@ -4152,7 +4345,7 @@ var columnSorterDivExtend=function($el){
   $el.boLoaded=0;
   var $head=$('<h3>').append(langHtml.SortColumns);
 
-  var $dragSorter=dragSorterExtend($('<div>')).css({margin:'1em',display:'inline-block'});  
+  var $dragSorter=dragSorterExtend($('<div>')).css({margin:'1em auto',display:'inline-block', 'text-align':'left'});  
 
   var tmpf=$dragSorter.myMouseup;
   $dragSorter.myMouseup=function(){
@@ -4165,21 +4358,20 @@ var columnSorterDivExtend=function($el){
   }
 
   var arrLabel=[];  
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-
-  var $span=$('<span>').append(langHtml.SortColumns).css({'vertical-align':'-0.4em'});
- 
-  var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden', 'text-align':'center'});  //$buttonBack,
-  $el.append($topDiv,$dragSorter);
-   
-  $el.css({'text-align':'left'});
+  $el.append($dragSorter);
+  $el.css({'text-align':'center'});
   //$el.$dragSorter=$dragSorter;
 
   return $el;
 }
 
-
-
+var columnSorterFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.SortColumns).addClass('footDivLabel');
+  $el.append($buttonBack, $span).addClass('footDiv');  // ,overflow:'hidden' , 'text-align':'center'
+  return $el;
+}
 
 /*
  * tHeadLabel
@@ -4416,7 +4608,7 @@ var tableDivExtend=function($el){
       }
       $tBody.append($row);
     }
-    var tmp='td:not([name=tel],[name=nReport])'; //,[name=link]
+    var tmp='td:not([name=tel],[name=displayEmail],[name=nReport])'; //,[name=link]
     $tBody.on('click',tmp,function(){
       var iMTab=$(this).parent().data('iMTab');
       $vendorInfoDiv.setContainers(iMTab);
@@ -4456,26 +4648,27 @@ var tableDivExtend=function($el){
 }
 
 
-var tableHeadExtend=function($el){
+var tableFootExtend=function($el){
 "use strict"
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'}); //'font-size':'1em'
+  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left','margin-left':'0.8em','margin-right':'1em'}); //'font-size':'1em'
 
-  //var $settingButtonClone=$settingButton.clone(); $settingButtonClone.on('click',function(){settingButtonClick();});
+  var tmpf=function(){ 
+    $columnSelectorDiv.setUp();
+    $columnSelectorDiv.setVis();
+    doHistPush({$view:$columnSelectorDiv});
+  };
+  var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
+  $el.$buttShowSelect=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-right':'1em'}).click(tmpf).prop('title',langHtml.AddRemoveColumns);
 
   //$el.$filterButton=$('<button>').append(langHtml.Filtered,': ').click(function(){  filterButtonClick();  }).css({'float':'right','clear':'both'});
   var $tmpImg=$('<img>').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
   //var $span=$('<span>').append($tmpImg,langHtml.ComparisonTable).css({'float':'right',margin:'0.4em 0 0 0'});
   //$el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
-  //var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton, $span).css({'margin-top':'1em',overflow:'hidden','text-align':'left'}); $el.$topDivA=$topDivA;   // $buttonBack,
  
-  var $span=$('<span>').append($tmpImg,langHtml.ComparisonTable).css({'vertical-align':'-0.4em'});
+  //var $span=$('<span>').append($tmpImg, langHtml.ComparisonTable).css({'vertical-align':'-0.4em', 'text-align':'center', display:'inline-block'});
+  var $span=$('<span>').append($tmpImg, langHtml.ComparisonTable).addClass('footDivLabel');
   $el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
-  var $topDivA=$('<div>').append($buttShowSelect, $el.$filterButton, $span).css({'margin-top':'1em',overflow:'hidden','text-align':'center'}); $el.$topDivA=$topDivA;   // $buttonBack,
-  
-
-  //var $topDivB=$('<div>').append($buttShowSelect).css({'margin-top':'1em','text-align':'left'});
-  
-  $el.append($topDivA); //,$topDivB
+  $el.append($buttonBack, $el.$buttShowSelect, $span, $el.$filterButton).addClass('footDiv');  //,'text-align':'center' ,overflow:'hidden'
   return $el;
 }
 
@@ -4547,7 +4740,7 @@ var firstAJAXCall=function(pos){
   //var o1={zoom:zoomT, pC:point, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();  $.extend(o1,oH);  
   //var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['setupById',1], ['VSetPosCond',point], ['IFun',o1,IRet]];   majax(oAJAX,vec);
   var o1={zoom:zoomT, pC:point, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();  
-  var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['setupById',1], ['VSetPosCond',point], 
+  var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['setupById'], ['VSetPosCond',point], 
     ['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,IRet]];   majax(oAJAX,vec);
   setMess('... fetching vendors ... ',15,true);
 }
@@ -4641,7 +4834,7 @@ var IRet=function(data){
 
   var boGroupTmp=Boolean($mapDiv.MGroupTab.length);
   $tableDiv.$toManyMess.toggle(boGroupTmp);
-  $buttShowSelect.toggle(!boGroupTmp);
+  $tableFoot.$buttShowSelect.toggle(!boGroupTmp);
   $tableButton.prop({disabled:boGroupTmp});  $tableButton.children('img').css({opacity:boGroupTmp?0.4:1});
   var tmp=boGroupTmp?('\n ('+langHtml.toManyMess+')'):'';  $tableButton.prop('title',langHtml.ComparisonTable+tmp);
   //$tableButton.toggle(!boGroupTmp);
@@ -4868,6 +5061,7 @@ var uploadImageDivExtend=function($el){
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
   $uploadButton.click(sendFun);
+  $el.css({'text-align':'left'});
   return $el;
 }
 
@@ -4930,17 +5124,21 @@ var teamDivExtend=function($el){
   popupHoverM($hImg0,$hId);   popupHoverM($hImg1,$hLink);   popupHoverM($hImg2,$hList);
   
   
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Team settings'); //.css({'float':'right',margin:'0.2em 0 0 0'});
-  var $topDiv=$('<div>').append($span).css({padding:'0.3em 0','margin-top':'1em',overflow:'hidden','text-align':'center', 'border-bottom':'1px solid gray'});  //$buttonBack,
-
  
-  $el.append($topDiv,'Team-Id: ',$el.$id,',',$hImg0,'<br>',
+  $el.append('Team-Id: ',$el.$id,',',$hImg0,'<br>',
           'Thumb image: ',$thumb,' ',$buttUploadImage,' &nbsp;&nbsp;(will be shrunk to fit a 50 x 50 pixel square)<br>',
           'Link: (optional)',$el.$link,' &nbsp;',$buttSaveName,$hImg1,'<hr>','<b>List of drivers</b>',$hImg2,$el.$divList); 
   //$el.append('Link: ',$el.$link,$buttSaveName,'<br>',$a,'<hr>',$el.$divList); 
   //$el.append('Name: ',$el.$name,'<br>Link: ',$el.$link,'<br>',$buttSaveName,'<hr>',$el.$divList); 
   
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var teamFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Team settings').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -4956,17 +5154,18 @@ var settingDivExtend=function($el){
   //var $opt=$([]).push($buttShowMarkSelect, $vendorDiv, $adminButton, $teamButton);    $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
   var $opt=$([]).push($buttShowMarkSelect, $vendorDiv, $adminButton, $teamButton);    $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
   $vendorDiv.css({'margin':'1em 0.6em 1em 0.6em'}); 
-
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em'});
+  
+  $el.append($opt);   
+  
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var settingFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
   var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  //var $span=$('<span>').append($tmpImg, langHtml.Settings).css({'float':'right',margin:'0.2em 0 0 0'});
-  //var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
-  
-  var $span=$('<span>').append($tmpImg, langHtml.Settings);//.css({'float':'right',margin:'0.2em 0 0 0'});
-  var $topDiv=$('<div>').append($span).css({'margin-top':'1em',overflow:'hidden','text-align':'center'});  //$buttonBack,
-  
-  $el.append($topDiv,$opt);   
-  
+  var $span=$('<span>').append($tmpImg, langHtml.Settings).addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -5011,59 +5210,48 @@ var moreDivExtend=function($el){
  
   //$langSelect=langSelectExtend($('<select>'));   var $langSpan=$("<span>").append('Change language: ',$langSelect).css({display:'block'});
   
-  var $labLoginVendor=$("<span>").append(langHtml.LoginSingUpAsVendor+':');
+  var $labLoginVendor=$("<span>").append(langHtml.LoginSingInAsVendor+':');
   
   var uImagePrim=window['u'+ucfirst(strIPPrim)+'22'];
 
-  //var $buttLoginVendor=$("<button>").append(langHtml.LoginSingUpAsVendor+' ('+langHtml.FacebookNeeded+')').click(function(){
-  var $buttLoginVendor=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(){
-    var strType='vendor';
-    ga('send', 'event', 'button', 'click', 'login');
-    var cbGetGraph=function(){
+  //var $buttLoginVendor=$("<button>").append(langHtml.LoginSingInAsVendor+' ('+langHtml.IdProviderNeeded+')').click(function(){
+  var $buttLoginVendor=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
+    e.stopPropagation();
+    var flow=(function*(){
+      ga('send', 'event', 'button', 'click', 'login');
+      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var oT={IP:strIPPrim, fun:'vendorFun', caller:'index', code:code};
+      var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      
       var boE=Boolean(userInfoFrDB.vendor);
       if(!boE){ $vendorIntroDiv.openFunc(); }
       if(boE) $quickDiv.setUp();
       history.fastBack($mapDiv);
-    }
-    var loginReturn=function(params){
-      if('error' in params) { setMess(params.error); }
-      else{
-        if('code' in params) { 
-          var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller}; oT.code=params.code;
-          var vec=[['loginGetGraph', oT], ['setupById', null, cbGetGraph]];   majax(oAJAX,vec);
-        } else setMess('no code parameter in response');
-      }
-    }
-    var uPop=OAuth.createUrlNSetStatVar('fb', strSchemeLong+site.wwwLoginRet, strType+'Fun', "index", loginReturn);
-    if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
-    window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
-
-    //$loginDiv.openFunc('vendor');
-    //specialRequstF();
+      
+    })(); flow.next();
     return false;
   });
+    
+    
+  var $loginWEmailButton=$('<button>').append('Old '+strIPAltLong+' users').addClass('flexWidth').css({'margin-left':'0.8em','margin-right':'1em','width':'initial','font-size':'0.7em'}); //'&equiv;'
+  $loginWEmailButton.click(function(){
+    $loginWEmailDiv.setVis(); doHistPush({$view:$loginWEmailDiv});
+  });
 
-  var $buttLoginTeam=$("<button>").append(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).click(function(){
-    var strType='team';
-    var cbGetGraph=function(){
+  var $buttLoginTeam=$("<button>").append(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).click(function(e){
+    e.stopPropagation();
+    var flow=(function*(){
+      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var oT={IP:strIPPrim, fun:'teamFun', caller:'index', code:code};
+      var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      
       history.fastBack($mapDiv);
-    }
-    var loginReturn=function(params){
-      if('error' in params) { setMess(params.error); }
-      else{
-        if('code' in params) { 
-          var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller}; oT.code=params.code;
-          var vec=[ ['loginGetGraph', oT], ['setupById', null, cbGetGraph]];   majax(oAJAX,vec);
-        } else setMess('no code parameter in response');
-      }
-    }
-    var uPop=OAuth.createUrlNSetStatVar('fb', strSchemeLong+site.wwwLoginRet, strType+'Fun', "index", loginReturn);
-    if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
-    window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
-
-    //$loginDiv.openFunc('team');
+      
+    })(); flow.next();
     return false;
   }).hide();
+  
+  
 
   if(document.domain.substr(0,4)=='demo') $buttLoginVendor.hide(); 
 
@@ -5075,6 +5263,7 @@ var moreDivExtend=function($el){
   
   //var $hovWhyIsFBNeeded=$hovHelp.clone().text(langHtml.WhyIsFBNeededQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.WhyIsFBNeededA);     popupHoverM(//$hovWhyIsFBNeeded,$bub,15000);
   var $NothingIsWrittenToYourFBFlow=$('<div>').append(langHtml.NothingIsWrittenToYourFBFlow);
+  var $YouCanChangeImage=$('<div>').append(langHtml.YouCanChangeImage);
   var $YouCanDeleteYourAccount=$('<div>').append(langHtml.YouCanDeleteYourAccount);
   var $FBToPreventMultipleAccounts=$('<div>').append(langHtml.FBToPreventMultipleAccounts);
   //var $aPrivacyPolicy=$('<a>').prop({href:'https://closeby.market/Privacy_policy_2016-Oct-12'}).append("Privacy policy 2016-Oct-12");
@@ -5082,12 +5271,58 @@ var moreDivExtend=function($el){
   var $aMoreAboutWhyAnIdPIsUsed=$('<a>').prop({href:'https://closeby.market/WhyIsAnIdPUsed'}).append(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
 
   //var $opt=$([]).push($pWiki, $langSpan, $buttLoginVendor, $buttLoginTeam, $teamApprovedMess);
-  var $rows=$([]).push($divOrdinal, $pWiki, $labLoginVendor, $buttLoginVendor, $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanDeleteYourAccount, $aMoreAboutWhyAnIdPIsUsed, $buttLoginTeam, $teamApprovedMess);  // , $langSpan
-  var $topDivA=$('<div>').append($iframeLike).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  var $rows=$([]).push($divOrdinal, $pWiki, $labLoginVendor, $buttLoginVendor, $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanChangeImage, $YouCanDeleteYourAccount, $buttLoginTeam, $teamApprovedMess);  // , $langSpan , $loginWEmailButton
+  var $topDivA=$('<div>').append($iframeLike).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,  , $aMoreAboutWhyAnIdPIsUsed
   $rows.css({'margin':'1em 0em 1em 0.6em'});
   $el.append($topDivA,$rows);  
  
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var moreFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left','margin-left':'0.8em','margin-right':'1em'}); //'font-size':'1em'
+  $el.append($buttonBack).addClass('footDiv');  
+  return $el;
+}
+
+
+var loginWEmailDivExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'loginWEmailDiv';}
+  $el.setUp=function(){
+    $inpEmail.val('');    $inpPW.val('');
+  }
+
+  var sendEmail=function(){
+    var vec=[['sendTempPassword',{email:$inpEmail.val()}]];   majax(oAJAX,vec); 
+  }
+  var loginWPW=function(){
+    var vec=[['loginWEmail',{email:$inpEmail.val(), code:$inpPW.val()}], ['setupById']];   majax(oAJAX,vec);
+  }
+  var $divHead=$('<h3>').append('Log in with your email address and a temporary password.');
+
+  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {sendEmail();return false;}} );
+  var $butSendNewPW=$('<button>').append('Generate temporary password').click(sendEmail);
+  //var $divEmail=$('<div>').append($inpEmail, $butSendNewPW);
   
+  var $inpPW=$('<input>').prop({placeholder:'Enter temporary password'}).keypress( function(e){if(e.which==13) {loginWPW();return false;}} );
+  var $butLogin=$('<button>').append('Login').click(loginWPW);
+  //var $divLogin=$('<div>').append($inpPW, $butLogin);
+  
+  
+  var $rows=$([]).push($divHead, $inpEmail, $butSendNewPW, $inpPW, $butLogin);
+  $rows.css({display:'block', 'margin':'1em 0em 1em 0.6em'});
+  $el.append($rows);
+ 
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var loginWEmailFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Log in with your email').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -5107,8 +5342,7 @@ setUp1=function(){
   $bodyNHtml=$body.add($html);  
   //$bodyNHtml=$body;   
   //$bodyNHtml=$([]);  
-  //$bodyNHtml.css({height:'100%',overflow:'hidden'}); 
-  $bodyNHtml.addClass('fillScreen');
+  $bodyNHtml.css({height:'100%'}); 
   $body.css({margin:0, padding:0});
   $document=$(document);
   $window=$(window);
@@ -5142,7 +5376,7 @@ setUp1=function(){
       //alert(dr);
       //$('#viewportMy').prop('content','initial-scale='+sc);
       //$bodyNHtml.css({"overflow-x":"hidden"});
-      $bodyNHtml.css({"height":"100%", "overflow-y":"scroll", "-webkit-overflow-scrolling":"touch"});
+      $bodyNHtml.css({"height":"100%", "overflow":"scroll" , "-webkit-overflow-scrolling":"touch"});  // , position:'fixed'
  
     } else if(boFF){
       dr=window.devicePixelRatio;  
@@ -5166,6 +5400,8 @@ setUp1=function(){
   drLev=log2(dr);
   drLev=Math.floor(drLev); //drLev=0;
   dr=Math.pow(2,drLev);
+  
+  if(boIOS) strBackSymbol='◄'; else strBackSymbol='◀';
 
   WCMIN=0; WCMAX=256; WCMID=WCMAX/2;
   TILESIZE=256/dr; TILESIZEHALF=TILESIZE/2;
@@ -5194,7 +5430,6 @@ setUp1=function(){
 
   assignSiteSpecific();
 
-  UrlOAuth={fb:"https://www.facebook.com/v2.5/dialog/oauth", google: "https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace};
   
   StrPlugIn=site.StrPlugIn; 
   Prop=site.Prop; KeyCol=Object.keys(Prop); nCol=KeyCol.length;  StrOrderFilt=site.StrOrderFilt;   
@@ -5264,7 +5499,7 @@ setUp1=function(){
   
   PlugIn=[]; 
   var rewriteProg=function(){    for(var i=0;i<StrPlugIn.length;i++){  PlugIn[i]=new CreatorPlugin[StrPlugIn[i]]();   }    };
-  var rewriteLang=function(){  for(var i=0;i<PlugIn.length;i++){  PlugIn[i].rewriteLang();   }  };
+  var rewriteLang=function(){  for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteLang; if(tmp) tmp();   }  };
   rewriteObj=function(){  for(var i=0;i<PlugIn.length;i++){  PlugIn[i].rewriteObj();   }  };
 
   rewriteProg();
@@ -5282,11 +5517,12 @@ setUp1=function(){
 
 
   var regNom=new RegExp("<span nom=\"([^\"]+)\">.*?</span>",'g');
-  var nomFunc=function(m,n){return langHtml[n]};
+  //var nomFunc=function(m,n){return langHtml[n]};
+  var nomFunc=function(m,n){return "<span nom="+n+">"+langHtml[n]+"</span>"};
   replaceNom=function(parent,strName){
     parent[strName]=parent[strName].replace(regNom,nomFunc);
   }
-
+/*
   replaceNom(langHtml.label,'standingByMethod');
   replaceNom(langHtml.helpBub,'link');
   replaceNom(langHtml.helpBub,'posTime');
@@ -5302,10 +5538,11 @@ setUp1=function(){
   replaceNom(langHtml,'SeeUnActivePopMess');
   replaceNom(langHtml,'writeReportPopup');
   replaceNom(langHtml,'introHead');
-  replaceNom(langHtml,'LoginSingUpAsVendor');
+  replaceNom(langHtml,'LoginSingInAsVendor');
 
   replaceNom(langHtml,'DummiesShowingMess');
   //replaceNom(langHtml,'noteLoginVendor');
+  */
 
   replaceNom(langHtml,'headOrdinal');
   //replaceNom(langHtml,'labOrdinal'); 
@@ -5379,14 +5616,14 @@ setUp1=function(){
 
   $H1=$('h1:eq(0)').detach()
   $H1.css({background:'#ff0', "box-sizing":"border-box", border:'solid 1px',color:'black','font-size':'1.6em','font-weight':'bold','text-align':'center',
-      padding:'0.4em 0em 0.4em 0em',margin:'0.3em 0em 0em 0em'}); 
+      padding:'0.4em 0em 0.4em 0em',margin:'0em 0em 0em 0em'}); 
   //$divH1=$('<div>').append($H1); //$divH1.css({}); 
   
   //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
   var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
-  $infoLink=$('<a>').prop({href:uWikiT}).append(langHtml.OtherJobs);
-  $footDiv=$('<div>').css({background:'#ee8', "box-sizing":"border-box", border:'solid 1px',color:'black','font-size':'1.2em','font-weight':'bold','text-align':'center',
-      padding:'0.2em 0em 0.2em 0em',margin:'1px 0em 0em 0em'}); 
+  $infoLink=$('<a>').prop({href:uWikiT}).append(langHtml.OtherMapApps);
+  $footDiv=$('<div>').css({background:'', "box-sizing":"border-box", 'border-top':'solid 1px',color:'black','font-size':'1.2em','line-height':'1.6em','font-weight':'bold','text-align':'center',
+      padding:'0.2em 0em 0.2em', margin:'1px 0em 0em 0em', flex:'0 0 auto', display:"flex", "justify-content":"space-evenly"});
   $footDiv.css({visibility:'hidden'});
 
   $body.css({padding:'0 0 0 0'});
@@ -5467,7 +5704,7 @@ setUp1=function(){
 var setUp2=function(){
   
 
-  $loginInfo=loginInfoExtend($('<div>'));  $loginInfo.css({padding:'0em 0em 0em 0em','font-size':'75%'});
+  $loginInfo=loginInfoExtend($('<div>'));  $loginInfo.css({'font-size':'75%', flex:'0 0 auto', margin:'0.4em auto','line-height':'1.6em'});
   
   $divs=$body.children('div:not(:last-child)').detach();
   divs=[];  $divs.each(function(i){divs[i]=$(this);});
@@ -5494,35 +5731,49 @@ var setUp2=function(){
   $vendorIntroDiv=vendorIntroDivExtend($('<div>'));
 
   //$vendorButton=$('<button>').append('&equiv;');
-  $quickDiv=quickDivExtend($('<div>'));  
-  $payButton=payButtonExtend($('<button>').append(langHtml.vendorPay.head));  $payDiv=payDivExtend($('<div>').append(langHtml.vendorPay.div));
-  $vendorSettingButton=$('<button>').append(langHtml.Settings);
-  $vendorSettingDiv=vendorSettingDivExtend($('<div>')); 
+  $quickDiv=quickDivExtend($('<div>'));   
+  $payButton=payButtonExtend($('<button>').append(langHtml.vendorPay.head));
+  $payDiv=payDivExtend($('<div>').append(langHtml.vendorPay.div)).css({flex:'1 1 0', overflow:'auto'});
+  $payFoot=payFootExtend($('<div>'));  
+  $userSettingButton=$('<button>').append(langHtml.UserInfo);
+  $userSettingDiv=userSettingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'}); 
+  $userSettingFoot=userSettingFootExtend($('<div>'));  
+  $vendorSettingButton=$('<button>').append(langHtml.VendorSettings);
+  $vendorSettingDiv=vendorSettingDivExtend($('<div>')).css({flex:'1 1 0', 'overflow-y':'auto', 'overflow-x':'hidden'}); 
+  $vendorSettingFoot=vendorSettingFootExtend($('<div>'));  
+  
 
   $priceSettingButton=$('<button>').append(langHtml.Prices);
-  $priceSettingDiv=priceSettingDivExtend($('<div>'));  
+  $priceSettingDiv=priceSettingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});  
+  $priceSettingFoot=priceSettingFootExtend($('<div>'));  
   $deleteAccountPop=deleteAccountPopExtend($('<div>'));
 
   
-  if(boAndroid) { var h=window.innerHeight/2.5;   $payDiv.add($vendorSettingDiv).add($priceSettingDiv).css({'padding-bottom':h+'px'});  } //make room for keyboard
-  $quickDiv.css({padding:'0.2em 0.2em',margin:'0.9em 0em 0em',display:'block',background:'#faa'});
+  //if(boAndroid) { var h=window.innerHeight/2.5;   $payDiv.add($vendorSettingDiv).add($priceSettingDiv).css({'padding-bottom':h+'px'});  } //make room for keyboard
+  $quickDiv.css({padding:'0.3em 0.2em',margin:'0em 0em 0em',display:'block',background:'#faa','border-top':'solid 1px'});  
 
-  $quickDivOuter=$('<div>').append($quickDiv).css({'border-top':'solid white 1px'});
+  $quickDivOuter=$('<div>').append($quickDiv).css({flex:'0 0 auto'});  //'border-top':'solid white 1px'
+  //if(boIOS && boTouch) $quickDivOuter.css({padding:'0em 0em 1.7em'});
 
   $uploadImageDiv=uploadImageDivExtend($('<div>'));
-  $teamDiv=teamDivExtend($('<div>'));
+  $teamDiv=teamDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $teamFoot=teamFootExtend($('<div>'));  
   
   $vendorDiv=vendorDivExtend($('<div>')).css({'background':'#ccc','border':'solid 1px','padding':'0.2em 0'});
   
-  $adminButton=$('<button>').html('Admin').css({display:'block'});  $adminDiv=adminDivExtend($('<div>')); 
+  $adminButton=$('<button>').html('Admin').css({display:'block'});
+  $adminDiv=adminDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'}); 
+  $adminFoot=adminFootExtend($('<div>')); 
   $teamButton=$("<button>").css({display:'block'}).append('Team/brand admin settings').click(function(){ 
     $teamDiv.setUp();
     $teamDiv.setVis();
     doHistPush({$view:$teamDiv});
   });
   $teamApprovedMess=$("<div>").css({display:'block'}).append('Team/brand not approved, Contact '+domainName+' to become approved.');
-  $reportVDiv=reportVDivExtend($('<div>'));
-  $reportRDiv=reportRDivExtend($('<div>'));
+  $reportVDiv=reportVDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $reportVFoot=reportVFootExtend($('<div>')); 
+  $reportRDiv=reportRDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $reportRFoot=reportRFootExtend($('<div>')); 
 
   $reportCommentPop=reportCommentPopExtend($('<div>')).css({border:'1px solid #000'});
   $reportAnswerPop=reportAnswerPopExtend($('<div>')).css({border:'1px solid #000'});
@@ -5531,12 +5782,13 @@ var setUp2=function(){
   //if(boFirstVisit) $agreementStart.setLocalDates(1);
   
     // paymentList
-  $paymentListDiv=paymentListDivExtend($('<div>'));
+  $paymentListDiv=paymentListDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $paymentListFoot=paymentListFootExtend($('<div>')); 
 
   makeMyOverlay();
   boMapGoogle=1
   if(boMapGoogle) $mapDiv=mapDivExtendGoogle($("<div>")); else $mapDiv=mapDivExtend($("<div>"));
-  $mapDiv.css({'margin-top':'0.9em'});  //,display:'inline-block','margin-top':'1px'
+  //$mapDiv.css({'margin-top':'0.9em'});  //,display:'inline-block','margin-top':'1px'
   $mapDiv.css({overflow:'hidden'});
 
     //filter colors
@@ -5549,10 +5801,11 @@ var setUp2=function(){
   $filterInfoWrap=$('<span>').append($filterInfoSpan);
   //$filterButton=$('<button>').append(langHtml.Filter,': (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','clear':'both'});//.css({background:colMenuOff});
   var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $filterButton=$('<button>').append($tmpImg,' (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','margin-left':'1em'}).prop('title',langHtml.FilterTitle);// ,'clear':'both'  .css({background:colMenuOff});
+  $filterButton=$('<button>').append($tmpImg,' (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'left'}).prop('title',langHtml.FilterTitle);// ,'clear':'both'  .css({background:colMenuOff});
   //$filterDiv=filterDivExtend($('<div>'),StrOrderFilt);  
   $filterDiv=new FilterDiv(Prop, $.extend({},langHtml.label), StrOrderFilt, loadTabStart);
-  $filterDiv.css({'background-color':'#eee','padding-bottom':'0.6em'});
+  $filterDiv.css({'background-color':'#eee','padding-bottom':'0.6em', flex:'1 1 0', overflow:'auto'}); 
+  $filterFoot=filterFootExtend($('<div>')); 
 
 
     // tableDivs
@@ -5562,25 +5815,23 @@ var setUp2=function(){
   var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
   $settingButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-left':'0.8em', 'margin-right':'1em'}).prop('title',langHtml.Settings);
 
-  $columnSelectorDiv=columnSelectorDivExtend($('<div>'));
-  $columnSorterDiv=columnSorterDivExtend($('<div>'));
+  $mapFoot=$('<div>').append($settingButton,$tableButton,$filterButton).addClass('footDiv');
+  
+  
+  $columnSelectorDiv=columnSelectorDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'}); 
+  $columnSelectorFoot=columnSelectorFootExtend($('<div>')); 
+  $columnSorterDiv=columnSorterDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'}); 
+  $columnSorterFoot=columnSorterFootExtend($('<div>')); 
 
   
   $currencyInfoDivs=$([]);
 
-  var tmpf=function(){ 
-    $columnSelectorDiv.setUp();
-    $columnSelectorDiv.setVis();
-    doHistPush({$view:$columnSelectorDiv});
-  };
-  var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $buttShowSelect=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-right':'1em', 'float':'left'}).click(tmpf).prop('title',langHtml.AddRemoveColumns);
 
-  $tableHead=tableHeadExtend($("<div>")).css({padding:'0','text-align':'left'});
 
   $tHeadLabel=tHeadLabelExtend($('<thead>')).css({'text-align':'center'});  
 
-  $tableDiv=tableDivExtend($("<div>"));    
+  $tableDiv=tableDivExtend($("<div>")).css({flex:'1 1 0', overflow:'auto'}); 
+  $tableFoot=tableFootExtend($("<div>"));   
   $tableDiv.$table.prepend($tHeadLabel);
 
   if(0){
@@ -5589,19 +5840,27 @@ var setUp2=function(){
 
   //var $tmp=$('<span>').append('&equiv;').css({height:'0.9em',width:'0.9em',display:'inline-block'});
   //$moreButton=$('<button>').append($tmp).css({'margin-left':'0.6em','margin-right':'1em'}); 
-  $moreButton=$('<button>').append(langHtml.VendorEntry).addClass('flexWidth').css({'margin-left':'0.8em','margin-right':'1em','width':'initial','font-size':'0.7em'}); //'&equiv;'
-  $moreDiv=moreDivExtend($('<div>'));
+  $moreButton=$('<button>').append(langHtml.VendorEntry).addClass('flexWidth').css({'width':'initial','font-size':'0.7em'}); //'&equiv;'
+  $moreDiv=moreDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $moreFoot=moreFootExtend($("<div>"));
   if(document.domain.substr(0,4)=='demo') $moreButton.hide(); 
-  $convertIDDiv=convertIDDivExtend($('<div>'));
+  $convertIDDiv=convertIDDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $convertIDFoot=convertIDFootExtend($('<div>'));
   
-  $settingDiv=settingDivExtend($('<div>'));
   
-  $markSelectorDiv=markSelectorDivExtend($('<div>'));
+  $loginWEmailDiv=loginWEmailDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $loginWEmailFoot=loginWEmailFootExtend($('<div>')); 
   
-  $mainMenuDiv=$('<div>').css({'margin-top':'1em','font-size':'100%'});
-  $mainMenuDiv.append($settingButton,$tableButton,$filterButton);  
+  
+  $settingDiv=settingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'}); 
+  $settingFoot=settingFootExtend($("<div>"));  
+  
+  $markSelectorDiv=markSelectorDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'}); 
+  $markSelectorFoot=markSelectorFootExtend($("<div>")); 
+  
 
-  $vendorInfoDiv=vendorInfoDivExtend($('<div>'));  
+  $vendorInfoDiv=vendorInfoDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});  
+  $vendorInfoFoot=vendorInfoFootExtend($("<div>"));  
   $vendorListCtrlDiv=vendorListCtrlDivExtend($('<div>')).css({display:'inline-block','float':'right'});  
   
   
@@ -5626,7 +5885,10 @@ var setUp2=function(){
 
 
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
-  StrMainDiv.push('loginInfo', 'H1', 'mainMenuDiv', 'quickDivOuter',  'mapDiv', 'filterDiv', 'tableHead', 'tableDiv', 'vendorSettingDiv', 'priceSettingDiv', 'payDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv',   'footDiv');
+  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'payDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'loginWEmailDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv');
+  
+  //  List of foots: admin, pay, vendorSetting, priceSetting, paymentList, userSetting, reportV, reportR, vendorInfo, filter, markSelector, columnSelector, columnSorter, table, map, team, setting, more, loginWEmail
+  StrMainDiv.push('footDiv', 'quickDivOuter', 'mapFoot', 'filterFoot', 'tableFoot', 'userSettingFoot', 'vendorSettingFoot', 'priceSettingFoot', 'payFoot', 'vendorInfoFoot', 'adminFoot', 'reportVFoot', 'reportRFoot', 'moreFoot', 'loginWEmailFoot', 'convertIDFoot', 'settingFoot', 'columnSelectorFoot', 'columnSorterFoot', 'markSelectorFoot', 'paymentListFoot', 'teamFoot');
 
   var MainDiv=[];
   for(var i=0;i<StrMainDiv.length;i++){
@@ -5646,8 +5908,8 @@ var setUp2=function(){
   $body.append($MainDiv); 
   //$MainDiv=$MainDiv.not($H1.add($footDiv)); 
 
-  //$mapDivs=$H1.add($mainMenuDiv).add($mapDiv).add($footDiv);  $mapDivs.show();
-  $H1.add($mainMenuDiv).add($mapDiv).add($footDiv).show();
+  //$mapDivs=$H1.add($mapFoot).add($mapDiv).add($footDiv);  $mapDivs.show();
+  $H1.add($footDiv).add($mapFoot).add($mapDiv).show();
 
   $filterDiv.hide();
 
@@ -5678,6 +5940,10 @@ var setUp2=function(){
   $filterButton.on('click',filterButtonClick);
   $settingButton.on('click',settingButtonClick);
 
+
+  $userSettingButton.on('click',function(){
+    $userSettingDiv.setVis(); doHistPush({$view:$userSettingDiv});
+  });  
   $vendorSettingButton.on('click',function(){
     $vendorSettingDiv.setVis(); doHistPush({$view:$vendorSettingDiv});
   });  
@@ -5711,10 +5977,8 @@ var setUp2=function(){
 
   $mapDiv.setVis=function(){
     $tableButton.add($filterButton).css({background:colMenuOff}); 
-    var $tmp=$mapDiv.add($mainMenuDiv).add($quickDivOuter).add($footDiv);
+    var $tmp=$footDiv.add($mapDiv).add($mapFoot).add($quickDivOuter);
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    //$bodyNHtml.css({height:'100%',overflow:'hidden'});
-    $bodyNHtml.addClass('fillScreen');
     $filterInfoWrap.append($filterInfoSpan);
     //$moreButton.after($filterButton);
     //$('meta[name=viewport]').prop({'user-scalable':'false'});
@@ -5724,137 +5988,131 @@ var setUp2=function(){
   }
   $tableDiv.setVis=function(){
     $filterButton.css({background:colMenuOff});  $tableButton.css({background:colMenuOn});
-    var $tmp=$tableDiv.add($tableHead);
+    var $tmp=$tableDiv.add($tableFoot);
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
-    //$tableHead.$topDivA.append($filterButton);
-    $tableHead.$filterButton.children('span').append($filterInfoSpan);
+    $tableFoot.$filterButton.children('span').append($filterInfoSpan);
     //$('meta[name=viewport]').prop({'user-scalable':'true'});
     scalableTog(1);
     return true;
   }
   $filterDiv.setVis=function(){
     $tableButton.css({background:colMenuOff});  $filterButton.css({background:colMenuOn});
-    var $tmp=$filterDiv;
+    var $tmp=$filterDiv.add($filterFoot);
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
-    $filterDiv.$filterInfoWrap.append($filterInfoSpan);
+    $filterFoot.$filterInfoWrap.append($filterInfoSpan);
+    scalableTog(1);
+    return true;
+  }
+  $userSettingDiv.setVis=function(){
+    if(!userInfoFrDB.user) return false;
+    $userSettingDiv.setUp(); 
+    var $tmp=$userSettingDiv.add($userSettingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $vendorSettingDiv.setVis=function(){
     if(!userInfoFrDB.vendor) return false;
     $vendorSettingDiv.setUp(); 
-    var $tmp=$vendorSettingDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$vendorSettingDiv.add($vendorSettingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $priceSettingDiv.setVis=function(){
     if(!userInfoFrDB.vendor) return false;
     $priceSettingDiv.setUp(); 
-    var $tmp=$priceSettingDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$priceSettingDiv.add($priceSettingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $payDiv.setVis=function(){
     if(!userInfoFrDB.vendor) return false;
     $payDiv.setUp(); 
-    var $tmp=$payDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$payDiv.add($payFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $vendorInfoDiv.setVis=function(){
     if($vendorInfoDiv.boLoaded==0) return false;
-    var $tmp=$vendorInfoDiv;
+    var $tmp=$vendorInfoDiv.add($vendorInfoFoot);
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $vendorInfoDiv.$menuDiv.append($vendorListCtrlDiv);
-    $bodyNHtml.removeClass('fillScreen');
     scalableTog(1);
     return true;
   }
   $reportVDiv.setVis=function(){
     if($reportVDiv.boLoaded==0) return false;
-    var $tmp=$reportVDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    var $tmp=$reportVDiv.add($reportVFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $reportVDiv.$topDiv.append($vendorListCtrlDiv);
-    $bodyNHtml.removeClass('fillScreen');
     scalableTog(1);
     return true;
   }
   $reportRDiv.setVis=function(){
     if($reportRDiv.boLoaded==0) return false;
-    var $tmp=$reportRDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$reportRDiv.add($reportRFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $adminDiv.setVis=function(){
-    var $tmp=$adminDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$adminDiv.add($adminFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $moreDiv.setVis=function(){
-    var $tmp=$moreDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    var $tmp=$moreDiv.add($moreFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $moreDiv.setUp();
-    $bodyNHtml.removeClass('fillScreen');
+    scalableTog(1);
+    return true;
+  }
+  $loginWEmailDiv.setVis=function(){
+    var $tmp=$loginWEmailDiv.add($loginWEmailFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $loginWEmailDiv.setUp();
     scalableTog(1);
     return true;
   }
   $convertIDDiv.setVis=function(){
-    var $tmp=$convertIDDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    var $tmp=$convertIDDiv.add($convertIDFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     $convertIDDiv.setUp();
-    $bodyNHtml.removeClass('fillScreen');
     scalableTog(1);
     return true;
   }
   $settingDiv.setVis=function(){
-    var $tmp=$settingDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$settingDiv.add($settingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $columnSelectorDiv.setVis=function(){
     if($columnSelectorDiv.boLoaded==0) return false;
-    var $tmp=$columnSelectorDiv; $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$columnSelectorDiv.add($columnSelectorFoot); $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $columnSorterDiv.setVis=function(){
     if($columnSorterDiv.boLoaded==0) return false;
-    var $tmp=$columnSorterDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$columnSorterDiv.add($columnSorterFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $markSelectorDiv.setVis=function(){
     if($markSelectorDiv.boLoaded==0) return false;
-    var $tmp=$markSelectorDiv; $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$markSelectorDiv.add($markSelectorFoot); $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $paymentListDiv.setVis=function(){
     if($paymentListDiv.boLoaded==0) return false;
-    var $tmp=$paymentListDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$paymentListDiv.add($paymentListFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $teamDiv.setVis=function(){
     if($teamDiv.boLoaded==0) return false;
-    var $tmp=$teamDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $bodyNHtml.removeClass('fillScreen');
+    var $tmp=$teamDiv.add($teamFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
 
   //$loginDiv.setVis=function(){
     //var $tmp=$loginDiv;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    //$bodyNHtml.removeClass('fillScreen');
     //scalableTog(1);
     //return true;
   //}
@@ -5864,7 +6122,7 @@ var setUp2=function(){
   $body.css({'text-align':'center'});
   //$MainDiv.css({'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff'});
   $MainDiv.css({'margin-left':'auto','margin-right':'auto'});
-  $MainDiv.not($H1.add($footDiv)).css({'text-align':'left',background:'#fff'});
+  //$MainDiv.not($H1.add($footDiv)).css({'text-align':'left',background:'#fff'});
   $mainDivsNonFixWidth=$([]);
   if(!boTouch) {$mainDivsNonFixWidth.push($tableDiv, $paymentListDiv);}
   $mainDivsFixWidth=$MainDiv.not($mainDivsNonFixWidth).css({'max-width':'800px'});
@@ -5880,7 +6138,7 @@ var setUp2=function(){
   
   
   $body.css({display:"flex","flex-direction":"column"});
-  $MainDiv.css({flex:"none", width:"100%"});
+  $MainDiv.css({width:"100%"}); //flex:"none", 
   $mapDiv.css({flex:"auto"});  // "overflow-y":"scroll", "-webkit-overflow-scrolling":"touch", 
 
   

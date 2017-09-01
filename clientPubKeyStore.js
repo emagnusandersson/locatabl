@@ -60,7 +60,6 @@ window.loginReturn=function(strQS, strHash){
 }
 
 var OAuthT=function(){
-  this.urlOAuth={fb:"https://www.facebook.com/v2.5/dialog/oauth", google: "https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace};
   this.createUrlNSetStatVar=function(IP, uRedir, fun, caller, cb){
     $.extend(this, {IP:IP, fun:fun, caller:caller, cb:cb});
     this.nonce=randomHash(); //CSRF protection
@@ -68,7 +67,7 @@ var OAuthT=function(){
     if(IP=='fb')   arrQ.push("display=popup");
     else if(IP=='google')    arrQ.push("scope=profile");
     else if(IP=='idplace')    arrQ.push("scope=name");
-    return this.urlOAuth[IP]+'?'+arrQ.join('&');
+    return UrlOAuth[IP]+'?'+arrQ.join('&');
   }
 }
 
@@ -93,7 +92,7 @@ loginDivExtend=function($el){
     else{
       if('code' in params) { 
         var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller, code:params.code};
-        var vec=[ ['loginGetGraph', oT], ['setupById', null, , function(data){
+        var vec=[ ['loginGetGraph', oT], ['setupById', null, function(data){
           if(typeof loginReturnC!=='undefined' && loginReturnC) {loginReturnC(); loginReturnC=null;}
         }]];   majax(oAJAX,vec);
       } else setMess('no "code" parameter in response');
