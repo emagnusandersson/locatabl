@@ -319,7 +319,13 @@ app.reqIndex=function*() {
 
   var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
   Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
-
+  
+  Str.push('<script>\n\
+try {\n\
+  eval("(function *(){})");\n\
+} catch(err) {\n\
+  alert("This browser does not seem to support generators:\\n"+ err);\n\
+}</script>');
 
   //var uCommon='http://'+wwwCommon;
   var uCommon=req.strSchemeLong+wwwCommon;
@@ -382,10 +388,10 @@ strLang="+JSON.stringify(strLang)+";\n\
 coordApprox="+JSON.stringify(coordApprox)+";\n\
 boTLS="+JSON.stringify(req.boTLS)+";\n\
 UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
-response_type="+JSON.stringify(response_type)+";\n\
 </script>\n\
 </body>\n\
 </html>");
+//response_type="+JSON.stringify(response_type)+";\n\
 
 
   var str=Str.join('\n');   res.writeHead(200, "OK", {'Content-Type': 'text/html'});   res.end(str);    

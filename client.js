@@ -2312,11 +2312,11 @@ var userSettingDivExtend=function($el){
   
   //var uImagePrim=window['u'+ucfirst(strIPPrim)];
   var uImagePrim=window['u'+ucfirst(strIPPrim)+'22'];
-  var $buttRefresh=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
+  var $buttRefetch=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
     e.stopPropagation();
     var flow=(function*(){
       var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'refreshFun', caller:'index', code:code};
+      var oT={IP:strIPPrim, fun:'refetchFun', caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       $el.setUp();
     })(); flow.next();
@@ -2331,11 +2331,14 @@ var userSettingDivExtend=function($el){
   var $butEmail=$('<button>').append('Save email').click(saveEmail);
   
   var $divIdUser=$('<div>').append('idUser (db): ', $spanIdUser);
-  var $divIdIP=$('<div>').append('IdP: ', $spanIP, $spanIdIP);
+  var $divIdIP=$('<div>').append('Id: ', $spanIP, $spanIdIP);
   var $divImage=$('<div>').append('Image: ', $imgImage);
   var $divNameIP=$('<div>').append('Name: ', $spanNameIP);
-  var $divEmail=$('<div>').append('Contact email: ', $inpEmail, $butEmail);
-  var $divRefresh=$('<div>').append('Refresh from Id-provider: ', $buttRefresh);
+  
+  var $bub=$('<div>').html("This email is not shown to the public, however it allows you to login if the Id-provider is changed.");
+  var $imgH=$imgHelp.clone();  popupHoverM($imgH,$bub); 
+  var $divEmail=$('<div>').append('Contact email: ', $inpEmail, $butEmail, $imgH);
+  var $divRefresh=$('<div>').append('Refetch data from Id-provider: ', $buttRefetch);
   
   var $divs=$([]).push($divRefresh, $divIdIP, $divImage, $divNameIP, $divEmail), $divCont=$('<div>').append($divs);
   $el.append($divCont);
@@ -2383,8 +2386,6 @@ var toggleSpecialistButts=function(){
 }
 
 
-
-
 var createUPop=function(IP, uRedir, nonce){
   var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+nonce, "response_type=code"];
   if(IP=='fb')   arrQ.push("scope=email", "display=popup"); //
@@ -2393,160 +2394,24 @@ var createUPop=function(IP, uRedir, nonce){
   //arrQ.push("auth_type=reauthenticate");
   return UrlOAuth[IP]+'?'+arrQ.join('&');
 }
-
-
-
-
-
-
-/*
-var oAuthT=function(IP, uRedir, strFun, strCaller, cb){  // This should be replaced with OAuthT
-  var self=this;
-  this.IP=IP; this.strFun=strFun; this.strCaller=strCaller;
-  this.nonce=randomHash();
-
-  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
-  if(IP=='fb')   arrQ.push( "display=popup");
-  else if(IP=='google')    arrQ.push("scope=profile");
-  else if(IP=='idplace')    arrQ.push("scope=name,image");
-  //arrQ.push("auth_type=reauthenticate");
-  this.uPop=UrlOAuth[IP]+'?'+arrQ.join('&');
-
-  window.loginReturn=function(strQS, strHash){
-    var params=parseQS(strQS.substring(1));
-    if(!('state' in params) || params.state !== self.nonce) {    alert('Invalid state.'); return;  } 
-
-    if('error' in params) { setMess(params.error); }
-    else{
-      if('code' in params) { 
-        var oT={IP:IP, fun:strFun, caller:strCaller, code:params.code};
-        var vec=[ ['loginGetGraph', oT], ['setupById', null, cb]];   majax(oAJAX,vec);
-      } else setMess('no "code" parameter in response from IP');
-    }
-  };
-}
-
-
-FuncLoginReturn={};
-FuncLoginReturn.vendor=function(){
-  var boE=Boolean(userInfoFrDB.vendor);
-  if(!boE){ $vendorIntroDiv.openFunc(); }
-  if(boE) $quickDiv.setUp();
-  //setTimeout(function(){history.go(-2);},100);
-  history.fastBack($mapDiv);
-}
-FuncLoginReturn.team=function(){
-  //setTimeout(function(){history.back();},100);
-  history.fastBack($mapDiv);
-}
-FuncLoginReturn.reporter=function(){
-  $loginDiv.myReset();       
-  $loginDiv.hide();   $reportCommentPop.openFunc($el.idV);
-  //setTimeout(function(){changeHist({$view:$reportCommentPop});},100);
-  changeHist({$view:$reportCommentPop});
-}
-var loginDivExtend=function($el){ //popup for logging in as admin/sponsor...
-"use strict"
-  $el.toString=function(){return 'loginDiv';}
-  var popupWin=function(IP, strType, loginReturnB) {
-    var oAuth=new oAuthT(IP, strSchemeLong+site.wwwLoginRet, strType+'Fun', "index", function(data){
-      $el.myReset();
-      if(typeof loginReturnB!=='undefined' && loginReturnB) {loginReturnB(); }
-    });
-    if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
-    $el.winMy=window.open(oAuth.uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
-
-    if($el.winMy && !$el.winMy.closed){
-      $pendingMess.show(); $cancelMess.hide();
-      clearInterval(timerClosePoll);
-      timerClosePoll = setInterval(function() { if($el.winMy.closed){ clearInterval(timerClosePoll); $pendingMess.hide(); $cancelMess.show(); }  }, 500);  
-    }
-  }
+getOAuthCode=function*(flow){
+  var strQS, nonce=randomHash(), uPop=createUPop(strIPPrim, strSchemeLong+site.wwwLoginRet, nonce);
+  window.loginReturn=function(strQST){ strQS=strQST; flow.next();}
+  if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
+  window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
+  yield;
   
-  $el.openFunc=function(strTypeT){
-    strType=strTypeT;
-    $pendingMess.hide(); $cancelMess.hide(); 
-    if(strType=='vendor') {      ga('send', 'event', 'button', 'click', 'login');    }
-    loginReturnB=FuncLoginReturn[strType];
-    $pAll.hide();   ObjDiv[strType].show();
-    doHistPush({$view:$loginDiv});
-    $el.setVis();
-  };
-  $el.myReset=function(){   clearInterval(timerClosePoll);     }
-  $el.myResetNBack=function(){   $el.myReset(); doHistBack();    }
-  var timerClosePoll; 
-
-  var strType, loginReturnB;
-  var ObjDiv={}; 
-  var uImagePrim=window['u'+ucfirst(strIPPrim)];
-
-  //var $labLogin=$('<span>').append(langHtml.Login).css({'font-weight':'bold','margin-right':'1em'});
-  var $labLogin=$('<div>').append(langHtml.toContinueAFacebookAccountIsNeeded).css({'font-weight':'bold','margin-right':'1em', 'margin-bottom':'1.5em'});
-  //var $imPrim=$('<img>').click(function(){popupWin(strIPPrim, strType, loginReturnB);}).prop({src:uImagePrim}).css({'vertical-align':'middle'});
-  var $imPrim=$('<button>').click(function(){popupWin(strIPPrim, strType, loginReturnB);}).html(langHtml.goAHead).css({'vertical-align':'middle','margin-right':'1em'});
-  //var $aPrim=$('<a>').append($imPrim).prop({href:UrlOAuth[strIPPrim], target:"_blank"});
-  var $hovReporter=$hovHelp.clone().text(langHtml.WhyOAuth).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.helpLoginCommenter);     popupHoverM($hovReporter,$bub,15000);  
-  var $hovWhatDataIsUsed=$hovHelp.clone().text(langHtml.whatIdPDataIsUsedQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bubB=$('<div>').html(langHtml.whatIdPDataIsUsedA);     popupHoverM($hovWhatDataIsUsed,$bubB,15000);  
-
-
-  ObjDiv.reporter=$('<div>').append($labLogin,$imPrim,$hovReporter);  //, $hovWhatDataIsUsed
-
-
-  //var $pA=$('<div>').append($imPrim.clone(true));//.css({'line-height':'68px','vertical-align':'middle','text-align':'center', 'margin-bottom':'1.5em'});
-  var $hovWhyOAuth=$hovHelp.clone().text(langHtml.WhyOAuth).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.noteLoginVendor);     popupHoverM($hovWhyOAuth,$bub,15000); 
-  //var $aWhat=$('<a>').prop({href:'https://closeby.market/What_does_logging_in_with_an_external_IdP_mean'}).text(langHtml.whatDoesItMeanLoggingInWithAnExternalId);
-  ObjDiv.vendor=$('<div>').append($labLogin.clone(), $imPrim.clone(true), $hovWhyOAuth);  //,$aWhat, $hovWhyOAuth  , $hovWhatDataIsUsed.clone(true)
-
-
-  ObjDiv.team=$('<div>').append($labLogin.clone(), $imPrim.clone(true));
-  var $pAll=$([]).push(ObjDiv.reporter, ObjDiv.vendor, ObjDiv.team).css({'margin-bottom':'1.5em'});
-
-  var $convertIDButton=$('<button>').append(langHtml.DidYouUseAltIPBefore).css({display:'block'});     
-  $convertIDButton.on('click',function(){ 
-    $convertIDDiv.setVis(); doHistPush({$view:$convertIDDiv});
-    ga('send', 'event', 'button', 'click', 'convertID');
-  }); 
-
-  //var $cancel=$('<button>').click(doHistBack).html(langHtml.Cancel);
-  
-  var $pendingMess=$('<span>').hide().append(langHtml.pendingMessLogin,' ',$imgBusy.clone()).css({"margin-left":"0.3em"});
-  var $cancelMess=$('<span>').hide().append(langHtml.cancelMessLogin);
-  
-  //$el.append($pAll,$cancel,$pendingMess,$cancelMess);  //
- 
-  $el.css({'text-align':'left'});
-
-  //var $blanket=$('<div>').addClass("blanket");
-  //var $centerDiv=$('<div>').append($pAll, $cancel,$pendingMess,$cancelMess);
-  //$centerDiv.addClass("Center").css({'max-width':'25em', height:'16em', padding: '0.5em 0.5em 1.2em 1.2em'})
-  //if(boIE) $centerDiv.css({'width':'25em'}); 
-  //$el.addClass("Center-Container").append($centerDiv,$blanket); //
-
-  $el.append($pAll, $pendingMess, $cancelMess); //, $convertIDButton
-
-
-  return $el;
+  var params=parseQS(strQS.substring(1));
+  if(!('state' in params) || params.state !== nonce) {   return {err:'Invalid state parameter: '+params.state}; } 
+  if('error' in params) { return {err:params.error}; }
+  if(!('code' in params)) { return {err: 'No "code" parameter in response from IdP'}; }
+  return {err:null, code:params.code};
 }
-*/
-
 
 var convertIDDivExtend=function($el){
 "use strict"
   $el.toString=function(){return 'convertIDDiv';}
-  var popupWin=function(IP, strType, loginReturnB) {
-    var oAuth=new oAuthT(IP, strSchemeLong+site.wwwLoginRet, strType+'Fun', "index", function(data){
-      $el.myReset(); $pendingMess.hide(); $cancelMess.hide();
-      if(typeof loginReturnB!=='undefined' && loginReturnB) {loginReturnB(); }
-    });
-    if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
-    $el.winMy=window.open(oAuth.uPop, '_blank', 'width=580,height=400');  //, '_blank', 'popup', 'width=580,height=400'
-
-    if($el.winMy && !$el.winMy.closed){
-      $pendingMess.show(); $cancelMess.hide();
-      clearInterval(timerClosePoll);
-      timerClosePoll = setInterval(function() { if($el.winMy.closed){ clearInterval(timerClosePoll); $pendingMess.hide(); $cancelMess.show(); }  }, 500);  
-    }
-  }
+  
   $el.setUp=function(){
   }
 
@@ -2557,17 +2422,6 @@ var convertIDDivExtend=function($el){
   };
   $el.myReset=function(){   clearInterval(timerClosePoll);     }
   $el.myResetNBack=function(){   $el.myReset(); doHistBack();    }
-  var loginReturnPrim=function(){
-    var boE=Boolean(userInfoFrDB.vendor);
-    if(!boE){
-      //var o1={tel:'000', displayName:'bla',boInsert:1, currency:'USD'};
-      var o1={boInsert:1};
-      var vec=[['VUpdate',o1], ['setupById']];   majax(oAJAX,vec);
-    }
-  }
-  var loginReturnAlt=function(){
-    var vec=[['setupById']];   majax(oAJAX,vec);
-  }
   var $pendingMess=$('<span>').hide().append(langHtml.pendingMessLogin,' ',$imgBusy.clone()).css({"margin-left":"0.3em"});
   var $cancelMess=$('<span>').hide().append(langHtml.cancelMessLogin);
 
@@ -2579,12 +2433,33 @@ var convertIDDivExtend=function($el){
   var timerClosePoll; 
 
   var uImagePrim=window['u'+ucfirst(strIPPrim)];
-  var $imPrim=$('<img>').click(function(){popupWin(strIPPrim, 'vendor', loginReturnPrim);}).prop({src:uImagePrim}).css({'vertical-align':'middle'});
-  //var $aPrim=$('<a>').append($imPrim).prop({href:UrlOAuth[strIPPrim], target:"_blank"}); 
+  var $imPrim=$('<img>').prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
+    e.stopPropagation();
+    var flow=(function*(){
+      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var oT={IP:strIPPrim, fun:'vendorFun', caller:'index', code:code};
+      var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      
+      var boE=Boolean(userInfoFrDB.vendor);
+      if(!boE){
+        //var o1={tel:'000', displayName:'bla',boInsert:1, currency:'USD'};
+        var o1={boInsert:1};
+        var vec=[['VUpdate',o1], ['setupById']];   majax(oAJAX,vec);
+      }
+    })(); flow.next();
+  });
+  
 
   var uImageAlt=window['u'+ucfirst(strIPAlt)];
-  var $imAlt=$('<img>').click(function(){popupWin(strIPAlt, 'mergeID', loginReturnAlt);}).prop({src:uImageAlt}).css({'vertical-align':'middle'});
-  //var $aAlt=$('<a>').append($imAlt).prop({href:UrlOAuth[strIPAlt], target:"_blank"}); 
+  var $imAlt=$('<img>').prop({src:uImageAlt}).css({'vertical-align':'middle'}).click(function(e){
+    e.stopPropagation();
+    var flow=(function*(){
+      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var oT={IP:strIPAlt, fun:'mergeIDFun', caller:'index', code:code};
+      var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      
+    })(); flow.next();
+  });
 
 
 
@@ -2733,20 +2608,6 @@ var reportAnswerPopExtend=function($el){
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
   return $el;
-}
-
-getOAuthCode=function*(flow){
-  var strQS, nonce=randomHash(), uPop=createUPop(strIPPrim, strSchemeLong+site.wwwLoginRet, nonce);
-  window.loginReturn=function(strQST){ strQS=strQST; flow.next();}
-  if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
-  window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
-  yield;
-  
-  var params=parseQS(strQS.substring(1));
-  if(!('state' in params) || params.state !== nonce) {   return {err:'Invalid state parameter: '+params.state}; } 
-  if('error' in params) { return {err:params.error}; }
-  if(!('code' in params)) { return {err: 'No "code" parameter in response from IdP'}; }
-  return {err:null, code:params.code};
 }
 
     //if(Object.keys(userInfoFrIP).length || typeof userInfoFrDB.user=='object'){

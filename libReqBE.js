@@ -350,7 +350,7 @@ ReqBE.prototype.adminFun=function*(){
   //this.boRunById=true;
   return {err:null};
 }
-ReqBE.prototype.refreshFun=function*(){
+ReqBE.prototype.refetchFun=function*(){
   var req=this.req, flow=req.flow, res=this.res, site=req.site, userTab=site.TableName.userTab, teamTab=site.TableName.teamTab;
   var idUser=this.sessionMain.userInfoFrDB.user.idUser;
   var Sql=[], {IP, idIP, nameIP, image, email}=this.sessionLogin.userInfoFrIP, Val=[IP, idIP, nameIP, image, email, idUser];
