@@ -79,7 +79,8 @@ maxVendor=30;
 arrLang=[['sv','Svenska'],['en','English']]; arrLangShort=[]; for(var i=0;i<arrLang.length;i++){    arrLangShort[i]=arrLang[i][0];    }
 maxGroupsInFeat=20;
 preDefault="v.";
-snoreLim=12*3600;
+//snoreLim=12*3600;
+snoreLim=20*24*3600;
 boShowTeam=0;
 rebateCodeLen=8;
 version='364';

@@ -22,9 +22,9 @@ myQueryGen=function*(flow, sql, Val, pool){
         console.log('err.code: '+err.code);
         if(err.code=='PROTOCOL_CONNECTION_LOST' || err.code=='ECONNREFUSED' || err.code=='ECONNRESET'){
           setTimeout(function(){ flow.next();}, 2000); yield;  continue;
-        } else { console.log('Can\'t handle: err.code: '+err.code); return {err:err}; }
+        } else { console.log('Can\'t handle: err.code: '+err.code); return [err]; }
       }
-      else { console.log('No \'code\' in err'); return {err:err}; }
+      else { console.log('No \'code\' in err'); return [err]; }
     }
   
     connection.query(sql, Val, function(errT, resultsT, fieldsT) { err=errT; results=resultsT; fields=fieldsT; flow.next();}); yield;
@@ -41,7 +41,7 @@ myQueryGen=function*(flow, sql, Val, pool){
     }
     else {break;}
   }
-  return {err:err, results:results, fields:fields};
+  return [err, results, fields];
   
 }
 
@@ -53,8 +53,14 @@ MyNeo4j=function(){
 MyNeo4j.prototype.escape=function(str){  return str.replace(this.regEscape,this.funEscape);    }
 
 
-MyError=Error;
-//MyError=function(){ debugger;}
+ErrorClient=class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ErrorClient';
+  }
+}
+
+
 
 getETag=function(headers){var t=false, f='if-none-match'; if(f in headers) t=headers[f]; return t;}
 getRequesterTime=function(headers){if("if-modified-since" in headers) return new Date(headers["if-modified-since"]); else return false;}
@@ -69,7 +75,11 @@ tmp.out301Loc=function(url){  this.writeHead(301, {Location: '/'+url});  this.en
 tmp.out403=function(){ this.outCode(403, "403 Forbidden\n");  }
 tmp.out304=function(){  this.outCode(304);   }
 tmp.out404=function(str){ str=str||"404 Not Found\n"; this.outCode(404, str);    }
-tmp.out500=function(err){ var errN=(err instanceof Error)?err:(new MyError(err)); console.log(errN.stack); this.writeHead(500, {"Content-Type": "text/plain"});  this.end(err+ "\n");   }
+//tmp.out500=function(err){ var errN=(err instanceof Error)?err:(new MyError(err)); console.log(errN.stack); this.writeHead(500, {"Content-Type": "text/plain"});  this.end(err+ "\n");   }
+tmp.out500=function(e){
+  if(e instanceof Error) {var mess=e.name + ': ' + e.message; console.error(e);} else {var mess=e; console.error(mess);} 
+  this.writeHead(500, {"Content-Type": "text/plain"});  this.end(mess+ "\n");
+}
 tmp.out501=function(){ this.outCode(501, "Not implemented\n");   }
 
 
@@ -138,39 +148,53 @@ genRandomString=function(len) {
 md5=function(str){return crypto.createHash('md5').update(str).digest('hex');}
 
 
-wrapRedisSendCommand=function*(flow, strCommand,arr){
+  // Redis
+cmdRedis=function*(flow, strCommand,arr){
   var value;
   redisClient.send_command(strCommand,arr, function(err, valueT){  value=valueT; flow.next();  }); yield;
   return value;
 }
 
-
-
-  // ReqBE methods / generators
-//getSessionVar=function*(strSuffix){
-  //var req=this.req, flow=req.flow;
-  //var redisVar=req.sessionID+'_'+strSuffix, strTmp=yield* wrapRedisSendCommand(flow, 'get', [redisVar]);   return JSON.parse(strTmp);
-//}
-//setSessionVar=function*(strSuffix, val, tExpire=maxUnactivity){
-  //var req=this.req, flow=req.flow,  strA=JSON.stringify(val);
-  //var redisVar=req.sessionID+'_'+strSuffix, strTmp=yield* wrapRedisSendCommand(flow, 'set',[redisVar,strA]);   var tmp=yield* wrapRedisSendCommand(flow, 'expire',[redisVar,tExpire]);
-//}
-//setExpireSessionVar=function*(strSuffix, tExpire=maxUnactivity){
-  //var req=this.req, flow=req.flow;
-  //var redisVar=req.sessionID+'_'+strSuffix, tmp=yield* wrapRedisSendCommand(flow, 'expire',[redisVar,tExpire]);
-//}
-
-
-  // ReqBE methods / generators
-getRedisVar=function*(flow, strVar){
-  var strTmp=yield* wrapRedisSendCommand(flow, 'get', [strVar]);   return JSON.parse(strTmp);
+/*
+getRedisStr=function*(flow, strVar){
+  var strTmp=yield* cmdRedis(flow, 'get', [strVar]);   return strTmp;
 }
-setRedisVar=function*(flow, strVar, val, tExpire=maxUnactivity){
-  var strA=JSON.stringify(val);
-  var strTmp=yield* wrapRedisSendCommand(flow, 'set',[strVar,strA]);   var tmp=yield* wrapRedisSendCommand(flow, 'expire',[strVar,tExpire]);
+setRedisStr=function*(flow, strVar, val){
+  var strTmp=yield* cmdRedis(flow, 'set',[strVar,val]);
 }
-setExpireRedisVar=function*(flow, strVar, tExpire=maxUnactivity){
-  var tmp=yield* wrapRedisSendCommand(flow, 'expire',[strVar,tExpire]);
+setexRedisStr=function*(flow, strVar, tExpire=maxUnactivity, val){
+  var strTmp=yield* cmdRedis(flow, 'setex',[strVar,tExpire,val]);
+}
+getRedisObj=function*(flow, strVar){
+  var strTmp=yield* cmdRedis(flow, 'get', [strVar]);   return JSON.parse(strTmp);
+}
+setRedisObj=function*(flow, strVar, val){
+  var strA=JSON.stringify(val),  strTmp=yield* cmdRedis(flow, 'set',[strVar,strA]);
+}
+setexRedisObj=function*(flow, strVar, tExpire=maxUnactivity, val){
+  var strA=JSON.stringify(val),  strTmp=yield* cmdRedis(flow, 'setex',[strVar,tExpire,strA]);
+}
+expireRedis=function*(flow, strVar, tExpire=maxUnactivity){
+  var tmp=yield* cmdRedis(flow, 'expire',[strVar,tExpire]);
+}
+delRedis=function*(flow, strVar){
+  var tmp=yield* cmdRedis(flow, 'del',[strVar]);
+}*/
+
+
+getRedis=function*(flow, strVar, boObj=false){
+  var strTmp=yield* cmdRedis(flow, 'get', [strVar]);  if(boObj) return JSON.parse(strTmp); else return strTmp;
+}
+setRedis=function*(flow, strVar, val, tExpire=-1){
+  if(typeof val!='string') var strA=JSON.stringify(val); else var strA=val;
+  if(tExpire>0) var strTmp=yield* cmdRedis(flow, 'setex',[strVar,tExpire,strA]);
+  else  var strTmp=yield* cmdRedis(flow, 'set',[strVar,strA]);
+}
+expireRedis=function*(flow, strVar, tExpire=maxUnactivity){
+  var tmp=yield* cmdRedis(flow, 'expire',[strVar,tExpire]);
+}
+delRedis=function*(flow, strVar){
+  var tmp=yield* cmdRedis(flow, 'del',[strVar]);
 }
 
 
@@ -225,10 +249,10 @@ CacheUriT=function(){
   var self=this;
   this.set=function*(flow, key,buf,type,boZip,boUglify){
     var eTag=crypto.createHash('md5').update(buf).digest('hex'); 
-    /*if(boUglify) {
-      var objU; objU=UglifyJS.minify(bufO.toString(), {fromString: true});
-      bufO=new Buffer(objU.code,'utf8');
-    }*/
+    //if(boUglify) {
+      //var objU; objU=UglifyJS.minify(bufO.toString(), {fromString: true});
+      //bufO=new Buffer(objU.code,'utf8');
+    //}
     if(boZip){
       var bufI=buf;
       var gzip = zlib.createGzip();
@@ -240,8 +264,6 @@ CacheUriT=function(){
   }
   
 }
-
-
 
 isRedirAppropriate=function(req){
   if(typeof RegRedir=='undefined') return false;

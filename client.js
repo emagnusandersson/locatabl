@@ -330,14 +330,15 @@ CreatorPlugin.transportProt=function(){
 
   rewriteLangDriver=function(){
     langHtml.vendorRewritten=langHtml.driver;
-    //langHtml.loginInfo.vendor=langHtml.driver;
-    //langHtml.Vendor=ucfirst(langHtml.driver);
-    //langHtml.Vendors=ucfirst(langHtml.drivers);
-    //langHtml.IndependentVendor=langHtml.IndependentDriver;
+    boRewriteVendor=true;
+    langHtml.loginInfo.vendor=langHtml.driver;
+    langHtml.Vendor=ucfirst(langHtml.driver);
+    langHtml.Vendors=ucfirst(langHtml.drivers);
+    langHtml.IndependentVendor=langHtml.IndependentDriver;
     
-    //langHtml.vendor=langHtml.driver;   langHtml.vendors=langHtml.drivers;
-    //langHtml.theVendor=langHtml.theDriver;  langHtml.theVendors=langHtml.theDrivers;
-    //langHtml.theVendors0=langHtml.theDrivers0;
+    langHtml.vendor=langHtml.driver;   langHtml.vendors=langHtml.drivers;
+    langHtml.theVendor=langHtml.theDriver;  langHtml.theVendors=langHtml.theDrivers;
+    langHtml.theVendors0=langHtml.theDrivers0;
   };
 
   //this.rewriteLang=function(){};
@@ -1062,14 +1063,15 @@ CreatorPlugin.fruitpicker=function(){
 
   this.rewriteLang=function(){
     langHtml.vendorRewritten=langHtml.picker;
-    //langHtml.loginInfo.vendor=langHtml.picker;
-    //langHtml.Vendor=ucfirst(langHtml.picker);
-    //langHtml.Vendors=ucfirst(langHtml.pickers);
-    //langHtml.IndependentVendor=langHtml.IndependentPicker;
+    boRewriteVendor=true;
+    langHtml.loginInfo.vendor=langHtml.picker;
+    langHtml.Vendor=ucfirst(langHtml.picker);
+    langHtml.Vendors=ucfirst(langHtml.pickers);
+    langHtml.IndependentVendor=langHtml.IndependentPicker;
     
-    //langHtml.vendor=langHtml.picker;     langHtml.vendors=langHtml.pickers;
-    //langHtml.theVendor=langHtml.thePicker;   langHtml.theVendors=langHtml.thePickers;
-    //langHtml.theVendors0=langHtml.thePickers0;
+    langHtml.vendor=langHtml.picker;     langHtml.vendors=langHtml.pickers;
+    langHtml.theVendor=langHtml.thePicker;   langHtml.theVendors=langHtml.thePickers;
+    langHtml.theVendors0=langHtml.thePickers0;
   }
   this.rewriteObj=function(){
 
@@ -1100,14 +1102,15 @@ CreatorPlugin.programmer=function(){
 
   this.rewriteLang=function(){
     langHtml.vendorRewritten=langHtml.programmer;
-    //langHtml.loginInfo.vendor=langHtml.programmer;
-    //langHtml.Vendor=ucfirst(langHtml.programmer);
-    //langHtml.Vendors=ucfirst(langHtml.programmers);
-    //langHtml.IndependentVendor=langHtml.IndependentProgrammer;
+    boRewriteVendor=true;
+    langHtml.loginInfo.vendor=langHtml.programmer;
+    langHtml.Vendor=ucfirst(langHtml.programmer);
+    langHtml.Vendors=ucfirst(langHtml.programmers);
+    langHtml.IndependentVendor=langHtml.IndependentProgrammer;
     
-    //langHtml.vendor=langHtml.programmer;    langHtml.vendors=langHtml.programmers;
-    //langHtml.theVendor=langHtml.theProgrammer; langHtml.theVendors=langHtml.theProgrammers;
-    //langHtml.theVendors0=langHtml.theProgrammers0;
+    langHtml.vendor=langHtml.programmer;    langHtml.vendors=langHtml.programmers;
+    langHtml.theVendor=langHtml.theProgrammer; langHtml.theVendors=langHtml.theProgrammers;
+    langHtml.theVendors0=langHtml.theProgrammers0;
   }
   this.rewriteObj=function(){
     $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', StrSpec);
@@ -1561,7 +1564,6 @@ var payDivExtend=function($el){
     setTax(0);
     if($payButton.tDiff>3600*24*365) {$formDiv.hide();  $rebateCodeDiv.hide(); $deadLineMess.show();} 
     else {$formDiv.show();  $rebateCodeDiv.show(); $deadLineMess.hide();}
-    if(userInfoFrDB.vendor.nPayment==0) $deleteDiv.show(); else $deleteDiv.hide();
   }
   var mySubmit=function(){
     $inpTime.val($select.val());
@@ -1631,14 +1633,7 @@ var payDivExtend=function($el){
     $paymentListDiv.setVis();
     doHistPush({$view:$paymentListDiv});
   });
-    
-    // deleteDiv
-  var $imgH=$imgHelp.clone(); popupHoverM($imgH,$('<div>').html(langHtml.deleteBox.help));
-  var $deleteDiv=$el.children('div:eq(3)').append('&nbsp;&nbsp;&nbsp;&nbsp;',$imgH);
-  //var $deleteButt=$deleteDiv.children('button').click($deleteAccountPop.openPop);
-  var $deleteButt=$deleteDiv.children('button').click(function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
-
-
+  
 
   $el.css({'text-align':'left'});
   return $el;
@@ -1651,39 +1646,6 @@ var payFootExtend=function($el){
   return $el;
 }
 
-
-var deleteAccountPopExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'deleteAccountPop';}
-  //var $el=popUpExtend($el);
-  var $yes=$('<button>').html(langHtml.Yes).click(function(){
-    //var vec=[['VDelete',1,function(data){doHistBack();doHistBack();}]];   majax(oAJAX,vec);
-    userInfoFrIP={};  userInfoFrDB=$.extend({}, specialistDefault);
-    var vec=[['VDelete',1], ['logout',1, function(data){
-      //$mapDiv.setVis(); 
-      history.fastBack($mapDiv,true);
-    }]];   majax(oAJAX,vec);
-    
-
-
-
-  });
-  var $cancel=$('<button>').html(langHtml.Cancel).click(doHistBack);
-  //$el.append(langHtml.deleteBox.regret,'<br>',$yes,$cancel);
-  //$el.css({padding:'1.1em',border:'1px solid'});
-  $el.setVis=function(){
-    $el.show();   
-    return true;
-  }
-  var $h1=$('<div>').append(langHtml.deleteBox.regret);
-  var $blanket=$('<div>').addClass("blanket");
-  var $centerDiv=$('<div>').append($h1,$cancel,$yes);
-  $centerDiv.addClass("Center").css({'width':'20em', height:'7em', padding:'1.1em'})
-  if(boIE) $centerDiv.css({'width':'20em'}); 
-  $el.addClass("Center-Container").append($centerDiv,$blanket); //
-  $el.css({'text-align':'left'});
-  return $el;
-}
 
 
 var payButtonExtend=function($el){
@@ -2170,7 +2132,7 @@ var reporterIntroDivExtend=function($el){
     var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('telephone number can not be empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
     var o1={email:strEmail, displayName:userInfoFrIP.nameIP, currency:curT};
-    var vec=[['VIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
+    var vec=[['RIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
     var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
     $body.append($iframeConversion);
@@ -2304,6 +2266,7 @@ var userSettingDivExtend=function($el){
     $imgImage.prop({src:tmp.image});
     $spanNameIP.html(tmp.nameIP);  $inpEmail.val(tmp.email);
         
+    if(userInfoFrDB.vendor.nPayment==0) $deleteDiv.show(); else $deleteDiv.hide();
     return true; 
   }
   var saveEmail=function(){
@@ -2328,7 +2291,7 @@ var userSettingDivExtend=function($el){
   var $imgImage=$('<img>').css({'vertical-align':'middle'});
   var $spanNameIP=$('<span>');
   var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {saveEmail();return false;}} );
-  var $butEmail=$('<button>').append('Save email').click(saveEmail);
+  var $butEmail=$('<button>').append('Change email').click(saveEmail);
   
   var $divIdUser=$('<div>').append('idUser (db): ', $spanIdUser);
   var $divIdIP=$('<div>').append('Id: ', $spanIP, $spanIdIP);
@@ -2338,9 +2301,16 @@ var userSettingDivExtend=function($el){
   var $bub=$('<div>').html("This email is not shown to the public, however it allows you to login if the Id-provider is changed.");
   var $imgH=$imgHelp.clone();  popupHoverM($imgH,$bub); 
   var $divEmail=$('<div>').append('Contact email: ', $inpEmail, $butEmail, $imgH);
-  var $divRefresh=$('<div>').append('Refetch data from Id-provider: ', $buttRefetch);
+  var $divRefresh=$('<div>').append('Refetch data: ', $buttRefetch);
+  var $divHead=$('<div>').append('Data from Id-provider (user info): ').css({'margin-bottom':'0.5em','font-weight':'bold'});
   
-  var $divs=$([]).push($divRefresh, $divIdIP, $divImage, $divNameIP, $divEmail), $divCont=$('<div>').append($divs);
+      // deleteDiv
+  var $imgH=$imgHelp.clone(); popupHoverM($imgH,$('<div>').html(langHtml.deleteBox.help));
+  var $butDelete=$('<button>').append(langHtml.DeleteAccount).css({'margin-right':'1em'}).click(function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
+  var $deleteDiv=$('<div>').append($butDelete); //,$imgH
+
+  
+  var $divs=$([]).push($divHead, $divRefresh, $divIdIP, $divImage, $divNameIP, $divEmail, $deleteDiv).css({'margin-top':'1em'}), $divCont=$('<div>').append($divs);
   $el.append($divCont);
   
   $el.css({'text-align':'left'});
@@ -2354,6 +2324,35 @@ var userSettingFootExtend=function($el){
   return $el;
 }
 
+var deleteAccountPopExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'deleteAccountPop';}
+  //var $el=popUpExtend($el);
+  var $yes=$('<button>').html(langHtml.Yes).click(function(){
+    //var vec=[['VDelete',1,function(data){doHistBack();doHistBack();}]];   majax(oAJAX,vec);
+    userInfoFrIP={};  userInfoFrDB=$.extend({}, specialistDefault);
+    var vec=[['VDelete',1], ['logout',1, function(data){
+      //$mapDiv.setVis(); 
+      history.fastBack($mapDiv,true);
+    }]];   majax(oAJAX,vec);
+    
+  });
+  var $cancel=$('<button>').html(langHtml.Cancel).click(doHistBack);
+  //$el.append(langHtml.deleteBox.regret,'<br>',$yes,$cancel);
+  //$el.css({padding:'1.1em',border:'1px solid'});
+  $el.setVis=function(){
+    $el.show();   
+    return true;
+  }
+  var $h1=$('<div>').append(langHtml.deleteBox.regret);
+  var $blanket=$('<div>').addClass("blanket");
+  var $centerDiv=$('<div>').append($h1,$cancel,$yes);
+  $centerDiv.addClass("Center").css({'width':'20em', height:'7em', padding:'1.1em'})
+  if(boIE) $centerDiv.css({'width':'20em'}); 
+  $el.addClass("Center-Container").append($centerDiv,$blanket); //
+  $el.css({'text-align':'left'});
+  return $el;
+}
 
 
 /*******************************************************************************************************************
@@ -4835,6 +4834,9 @@ var langSelectExtend=function($sel){
 var uploadImageDivExtend=function($el){
   $el.toString=function(){return 'uploadImageDiv';}
   var progressHandlingFunction=function(e){      if(e.lengthComputable){   $progress.attr({value:e.loaded,max:e.total});      }      }
+  var errorFunc=function(jqXHR, textStatus, errorThrown){
+    setMess('responseText: '+jqXHR.responseText+', textStatus: '+' '+textStatus+', errorThrown: '+errorThrown);     throw 'bla';
+  }
   var oAJAXL={
     url: leafBE,
     type: 'POST',
@@ -5050,7 +5052,7 @@ var moreDivExtend=function($el){
     $nNext.html(nNext); //+ending
   }
   var $headOrdinal=$('<span>').append(langHtml.headOrdinal).css({'font-weight':'bold'});
-  var $labOrdinal=$('<span>').append(langHtml.labOrdinal), $nNext=$labOrdinal.children(':nth-child(2)').css({'font-weight':'bold'});
+  var $labOrdinal=$('<span>').append(langHtml.labOrdinal), $nNext=$labOrdinal.children(':nth-child(1)').css({'font-weight':'bold'});
   var $labOrdinalB=$('<div>').append(langHtml.labOrdinalB);
   var $divOrdinal=$('<div>').append($headOrdinal, ' ', $labOrdinal).css({border:'solid green 2px', padding:'0.3em'});  //, $labOrdinalB
   //var func=function(){}; if(!boDbg) func=function(){trackConv(949679695,"wCpMCPHKhQUQz-zrxAM");}
@@ -5124,7 +5126,7 @@ var moreDivExtend=function($el){
   
   //var $hovWhyIsFBNeeded=$hovHelp.clone().text(langHtml.WhyIsFBNeededQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.WhyIsFBNeededA);     popupHoverM(//$hovWhyIsFBNeeded,$bub,15000);
   var $NothingIsWrittenToYourFBFlow=$('<div>').append(langHtml.NothingIsWrittenToYourFBFlow);
-  var $YouCanChangeImage=$('<div>').append(langHtml.YouCanChangeImage);
+  var $YouCanUseCustomImage=$('<div>').append(langHtml.YouCanUseCustomImage);
   var $YouCanDeleteYourAccount=$('<div>').append(langHtml.YouCanDeleteYourAccount);
   var $FBToPreventMultipleAccounts=$('<div>').append(langHtml.FBToPreventMultipleAccounts);
   //var $aPrivacyPolicy=$('<a>').prop({href:'https://closeby.market/Privacy_policy_2016-Oct-12'}).append("Privacy policy 2016-Oct-12");
@@ -5132,7 +5134,7 @@ var moreDivExtend=function($el){
   var $aMoreAboutWhyAnIdPIsUsed=$('<a>').prop({href:'https://closeby.market/WhyIsAnIdPUsed'}).append(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
 
   //var $opt=$([]).push($pWiki, $langSpan, $buttLoginVendor, $buttLoginTeam, $teamApprovedMess);
-  var $rows=$([]).push($divOrdinal, $pWiki, $labLoginVendor, $buttLoginVendor, $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanChangeImage, $YouCanDeleteYourAccount, $buttLoginTeam, $teamApprovedMess);  // , $langSpan , $loginWEmailButton
+  var $rows=$([]).push($divOrdinal, $pWiki, $labLoginVendor, $buttLoginVendor, $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanUseCustomImage, $YouCanDeleteYourAccount, $buttLoginTeam, $teamApprovedMess);  // , $langSpan , $loginWEmailButton
   var $topDivA=$('<div>').append($iframeLike).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,  , $aMoreAboutWhyAnIdPIsUsed
   $rows.css({'margin':'1em 0em 1em 0.6em'});
   $el.append($topDivA,$rows);  
@@ -5262,7 +5264,7 @@ setUp1=function(){
   drLev=Math.floor(drLev); //drLev=0;
   dr=Math.pow(2,drLev);
   
-  if(boIOS) strBackSymbol='◄'; else strBackSymbol='◀';
+  if(boIOS  || boIE) strBackSymbol='◄'; else strBackSymbol='◀';
 
   WCMIN=0; WCMAX=256; WCMID=WCMAX/2;
   TILESIZE=256/dr; TILESIZEHALF=TILESIZE/2;
@@ -5360,15 +5362,26 @@ setUp1=function(){
   
   PlugIn=[]; 
   var rewriteProg=function(){    for(var i=0;i<StrPlugIn.length;i++){  PlugIn[i]=new CreatorPlugin[StrPlugIn[i]]();   }    };
+
+    //
+    // langHtml.vendor (and plural-, the-, uppercase-versions etc) may be rewritten by some sites.
+    // 
   var rewriteLang=function(){  for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteLang; if(tmp) tmp();   }  };
   rewriteObj=function(){  for(var i=0;i<PlugIn.length;i++){  PlugIn[i].rewriteObj();   }  };
 
   rewriteProg();
  
 
-   
+
+     // Create ucfirst versions
   var StrMakeUCase=['vendor', 'vendors', 'column', 'visible', 'show'];
   for(var i=0;i<StrMakeUCase.length;i++){var name=StrMakeUCase[i]; langHtml[ucfirst(name)]=ucfirst(langHtml[name]); }
+  
+  
+     // Store vanilla version
+  var StrStoreVanilla=['vendor', 'vendors', 'Vendor', 'Vendors', 'theVendor', 'theVendors', 'theVendors0', 'IndependentVendor'];
+  for(var i=0;i<StrStoreVanilla.length;i++){var name=StrStoreVanilla[i]; langHtml[name+'Vanilla']=langHtml[name]; }
+  
 
   rewriteLang();
 
@@ -5378,20 +5391,21 @@ setUp1=function(){
 
 
   var regNom=new RegExp("<span nom=\"([^\"]+)\">.*?</span>",'g');
-  //var nomFunc=function(m,n){return langHtml[n]};
-  var nomFunc=function(m,n){return "<span nom="+n+">"+langHtml[n]+"</span>"};
+  var nomFunc=function(m,n){return langHtml[n]};
+  //var nomFunc=function(m,n){return "<span nom="+n+">"+langHtml[n]+"</span>"};
   replaceNom=function(parent,strName){
     parent[strName]=parent[strName].replace(regNom,nomFunc);
   }
-/*
-  replaceNom(langHtml.label,'standingByMethod');
+  replaceNom(langHtml.label,'standingByMethod');  // Only used by transportUrgent (taxi, transport)
+
+
   replaceNom(langHtml.helpBub,'link');
   replaceNom(langHtml.helpBub,'posTime');
   replaceNom(langHtml.helpBub,'shiftEnd');
   replaceNom(langHtml.helpBub,'donatedAmount');
 
   replaceNom(langHtml,'VendorSettings');
-  //replaceNom(langHtml,'VendorLogin');
+  //replaceNom(langHtml,'VendorLogin'); // Not used
   replaceNom(langHtml,'VendorEntry');
   replaceNom(langHtml,'FilterTitle');
   replaceNom(langHtml,'gettingStartedLink');
@@ -5403,10 +5417,12 @@ setUp1=function(){
 
   replaceNom(langHtml,'DummiesShowingMess');
   //replaceNom(langHtml,'noteLoginVendor');
-  */
+  
 
   replaceNom(langHtml,'headOrdinal');
-  //replaceNom(langHtml,'labOrdinal'); 
+  replaceNom(langHtml,'headOrdinalDouble');
+  if(langHtml.vendorRewritten!=langHtml.vendor)  langHtml.headOrdinal=langHtml.headOrdinalDouble;
+  replaceNom(langHtml,'labOrdinal'); 
 
 
   langHtml.DidYouUseAltIPBefore=langHtml.DidYouUseAltIPBefore.replace(regNom,strIPAltLong);
@@ -5484,7 +5500,7 @@ setUp1=function(){
   var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
   $infoLink=$('<a>').prop({href:uWikiT}).append(langHtml.OtherMapApps);
   $footDiv=$('<div>').css({background:'', "box-sizing":"border-box", 'border-top':'solid 1px',color:'black','font-size':'1.2em','line-height':'1.6em','font-weight':'bold','text-align':'center',
-      padding:'0.2em 0em 0.2em', margin:'1px 0em 0em 0em', flex:'0 0 auto', display:"flex", "justify-content":"space-evenly"});
+      padding:'0.2em 0em 0.2em', margin:'1px 0em 0em 0em', flex:'0 0 auto', display:"flex", "justify-content":"space-around"}); //, "justify-content":"space-evenly"
   $footDiv.css({visibility:'hidden'});
 
   $body.css({padding:'0 0 0 0'});
@@ -5602,13 +5618,10 @@ var setUp2=function(){
   $vendorSettingButton=$('<button>').append(langHtml.VendorSettings);
   $vendorSettingDiv=vendorSettingDivExtend($('<div>')).css({flex:'1 1 0', 'overflow-y':'auto', 'overflow-x':'hidden'}); 
   $vendorSettingFoot=vendorSettingFootExtend($('<div>'));  
-  
-
   $priceSettingButton=$('<button>').append(langHtml.Prices);
   $priceSettingDiv=priceSettingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});  
   $priceSettingFoot=priceSettingFootExtend($('<div>'));  
   $deleteAccountPop=deleteAccountPopExtend($('<div>'));
-
   
   //if(boAndroid) { var h=window.innerHeight/2.5;   $payDiv.add($vendorSettingDiv).add($priceSettingDiv).css({'padding-bottom':h+'px'});  } //make room for keyboard
   $quickDiv.css({padding:'0.3em 0.2em',margin:'0em 0em 0em',display:'block',background:'#faa','border-top':'solid 1px'});  

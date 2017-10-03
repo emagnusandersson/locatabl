@@ -135,7 +135,8 @@ loginAsTeam:'Logga in som lag-admin',
 gettingStartedLink:'Komma igång som <span nom="vendor">entreprenör</span>',
 SeeAlso:'Se också',
 //labOrdinal:'Be the <span></span> <span nom="vendor">vendor</span> to join.',
-headOrdinal:'Ny entreprenör (<span nom="vendorRewritten">entreprenör</span>)?',
+headOrdinal:'Ny <span nom="vendorRewritten">entreprenör</span>?',
+headOrdinalDouble:'Ny entreprenör (<span nom="vendorRewritten">entreprenör</span>)?',
 labOrdinal:'Logga in nu och bli <span nom="vendor">entreprenör</span> nummer <span></span>.',
 labOrdinalB:'Du kan radera ditt konto när som helst.',
 
@@ -206,7 +207,7 @@ MoreAboutWhyAnIdPIsUsed:'Mer om hur och varför en extern ID tjänst (Facebook) 
 FBToPreventMultipleAccounts:'En ID tjänst (Facebook) används för att förhindra att folk skaffar sig mer än ett konto.',
 //(Annars skulle någon illvillig kunna skapa typ 100-tals konton och på så sätt sabotera tjänsten)
 NothingIsWrittenToYourFBFlow:'Inget skrivs på ditt Facebookflöde.',
-YouCanChangeImage:'Du behöver inte visa din facebookbild, namn etc.',
+YouCanUseCustomImage:'Du kan använda en separat bild, namn etc.',
 YouCanDeleteYourAccount:'Du kan radera all data (radera ditt konto) och komma tillbaka senare, så många gånger du vill.',
 moreInfoOnFAQ:'Mer info (FAQ-sida)',
 
@@ -222,10 +223,10 @@ div:"\
   </div>\
   <div>Använd kampanjkod: <input type=text> <button>Skicka</button></div>\
   <div>Över ett år till deadline.</div>\
-  <hr><button>Lista på alla betalningar</button>\
-  <div><hr><button>Radera konto</button></div>"
+  <hr><button>Lista på alla betalningar</button>"
 },
-
+//<div><hr><button>Radera konto</button></div>
+DeleteAccount:"Radera konto",
 
 deleteBox:{
 regret:"Vill du verkligen radera kontot?",
@@ -373,6 +374,7 @@ displayEmail:'Email',
 link:'Länk',
 homeTown:'Hemstad',
 standingByMethod:'Hur väntar <span nom="theVendor">entreprenören</span>',
+//standingByMethod:'Hur väntar entreprenören',
 idDriverGovernment:'Förar-ID',
 vehicleType:'Fordonstyp',
 brand:'Märke',
