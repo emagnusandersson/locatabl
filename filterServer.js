@@ -120,7 +120,7 @@ getHist=function*(flow, mysqlPool, arg){
   }
   var sql=Sql.join('\n'), Val=[]; //set GLOBAL max_heap_table_size=128*1024*1024, GLOBAL tmp_table_size=128*1024*1024
 //debugger
-  var {err, results}=yield* myQueryGen(flow, sql, Val, mysqlPool);  if(err) { extend(Ou, {err:err}); return Ou; }
+  var [err, results]=yield* myQueryGen(flow, sql, Val, mysqlPool);  if(err) return [err];
   var NInRelaxedCond=[], Hist=[];
   for(var i=0;i<results.length;i++){
     var [kind,ii]=TypeNInd[i]; 
@@ -140,7 +140,7 @@ getHist=function*(flow, mysqlPool, arg){
       Hist[ii].push(boTrunk);  // The last item marks if the second-last-item is a trunk (remainder)
     }
   }
-  extend(Ou, {Hist:Hist});  return Ou;
+  return [null,Hist];
 
 }
 

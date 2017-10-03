@@ -16,8 +16,8 @@ Vehicle:'Vehicle',
 Brand:'Brand',  // Vehicle brand
 Independent:'Independent',
 
-
 vendorRewritten:'vendor',
+
 
 vendor:'vendor', vendors:'vendors',
 theVendor:"the vendor", theVendors:"the vendors",
@@ -135,7 +135,8 @@ TeamAdmin:'Team administrator',
 gettingStartedLink:'Getting started as <span nom="vendor">vendor</span>',
 SeeAlso:'See also',
 //labOrdinal:'Be the <span></span> <span nom="vendor">vendor</span> to join.',
-headOrdinal:'New vendor (<span nom="vendorRewritten">vendor</span>)?',
+headOrdinal:'New <span nom="vendor">vendor</span>?',
+headOrdinalDouble:'New vendor (<span nom="vendorRewritten">vendor</span>)?',
 labOrdinal:'Join now and be <span nom="vendor">vendor</span> number <span></span>.',
 labOrdinalB:'You can delete your account at any time.',
 
@@ -209,7 +210,7 @@ MoreAboutWhyAnIdPIsUsed:'More about how and why an ID provider (Facebook) is use
 FBToPreventMultipleAccounts:'An ID provider (Facebook) is used to prevent people from creating multiple accounts.',
 //(Otherwise some mischievous person could create like 100\'s of accounts and effectively sabotage the service)
 NothingIsWrittenToYourFBFlow:'Nothing is written to your Facebook flow.',
-YouCanChangeImage:"You don't have to appear with your Facebook image, name etc.",
+YouCanUseCustomImage:"You can use custom image, display name etc.",
 YouCanDeleteYourAccount:'You can delete all your data (delete your account), and come back at a later timepoint as many times as you want.',
 moreInfoOnFAQ:'More info (FAQ)',
 
@@ -225,10 +226,10 @@ div:"\
   </div>\
   <div>Use campaign code: <input type=text> <button>Send</button></div>\
   <div>More than a year till deadline.</div>\
-  <hr><button>Show list of all payments</button>\
-  <div><hr><button>Delete account</button></div>"
+  <hr><button>Show list of all payments</button>"
 },
-
+//<div><hr><button>Delete account</button></div>
+DeleteAccount:"Delete account",
 
 deleteBox:{
 regret:"Do you really want to delete the account",
@@ -376,6 +377,7 @@ displayEmail:'Email',
 link:'Link',
 homeTown:'Home town',
 standingByMethod:'How is <span nom="theVendor">the vendor</span> waiting',
+//standingByMethod:'How is the vendor waiting',
 idDriverGovernment:'Driver-ID (gov)',
 vehicleType:'Vehicle type',
 brand:'Brand',

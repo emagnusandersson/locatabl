@@ -1,20 +1,20 @@
 
 
-mesOMake=function(glue){ return function(str){
-  if(str) this.Str.push(str);
-  var str=this.Str.join(glue);  this.res.end(str);
-}}
-mesEOMake=function(glue){ return function(err){
-  var error=new MyError(err); console.log(error.stack);
-  this.Str.push('E: '+err.syscal+' '+err.code);
-  var str=this.Str.join(glue); this.res.end(str);  
-}}
+//mesOMake=function(glue){ return function(str){
+  //if(str) this.Str.push(str);
+  //var str=this.Str.join(glue);  this.res.end(str);
+//}}
+//mesEOMake=function(glue){ return function(err){
+  //var error=new Error(err); console.log(error.stack);
+  //this.Str.push('E: '+err.syscal+' '+err.code);
+  //var str=this.Str.join(glue); this.res.end(str);  
+//}}
 mesOMakeJSON=function(glue){ return function(str){
   if(str) this.Str.push(str);
   var str=this.Str.join(glue);  this.res.end(JSON.stringify(str));
 }}
 mesEOMakeJSON=function(glue){ return function(err){
-  var error=new MyError(err); console.log(error.stack);
+  console.error(err);
   var tmp=err.syscal||''; this.Str.push('E: '+tmp+' '+err.code);
   var str=this.Str.join(glue); this.res.end(JSON.stringify(str));  
 }}
@@ -81,8 +81,7 @@ app.reqCurlEnd=function*(){
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
   }
   var sql=Sql.join('\n');
-  var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
-  if(err){this.mesEO(err); return; } 
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err){this.mesEO(err); return; } 
   var {boShow, tDiff, boOK, mess}=results[1][0];
   if(inObj.boCheck){
     if(!boOK) {this.mesO(mess); return;}
@@ -105,12 +104,13 @@ app.reqCurlEnd=function*(){
 app.reqPubKeyStore=function*(){
   var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS, uSite=req.uSite; this.pool=DB[site.db].pool;
   var flow=req.flow;
-  this.mesO=mesOMake('\n');
+  //this.mesO=mesOMake('\n');
   
   var pubKey=objQS.pubKey||'';
   var strLang='en';
 
-  var Str=this.Str=[];
+  //var Str=this.Str=[];
+  var Str=[];
   Str.push('<!DOCTYPE html> \n\
 <html><head> \n\
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> \n\
@@ -140,7 +140,7 @@ app.reqPubKeyStore=function*(){
 
 
   var caller="pubKeyStore",  CSRFCode=randomHash();
-  yield* setRedisVar(flow, req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode); 
+  yield* setRedis(flow, req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode, maxUnactivity); 
   
 
   Str.push("\n\
@@ -163,7 +163,9 @@ response_type="+JSON.stringify(response_type)+";\n\
 </script>");
 
   Str.push("</body></html>");
-  this.mesO();
+  //this.mesO();
+
+  var str=Str.join('\n');   res.writeHead(200, "OK");   res.end(str); 
 }
 
 
@@ -235,7 +237,7 @@ app.reqIndex=function*() {
 
 
   //this.sessionLogin={userInfoFrIP:0};
-  //yield* setRedisVar(flow, req.sessionID+'_Login', this.sessionLogin); 
+  //yield* setRedis(flow, req.sessionID+'_Login', this.sessionLogin, maxLoginUnactivity); 
 
   //boVideo=1;
   
@@ -419,8 +421,7 @@ app.reqImage=function*() {
 
   var tab;  if(kind=='v'){tab=site.TableName.vendorImageTab; }else tab=site.TableName.teamImageTab;
   var sql = "SELECT data FROM "+tab+" WHERE idUser=?", Val=[id];
-  var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
-  if(err) { res.out500(err); return;}
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err) { res.out500(err); return;}
   if(results.length>0){
     var strData=results[0].data;
     var eTag=crypto.createHash('md5').update(strData).digest('hex'); 
@@ -484,8 +485,8 @@ app.reqStatic=function*() {
     var err=yield *readFileToCache(flow, filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
-      if('host' in req.headers) console.log('Faulty request from'+req.headers.host);
-      if('Referer' in req.headers) console.log(req.headers.Referer);
+      if('host' in req.headers) console.error('Faulty request from'+req.headers.host);
+      if('Referer' in req.headers) console.error(req.headers.Referer);
       res.out500(err); return;
     }
   }
@@ -522,8 +523,7 @@ app.reqMonitor=function*(){
     Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser WHERE "+where+";");
 
     var sql=Sql.join('\n'), Val=[];
-    var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
-    if(err){ res.out500(err); return; }
+    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return; }
     site.nVis=results[0][0].n;
     site.nUser=results[1][0].n;
   }
@@ -589,8 +589,7 @@ app.reqStat=function*(){
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+vendorTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
-  var {err, results}=yield* myQueryGen(flow, sql, Val, this.pool);
-  if(err){ res.out500(err); return {err:'exited'};  }
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return;  }
   var nUser=results[0][0].n;
   if('code' in objQS && objQS.code=='amfoen') {site.boGotNewVendors=0; site.nUser=nUser;}
   var matA=results[1];
@@ -620,7 +619,6 @@ app.reqStat=function*(){
   
   Str.push("</body></html>");
   var str=Str.join('\n');  res.end(str);
-  return {err:null, result:1}; 
 }
 
 
@@ -1654,7 +1652,7 @@ app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
   //var keys=Object.keys(UriDB), poolTmp=DB[keys[0]].pool;
   if(!('default' in DB)) {console.log('no DB.default');}
   var poolTmp=DB.default.pool;
-  var {err, results}=yield* myQueryGen(flow, sql, Val, poolTmp);
+  var [err, results]=yield* myQueryGen(flow, sql, Val, poolTmp);
   var tmp=createMessTextOfMultQuery(SqlA, err, results);  console.log(tmp); 
   if(err){ debugger;  return; }
 }

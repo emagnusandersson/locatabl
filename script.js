@@ -106,24 +106,20 @@ var flow=( function*(){
 
   var strConfig;
   if(boHeroku){ 
-    if(!process.env.jsConfig) { console.log('jsConfig-environment-variable is not set'); process.exit(1);}
+    if(!process.env.jsConfig) { console.error('jsConfig-environment-variable is not set'); return;} //process.exit(1);
     strConfig=process.env.jsConfig||'';
   }
   else{
-    fs.readFile('./config.js', function(errT, bufT) { //, this.encRead
-      if(errT){  console.log(errT); }
-      strConfig=bufT.toString();
-      flow.next();
-    });
-    yield;
+    var err, buf; fs.readFile('./config.js', function(errT, bufT) { err=errT;  buf=bufT;  flow.next();  });  yield;     if(err) {console.error(err); return;}
+    strConfig=buf.toString();
     //require('./config.js');    //require('./config.example.js');
   } 
   var strMd5Config=md5(strConfig);
   eval(strConfig);
   var redisVar='str'+ucfirst(strAppName)+'Md5Config';
-  var tmp=yield *wrapRedisSendCommand(flow, 'get',[redisVar]);
+  var tmp=yield *getRedis(flow, redisVar);
   var boNewConfig=strMd5Config!==tmp; 
-  if(boNewConfig) { var tmp=yield *wrapRedisSendCommand(flow, 'set',[redisVar,strMd5Config]);  }
+  if(boNewConfig) { var tmp=yield *setRedis(flow, redisVar, strMd5Config);  }
 
   if('levelMaintenance' in process.env) levelMaintenance=process.env.levelMaintenance;
   SiteName=Object.keys(Site);
@@ -162,9 +158,9 @@ var flow=( function*(){
         //console.log(filename+' changed: '+ev);
       if(StrFile.indexOf(filename)!=-1){
         console.log(filename+' changed: '+ev);
-        var flowWatch=( function*(){ 
-          var err=yield* readFileToCache(flowWatch, filename); if(err) console.log(err.message);
-        })(); flowWatch.next();
+        var flow=( function*(){ 
+          var err=yield* readFileToCache(flow, filename); if(err) console.error(err);
+        })(); flow.next();
       }
     });
     fs.watch('stylesheets',function (ev,filename) {
@@ -172,9 +168,9 @@ var flow=( function*(){
         //console.log(filename+' changed: '+ev);
       if(StrFile.indexOf(filename)!=-1){
         console.log(filename+' changed: '+ev);
-        var flowWatch=( function*(){ 
-          var err=yield* readFileToCache(flowWatch, 'stylesheets/'+filename); if(err) console.log(err.message);
-        })(); flowWatch.next();
+        var flow=( function*(){ 
+          var err=yield* readFileToCache(flow, 'stylesheets/'+filename); if(err) console.error(err);
+        })(); flow.next();
       }
     });
     fs.watch('lang',function (ev,filename) {
@@ -182,9 +178,9 @@ var flow=( function*(){
         //console.log(filename+' changed: '+ev);
       if(StrFile.indexOf(filename)!=-1){
         console.log(filename+' changed: '+ev);
-        var flowWatch=( function*(){ 
-          var err=yield* readFileToCache(flowWatch, 'lang/'+filename); if(err) console.log(err.message);
-        })(); flowWatch.next();
+        var flow=( function*(){ 
+          var err=yield* readFileToCache(flow, 'lang/'+filename); if(err) console.error(err);
+        })(); flow.next();
       }
     });
   }
@@ -194,7 +190,7 @@ var flow=( function*(){
   CacheUri=new CacheUriT();
   for(var i=0;i<StrFilePreCache.length;i++) {
     var filename=StrFilePreCache[i];
-    var err=yield *readFileToCache(flow, filename); if(err) {  console.log(err.message);  return;}
+    var err=yield *readFileToCache(flow, filename); if(err) {  console.error(err);  return;}
   }
   yield *createSiteSpecificClientJSAll(flow);
   
@@ -236,16 +232,15 @@ var flow=( function*(){
 
       
       var ipClient=getIP(req);
-      var redisVarSession=sessionID+'_Main';
-      var redisVarCounter=sessionID+'_Counter', redisVarCounterIP=ipClient+'_Counter'; 
+      var redisVarSession=sessionID+'_Main', redisVarCounter=sessionID+'_Counter', redisVarCounterIP=ipClient+'_Counter'; 
       
         // get intCount
       var semY=0, semCB=0, err, intCount;
       var tmp=redisClient.send_command('eval',[luaCountFunc, 3, redisVarSession, redisVarCounter, redisVarCounterIP, tDDOSBan], function(errT,intCountT){
-        err=errT; intCount=intCountT; if(semY) { req.flow.next(); } semCB=1;
+        err=errT; intCount=intCountT; if(semY) req.flow.next();   semCB=1;
       });
       if(!semCB) { semY=1; yield;}
-      if(err) {console.log(err); return;}
+      if(err) {console.error(err); return;}
       if(intCount>intDDOSMax) {res.outCode(429,"Too Many Requests ("+intCount+"), wait "+tDDOSBan+"s\n"); return; }
 
 
