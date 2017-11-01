@@ -28,7 +28,10 @@ sgMail = require('@sendgrid/mail');
 ip = require('ip');
 require('./lib.js');
 require('./libServerGeneral.js');
+require('./libMysql.js');
 require('./libServer.js');
+require('./lib/foundOnTheInternet/sha1.js');
+
 //require('./store.js');
 
 strAppName='tracker';
@@ -60,6 +63,7 @@ interpretArgv=function(){
     }
   }
 }
+
 
 StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummy', 'createDummies'];
   
@@ -112,7 +116,6 @@ var flow=( function*(){
   else{
     var err, buf; fs.readFile('./config.js', function(errT, bufT) { err=errT;  buf=bufT;  flow.next();  });  yield;     if(err) {console.error(err); return;}
     strConfig=buf.toString();
-    //require('./config.js');    //require('./config.example.js');
   } 
   var strMd5Config=md5(strConfig);
   eval(strConfig);
@@ -232,7 +235,7 @@ var flow=( function*(){
 
       
       var ipClient=getIP(req);
-      var redisVarSession=sessionID+'_Main', redisVarCounter=sessionID+'_Counter', redisVarCounterIP=ipClient+'_Counter'; 
+      var redisVarSession=sessionID+'_UserInfoFrDB', redisVarCounter=sessionID+'_Counter', redisVarCounterIP=ipClient+'_Counter'; 
       
         // get intCount
       var semY=0, semCB=0, err, intCount;
@@ -287,6 +290,9 @@ var flow=( function*(){
         else if(pathName=='/monitor.html'){     yield* reqMonitor.call(objReqRes);     }
         else if(pathName=='/stat.html'){        yield* reqStat.call(objReqRes);        }
         else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
+        else if(pathName=='/'+leafLoginWLink){  yield* reqLoginWLink.call(objReqRes);  }
+        else if(pathName=='/'+leafVerifyPWResetReturn){  yield* reqVerifyPWResetReturn.call(objReqRes);  }
+        else if(pathName=='/'+leafVerifyEmailNCreateUserReturn){  yield* reqVerifyEmailNCreateUserReturn.call(objReqRes);  }
         //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
         else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
         else if(pathName=='/debug'){    debugger  }

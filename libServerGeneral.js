@@ -12,39 +12,6 @@ parseCookies=function(req) {
 
 
 
-myQueryGen=function*(flow, sql, Val, pool){ 
-  var err, connection, results, fields;
-  for(var i=0;i<nDBRetry;i++){
-    pool.getConnection(function(errT, connectionT) { err=errT; connection=connectionT; flow.next(); }); yield;
-    if(err) {
-      console.log('Error when getting mysql connection, attemptCounter: '+i);
-      if(typeof err=='object' && 'code' in err) {
-        console.log('err.code: '+err.code);
-        if(err.code=='PROTOCOL_CONNECTION_LOST' || err.code=='ECONNREFUSED' || err.code=='ECONNRESET'){
-          setTimeout(function(){ flow.next();}, 2000); yield;  continue;
-        } else { console.log('Can\'t handle: err.code: '+err.code); return [err]; }
-      }
-      else { console.log('No \'code\' in err'); return [err]; }
-    }
-  
-    connection.query(sql, Val, function(errT, resultsT, fieldsT) { err=errT; results=resultsT; fields=fieldsT; flow.next();}); yield;
-    connection.release();
-    if(err) {
-      console.log('Error when making mysql query, attemptCounter: '+i);
-      if(typeof err=='object' && 'code' in err) {
-        console.log('err.code: '+err.code); debugger
-        if(err.code=='PROTOCOL_CONNECTION_LOST' || err.code=='ECONNREFUSED'){
-          setTimeout(function(){ flow.next();}, 2000); yield;   continue;
-        } else { console.log('Can\'t handle: err.code: '+err.code); break; }
-      }
-      else { console.log('No \'code\' in err'); break; }
-    }
-    else {break;}
-  }
-  return [err, results, fields];
-  
-}
-
 
 MyNeo4j=function(){
   var chars = ['\\"', '\\\'', '\\\\'],   tmpStr='[' +chars.join("") +']';  this.regEscape=new RegExp(tmpStr, 'g');
