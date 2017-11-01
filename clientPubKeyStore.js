@@ -35,7 +35,7 @@ var loginInfoExtend=function($el){
   var $spanName=$('<span>'), $spanKind=$('<span>'); 
   var $logoutButt=$('<a>').prop({href:''}).text(langHtml.loginInfo.logoutButt).css({'float':'right'});
   $logoutButt.click(function(){ 
-    userInfoFrIP={}; userInfoFrDB=$.extend({}, specialistDefault);
+    sessionLoginIdP={}; userInfoFrDB=$.extend({}, specialistDefault);
     var vec=[['logout',1, function(data){$yesDiv.setStat();}]];   majax(oAJAX,vec);
     return false;
   });
@@ -120,7 +120,7 @@ loginDivExtend=function($el){
 yesDivExtend=function($el){
   $el.setStat=function(){ 
     var boDb=Boolean(userInfoFrDB.vendor);//Boolean(userInfoFrDB);
-    var boIp='IP' in userInfoFrIP, boWannaBe=boIp && !boDb; $loginDiv.toggle(!boDb);  $buttStore.prop({disabled:!boDb}); $spanErr.toggle(boWannaBe); 
+    var boIp=isSet(sessionLoginIdP), boWannaBe=boIp && !boDb; $loginDiv.toggle(!boDb);  $buttStore.prop({disabled:!boDb}); $spanErr.toggle(boWannaBe); 
   }
   var storeF=function(){
     var vec=[['pubKeyStore',{pubKey:pubKey},retF]];   majax(oAJAX,vec);
@@ -182,7 +182,7 @@ GRet=function(data){
   var tmp;
   tmp=data.strMessageText;   if(typeof tmp!="undefined") setMess(tmp);
   tmp=data.CSRFCode;   if(typeof tmp!="undefined") CSRFCode=tmp;
-  tmp=data.userInfoFrIP; if(typeof tmp!="undefined") {userInfoFrIP=tmp;}
+  tmp=data.sessionLoginIdP; if(typeof tmp!="undefined") {sessionLoginIdP=tmp;}
   tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }   }
   
   $loginInfo.setStat();
@@ -241,7 +241,7 @@ setUp=function(){
 
 
 
-  userInfoFrIP={};
+  sessionLoginIdP={};
   userInfoFrDB=$.extend({}, specialistDefault);
 
   $.ajaxSetup({

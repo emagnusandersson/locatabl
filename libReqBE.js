@@ -1,3 +1,141 @@
+
+// idplace:
+//   client.js
+//     $createUserSelectorDiv
+//       $createUserDiv (calls createUser) (creates user with email and password)
+//     $loginSelectorDiv
+//       $formLogin (calls loginWEmail, setupById)
+//       $idPLoginDiv (calls loginGetGraph, setupById)
+//     $changePWPop (calls changePW)
+//     $verifyEmailPop (calls verifyEmail)
+//     $forgottPWPop (calls verifyPWReset)
+//   libReqBE.js
+//     createUser 
+//     loginWEmail
+//     changePW
+//     verifyEmail (Sends an email)
+//     verifyPWReset (Sends an email)
+//   libReq.js
+//     reqVerifyEmailReturn (Return from email)
+//     reqVerifyPWResetReturn (Return from email)
+
+
+// closebymarket:
+//   client.js
+//     $loginWLinkDiv (calls sendLoginLink)
+//     $loginWEmailDiv (calls loginWEmail)
+//   libReqBE.js
+//     sendLoginLink (from $loginWLinkDiv, Sends an email)
+//     loginWEmail (from $loginWEmailDiv)
+//     createUser
+//   libReq.js
+//     reqLoginWLink (Return from email)
+
+
+
+// closebymarketNew:
+//   client.js
+//     $loginSelectorDiv
+//       $formLogin (calls loginWEmail or sendLoginLink) 
+//     $createUserDiv (calls createUser) (creates user with email and password)
+//     $changePWPop (calls changePW)
+//     //$verifyEmailPop (calls verifyEmail)
+//     $forgottPWPop (calls verifyPWReset)
+//   libReqBE.js
+//     sendLoginLink ( Sends an email)
+//     createUser 
+//     loginWEmail
+//     changePW
+//     verifyEmail (Sends an email)
+//     verifyPWReset (Sends an email)
+//   libReq.js
+//     reqLoginWLink (Return from email)
+//     reqVerifyEmailReturn (Return from email)
+//     reqVerifyPWResetReturn (Return from email)
+
+
+
+//           Sign in                               Create account
+// [email]/[PW] [forgotPW]  | [FB]      Using password   |  Using Facebook
+
+
+// $loginSelectorDiv
+//       Sign in / Create account
+// Using external |    Using                 
+// ID-provider    | email/password
+// (recommended)  |
+//                |
+//                |[email]
+//     [FB]       |[PW][Login]
+//                |[forgottPW] (A new password is generated) | [sendLoginLink] (Password is not changed)
+//                |---------------
+//                |[Create account]
+
+
+
+// $createUserDiv
+//Create account
+//[Full name]
+//[email]
+//[PW]
+//[PW Again]
+//[createAccount]
+////[sendVerifyEmailAndCreateAccountLink]
+
+//        Sign in / Create account
+//                | If you used to login with (idPlace or) password
+//     [FB]       | (not available for new accounts)    
+//                |    [email]
+//                |    [sendLoginLink]
+//                |
+//
+
+
+
+  // Session variables
+//'str'+ucfirst(strAppName)+'Md5Config'
+
+//req.sessionID+'_CSRFCode'+ucfirst(caller)
+   //libReqBE->go, libReq->reqPubKeyStore  --->  libReqBE->go
+   
+//req.sessionID+'_UserInfoFrDB'
+   //libReqBE->go, loginGetGraph, setupById, VDelete  --->  libReqBE->go
+//req.sessionID+'_LoginIdP'
+   //libReqBE->loginGetGraph  --->  libReqBE->go
+//req.sessionID+'_LoginIdUser'  (idUser)
+   //libReqBE->loginWEmail, libReq->reqLoginWLink, libReq->reqVerifyEmailNCreateUserReturn  --->  libReqBE->setupById
+
+
+//code+'_LoginWLink'  (email)
+   //libReqBE->sendLoginLink  --->  libReq->reqLoginWLink
+   
+//code+'_verifyEmailNCreateUser';     ({email:email, password:password, name:name})
+   //libReqBE->sendVerifyEmailNCreateUserMessage  --->  libReq->reqVerifyEmailNCreateUserReturn
+//code+'_verifyEmail'    (idUser)
+   //libReqBE->verifyEmail  --->  libReq->reqVerifyEmailReturn
+//code+'_verifyPWReset'   (email)
+   //libReqBE->verifyPWReset  --->  libReq->reqVerifyPWResetReturn
+
+
+
+
+
+
+//BE calls that need to transfer idUser to  setupById
+//BE calls that precede setupById
+//deleteImage
+//SUseRebateCode (payDiv)
+//VUpdate (vendorSettingDiv, priceSettingDiv)
+//VHide (quickDiv)
+//VIntroCB (vendorIntroDiv)
+//RIntroCB (reporterIntroDiv)
+//UUpdate (userSettingDiv)
+//loginGetGraph (userSettingDiv, convertIDDiv, reportCommentButt, moreDiv)
+//VUpdate (convertIDDiv, uploadPosNLoadTabStart)
+//reportUpdateComment (reportCommentPop)
+//(nothing really) (loadTabStart, firstAJAXCall, teamDiv)
+
+
 "use strict"
 
 /******************************************************************************
@@ -24,7 +162,7 @@ ReqBE.prototype.mesO=function(e){
   this.GRet.strMessageText=this.Str.join(', '); 
    
     // closebymarket-specific
-  this.GRet.userInfoFrIP=this.sessionLogin.userInfoFrIP;
+  this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
   this.res.end(JSON.stringify(this.Out));  
 }
@@ -46,7 +184,7 @@ ReqBE.prototype.mesEO=function(e){
   this.GRet.strMessageText=this.Str.join(', ');
   
     // closebymarket-specific
-  this.GRet.userInfoFrIP=this.sessionLogin.userInfoFrIP;
+  this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
   this.res.writeHead(500, {"Content-Type": "text/plain"}); 
   this.res.end(JSON.stringify(this.Out));
@@ -88,16 +226,16 @@ ReqBE.prototype.go=function*(){
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
   
-  this.sessionMain=yield *getRedis(flow, req.sessionID+'_Main', true);
-    // Checking for 'user' in userInfoFrDB is for backward compatibility
-  if(!this.sessionMain || typeof this.sessionMain!='object' || !('userInfoFrDB' in this.sessionMain) || !('user' in this.sessionMain.userInfoFrDB) ) {
-    this.sessionMain={userInfoFrDB:extend({}, specialistDefault)};
+  this.sessionUserInfoFrDB=yield *getRedis(flow, req.sessionID+'_UserInfoFrDB', true);
+  if(!this.sessionUserInfoFrDB || typeof this.sessionUserInfoFrDB!='object'  ) {
+    this.sessionUserInfoFrDB=extend({}, specialistDefault);
   }
-  yield* setRedis(flow, req.sessionID+'_Main', this.sessionMain, maxUnactivity);
+  yield* setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
 
-  this.sessionLogin=yield *getRedis(flow, req.sessionID+'_Login', true);
-  if(!this.sessionLogin || typeof this.sessionLogin!='object' || !('userInfoFrIP' in this.sessionLogin) ) { this.sessionLogin={userInfoFrIP:0};}
-  yield* setRedis(flow, req.sessionID+'_Login', this.sessionLogin, maxLoginUnactivity);
+  this.sessionLoginIdP=yield *getRedis(flow, req.sessionID+'_LoginIdP', true);
+  //if(this.sessionLoginIdP ) { yield* setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity); }
+  if(this.sessionLoginIdP ) { yield* expireRedis(flow, req.sessionID+'_LoginIdP', maxLoginUnactivity); } else this.sessionLoginIdP={};
+  
   
   
   res.setHeader("Content-type", "application/json");
@@ -117,7 +255,7 @@ ReqBE.prototype.go=function*(){
   if(caller=='index'){
       // Arrays of functions
     arrCSRF=['UUpdate','VIntroCB','RIntroCB','VSetPosCond','VUpdate','VShow','VHide','VDelete','SUseRebateCode','teamLoad','teamSaveName','teamSave','rebateCodeCreate','adminMonitorClear',
-    'reportUpdateComment','reportUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendTempPassword', 'loginWEmail'];  // Functions that changes something must check and refresh CSRF-code
+    'reportUpdateComment','reportUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
     arrNoCSRF=['setupById','setUpCond','setUp','getList','getGroupList','getHist','VPaymentList','adminNVendor','reportOneGet','reportVGet','reportRGet','logout','getSetting'];  // ,'testA','testB'
     allowed=arrCSRF.concat(arrNoCSRF);
 
@@ -185,17 +323,15 @@ ReqBE.prototype.go=function*(){
 
 
 /******************************************************************************
- * sendTempPassword  and loginWEmail
+ * sendLoginLink  and loginWEmail
  ******************************************************************************/
 
-ReqBE.prototype.sendTempPassword=function*(inObj){ 
-  var req=this.req, flow=req.flow, site=req.site;
-  var userTab=site.TableName.userTab;
+ReqBE.prototype.sendLoginLink=function*(inObj){ 
+  var req=this.req, flow=req.flow, site=req.site, userTab=site.TableName.userTab;
 
-  var expirationTime=600;
+  var expirationTime=20*60;
   var Ou={};
   var email=inObj.email;
-
 
   var Sql=[], Val=[];
   Sql.push("SELECT email FROM "+userTab+" WHERE email=?;");
@@ -203,53 +339,252 @@ ReqBE.prototype.sendTempPassword=function*(inObj){
 
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  if(results.length==0) { this.mes('No such email in the database'); return [null, [Ou]];}
+  if(results.length==0) { return [new ErrorClient('No such email in the database')];}
   
   var code=randomHash();
-  var redisVar=code+'_verifyEmail';
+  var redisVar=code+'_LoginWLink';
   var tmp=yield* setRedis(flow, redisVar, email, expirationTime);
   
   var wwwSite=req.wwwSite;
-  var strTxt='<h3>Temporary password for '+wwwSite+'</h3> \n\
-<p>Someone (maybe you) uses '+wwwSite+' and wants a temporary password for '+email+'. Is this you, then here is the temporary password: <b>'+code+'</b> .</p> \n\
-<p>Otherwise neglect this message.</p> \n\
-<p>Note! The password stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+  var uLink=req.strSchemeLong+wwwSite+'/'+leafLoginWLink+'?code='+code;
   
-  const msg = { to:email, from:'noreply@closeby.market', subject:'Temporary password',  html:strTxt};    sgMail.send(msg);
+  var strTxt='<h3>Login link to '+wwwSite+'</h3> \n\
+<p>Someone (maybe you) uses '+wwwSite+' and wants to login using '+email+'. Is this you, then click this link to login: <a href="'+uLink+'">'+uLink+'</a> .</p> \n\
+<p>Otherwise neglect this message.</p>';
+//<p>Note! The link stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+  
+  if(boDbg) wwwSite="closeby.market";
+  const msg = { to:email, from:'noreply@'+wwwSite, subject:'Login link',  html:strTxt};    sgMail.send(msg);
   this.mes('Email sent'); Ou.boOK=1;
   
   return [null, [Ou]];
 }
 
+
 ReqBE.prototype.loginWEmail=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, objQS=req.objQS;
+  var req=this.req, flow=req.flow, site=req.site, Ou={};
   var userTab=site.TableName.userTab;
-  var Ou={};
-
-  var code=inObj.code;
-  var redisVar=code+'_verifyEmail';
-  var email=yield* getRedis(flow, redisVar);
-  if(!email) { return [new ErrorClient('No such code')];}
-  if(email!=inObj.email) {  return [new ErrorClient('email does not match')]; }
-
-
-  var sql="SELECT idUser FROM "+userTab+" WHERE email=?;", Val=[email];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  if(results.length==0) { this.mes('No such email in the database'); return [null, [Ou]];}
+  var Sql=[], Val=[];
+  var StrRequired=['email', 'password'];
+  for(var i=0; i<StrRequired.length; i++){      var tmp=StrRequired[i]; if(!(tmp in inObj)) { return [new ErrorClient('The parameter: '+tmp+' is required')]; }     }
   
-  this.sessionLoginWEmail=results[0].idUser;
+
+  Sql.push("SELECT idUser, password FROM "+userTab+" WHERE email=?");
+  Val.push(inObj.email);
+
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  
+  if(results.length==0) return [new ErrorClient('Email not found')];
+  var objT=results[0];
+  if(objT.password!==inObj.password) { return [new ErrorClient('Wrong password')]; }
+  var idUser=Number(objT.idUser);   yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
 
   return [null, [Ou]];
 }
+
+
+ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
+  var req=this.req, flow=req.flow, site=req.site;
+  var userTab=site.TableName.userTab;
+  var {name, email, password}=inObj;
+  
+    // Check reCaptcha with google
+  var uGogCheck = "https://www.google.com/recaptcha/api/siteverify"; 
+  var objForm={  secret:strReCaptchaSecretKey, response:inObj['g-recaptcha-response'], remoteip:req.connection.remoteAddress  };
+  var semY=0, semCB=0, err, response, body;
+  var reqStream=requestMod.post({url:uGogCheck, form:objForm}, function(errT, responseT, bodyT) { err=errT; response=responseT; body=bodyT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
+  var buf=body;
+  try{ var data = JSON.parse(buf.toString()); }catch(e){ return [e]; }
+  //console.log('Data: ', data);
+  if(!data.success) return [new ErrorClient('reCaptcha test not successfull')];
+  
+  if(!/\S+@\S+/.test(email)) return [new ErrorClient('Invalid email')]; 
+    
+  
+    // Check if email exists
+  var Sql=[], Val=[];
+  Sql.push("SELECT * FROM "+userTab+" WHERE email=?;");
+  Val.push(email);
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  if(results.length) { return [new ErrorClient('Email already exists.')];}
+  
+
+    // Store temporarily
+  var expirationTime=20*60;
+  var code=randomHash()+randomHash();
+  var redisVar=code+'_verifyEmailNCreateUser';
+  var tmp=yield* setRedis(flow, redisVar, {email:email, password:password, name:name}, expirationTime);
+  var Ou={};
+
+    // Send email
+  var wwwSite=req.wwwSite;
+  var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailNCreateUserReturn+'?code='+code;
+  var strTxt='<h3>Email verification / account creation on '+wwwSite+'</h3> \n\
+<p>Someone (maybe you) uses '+wwwSite+' and claims that '+email+' is their email address and they want to become a user. Is this you? If so use the link below to create an account.</p> \n\
+<p>Otherwise neglect this message.</p> \n\
+<p><a href='+uVerification+'>'+uVerification+'</a></p>';
+//<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+  
+  if(boDbg) wwwSite="closeby.market";
+  const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Email verification / account creation', html: strTxt }; sgMail.send(msg);
+  this.mes('Email sent');
+  Ou.boOK=1;
+  return [null, [Ou]];
+}
+
+//ReqBE.prototype.createUser=function*(inObj){ // writing needSession
+  //var req=this.req, flow=req.flow, site=req.site;
+  //var userTab=site.TableName.userTab;
+  //var Ou={}; //debugger
+
+    //// Check reCaptcha with google
+  //var uGogCheck = "https://www.google.com/recaptcha/api/siteverify"; 
+  //var objForm={  secret:strReCaptchaSecretKey, response:inObj['g-recaptcha-response'], remoteip:req.connection.remoteAddress  };
+  //var semY=0, semCB=0, err, response, body;
+  //var reqStream=requestMod.post({url:uGogCheck, form:objForm}, function(errT, responseT, bodyT) { err=errT; response=responseT; body=bodyT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
+  //var buf=body;
+  //try{ var data = JSON.parse(buf.toString()); }catch(e){ return [e]; }
+  ////console.log('Data: ', data);
+  //if(!data.success) return [new ErrorClient('reCaptcha test not successfull')];
+  
+  //if(!/\S+@\S+/.test(inObj.email)) return [new ErrorClient('Invalid email')]; 
+  
+  //var Sql=[]; 
+  //Sql.push("INSERT INTO "+userTab+" SET email=?, nameIP=?, password=?, tCreated=now();");
+  //var Val=[inObj.email, inObj.name, inObj.password];
+  //Sql.push("SELECT LAST_INSERT_ID() AS idUser;");
+  ////Sql.push("UPDATE "+userTab+" SET imageHash=LAST_INSERT_ID()%32 WHERE idUser=LAST_INSERT_ID();");
+
+  //var sql=Sql.join('\n');
+  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); 
+  
+  //var boOK, mestmp;
+  //if(err && (typeof err=='object') && err.code=='ER_DUP_ENTRY'){boOK=0; mestmp='dup email';}
+  //else if(err) return [err];
+  //else{
+    //boOK=1; mestmp="Done"; 
+    //var idUser=this.sessionUserInfoFrDB.idUser=Number(results[1][0].idUser);
+  //}
+  //this.mes(mestmp);
+  //extend(Ou, {boOK:boOK});
+  //yield* setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
+  
+  //return [null, [Ou]];
+//}
+
+
+ReqBE.prototype.changePW=function*(inObj){ 
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
+  var userTab=site.TableName.userTab;
+  var Ou={boOK:0};
+  if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
+  var idUser=this.sessionUserInfoFrDB.user.idUser
+  var passwordOld=inObj.passwordOld;
+  var passwordNew=inObj.passwordNew;
+
+  var Sql=[], Val=[];
+  //Sql.push("UPDATE "+userTab+" SET password=? WHERE password=? AND idUser=?;");
+  //Val.push(inObj.password, inObj.passwordOld, idUser);
+  Sql.push("CALL "+siteName+"setPassword(?,?,?);"); Val.push(idUser, passwordOld, passwordNew);
+
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+
+  var mess=results[0][0].mess;
+  if(mess=='Password changed') Ou.boOK=1;
+  this.mes(mess); 
+  
+  return [null, [Ou]];
+}
+
+ReqBE.prototype.verifyEmail=function*(inObj){ 
+  var req=this.req, flow=req.flow, site=req.site;
+  var userTab=site.TableName.userTab;
+  if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
+  var idUser=this.sessionUserInfoFrDB.user.idUser;
+
+  var expirationTime=20*60;
+
+  var code=randomHash()+randomHash();
+  var redisVar=code+'_verifyEmail';
+  var tmp=yield* setRedis(flow, redisVar, idUser, expirationTime);
+  var Ou={};
+
+  var Sql=[], Val=[];
+  Sql.push("SELECT email FROM "+userTab+" WHERE idUser=?;");
+  Val.push(idUser);
+
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+
+  if(results.length==0) { this.mes('No such idUser in the database'); return [null, [Ou]];}
+  var email=results[0].email;
+  var wwwSite=req.wwwSite;
+  var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailReturn+'?code='+code;
+  var strTxt='<h3>Email verification on '+wwwSite+'</h3> \n\
+<p>Someone (maybe you) uses '+wwwSite+' and claims that '+email+' is their email address. Is this you? If so use the link below to verify that you are the owner of this email address.</p> \n\
+<p>Otherwise neglect this message.</p> \n\
+<p><a href='+uVerification+'>'+uVerification+'</a></p>';
+//<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+
+  if(boDbg) wwwSite="closeby.market";
+  const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Email verification', html: strTxt }; sgMail.send(msg);
+  this.mes('Email sent');
+  Ou.boOK=1;
+  return [null, [Ou]];
+
+}
+
+
+ReqBE.prototype.verifyPWReset=function*(inObj){ 
+  var req=this.req, flow=req.flow, site=req.site;
+  var userTab=site.TableName.userTab;
+  var Ou={boOK:0};
+
+  var tmp='email'; if(!(tmp in inObj)) { this.mes('The parameter '+tmp+' is required'); return [null, [Ou]];}
+  var email=inObj.email;
+
+  var Sql=[], Val=[];
+  Sql.push("SELECT email FROM "+userTab+" WHERE email=?;");
+  Val.push(email);
+
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+
+  if(results.length==0) { this.mes('No such email in the database'); return [null, [Ou]];}
+
+  var expirationTime=20*60;
+
+  var code=randomHash()+randomHash();
+  var redisVar=code+'_verifyPWReset';
+  var tmp=yield* setRedis(flow, redisVar, email, expirationTime);
+
+  var wwwSite=req.wwwSite;
+  var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyPWResetReturn+'?code='+code;
+  var strTxt='<h3>Password reset request on '+wwwSite+'</h3> \n\
+<p>Someone (maybe you) tries to reset their '+wwwSite+' password and entered '+email+' as their email.</p> \n\
+<p>Is this you, then use the link below to have a new password generated and sent to you.</p> \n\
+<p>Otherwise neglect this message.</p> \n\
+<p><a href='+uVerification+'>'+uVerification+'</a></p>';
+//<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+  
+  if(boDbg) wwwSite="closeby.market";
+  const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Password reset request', html: strTxt };  sgMail.send(msg);
+  this.mes('Email sent'); Ou.boOK=1;
+  return [null, [Ou]];
+}
+
 
 /******************************************************************************
  * loginGetGraph
  ******************************************************************************/
 ReqBE.prototype.loginGetGraph=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, objQS=req.objQS;
+  var req=this.req, flow=req.flow, site=req.site, objQS=req.objQS;
   var strFun=inObj.fun;
   var Ou={};
-  if(!this.sessionMain.userInfoFrDB){ this.sessionMain.userInfoFrDB=extend({},specialistDefault); yield *setRedis(flow, req.sessionID+'_Main', this.sessionMain, maxUnactivity);  }
+  if(!this.sessionUserInfoFrDB){ this.sessionUserInfoFrDB=extend({},specialistDefault); yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);  }
   
 
   var strIP=inObj.IP;
@@ -293,79 +628,105 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
     // interpretGraph
   if('error' in objGraph) {var {type,message}=objGraph.error, tmp='Error accessing data from ID provider: '+type+' '+message+'<br>';  return [new Error(tmp)]; }
 
-
+  var idFB, idIdPlace, idOpenId;
   if(strIP=='fb'){ 
     if(!objGraph.verified) { var tmp="Your facebook account is not verified. Try search internet for  \"How to verify facebook account\".";   return [new ErrorClient(tmp)];  }
-    var IP='fb', idIP=objGraph.id, nameIP=objGraph.name, email=objGraph.email, image=objGraph.picture.data.url;
+    var idFB=objGraph.id, email=objGraph.email, nameIP=objGraph.name, image=objGraph.picture.data.url;
   }else if(strIP=='google'){
-    var IP='google', idIP=objGraph.id, nameIP=objGraph.name.givenName+' '+objGraph.name.familyName, email=objGraph.email, image=objGraph.image.url;
+    var idGoogle=objGraph.id, email=objGraph.email, nameIP=objGraph.name.givenName+' '+objGraph.name.familyName, image=objGraph.image.url;
   }else if(strIP=='idplace'){
-    var IP='idplace', idIP=objGraph.id, nameIP=objGraph.name, email=objGraph.email, image=objGraph.image;
+    var idIdPlace=objGraph.id, email=objGraph.email, nameIP=objGraph.name, image=objGraph.image;
   }
 
-  if(typeof idIP=='undefined') { return [new Error("Error idIP is empty")];}
-  if(typeof nameIP=='undefined' ) {nameIP=idIP;}
-  this.sessionLogin.userInfoFrIP={IP:IP, idIP:idIP, nameIP:nameIP, image:image, email:email};    yield *setRedis(flow, req.sessionID+'_Login', this.sessionLogin, maxLoginUnactivity);
+  if(typeof idFB=='undefined') { return [new Error("Error idFB is empty")];}
+  if(typeof nameIP=='undefined' ) {nameIP=idFB;}
+  this.sessionLoginIdP={IP:strIP, idFB:idFB, idIdPlace, idOpenId, email:email, nameIP:nameIP, image:image};
+  yield *setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity);
   
   
+  var [err,con]=yield*mysqlGetConnection(flow, this.pool);  if(err) return [err];   this.con=con;
+  var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
   if(['vendorFun', 'reporterFun', 'teamFun', 'marketerFun', 'adminFun', 'refreshFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
     var [err, result]=yield *this[strFun](inObj);  if(err) return [err];
   }
+  if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
   return [null, [Ou]];
 }
 
 ReqBE.prototype.reporterFun=function*(){
   var Ou={};
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.vendorFun=function*(){
   var Ou={};
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.teamFun=function*(){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, userTab=site.TableName.userTab, teamTab=site.TableName.teamTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, teamTab}=site.TableName;
   var Ou={};
-  var Sql=[], {IP, idIP, nameIP, image, email}=this.sessionLogin.userInfoFrIP, Val=[IP, idIP, nameIP, image, email, nameIP, image, email];
-  Sql.push("INSERT INTO "+userTab+" (IP, idIP, nameIP, image, email) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), nameIP=?, image=?, email=?;");
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
+  
+  var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
+  var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
+  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
+  
   Sql.push("INSERT INTO "+teamTab+" (idUser,created) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
+  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.marketerFun=function*(){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, userTab=site.TableName.userTab, marketerTab=site.TableName.marketerTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, marketerTab}=site.TableName;
   var Ou={};
-  var Sql=[], {IP, idIP, nameIP, image, email}=this.sessionLogin.userInfoFrIP, Val=[IP, idIP, nameIP, image, email, nameIP, image, email];
-  Sql.push("INSERT INTO "+userTab+" (IP, idIP, nameIP, image, email) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), nameIP=?, image=?, email=?;");
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
+  
+  var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
+  var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
+  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
   Sql.push("INSERT INTO "+marketerTab+" VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
+  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.adminFun=function*(){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, userTab=site.TableName.userTab, adminTab=site.TableName.adminTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, adminTab}=site.TableName;
   var Ou={};
-  var Sql=[], {IP, idIP, nameIP, image, email}=this.sessionLogin.userInfoFrIP, Val=[IP, idIP, nameIP, image, email, nameIP, image, email];
-  Sql.push("INSERT INTO "+userTab+" (IP, idIP, nameIP, image, email) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), nameIP=?, image=?, email=?;");
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
+  
+  var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
+  var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
+  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
   Sql.push("INSERT INTO "+adminTab+" VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
+  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.refetchFun=function*(){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, userTab=site.TableName.userTab, teamTab=site.TableName.teamTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, teamTab}=site.TableName;
   var Ou={};
-  var idUser=this.sessionMain.userInfoFrDB.user.idUser;
-  var Sql=[], {IP, idIP, nameIP, image, email}=this.sessionLogin.userInfoFrIP, Val=[IP, idIP, nameIP, image, email, idUser];
-  Sql.push("UPDATE "+userTab+" SET IP=?, idIP=?, nameIP=?, image=?, email=? WHERE idUser=?;");
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeThree.call(this, objT); if(err) return [err];
+  
+  var idUser=this.sessionUserInfoFrDB.user.idUser;
+  var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
+  var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image, idUser];
+  Sql.push("UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=? WHERE idUser=?;");
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
+  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   return [null, Ou];
 }
 
 
 
-ReqBE.prototype.setupById=function*(inObj){ //check  idIP (or idUser) against the vendor-table and return diverse data
+ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against the vendor-table and return diverse data
 "use strict"
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Ou={};
   
@@ -377,13 +738,13 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idIP (or idUser) against th
 
   var userInfoFrDBUpd={};
   
-  var {IP,idIP}=this.sessionLogin.userInfoFrIP;
-  var idUser=this.sessionMain.userInfoFrDB.user.idUser||null;
-  if(!idUser) idUser=this.sessionLoginWEmail||null;
+  var idUser=this.sessionUserInfoFrDB.user.idUser||null;
+  var {idFB, idIdPlace, idOpenId}=this.sessionLoginIdP;
+  if(!idUser) { idUser=yield* getRedis(flow, req.sessionID+'_LoginIdUser'); }
   var BoTest={};
   for(var i=0;i<StrRoleAll.length;i++) { var strRole=StrRoleAll[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
-  var Sql=[], Val=[idUser, IP, idIP, BoTest.vendor, BoTest.team, BoTest.marketer, BoTest.admin, BoTest.reporter];
-  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, @OboOk, @Omess);");
+  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.vendor, BoTest.team, BoTest.marketer, BoTest.admin, BoTest.reporter];
+  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, @OboOk, @Omess);");
   var sql=Sql.join('\n');
   
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -398,8 +759,8 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idIP (or idUser) against th
     var res=results[6]; if(BoTest.reporter ) {   var  c=res[0].n;  userInfoFrDBUpd.reporter=c?{idUser:userInfoFrDBUpd.user.idUser, c:c}:0;    }
   } else extend(userInfoFrDBUpd, specialistDefault);
   
-  extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionMain.userInfoFrDB, userInfoFrDBUpd);
-  yield *setRedis(flow, req.sessionID+'_Main', this.sessionMain, maxUnactivity);
+  extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
+  yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
   
   return [null, [Ou]];
 }
@@ -407,9 +768,9 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idIP (or idUser) against th
 
 
 ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, Ou={};
+  var req=this.req, flow=req.flow, site=req.site, Ou={};
  
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for vendors as well as any visitor) 
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for vendors as well as any visitor) 
   var {idUser,coordinatePrecisionM}=vendor;
   var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj[0],inObj[1]); inObj[0]=xtmp; inObj[1]=ytmp;
 
@@ -420,9 +781,9 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
 
 
 ReqBE.prototype.logout=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, Ou={};
-  var tmp=yield* cmdRedis(flow, 'del',[req.sessionID+'_Main', req.sessionID+'_Login']);
-  this.sessionLogin={userInfoFrIP:0};  this.sessionMain={userInfoFrDB:extend({}, specialistDefault)};  this.GRet.userInfoFrDBUpd=extend({},specialistDefault);
+  var req=this.req, flow=req.flow, Ou={};
+  var tmp=yield* cmdRedis(flow, 'del',[req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser']);
+  this.sessionLoginIdP={};  this.sessionUserInfoFrDB=extend({}, specialistDefault);  this.GRet.userInfoFrDBUpd=extend({},specialistDefault);
   this.mes('Logged out'); return [null, [Ou]];
 }
 
@@ -438,8 +799,7 @@ ReqBE.prototype.setUpCond=function*(inObj){
 
 
 ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCond, VPSize, pC, zoom, boShowDummy).
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName;
-  var vendorTab=site.TableName.vendorTab, userTab=site.TableName.userTab;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, vendorTab}=site.TableName;
   
   var Ou={},  Sql=[];
   Sql.push("SELECT UNIX_TIMESTAMP(now()) AS now;");
@@ -457,9 +817,10 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
 
   if(boCalcZoom){  
       // If too few vehicles are visible then show the dummies
-    Sql.push("SELECT (@boShowDummy:=count(u.idUser)<1) AS boShowDummy FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND !(idIP REGEXP '^Dummy');");
-    Sql.push("SELECT count(u.idUser) AS nUserReal FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE  !(idIP REGEXP '^Dummy');");
-    Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=@boShowDummy, posTime=now() WHERE idIP REGEXP '^Dummy';");  
+    var whereDummyFilter="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";
+    Sql.push("SELECT (@boShowDummy:=count(u.idUser)<1) AS boShowDummy FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND ("+whereDummyFilter+");");
+    Sql.push("SELECT count(u.idUser) AS nUserReal FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE  "+whereDummyFilter+";");
+    Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=@boShowDummy, posTime=now() WHERE idOpenId REGEXP '^Dummy';");  
 
     
     //strCond=array_filter(Where).join(' AND '); if(strCond.length>0) strCond='AND '+strCond;
@@ -491,8 +852,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
 //ReqBE.prototype.addMapCond=function*(inObj){}
 
 ReqBE.prototype.getList=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName;
-  var TableName=site.TableName, vendorTab=TableName.vendorTab, userTab=TableName.userTab, teamTab=TableName.teamTab, reportTab=TableName.reportTab;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, vendorTab, teamTab, reportTab, reportTab}=site.TableName;
   var strCol=this.strCol;
   var Ou={};
   this.tab=[];this.NVendor=[0,0];
@@ -535,7 +895,7 @@ WHERE "+strCond+" GROUP BY v.idUser ORDER BY posTime DESC LIMIT 0, "+maxVendor+"
 }
 
 ReqBE.prototype.getGroupList=function*(inObj){  
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
   var vendorTab=site.TableName.vendorTab;
   var Ou={};
   this.groupTab=[];
@@ -553,7 +913,7 @@ ReqBE.prototype.getGroupList=function*(inObj){
 }
 
 ReqBE.prototype.getHist=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, vendorTab=site.TableName.vendorTab;
+  var req=this.req, flow=req.flow, site=req.site, vendorTab=site.TableName.vendorTab;
   var Ou={}
   var arg={strTableRef:vendorTab+' v', Ou:Ou, WhereExtra:[this.whereMap, "boShow=1", this.termCond]};  // , strTableRefCount:vendorTab+' v'
   copySome(arg, site, ['Prop','StrOrderFilt']);
@@ -570,10 +930,10 @@ ReqBE.prototype.getHist=function*(inObj){
  *********************************************************************************************/
 
 ReqBE.prototype.UUpdate=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var userTab=site.TableName.userTab;
   var Ou={};
-  var {user}=this.sessionMain.userInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
   
   var Sql=[], Val=[];
@@ -594,50 +954,52 @@ ReqBE.prototype.UUpdate=function*(inObj){  // writing needSession
  *********************************************************************************************/
 
 ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName, Prop=site.Prop;
-  var vendorTab=site.TableName.vendorTab, userTab=site.TableName.userTab;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Prop=site.Prop, {userTab, vendorTab}=site.TableName;
   var Ou={}; 
-  var objT=this.sessionLogin.userInfoFrIP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
-  var {IP, idIP, nameIP, image, email}=objT;
+  var objT=this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
+  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
+
+  if(inObj.email) email=inObj.email;
   
+    // An entry in userTab may exist if the user is a reporter. However an entry in vendorTab is something one can assume does not exist.
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"vendorSetup(?,?,?,?,?,?,@boInserted,@idUser);");
-  Val.push(null, IP, idIP, nameIP, image, email);
-  Sql.push("SELECT @boInserted AS boInserted;");
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
+  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image,   email, nameIP, image);
+  Sql.push("INSERT INTO "+vendorTab+" (idUser,created, lastPriceChange, posTime, tLastWriteOfTA, histActive) VALUES (@idUser, now(), now(), now(), now(), 1 ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
+  Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idIP REGEXP '^Dummy');");
-
-  Sql.push("UPDATE "+userTab+" SET email=? WHERE idUser=@idUser;");
-  Sql.push("UPDATE "+vendorTab+" SET displayName=?, currency=? WHERE idUser=@idUser;");
-  Val=Val.concat(inObj.email, inObj.displayName, inObj.currency+1);
+  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
   
   if(payLev==0) {
     Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
   }
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var boIns=site.boGotNewVendors=Number(results[1][0].boInserted);
-  site.nUser=Number(results[2][0].n);
+  var c=results[0][0].affectedRows; if(c!=1) return [new Error(c+" userTab rows affected")];
+  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  
+  var boIns=site.boGotNewVendors=Number(results[3][0].boInserted);
+  site.nUser=Number(results[4][0].n);
   var  tmpMes='Data '+(boIns?'inserted':'updated'); this.mes(tmpMes);
   return [null, [Ou]];
 }
 
 
 ReqBE.prototype.VUpdate=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName, Prop=site.Prop;
-  var vendorTab=site.TableName.vendorTab, userTab=site.TableName.userTab;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Prop=site.Prop, {userTab, vendorTab}=site.TableName;
   //var VendorUpdF=site.VendorUpdF;
   var Ou={}; 
-  var user=this.sessionMain.userInfoFrDB.user, userInfoFrIP=this.sessionLogin.userInfoFrIP, objT;
-  if(user) objT=user;  else if(userInfoFrIP) objT=userInfoFrIP;  else {this.mes('No session'); return [null, [Ou]]; }
-  var {idUser, IP, idIP, nameIP, image, email}=objT; 
-  if(typeof IP=='number') IP=site.Prop.IP.Enum[IP];
-  if(typeof idUser=='undefined') idUser=null;
+  var user=this.sessionUserInfoFrDB.user, objT;
+  if(user) objT=user;  else if(this.sessionLoginIdP) objT=this.sessionLoginIdP;  else {this.mes('No session'); return [null, [Ou]]; }
+  var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objT; 
+  if(typeof idUser=='undefined') {return [new Error('no idUser')];}
 
   var objVar=extend({},inObj);
   
   var boPrice='boPrice' in objVar; if(boPrice) delete objVar.boPrice;
-  var boInsert='boInsert' in objVar; if(boInsert) delete objVar.boInsert;
+  //var boInsert='boInsert' in objVar; if(boInsert) delete objVar.boInsert;
   if('image' in objVar) delete objVar.image;
     
   var arrK=[], arrVal=[], arrUpdQM=[];
@@ -658,27 +1020,17 @@ ReqBE.prototype.VUpdate=function*(inObj){ // writing needSession
   var strUpdQM=arrUpdQM.join(', ');
     
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"vendorSetup(?,?,?,?,?,?,@boInserted,@idUser);");
-  Val.push(idUser, IP, idIP, nameIP, image, email);
-  Sql.push("SELECT @boInserted AS boInserted;");
-
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idIP REGEXP '^Dummy');");
 
   var strTeamTmp='';     if('idTeamWanted' in objVar) {    var idTmp=Number(objVar.idTeamWanted);    strTeamTmp=", idTeamWanted="+idTmp+", idTeam= IF(idTeam="+idTmp+",idTeam,0)";      }
   var strPriceTmp='';  if(boPrice) strPriceTmp=', lastPriceChange=now()';
   var tmp=strUpdQM+" "+strPriceTmp+" "+strTeamTmp;
   if(tmp.length>2) {
-    Sql.push("UPDATE "+vendorTab+" SET "+tmp+" WHERE idUser=@idUser;");
-    Val=Val.concat(arrVal);
+    Sql.push("UPDATE "+vendorTab+" SET "+tmp+" WHERE idUser=?;");
+    Val=Val.concat(arrVal); Val.push(idUser);
   }
 
-  if(payLev==0) {
-    Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
-  }
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  site.boGotNewVendors=Number(results[1][0].boInserted);
-  site.nUser=Number(results[2][0].n);
   this.mes('Data updated');      
   return [null, [Ou]];
 }
@@ -686,19 +1038,19 @@ ReqBE.prototype.VUpdate=function*(inObj){ // writing needSession
 
 
 ReqBE.prototype.VDelete=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var userTab=site.TableName.userTab;
   var Ou={};
-  var {user}=this.sessionMain.userInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser; 
   
   var Sql=[], Val=[];
   Sql.push("DELETE FROM "+userTab+" WHERE idUser=?;"); Val.push(idUser);
   
-  this.sessionMain={userInfoFrDB:extend({}, specialistDefault)};    yield *setRedis(flow, req.sessionID+'_Main', this.sessionMain, maxUnactivity);
+  this.sessionUserInfoFrDB=extend({}, specialistDefault);    yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
   extend(this.GRet.userInfoFrDBUpd, specialistDefault); 
 
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idIP REGEXP '^Dummy');");
+  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   site.boGotNewVendors=1; // variabel should be called boNUsers changed or something..
@@ -709,10 +1061,10 @@ ReqBE.prototype.VDelete=function*(inObj){  // writing needSession
 
 
 ReqBE.prototype.VShow=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
   var vendorTab=site.TableName.vendorTab;
   var Ou={};
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var {idUser,coordinatePrecisionM}=vendor;
   var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj[0],inObj[1]); inObj[0]=xtmp; inObj[1]=ytmp;
 
@@ -726,10 +1078,10 @@ ReqBE.prototype.VShow=function*(inObj){  // writing needSession
   return [null, [Ou]];
 }
 ReqBE.prototype.VHide=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
   var vendorTab=site.TableName.vendorTab;
   var Ou={};
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var idUser=user.idUser; 
 
   var Sql=[], Val=[];
@@ -744,10 +1096,9 @@ ReqBE.prototype.VHide=function*(inObj){  // writing needSession
 
 
 ReqBE.prototype.SUseRebateCode=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
-  var vendorTab=site.TableName.vendorTab, rebateCodeTab=site.TableName.rebateCodeTab;
+  var req=this.req, flow=req.flow, site=req.site, {vendorTab, rebateCodeTab}=site.TableName;
   var Ou={};
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var idUser=user.idUser; 
   
   var Sql=[], Val=[];
@@ -767,10 +1118,10 @@ ReqBE.prototype.SUseRebateCode=function*(inObj){  // writing needSession
 
 
 ReqBE.prototype.VPaymentList=function*(inObj){ // needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var paymentTab=site.TableName.paymentTab;
   var Ou={};
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var idUser=user.idUser; 
 
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
@@ -789,19 +1140,19 @@ ReqBE.prototype.VPaymentList=function*(inObj){ // needSession
 
 
 ReqBE.prototype.adminNVendor=function*(inObj){ 
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, vendorTab=site.TableName.vendorTab;
+  var req=this.req, flow=req.flow, site=req.site, vendorTab=site.TableName.vendorTab;
   var sql="SELECT count(*) AS n FROM "+vendorTab, Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var Ou={}; Ou.n=results[0].n;
   return [null, [Ou]];
 }
 ReqBE.prototype.adminMonitorClear=function*(inObj){ 
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var userTab=site.TableName.userTab;
   var Ou={};
-  var {user, admin}=this.sessionMain.userInfoFrDB; if(!user || !admin) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var {user, admin}=this.sessionUserInfoFrDB; if(!user || !admin) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   if(!admin.boApproved) { this.mes('Not approved'); return [null, [Ou,'errFunc']]; }
-  var sql="SELECT count(*) AS n FROM "+userTab+" WHERE !(idIP REGEXP '^Dummy');", Val=[];
+  var sql="SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;", Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   Ou.n=results[0].n;
   return [null, [Ou]];
@@ -809,10 +1160,10 @@ ReqBE.prototype.adminMonitorClear=function*(inObj){
 
 
 ReqBE.prototype.rebateCodeCreate=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var rebateCodeTab=site.TableName.rebateCodeTab;
   var Ou={};
-  var {user, marketer}=this.sessionMain.userInfoFrDB; if(!user || !marketer) { this.mes('No session'); return [null, [Ou]];}
+  var {user, marketer}=this.sessionUserInfoFrDB; if(!user || !marketer) { this.mes('No session'); return [null, [Ou]];}
   var {idUser,boApproved}=marketer;
   if(!boApproved) { this.mes('Marketer not approved'); return [null, [Ou]]; }
     
@@ -829,39 +1180,47 @@ ReqBE.prototype.rebateCodeCreate=function*(inObj){  // writing needSession
 
 
 ReqBE.prototype.reportUpdateComment=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName;
-  var reportTab=site.TableName.reportTab;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
+  var {userTab,reportTab}=site.TableName;
   var Ou={};
-  var user=this.sessionMain.userInfoFrDB.user, userInfoFrIP=this.sessionLogin.userInfoFrIP, objT;
-  if(user) objT=user;  else if(userInfoFrIP) objT=userInfoFrIP;  else {this.mes('No session'); return [null, [Ou]]; }
-  var {IP, idIP, nameIP, image, email}=objT; 
-  if(typeof IP=='number') IP=site.Prop.IP.Enum[IP];
-  
+  var objT=this.sessionUserInfoFrDB.user||this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
+  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
+
+
   var idVendor=inObj.idVendor;
   var comment=inObj.comment;  comment=comment.substr(0,10000);
   if(comment.length==0) comment=null;
+
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"reporterSetup(?, ?, ?, ?, ?, @boInserted, @idReporter);");  Val.push(IP, idIP, nameIP, image, email);
+  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image,   email, nameIP, image);
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  Sql.push("SELECT @idReporter:=LAST_INSERT_ID() AS idUser;");
+  
   Sql.push("INSERT INTO "+reportTab+" (idVendor,idReporter,comment,created) VALUES (?,@idReporter,?,now()) ON DUPLICATE KEY UPDATE comment=?, modified=now();");
   Val.push(idVendor,comment,comment);
   Sql.push("DELETE FROM "+reportTab+" WHERE comment IS NULL AND answer IS NULL;");
-  Sql.push("SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=@idReporter;");  
+  Sql.push("SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=@idReporter;"); 
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var StrMes=[];
-  var c=results[1].affectedRows; if(c==1) StrMes.push("Entry inserted"); else if(c==2) StrMes.push("Entry updated");
-  var c=results[2].affectedRows; if(c==1) StrMes.push("Entry deleted"); else if(c>1) StrMes.push(c+" entries deleted");
-  var n=results[3][0].n; if(n==0) StrMes.push("No comments remaining");
+  
+  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  
+  var c=results[2].affectedRows; if(c==1) StrMes.push("Entry inserted"); else if(c==2) StrMes.push("Entry updated");
+  var c=results[3].affectedRows; if(c==1) StrMes.push("Entry deleted"); else if(c>1) StrMes.push(c+" entries deleted");
+  var n=results[4][0].n; if(n==0) StrMes.push("No comments remaining");
+
+  
   var mestmp=StrMes.join(', ');
   this.mes(mestmp);
 
   return [null, [Ou]];
 }
 ReqBE.prototype.reportUpdateAnswer=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var reportTab=site.TableName.reportTab;
   var Ou={};
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
 
   var idReporter=inObj.idReporter;
   var idVendor=user.idUser;
@@ -882,11 +1241,10 @@ ReqBE.prototype.reportUpdateAnswer=function*(inObj){
 }
 
 ReqBE.prototype.reportOneGet=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
-  var userTab=site.TableName.userTab,  reportTab=site.TableName.reportTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, reportTab}=site.TableName;
   var Ou={};   
   //debugger
-  var {user, vendor, reporter}=this.sessionMain.userInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var {user, vendor, reporter}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idReporter, idVendor;
   if('idReporter' in inObj) idReporter=inObj.idReporter;  else if(reporter) idReporter=reporter.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   if('idVendor' in inObj) idVendor=inObj.idVendor; else if(vendor) idVendor=vendor.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
@@ -903,8 +1261,7 @@ ReqBE.prototype.reportOneGet=function*(inObj){
 
 
 ReqBE.prototype.reportVGet=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
-  var reportTab=site.TableName.reportTab, userTab=site.TableName.userTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, reportTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
   
@@ -921,14 +1278,13 @@ ReqBE.prototype.reportVGet=function*(inObj){
   return [null, [Ou]];
 }
 ReqBE.prototype.reportRGet=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
-  var TableName=site.TableName, userTab=TableName.userTab, vendorTab=TableName.vendorTab, reportTab=TableName.reportTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, vendorTab, reportTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
 
   var idReporter=inObj.idReporter;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser, IP, idIP, image, displayName, boImgOwn, imTag, comment, answer, UNIX_TIMESTAMP(r.created) AS created FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser JOIN "+reportTab+" r ON u.idUser=r.idVendor WHERE idReporter=? ORDER BY r.created DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser, idFB, idIdPlace, idOpenId, image, displayName, boImgOwn, imTag, comment, answer, UNIX_TIMESTAMP(r.created) AS created FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser JOIN "+reportTab+" r ON u.idUser=r.idVendor WHERE idReporter=? ORDER BY r.created DESC LIMIT "+offset+","+rowCount+";"); 
   Val.push(idReporter); 
   Sql.push("SELECT FOUND_ROWS() AS n;"); 
   var sql=Sql.join("\n ");
@@ -943,10 +1299,10 @@ ReqBE.prototype.reportRGet=function*(inObj){
 
 
 ReqBE.prototype.teamSaveName=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var teamTab=site.TableName.teamTab;
   var Ou={};
-  var {user, team}=this.sessionMain.userInfoFrDB; if(!user || !team) { this.mes('No session'); return [null, [Ou]];}
+  var {user, team}=this.sessionUserInfoFrDB; if(!user || !team) { this.mes('No session'); return [null, [Ou]];}
   var {idUser, boApproved}=team; if(!boApproved){this.mes('Team not approved'); return [null, [Ou]];}
 
   var link=this.pool.escape(inObj.link);  
@@ -956,10 +1312,10 @@ ReqBE.prototype.teamSaveName=function*(inObj){  // writing needSession
   return [null, [Ou]];
 }
 ReqBE.prototype.teamSave=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var vendorTab=site.TableName.vendorTab;
   var Ou={};
-  var {user, team}=this.sessionMain.userInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var {user, team}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   if(!team.boApproved){ this.mes('Team not approved'); return [null, [Ou]];}
   
   var idUser=Number(inObj.idUser),   boOn=Number(inObj.boOn); 
@@ -970,15 +1326,14 @@ ReqBE.prototype.teamSave=function*(inObj){  // writing needSession
 }
 
 ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
-  var userTab=site.TableName.userTab, vendorTab=site.TableName.vendorTab;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, vendorTab}=site.TableName;
   var Ou={};
-  var {user, team}=this.sessionMain.userInfoFrDB; if(!user || !team) { this.mes('No session'); return [null, [Ou]];}
+  var {user, team}=this.sessionUserInfoFrDB; if(!user || !team) { this.mes('No session'); return [null, [Ou]];}
   var {idUser, boApproved, imTag, link}=team;  if(boApproved==0){ this.mes('Team not approved'); return [null, [Ou]];}
   
   copySome(Ou, team, ['idUser', 'imTag', 'link']);
 
-  var TmpCol=['u.idUser', 'IP', 'idIP', 'displayName', 'idTeam', 'imTag'];
+  var TmpCol=['u.idUser', 'idFB', 'idIdPlace', 'idOpenId', 'displayName', 'idTeam', 'imTag'];
   for(var i=0;i<TmpCol.length;i++){TmpCol[i]+=" AS '"+i+"'";} 
   var strCol=TmpCol.join(', ');
   var sql="SELECT "+strCol+" FROM "+vendorTab+" v JOIN "+userTab+" u ON v.idUser=u.idUser WHERE idTeamWanted=?";
@@ -999,10 +1354,9 @@ ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
 
 
 ReqBE.prototype.deleteImage=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
-  var vendorImageTab=site.TableName.vendorImageTab, vendorTab=site.TableName.vendorTab;
+  var req=this.req, flow=req.flow, site=req.site, {vendorTab, vendorImageTab}=site.TableName;
   var Ou={};
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
 
   var Sql=[];
@@ -1011,16 +1365,16 @@ ReqBE.prototype.deleteImage=function*(inObj){
   var sql=Sql.join("\n "), Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var nDel=results[0].affectedRows; 
-  if(nDel==1) {this.mes('Image deleted'); } else { this.mes(nDel+" images deleted!?");}
+  Ou.boOK=0; if(nDel==1) {Ou.boOK=1; this.mes('Image deleted'); } else { this.mes(nDel+" images deleted!?");}
   return [null, [Ou]];
 }
 
 
 ReqBE.prototype.pubKeyStore=function*(inObj){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var pubKeyTab=site.TableName.pubKeyTab;
   var Ou={};
-  var {user, vendor}=this.sessionMain.userInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
+  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
   var pubKey=inObj.pubKey;
   var sql="INSERT INTO "+pubKeyTab+" (idUser,pubKey) VALUES (?, ?) ON DUPLICATE KEY UPDATE pubKey=VALUES(pubKey), iSeq=0";
@@ -1034,7 +1388,7 @@ ReqBE.prototype.pubKeyStore=function*(inObj){
 
 
 ReqBE.prototype.getSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var Str=['payLev','boTerminationCheck','boShowTeam'];
@@ -1043,11 +1397,11 @@ ReqBE.prototype.getSetting=function*(inObj){
   return [null, [Ou]];
 }
 ReqBE.prototype.setSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, res=this.res, site=req.site; 
+  var req=this.req, flow=req.flow, site=req.site; 
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var StrApp=[],  StrServ=[];
-  if(this.sessionMain.userInfoFrDB.admin) StrApp=['payLev','boTerminationCheck','boShowTeam'];  
+  if(this.sessionUserInfoFrDB.admin) StrApp=['payLev','boTerminationCheck','boShowTeam'];  
   var Str=StrApp.concat(StrServ);
   var Key=Object.keys(inObj);
   if(!isAWithinB(Key, Str)) { this.mes('Illegal invariable'); return [null, [Ou]];}
@@ -1056,7 +1410,7 @@ ReqBE.prototype.setSetting=function*(inObj){
 }
 
 ReqBE.prototype.getDBSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;
   var Ou={};
   if(!isAWithinB(inObj,['payLev','boTerminationCheck','boShowTeam'])) {this.mes('Illegal invariable'); return [null, [Ou]];}
@@ -1069,11 +1423,11 @@ ReqBE.prototype.getDBSetting=function*(inObj){
 }
 
 ReqBE.prototype.setDBSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, res=this.res, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var Str=[];
-  if(this.sessionMain.userInfoFrDB.admin) Str=['payLev','boTerminationCheck','boShowTeam','boGotNewVendors','nUser'];  
+  if(this.sessionUserInfoFrDB.admin) Str=['payLev','boTerminationCheck','boShowTeam','boGotNewVendors','nUser'];  
   var Key=Object.keys(inObj);
   if(!isAWithinB(Key, Str)) { this.mes('Illegal invariable'); return [null, [Ou]];}
 
@@ -1095,7 +1449,7 @@ ReqBE.prototype.setDBSetting=function*(inObj){
 
 
 ReqBE.prototype.uploadImage=function*(inObj){
-  var self=this, req=this.req, flow=req.flow, res=this.res, site=req.site, siteName=site.siteName;
+  var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {vendorTab, teamTab, teamImageTab, vendorImageTab}=site.TableName;
   var Ou={};
   var regImg=RegExp("^(png|jpeg|jpg|gif|svg)$");
 
@@ -1126,9 +1480,8 @@ ReqBE.prototype.uploadImage=function*(inObj){
   //var kind=this.kind||'v';
   var boTeam=this.kind=='t';
 
-  var TableName=site.TableName, vendorTab=TableName.vendorTab, teamTab=TableName.teamTab, vendorImageTab=TableName.vendorImageTab, teamImageTab=TableName.teamImageTab;
-  var {user, vendor, team}=this.sessionMain.userInfoFrDB; if(!user || !vendor || (boTeam && !team)) { this.mes('No session'); return [null, [Ou]];}
-  var strKind=boTeam?'team':'vendor', idUser=this.sessionMain.userInfoFrDB[strKind].idUser;
+  var {user, vendor, team}=this.sessionUserInfoFrDB; if(!user || !vendor || (boTeam && !team)) { this.mes('No session'); return [null, [Ou]];}
+  var strKind=boTeam?'team':'vendor', idUser=this.sessionUserInfoFrDB[strKind].idUser;
   
   console.log('uploadImage data.length: '+data.length);
   if(data.length==0) {  return [new Error('data.length==0')]; }

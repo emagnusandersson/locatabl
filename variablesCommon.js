@@ -1,9 +1,4 @@
 
-//
-// Inconsequncies:
-// When IP is refered to in userInfoFrIP it is a string otherwise an enum
-//
-
 
 two31=Math.pow(2,31);  intMax=two31-1;  intMin=-two31;
 sPerDay=24*3600;  sPerMonth=sPerDay*30;
@@ -24,7 +19,10 @@ leafUploadFront="upload.html";
 //leafAssign='assign.js'; 
 leafSiteSpecific='siteSpecific.js';
 leafPayNotify="payNotify.js";
-
+leafLoginWLink="loginWLink";
+//leafVerifyEmailReturn='verifyEmail';
+leafVerifyPWResetReturn='verifyPWReset';
+leafVerifyEmailNCreateUserReturn='verifyEmailNCreateUser';
 
 hideTimerDefault=30*24*3600; //minutes
 if(boDbg) hideTimerDefault=30*60;
@@ -93,13 +91,16 @@ auto_increment_increment=1;
 CreatorPlugin={}
 CreatorPlugin.general=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   //                       012345678
   var tmp={
   index:               {b:'000000000'},
   idUser:              {b:'011000110',type:'int(4)'},
-  IP:                  {b:'001011000'}, 
-  idIP:                {b:'001011000'},
+  idFB:                {b:'001011000'},
+  idIdPlace:           {b:'001011000'},
+  idOpenId:            {b:'001011000'},
   donatedAmount:       {b:'011111111',type:'DOUBLE', default:0},
   boShow:              {b:'110000110',type:'TINYINT', default:0},
   created:             {b:'011111101',type:'TIMESTAMP', default:0},
@@ -139,7 +140,7 @@ this.rewriteSite=function(site){
   };
   extend(Prop,tmp);
   site.StrOrderDB=Object.keys(tmp);
-  //StrOrderDB=['index', 'idUser', 'IP', 'idIP', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'nMonthsStartOffer', 'nPayment', 'imTag', 'imTagTeam', 'idTeam', 'idTeamWanted', 'boImgOwn', 'linkTeam', 'nReport', 'coordinatePrecisionM', 'dist', 'image']
+  //StrOrderDB=['index', 'idUser', 'idFB', 'idIdPlace', 'idOpenId', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'nMonthsStartOffer', 'nPayment', 'imTag', 'imTagTeam', 'idTeam', 'idTeamWanted', 'boImgOwn', 'linkTeam', 'nReport', 'coordinatePrecisionM', 'dist', 'image']
   Prop.donatedAmount.feat={kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]};
   Prop.homeTown.feat={kind:'B'};
   Prop.idTeam.feat={kind:'BN'};
@@ -151,11 +152,11 @@ this.rewriteSite=function(site){
 
   
   Prop.idUser.pre='u.';
-  Prop.idIP.pre='u.';
-  Prop.IP.pre='u.';
+  Prop.idFB.pre='u.';
+  Prop.idIdPlace.pre='u.';
+  Prop.idOpenId.pre='u.';
   Prop.image.pre='u.';
 
-  Prop.IP.Enum=['openid', 'fb','google', 'idplace'];
   Prop.posTime.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" HOUR)"; return name+"<="+val;};
   Prop.created.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+"<="+val;};
   Prop.histActive.cond0F=function(name, val){ return sqlHistActiveColCount+">="+val;};
@@ -173,7 +174,6 @@ this.rewriteSite=function(site){
   Prop.link.selOneF=function(){ return "v.link";};
   Prop.imTag.selOneF=function(){ return "v.imTag";};
   Prop.imTagTeam.selOneF=function(){ return "dis.imTag";};
-  Prop.IP.selOneF=selEnumF;
   Prop.posTime.selOneF=Prop.tLastWriteOfTA.selOneF=Prop.terminationDate.selOneF=Prop.lastPriceChange.selOneF=selTimeF;
 
   Prop.created.selF=function(){ return "UNIX_TIMESTAMP(v.created)";};
@@ -184,7 +184,6 @@ this.rewriteSite=function(site){
   Prop.linkTeam.selF=function(){return "dis.link";};
   Prop.nReport.selF=function(){return "sum(rb.created IS NOT NULL)";};
   Prop.histActive.selF=function(){return sqlHistActiveColCount;};
-  Prop.IP.selF=selEnumF;
   Prop.posTime.selF=Prop.tLastWriteOfTA.selF=Prop.terminationDate.selF=Prop.lastPriceChange.selF=selTimeF;
 
   Prop.posTime.histCondF=function(name){ return "floor((-UNIX_TIMESTAMP(v.posTime)+UNIX_TIMESTAMP(now()))/3600)";};
@@ -193,7 +192,6 @@ this.rewriteSite=function(site){
   Prop.timeAccumulated.histCondF=function(name){ return "floor(timeAccumulated/"+sPerMonth+")";};
 
   Prop.idTeamWanted.vendorUpdF=function(name,value){ var v=value.length==0?0:Number(value);  return ['?',v];};
-  Prop.IP.vendorUpdF=updEnumBoundF;
   Prop.created.vendorUpdF=Prop.posTime.vendorUpdF=Prop.tLastWriteOfTA.vendorUpdF=Prop.terminationDate.vendorUpdF=Prop.lastPriceChange.vendorUpdF=updTimeF;
 
 
@@ -208,7 +206,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.transportProt=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   //                             012345678
   var tmpEnum=['sedan', 'wagon', 'largeMPV', 'MPV', 'hatchback'];
   var tmp={
@@ -229,7 +229,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.transportPrice=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   //                           012345678
   var tmpEnum=['km','mile'];
   var tmp={
@@ -252,7 +254,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.transportUrgent=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   var tmpEnum=['inCar','atHome','5min','10min'];
   var tmp={
   standingByMethod:    {b:'111110111',type:'ENUM', default:tmpEnum[0]}};
@@ -270,7 +274,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.night=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   //                           012345678
   var tmp={
   shiftEnd:            {b:'111110101',type:'TIMESTAMP', default:0}};
@@ -291,7 +297,9 @@ this.rewriteSite=function(site){
 //CreatorPlugin.taxi=CreatorPlugin.demo=CreatorPlugin.test=function(){
 CreatorPlugin.taxi=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   site.StrPropTaxi=['nPassengers', 'extraSeat', 'childSeat', 'wheelChairPlaces'];
   
   //                           012345678
@@ -323,7 +331,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.transport=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   //                           012345678
   var tmpA={
   brand:               {b:'111000111',type:'VARCHAR(20)', default:''},
@@ -357,7 +367,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.cleaner=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   site.StrCleanerBool=['boHome','boOffice','boIndustrial', 'boGotEquipment'];
 
   //                          012345678
@@ -376,7 +388,9 @@ this.rewriteSite=function(site){
 }
 CreatorPlugin.windowcleaner=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));  
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   site.StrCleanerBool=['boLadder','boSkyLift'];
 
   //                          012345678
@@ -396,7 +410,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.lawnmower=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   site.StrToolBool=['pushMower','ridingMower', 'edger'];
   Prop.vehicleType.feat.bucket=Prop.vehicleType.Enum=['ridingMower', 'foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
 
@@ -423,7 +439,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.snowremoval=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   site.StrToolBool=['shovel', 'snowblower', 'plow'];
   Prop.vehicleType.feat.bucket=Prop.vehicleType.Enum=[ 'foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van', 'lorryOpen', 'ridingMower', 'tractor'];
 
@@ -443,7 +461,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.hourlyPrice=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   //                           012345678
   var tmp={
   pricePerHour:        {b:'111010110',type:'DECIMAL(10,0)', default:0}
@@ -455,8 +475,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.fruitpicker=function(){
 this.rewriteSite=function(site){
-  
-  eval(extractLoc(site,'site'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+
   Prop.vehicleType.feat.bucket=Prop.vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'van'];
 
   site.StrOrderFilt=array_mergeM(['homeTown','currency','idTeam','vehicleType','posTime'],site.StrPropRep);
@@ -468,7 +489,9 @@ this.rewriteSite=function(site){
 
 CreatorPlugin.programmer=function(){
 this.rewriteSite=function(site){
-  eval(extractLocSome('site','Prop'));
+  //eval(extractLocSome('site','Prop'));
+  var Prop=site.Prop;
+  
   //                           012345678
   var tmpA={
   otherLang:           {b:'111111111',type:'VARCHAR(20)', default:''}

@@ -23,7 +23,7 @@ CreatorPlugin.general=function(){
   
   //enumIP=Enum.IP; enumDistUnit=Enum.distUnit;
   //enumIP=Prop.IP.Enum; enumDistUnit=Prop.distUnit.Enum;
-  enumIP=Prop.IP.Enum;
+  //enumIP=Prop.IP.Enum;
  
   distUnitDefault='km'; if(strLang=='en') {distUnitDefault='mile'; }
   if(boNewVersion) { setItem('distUnit',distUnitDefault);}
@@ -102,8 +102,8 @@ CreatorPlugin.general=function(){
       // timeAccumulated, IP
     var tmpF=function(iMTab,$c){ return UTC2ReadableDiff(MTab[iMTab].timeAccumulated); };
     $.extend(Prop.timeAccumulated, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-    var tmpIP=function(iMTab,$c){  return enumIP[Number( MTab[iMTab].IP )]; };
-    $.extend(Prop.IP, { setInfo:tmpIP, sortTabF:tmpIP, setTabF:tmpIP, setMapF:tmpIP, setMapMF:tmpIP });
+    //var tmpIP=function(iMTab,$c){  return enumIP[Number( MTab[iMTab].IP )]; };
+    //$.extend(Prop.IP, { setInfo:tmpIP, sortTabF:tmpIP, setTabF:tmpIP, setMapF:tmpIP, setMapMF:tmpIP });
 
       // nReport
     var tmpSetNReport=function(iMTab,$c){   $c.children('button')[0].mySet(iMTab);   };
@@ -183,9 +183,14 @@ CreatorPlugin.general=function(){
       setMapF:tmp.setMapF, setMapMF:tmp.setMapMF
     }); 
 
-      // idIP, homeTown 
-    var tmp=makeTrunkF('idIP',40-langHtml.label.idIP.length); 
-    $.extend(Prop.idIP, {setMapF:tmp.setMapF, setMapMF:tmp.setMapMF});
+
+      // idFB, idIdPlace, idOpenId, homeTown 
+    var tmp=makeTrunkF('idFB',40-langHtml.label.idFB.length); 
+    var tmp=makeTrunkF('idIdPlace',40-langHtml.label.idIdPlace.length); 
+    var tmp=makeTrunkF('idOpenId',40-langHtml.label.idOpenId.length); 
+    $.extend(Prop.idFB, {setMapF:tmp.setMapF, setMapMF:tmp.setMapMF});
+    $.extend(Prop.idIdPlace, {setMapF:tmp.setMapF, setMapMF:tmp.setMapMF});
+    $.extend(Prop.idOpenId, {setMapF:tmp.setMapF, setMapMF:tmp.setMapMF});
     $.extend(Prop.homeTown, {strType:'text',inpW:6});
     
       // idTeamWanted 
@@ -209,18 +214,22 @@ CreatorPlugin.general=function(){
       var $c=$('<span>');
       var $thumb=$c[0].$thumb=$('<img>').css({'vertical-align':'middle'});
       $c[0].$butDeleteImg=$('<button>').append(langHtml.Delete).click(function(){
-        var vec=[['deleteImage',1,$vendorSettingDiv.setUp], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec); 
+        var vec=[['deleteImage',1,function(data){
+          if(data.boOK) userInfoFrDB.boImgOwn=0;
+          $vendorSettingDiv.setUp();
+        }]];   majax(oAJAX,vec);  //, ['setupById',{Role:'vendor'}]
       });
       var uploadCallback=function(){
-        var tmpF=function(){var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str});};  $c[0].$butDeleteImg.toggle(tmp.boImgOwn);  var vec=[ ['setupById',{Role:'vendor'},tmpF]];   majax(oAJAX,vec);
+        userInfoFrDB.vendor.boImgOwn=1; userInfoFrDB.vendor.imTag=randomHash(); var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str}); $c[0].$butDeleteImg.toggle(tmp.boImgOwn);
+        //var tmpF=function(){var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str});};  $c[0].$butDeleteImg.toggle(tmp.boImgOwn);  var vec=[ ['setupById',{Role:'vendor'},tmpF]];   majax(oAJAX,vec);
       }
       var $buttUploadImage=$('<button>').html(langHtml.uploadNewImg).click(function(){$uploadImageDiv.openFunc('v',uploadCallback);});
       $c.append($c[0].$thumb,$c[0].$butDeleteImg,$buttUploadImage);  //langHtml.YourImage+': ',
       return $c;
     };
     calcImageUrl=function(rT){ // Keys of rT: ["IP", "boImageOwn", "idUser", "imTag", "image"] 
-      var tmp='',  IPTmp=enumIP[Number(rT.IP)],  boImgOwn=Number(rT.boImgOwn);
-      if(boImgOwn || IPTmp=='openid' || rT.image.length==0) tmp=uVendorImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image; 
+      var tmp='',  boImgOwn=Number(rT.boImgOwn);  // IPTmp=enumIP[Number(rT.IP)]
+      if(boImgOwn  || rT.image.length==0) tmp=uVendorImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image; 
       return tmp;
     };
     calcImageUrlW=function(iMTab){      return calcImageUrl(MTab[iMTab]);     };
@@ -243,7 +252,7 @@ CreatorPlugin.general=function(){
       strType:'span',
       crInp:tmpCrInp, setInp:tmpSetInp, saveInp:function(){return [null,null];},
       setInfo:tmpSetImage, crInfo:tmpCrImage,
-      sortTabF:function(iMTab){return MTab[iMTab].IP+MTab[iMTab].idUser;},
+      sortTabF:function(iMTab){return MTab[iMTab].idUser;},  // MTab[iMTab].IP+
       setTabF:tmpSetImage,
       crTabF:tmpCrImage,
       setMapF:function(iMTab){     return {url:calcImageUrlW(iMTab)};  },
@@ -1556,7 +1565,7 @@ var payDivExtend=function($el){
   }
   var sendRebateCode=function(){
     var tmp=$rebateCode.val(); //if(tmp.length!=rebateCodeLen ) {$messageText.html($lengthErrMess.html()); return false;}  
-    var vec=[['SUseRebateCode',{rebateCode:tmp.slice(0,10)}], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec);
+    var vec=[['SUseRebateCode',{rebateCode:tmp.slice(0,10)}]];   majax(oAJAX,vec);  // , ['setupById',{Role:'vendor'}]
   }
   $el.setUp=function(){
     $rebateCode.val('');
@@ -2050,44 +2059,7 @@ var input2object=function($el){
  * vendorIntroDiv
  */
 
-/*
-var vendorIntroDivExtend=function($el){
-"use strict"
-  var save=function(){ 
-    resetMess();  
-    //$el.find(':text').each(function(){var tmp=$(this).val().trim(); $(this).val(tmp); });
-    //if(!entryTestWMyName($el,arrMustBeSet,arrPosNum,arrPosNumOrEmpty)) return;
-    //var o1=input2object($el);
-    var strTel=$inpTel.val().trim(); $inpTel.val(strTel); if(strTel.length==0) {setMess('telephone number can not be empty'); return; }
-    var o1={tel:strTel, displayName:userInfoFrIP.nameIP, boInsert:1};
-    var curT; if(strLang=='sv') curT='SEK'; else curT='USD'; o1.currency=curT;
-    var vec=[['VUpdate',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
-    var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
-    $body.append($iframeConversion);
-
-    setMess('',null,true);  
-  }
-  $el.setUp=function(){  var  $tmp=$inpTel.val(''); $inpTel.focus();  return true;  }
-  $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
- 
-  $el=popUpExtend($el);  
-  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em'}); 
-
-  
-  var $helpPopup=$('<div>').html(langHtml.driverTextPopup.tel);
-  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverM($imgH,$helpPopup);
-         
-  var $head=$('<h3>').append(langHtml.introHead);
-  var $inpTel=$('<input type=tel>').prop({size:10}).attr({myName:'tel'}).keypress( function(e){ if(e.which==13) {save();return false;}} );
-  var $telDiv=$('<div>').append(langHtml.Tel,': ',$inpTel,$imgH);
-
-  var $saveButton=$('<button>').append(langHtml.Save).click(save).css({'margin-top':'1em'});
-  $el.append($head,$telDiv,$saveButton).css({padding:'0.1em'}); 
-
-  return $el;
-}
-*/
 
 var vendorIntroDivExtend=function($el){
 "use strict"
@@ -2095,7 +2067,8 @@ var vendorIntroDivExtend=function($el){
     resetMess();  
     var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('telephone number can not be empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
-    var o1={email:strEmail, displayName:userInfoFrIP.nameIP, currency:curT};
+    var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
+    var o1={email:strEmail, displayName:nameT, currency:curT};
     var vec=[['VIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
     var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
@@ -2103,7 +2076,7 @@ var vendorIntroDivExtend=function($el){
 
     setMess('',null,true);  
   }
-  $el.setUp=function(){  var  $tmp=$inpEmail.val(userInfoFrIP.email); $inpEmail.focus();  return true;  }
+  $el.setUp=function(){  var emailT=sessionLoginIdP?sessionLoginIdP.email:''; $inpEmail.val(emailT); $inpEmail.focus();  return true;  }
   $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
  
   $el=popUpExtend($el);  
@@ -2131,7 +2104,8 @@ var reporterIntroDivExtend=function($el){
     resetMess();  
     var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('telephone number can not be empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
-    var o1={email:strEmail, displayName:userInfoFrIP.nameIP, currency:curT};
+    var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
+    var o1={email:strEmail, displayName:nameT, currency:curT};
     var vec=[['RIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
     var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
@@ -2139,7 +2113,7 @@ var reporterIntroDivExtend=function($el){
 
     setMess('',null,true);  
   }
-  $el.setUp=function(){  var  $tmp=$inpEmail.val(userInfoFrIP.email); $inpEmail.focus();  return true;  }
+  $el.setUp=function(){  var emailT=sessionLoginIdP?sessionLoginIdP.email:''; $inpEmail.val(emailT); $inpEmail.focus();  return true;  }
   $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
  
   $el=popUpExtend($el);  
@@ -2262,7 +2236,7 @@ var userSettingDivExtend=function($el){
 
   $el.setUp=function(){
     var tmp=userInfoFrDB.user;
-    $spanIdUser.html(tmp.idUser);  $spanIP.html(Prop.IP.Enum[tmp.IP]);  $spanIdIP.html(tmp.idIP);
+    $spanIdUser.html(tmp.idUser);   $spanIdFB.html(tmp.idFB);  $spanIdIdPlace.html(tmp.idIdPlace);  $spanIdOpenId.html(tmp.idOpenId);
     $imgImage.prop({src:tmp.image});
     $spanNameIP.html(tmp.nameIP);  $inpEmail.val(tmp.email);
         
@@ -2278,7 +2252,7 @@ var userSettingDivExtend=function($el){
   var $buttRefetch=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
     e.stopPropagation();
     var flow=(function*(){
-      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'refetchFun', caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       $el.setUp();
@@ -2287,14 +2261,15 @@ var userSettingDivExtend=function($el){
   });
   
   
-  var $spanIdUser=$('<span>'), $spanIP=$('<span>').css({margin:'0 0.2em 0 0'}), $spanIdIP=$('<span>').css({margin:'0 0.2em 0 0'});
+  var $spanIdUser=$('<span>'), $spanIdFB=$('<span>'), $spanIdIdPlace=$('<span>'), $spanIdOpenId=$('<span>');
+  $spanIdFB.add($spanIdIdPlace).add($spanIdOpenId).css({margin:'0 0.2em 0 0'})
   var $imgImage=$('<img>').css({'vertical-align':'middle'});
   var $spanNameIP=$('<span>');
   var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {saveEmail();return false;}} );
   var $butEmail=$('<button>').append('Change email').click(saveEmail);
   
   var $divIdUser=$('<div>').append('idUser (db): ', $spanIdUser);
-  var $divIdIP=$('<div>').append('Id: ', $spanIP, $spanIdIP);
+  var $divIdIP=$('<div>').append('ID-codes: FB: ', $spanIdFB, ', IdPlace: ', $spanIdIdPlace, ', OpenID: ', $spanIdOpenId);
   var $divImage=$('<div>').append('Image: ', $imgImage);
   var $divNameIP=$('<div>').append('Name: ', $spanNameIP);
   
@@ -2304,13 +2279,17 @@ var userSettingDivExtend=function($el){
   var $divRefresh=$('<div>').append('Refetch data: ', $buttRefetch);
   var $divHead=$('<div>').append('Data from Id-provider (user info): ').css({'margin-bottom':'0.5em','font-weight':'bold'});
   
+    // change PW
+  var $buttChangePW=$("<button>").append('Change password').click(function(e){ $changePWPop.openFunc(); });
+  var $divPW=$('<div>').append('Change password: ', $buttChangePW);
+
       // deleteDiv
   var $imgH=$imgHelp.clone(); popupHoverM($imgH,$('<div>').html(langHtml.deleteBox.help));
   var $butDelete=$('<button>').append(langHtml.DeleteAccount).css({'margin-right':'1em'}).click(function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
   var $deleteDiv=$('<div>').append($butDelete); //,$imgH
 
   
-  var $divs=$([]).push($divHead, $divRefresh, $divIdIP, $divImage, $divNameIP, $divEmail, $deleteDiv).css({'margin-top':'1em'}), $divCont=$('<div>').append($divs);
+  var $divs=$([]).push($divHead, $divRefresh, $divIdIP, $divImage, $divNameIP, $divEmail, $divPW, $deleteDiv).css({'margin-top':'1em'}), $divCont=$('<div>').append($divs);
   $el.append($divCont);
   
   $el.css({'text-align':'left'});
@@ -2330,7 +2309,7 @@ var deleteAccountPopExtend=function($el){
   //var $el=popUpExtend($el);
   var $yes=$('<button>').html(langHtml.Yes).click(function(){
     //var vec=[['VDelete',1,function(data){doHistBack();doHistBack();}]];   majax(oAJAX,vec);
-    userInfoFrIP={};  userInfoFrDB=$.extend({}, specialistDefault);
+    sessionLoginIdP={};  userInfoFrDB=$.extend({}, specialistDefault);
     var vec=[['VDelete',1], ['logout',1, function(data){
       //$mapDiv.setVis(); 
       history.fastBack($mapDiv,true);
@@ -2401,10 +2380,309 @@ getOAuthCode=function*(flow){
   yield;
   
   var params=parseQS(strQS.substring(1));
-  if(!('state' in params) || params.state !== nonce) {   return {err:'Invalid state parameter: '+params.state}; } 
-  if('error' in params) { return {err:params.error}; }
-  if(!('code' in params)) { return {err: 'No "code" parameter in response from IdP'}; }
-  return {err:null, code:params.code};
+  if(!('state' in params) || params.state !== nonce) {   return ['Invalid state parameter: '+params.state]; } 
+  if('error' in params) { return [params.error]; }
+  if(!('code' in params)) { return ['No "code" parameter in response from IdP']; }
+  return [null, params.code];
+}
+
+
+var loginWLinkDivExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'loginWLinkDiv';}
+  $el.setUp=function(){
+    $inpEmail.val('');    //$inpPW.val('');
+  }
+
+  var sendEmail=function(){
+    var vec=[['sendLoginLink',{email:$inpEmail.val()}]];   majax(oAJAX,vec);   return false;
+  }
+  var $divHead=$('<h3>').append('Log in with email.');
+
+  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {sendEmail();return false;}} );
+  var $butSendLink=$('<button>').append('Send login link to email address.').click(sendEmail);
+
+  var $rows=$([]).push($divHead, $inpEmail, $butSendLink); //, $inpPW, $butLogin
+  $rows.css({display:'block', 'margin':'1em 0em 1em 0.6em'});
+  $el.append($rows);
+ 
+  $el.css({'text-align':'left'});
+  return $el;
+}
+var loginWLinkFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Log in with your email').addClass('footDivLabel');
+  $el.append($buttonBack,$span).addClass('footDiv'); 
+  return $el;
+}
+
+
+idPLoginDivExtend=function($el){
+
+  return $el;
+}
+
+
+formLoginDivExtend=function($el){  
+  "use strict"
+  $el.toString=function(){return 'formLoginDiv';}
+  
+  
+  $el.setUp=function(){
+    $inpEmail.val('');    $inpPass.val('');
+  }
+
+  var loginWEmail=function(){
+    var flow=(function*(){
+      var tmp=SHA1($inpPass.val()+strSalt); //$inpPass.val('');
+      var vec=[['loginWEmail',{email:$inpEmail.val(), password:tmp}], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      history.fastBack($mapDiv);
+      
+    })(); flow.next();
+    return false;
+  }
+  var sendEmail=function(){
+    var vec=[['sendLoginLink',{email:$inpEmail.val()}]];   majax(oAJAX,vec);  return false;
+  }
+  
+  var $divHead=$('<h3>').append('Sign in using email / password').css({'text-align':'center'});
+  
+  var $formLogin=$('#formLogin');
+  var $inpEmail=$formLogin.children("input[name='email']").css({'max-width':'100%'});
+  var $inpPass=$formLogin.children("input[name='password']").css({'max-width':'100%'});
+  var $buttLogin=$formLogin.children("button[name='submit']").css({"margin-top": "1em"}).on('click',loginWEmail);
+  $formLogin.find('input[type=text],[type=email],[type=number],[type=password]').css({display:'block'}).keypress( function(e){ if(e.which==13) { loginWEmail(); }} );
+
+  var $messDiv=$('<div>').css({color:'red'});
+  var $buttForgot=$('<a>').prop({href:''}).text('Forgot your password?').click(function(){  $forgottPWPop.openFunc(); return false; });
+  var $imgH=popupHoverM($imgHelp.clone(), $('<div>').html("A new password is generated and sent to the email address.")); 
+  var $divForgot=$('<div>').css({'margin-top':'1em'}).append($buttForgot, $imgH);
+  var $butSendLink=$('<a>').prop({href:''}).text('Login with email link').click(sendEmail); 
+  var $imgH=popupHoverM($imgHelp.clone(), $('<div>').html("An email is sent with a link which will log you in. Your password is not changed.")); 
+  var $divSendLink=$('<div>').css({'margin-top':'1em'}).append($butSendLink, $imgH);
+  
+  var $buttonCreateAccount=$('<button>').addClass('highStyle').append('Create an account').click(function(){
+    doHistPush({$view:$createUserDiv});
+    $createUserDiv.setVis();
+  });
+  $el.append($divHead, $messDiv, $formLogin, $divForgot, $divSendLink, '<hr>', $buttonCreateAccount); 
+  return $el;
+}
+var formLoginFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Login with email / password').addClass('footDivLabel');
+  $el.append($buttonBack, $span).addClass('footDiv'); 
+  return $el;
+}
+
+
+var loginSelectorDivExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'loginSelectorDiv';}
+  //$el.setUp=function(){}
+
+  var strButtonSize='2em';
+  var $imgFb=$('<img>').prop({src:uFb}).click(function(){
+    var flow=(function*(){
+      ga('send', 'event', 'button', 'click', 'login');
+      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var oT={IP:strIPPrim, fun:'vendorFun', caller:'index', code:code};
+      var vec=[['loginGetGraph', oT], ['setupById',{}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      
+      var boE=Boolean(userInfoFrDB.vendor);
+      if(!boE){ $vendorIntroDiv.openFunc(); }
+      if(boE) $quickDiv.setUp();
+      history.fastBack($mapDiv);
+    })(); flow.next();
+  });
+  $imgFb.css({align:'center', display:'block', 'margin': '0.7em auto'}); //     , position:'relative',top:'0.4em',heigth:strButtonSize,width:strButtonSize
+
+      
+  
+  var $divHead=$('<h3>').append('Sign in / Create account, using ...').css({'text-align':'center'});
+
+
+  
+  var cssCol={display:'inline-block','box-sizing': 'border-box',padding:'1em',flex:1}; //width:'50%',
+  var $buttonViaEmail=$('<button>').addClass('highStyle').append('Email and password').click(function(){
+    doHistPush({$view:$formLoginDiv});
+    $formLoginDiv.setVis();
+  });  
+  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
+  var $divRight=$('<div>').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).append( $buttonViaEmail); 
+  var $divRow=$('<div>').append($divLeft, $divRight).css({display: 'flex', 'justify-content':'space-around'});
+  
+  
+  $divHead.css({display:'block', 'margin':'1em 0em 1em 0.6em'});
+  $el.append($divHead, $divRow);
+ 
+  $el.css({'text-align':'left'});
+  return $el;
+}
+
+
+var createUserDivExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'createUserDiv';}
+  var save=function(){ 
+    resetMess();  
+    var strPassword=$inpPass.val().trim();
+    if(strPassword!==$inpPassB.val().trim()) { var tmp='Password-fields are not equal'; setMess(tmp); return; }
+    if(strPassword.length<lPWMin) { var tmp='The password must be at least '+lPWMin+' characters long'; setMess(tmp); return; }
+
+  
+    var strName=$inpName.val().trim();
+    var strEmail=$inpEmail.val().trim(); if(/\S+@\S+/.test(strEmail)) ; else {setMess('Invalid email'); return;}
+    
+    var strTmp=grecaptcha.getResponse(); if(!strTmp) {setMess("Captcha response is empty"); return; }
+    var o={name:strName, email:strEmail, password:SHA1(strPassword+strSalt),  'g-recaptcha-response': grecaptcha.getResponse()};
+
+    //var vec=[['createUser',o], ['setupById',{}, $el.cb]];   majax(oAJAX,vec); 
+    var vec=[['sendVerifyEmailNCreateUserMessage',o, saveRet]];   majax(oAJAX,vec); 
+    
+    $inpPass.val(''); $inpPassB.val('');
+    setMess('',null,true); 
+  }
+  var saveRet=function(data){
+    if(data.boOK) $messEndDiv.append('Check your mailbox, an email was sent which contains a link which will create the account.'); 
+  }
+    
+  var lPWMin=boDbg?2:6; 
+
+  $el.setUp=function(){ 
+    if($divReCaptcha.is(':empty')){
+      grecaptcha.render($divReCaptcha[0], {sitekey:strReCaptchaSiteKey});
+      $messDiv.html('');  $messEndDiv.html('');
+      return true;
+    }
+  }
+  $el.cb=null;
+  
+  var $h1=$('<h1>').append('Create account');  
+
+  var $formCreateAccount=$('#formCreateAccount');
+  var $inpName=$formCreateAccount.children("input[name='name']").css({'max-width':'100%'});
+  var $inpEmail=$formCreateAccount.children("input[name='email']").css({'max-width':'100%'});
+  var $inpPass=$formCreateAccount.children("input[name='password']").css({'max-width':'100%'});
+  var $inpPassB=$formCreateAccount.children("input[name='passwordB']").css({'max-width':'100%'});
+  $formCreateAccount.find('input[type=text],[type=email],[type=number],[type=password]').css({display:'block', 'margin-bottom':'0.5em'});
+  $inpPass.attr("placeholder", 'at least '+lPWMin+' characters');
+  
+  var $divReCaptcha=$('<div>');
+  $el.$divDisclaimerW=$('<div>').css({'margin':'0em', 'padding':'0em'});
+  
+  var $messDiv=$('<div>').css({color:'red'});
+  
+  //var $labName=$('<label>').append('Full name'),  $labEmail=$('<label>').append('Email'); 
+  //var $inpName=$('<input>'), $inpEmail=$('<input type=email>');
+  //var $labPass=$('<label>').append('Password'),  $labPassB=$('<label>').append('Password again');  
+  //var $inpPass=$('<input type=password placeholder="at least '+lPWMin+' characters">'),  $inpPassB=$('<input type=password >');
+  //$inpName.add($inpEmail).add($inpPass).add($inpPassB).css({display:'block', 'margin-bottom':'0.5em'});
+
+  var $buttonVerifyNCreate=$("<button>").text('Verify email and create account').click(save).addClass('flexWidth').css({'margin':'0.5em 0em 0.3em'})
+  var $messEndDiv=$('<div>');
+
+  //$el.append($h1, $el.$divDisclaimerW, $messDiv,   $labName, $inpName, $labEmail, $inpEmail, $labPass, $inpPass, $labPassB, $inpPassB, $divReCaptcha, $buttonVerifyNCreate, $messEndDiv);
+  $el.append($h1, $el.$divDisclaimerW, $messDiv,   $formCreateAccount, $divReCaptcha, $buttonVerifyNCreate, $messEndDiv);
+  return $el;
+}
+var createUserFootExtend=function($el){
+"use strict"
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.CreateAccount).addClass('footDivLabel');
+  $el.append($buttonBack, $span).addClass('footDiv'); 
+  return $el;
+}
+
+
+
+
+var changePWPopExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'changePWPop';}
+  var save=function(){ 
+    resetMess();
+    $messDiv.html('');
+    if($inpPass.val().trim()!==$inpPassB.val().trim()) { setMess('The new password fields are not equal'); return; }
+    var lTmp=boDbg?2:6; if($inpPass.val().trim().length<lTmp) { setMess('The password must be at least '+lTmp+' characters long'); return; }
+
+    var o={passwordOld:SHA1($inpPassOld.val().trim()+strSalt), passwordNew:SHA1($inpPass.val().trim()+strSalt)};
+
+    var vec=[['changePW',o,changePWRet]];   majax(oAJAX,vec); 
+    setMess('',null,true); 
+  }
+
+  $el.openFunc=function(){
+    doHistPush({$view:$changePWPop});
+    $el.setVis();
+    $inpPassOld.val(''); $inpPass.val(''); $inpPassB.val('');
+  }
+  $el.setVis=function(){
+    $el.show();   
+    return true;
+  }
+  var changePWRet=function(data){
+    if(data.boOK) { $inpPassOld.val(''); $inpPass.val(''); $inpPassB.val('');  doHistBack(); }
+  }
+
+  var $h1=$('<h3>').append('Change your password');
+  var $blanket=$('<div>').addClass("blanket");
+  var $messDiv=$('<div>').css({color:'red'});
+  var $labPassOld=$('<label>').append('Old password'), $labPass=$('<label>').append('New password'),  $labPassB=$('<label>').append('New password again');  
+  var $inpPassOld=$('<input type=password>'), $inpPass=$('<input type=password placeholder="at least 6 characters">'),  $inpPassB=$('<input type=password>');
+
+  $([]).push($inpPassOld, $inpPass, $inpPassB).css({display:'block', 'margin-bottom':'0.5em'}).keypress( function(e){ if(e.which==13) {okF();return false;}} );
+
+  var $ok=$('<button>').html(langHtml.OK).addClass('highStyle').click(save);
+  var $cancel=$('<button>').html(langHtml.Cancel).addClass('highStyle').click(doHistBack);
+  var $divBottom=$('<div>').append($cancel,$ok);  //$buttonCancel,
+
+  var $centerDiv=$('<div>').append($h1, $messDiv,   $labPassOld, $inpPassOld, $labPass, $inpPass, $labPassB, $inpPassB, $divBottom);
+  $centerDiv.addClass("Center").css({'width':'20em', height:'21em', padding:'1.1em'})
+  if(boIE) $centerDiv.css({'width':'20em'}); 
+  $el.addClass("Center-Container").append($centerDiv,$blanket); //
+
+  return $el;
+}
+
+var forgottPWPopExtend=function($el){
+"use strict"
+  $el.toString=function(){return 'forgottPWPop';}
+  var okF=function(){
+    var vec=[['verifyPWReset',{email:$inpEmail.val().trim()}, okRet]];   majax(oAJAX,vec);
+    
+  };
+  $el.openFunc=function(){
+    doHistPush({$view:$forgottPWPop});
+    $el.setVis();
+    $inpEmail.val('');
+  }
+  $el.setVis=function(){
+    $el.show();   
+    return true;
+  }
+  var okRet=function(data){
+    if(data.boOK) { $inpEmail.val('');  doHistBack(); }
+  }
+
+  var $h1=$('<h3>').append('Forgott your password?');
+  var $blanket=$('<div>').addClass("blanket");
+  var $labEmail=$('<label>').append('Email');  
+  var $inpEmail=$('<input type=email>').keypress( function(e){ if(e.which==13) {okF();return false;}} );
+  $inpEmail.css({display:'block', 'margin-bottom':'0.5em'});
+
+  var $ok=$('<button>').html(langHtml.OK).addClass('highStyle').click(okF);
+  var $cancel=$('<button>').html(langHtml.Cancel).addClass('highStyle').click(doHistBack);
+  var $divBottom=$('<div>').append($cancel,$ok);  //$buttonCancel,
+
+  var $centerDiv=$('<div>').append($h1, $labEmail, $inpEmail, $divBottom);
+  $centerDiv.addClass("Center").css({'width':'20em', height:'13em', padding:'1.1em'});
+  if(boIE) $centerDiv.css({'width':'20em'}); 
+  $el.addClass("Center-Container").append($centerDiv,$blanket); //
+
+  return $el;
 }
 
 var convertIDDivExtend=function($el){
@@ -2435,14 +2713,15 @@ var convertIDDivExtend=function($el){
   var $imPrim=$('<img>').prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
     e.stopPropagation();
     var flow=(function*(){
-      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'vendorFun', caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       
       var boE=Boolean(userInfoFrDB.vendor);
       if(!boE){
         //var o1={tel:'000', displayName:'bla',boInsert:1, currency:'USD'};
-        var o1={boInsert:1};
+        //var o1={boInsert:1};
+        var o1={};
         var vec=[['VUpdate',o1], ['setupById']];   majax(oAJAX,vec);
       }
     })(); flow.next();
@@ -2453,7 +2732,7 @@ var convertIDDivExtend=function($el){
   var $imAlt=$('<img>').prop({src:uImageAlt}).css({'vertical-align':'middle'}).click(function(e){
     e.stopPropagation();
     var flow=(function*(){
-      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPAlt, fun:'mergeIDFun', caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       
@@ -2502,7 +2781,7 @@ var reportCommentPopExtend=function($el){
   $el.openFunc=function(idV){
     idVendor=idV;  $idVendor.html(idV);
     
-    if(Object.keys(userInfoFrIP).length || typeof userInfoFrDB.user=='object'){} else {setMess('not logged in'); return;}
+    if(isSet(sessionLoginIdP) || typeof userInfoFrDB.user=='object'){} else {setMess('not logged in'); return;}
     var o1={idVendor:idVendor}, vec=[['reportOneGet',o1,reportCommentOneGet]];   majax(oAJAX,vec);
     $el.setVis();    
     $comment.focus();
@@ -2609,14 +2888,14 @@ var reportAnswerPopExtend=function($el){
   return $el;
 }
 
-    //if(Object.keys(userInfoFrIP).length || typeof userInfoFrDB.user=='object'){
+    //if(Object.keys(sessionLoginIdP).length || typeof userInfoFrDB.user=='object'){
 var reportCommentButtExtend=function($el){    // Opens $reportCommentPop, placed in $reportVDiv
 "use strict"
   $el.click(function(e){
     e.stopPropagation();
     var flow=(function*(){
-      if(Object.keys(userInfoFrIP).length==0 && typeof userInfoFrDB.user!='object'){
-        var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
+        var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
         var oT={IP:strIPPrim, fun:'reporterFun', caller:'index', code:code};
         var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       }
@@ -2647,7 +2926,7 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
     $el.idVendor=rowVendor.idUser;
     $nameSpan.html(rowVendor.displayName);
 
-    var strTmp; var IPTmp=enumIP[Number(rowVendor.IP)];
+    var strTmp; //var IPTmp=enumIP[Number(rowVendor.IP)];
     strTmp=calcImageUrl(rowVendor);
     $imgVendor.prop({src:strTmp});
     $vendorListCtrlDiv.mySet(iMTab);
@@ -2758,7 +3037,7 @@ var reportRDivExtend=function($el){  // Reports from a certain Reporter
 
     $tBody.empty();
     for(var i=0; i<tab.length; i++) {
-      var strTmp=calcImageUrl({idUser:tab[i].idUser, IP:tab[i].IP, boImgOwn:tab[i].boImgOwn, imTag:tab[i].imTag, image:tab[i].image});
+      var strTmp=calcImageUrl({idUser:tab[i].idUser, boImgOwn:tab[i].boImgOwn, imTag:tab[i].imTag, image:tab[i].image}); //, IP:tab[i].IP
       
       var $img=$('<img>').prop({src:strTmp}).css({'float':'right','border-left':'solid #ff3 15px'});
 
@@ -3028,7 +3307,7 @@ var loginInfoExtend=function($el){
   //var $logoutButt=$('<a>').prop({href:''}).text(langHtml.loginInfo.logoutButt).css({'float':'right'});
   var $logoutButt=$('<button>').text(langHtml.loginInfo.logoutButt).css({'float':'right','font-size':'90%'});
   $logoutButt.click(function(){ 
-    userInfoFrIP={}; userInfoFrDB=$.extend({}, specialistDefault); 
+    sessionLoginIdP={}; userInfoFrDB=$.extend({}, specialistDefault); 
     var vec=[['logout',1, function(data){
       //$mapDiv.setVis();  changeHistNRefreshHash({$view:$mapDiv});
       history.fastBack($mapDiv,true);
@@ -3275,8 +3554,8 @@ var mapDivExtendGoogle=function($el){
   var makeFuncInfoClick=function(i){ 
     //var fOut=makeFuncOut(i);
     return function(){    
-      //var idIP=MTab[i].idIP;   
-      //$vendorInfoDiv.setContainers(idIP);
+      //var idFB=MTab[i].idFB;   
+      //$vendorInfoDiv.setContainers(idFB);
       $vendorInfoDiv.setContainers(i);
       $vendorInfoDiv.setVis(); 
       doHistPush({$view:$vendorInfoDiv});
@@ -4565,7 +4844,7 @@ loadTabStart=function(boFlexZoom){
   //var vec=[['IFun',o1,IRet]];   majax(oAJAX,vec);
   var o1={zoom:zoomT, pC:point, VPSize:VPSizeT},   oH=$filterDiv.gatherFiltData();
   var vec=[['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,IRet]];
-  if(userInfoFrDB.vendor) vec.unshift(['setupById',{Role:'vendor'}]); 
+  if(userInfoFrDB.vendor) vec.unshift(['setupById',{Role:'vendor'}]);  // "setupById" is included to change quickdiv button... (I think)
   majax(oAJAX,vec);
     
   setMess('... fetching vendors ... ',15,true);
@@ -4654,7 +4933,7 @@ window.GRet=function(data){
   tmp=data.curTime;   if(typeof tmp!="undefined") curTime=tmp;
   tmp=data.strMessageText;   if(typeof tmp!="undefined") setMess(tmp);
   tmp=data.CSRFCode;   if(typeof tmp!="undefined") CSRFCode=tmp;
-  tmp=data.userInfoFrIP; if(typeof tmp!="undefined") {userInfoFrIP=tmp;}
+  tmp=data.sessionLoginIdP; if(typeof tmp!="undefined") {sessionLoginIdP=tmp;}
   //var WBD=[]; tmp=data.boSpecialistWannaBe; if(typeof tmp!="undefined") {
   //    for(var key in tmp){   if(boSpecialistWannaBe[key]==tmp[key]) {delete tmp[key];} else {boSpecialistWannaBe[key]=tmp[key]; }  } $loginInfo.setStat(); WBD=tmp; }
   tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if(tmp.vendor) $quickDiv.setUp(); }
@@ -4973,7 +5252,8 @@ var teamDivExtend=function($el){
   //$el.$file=$('<input>').attr({type:'file'});
   var $thumb=$('<img>').css({'vertical-align':'middle'});
   var uploadCallback=function(){
-    var tmpF=function(){$thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['setupById',{Role:'team'},tmpF]];   majax(oAJAX,vec);
+    userInfoFrDB.team.imTag=randomHash(); $thumb.attr({src:calcTeamImageUrl()});
+    //var tmpF=function(){$thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['setupById',{Role:'team'},tmpF]];   majax(oAJAX,vec);
   }
   var $buttUploadImage=$('<button>').html('Upload image').click(function(){$uploadImageDiv.openFunc('t',uploadCallback);});
   var $buttSaveName=$('<button>').html('Save link').click(saveName);
@@ -5070,41 +5350,12 @@ var moreDivExtend=function($el){
   var $infoLinkVendor=$('<a>').prop({href:uWiki+'/'+'new_vendors',target:"_blank"}).append(langHtml.gettingStartedLink);
   var $pSeeAlso=$('<p>').append(langHtml.SeeAlso,': ',$infoLinkVendor);
   
- 
-  //$langSelect=langSelectExtend($('<select>'));   var $langSpan=$("<span>").append('Change language: ',$langSelect).css({display:'block'});
-  
-  var $labLoginVendor=$("<span>").append(langHtml.LoginSingInAsVendor+':');
-  
-  var uImagePrim=window['u'+ucfirst(strIPPrim)+'22'];
 
-  //var $buttLoginVendor=$("<button>").append(langHtml.LoginSingInAsVendor+' ('+langHtml.IdProviderNeeded+')').click(function(){
-  var $buttLoginVendor=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
-    e.stopPropagation();
-    var flow=(function*(){
-      ga('send', 'event', 'button', 'click', 'login');
-      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'vendorFun', caller:'index', code:code};
-      var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
-      
-      var boE=Boolean(userInfoFrDB.vendor);
-      if(!boE){ $vendorIntroDiv.openFunc(); }
-      if(boE) $quickDiv.setUp();
-      history.fastBack($mapDiv);
-      
-    })(); flow.next();
-    return false;
-  });
-    
-    
-  var $loginWEmailButton=$('<button>').append('Old '+strIPAltLong+' users').addClass('flexWidth').css({'margin-left':'0.8em','margin-right':'1em','width':'initial','font-size':'0.7em'}); //'&equiv;'
-  $loginWEmailButton.click(function(){
-    $loginWEmailDiv.setVis(); doHistPush({$view:$loginWEmailDiv});
-  });
 
   var $buttLoginTeam=$("<button>").append(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).click(function(e){
     e.stopPropagation();
     var flow=(function*(){
-      var {err, code}=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'teamFun', caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       
@@ -5113,7 +5364,6 @@ var moreDivExtend=function($el){
     })(); flow.next();
     return false;
   }).hide();
-  
   
 
   if(document.domain.substr(0,4)=='demo') $buttLoginVendor.hide(); 
@@ -5125,16 +5375,16 @@ var moreDivExtend=function($el){
   //$iframeLike.css({display:'block'});
   
   //var $hovWhyIsFBNeeded=$hovHelp.clone().text(langHtml.WhyIsFBNeededQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.WhyIsFBNeededA);     popupHoverM(//$hovWhyIsFBNeeded,$bub,15000);
-  var $NothingIsWrittenToYourFBFlow=$('<div>').append(langHtml.NothingIsWrittenToYourFBFlow);
-  var $YouCanUseCustomImage=$('<div>').append(langHtml.YouCanUseCustomImage);
-  var $YouCanDeleteYourAccount=$('<div>').append(langHtml.YouCanDeleteYourAccount);
-  var $FBToPreventMultipleAccounts=$('<div>').append(langHtml.FBToPreventMultipleAccounts);
+  //var $NothingIsWrittenToYourFBFlow=$('<div>').append(langHtml.NothingIsWrittenToYourFBFlow);
+  //var $YouCanUseCustomImage=$('<div>').append(langHtml.YouCanUseCustomImage);
+  //var $YouCanDeleteYourAccount=$('<div>').append(langHtml.YouCanDeleteYourAccount);
+  //var $FBToPreventMultipleAccounts=$('<div>').append(langHtml.FBToPreventMultipleAccounts);
   //var $aPrivacyPolicy=$('<a>').prop({href:'https://closeby.market/Privacy_policy_2016-Oct-12'}).append("Privacy policy 2016-Oct-12");
   //var $aDisclaimer=$('<a>').prop({href:'https://closeby.market/Disclaimer_2016-Oct-12'}).append("Disclaimer 2016-Oct-12").css({display:'block'});
   var $aMoreAboutWhyAnIdPIsUsed=$('<a>').prop({href:'https://closeby.market/WhyIsAnIdPUsed'}).append(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
 
   //var $opt=$([]).push($pWiki, $langSpan, $buttLoginVendor, $buttLoginTeam, $teamApprovedMess);
-  var $rows=$([]).push($divOrdinal, $pWiki, $labLoginVendor, $buttLoginVendor, $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanUseCustomImage, $YouCanDeleteYourAccount, $buttLoginTeam, $teamApprovedMess);  // , $langSpan , $loginWEmailButton
+  var $rows=$([]).push($divOrdinal, $loginSelectorDiv, $pWiki, $buttLoginTeam, $teamApprovedMess);  // $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanUseCustomImage, $YouCanDeleteYourAccount, $langSpan
   var $topDivA=$('<div>').append($iframeLike).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,  , $aMoreAboutWhyAnIdPIsUsed
   $rows.css({'margin':'1em 0em 1em 0.6em'});
   $el.append($topDivA,$rows);  
@@ -5146,46 +5396,6 @@ var moreFootExtend=function($el){
 "use strict"
   var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left','margin-left':'0.8em','margin-right':'1em'}); //'font-size':'1em'
   $el.append($buttonBack).addClass('footDiv');  
-  return $el;
-}
-
-
-var loginWEmailDivExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'loginWEmailDiv';}
-  $el.setUp=function(){
-    $inpEmail.val('');    $inpPW.val('');
-  }
-
-  var sendEmail=function(){
-    var vec=[['sendTempPassword',{email:$inpEmail.val()}]];   majax(oAJAX,vec); 
-  }
-  var loginWPW=function(){
-    var vec=[['loginWEmail',{email:$inpEmail.val(), code:$inpPW.val()}], ['setupById']];   majax(oAJAX,vec);
-  }
-  var $divHead=$('<h3>').append('Log in with your email address and a temporary password.');
-
-  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {sendEmail();return false;}} );
-  var $butSendNewPW=$('<button>').append('Generate temporary password').click(sendEmail);
-  //var $divEmail=$('<div>').append($inpEmail, $butSendNewPW);
-  
-  var $inpPW=$('<input>').prop({placeholder:'Enter temporary password'}).keypress( function(e){if(e.which==13) {loginWPW();return false;}} );
-  var $butLogin=$('<button>').append('Login').click(loginWPW);
-  //var $divLogin=$('<div>').append($inpPW, $butLogin);
-  
-  
-  var $rows=$([]).push($divHead, $inpEmail, $butSendNewPW, $inpPW, $butLogin);
-  $rows.css({display:'block', 'margin':'1em 0em 1em 0.6em'});
-  $el.append($rows);
- 
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var loginWEmailFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Log in with your email').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv'); 
   return $el;
 }
 
@@ -5446,7 +5656,7 @@ setUp1=function(){
   //setUpColsShowIndCurrency(); 
 
   
-  userInfoFrIP={};
+  sessionLoginIdP={};
   userInfoFrDB=$.extend({}, specialistDefault);
 
   CSRFCode='';
@@ -5482,7 +5692,7 @@ setUp1=function(){
 
   var tmp=getItem('boFirstVisit');     if(tmp===null) boFirstVisit=1; else boFirstVisit=0;      setItem('boFirstVisit',0);
 
-  $imgHelp=$('<img>').prop({src:uHelpFile}).css({'vertical-align':'-0.4em'});
+  $imgHelp=$('<img>').prop({src:uHelpFile}).css({'vertical-align':'-0.4em', 'margin-left':'0.6em'});
   $hovHelp=$('<span>').text('?').css({'font-size':'88%',color:'#a7a7a7','vertical-align':'-0.4em'}); //click(function(){return false;})    //'pointer-events':'none',
 
   helpBub={}; for(var i=0;i<nCol;i++){
@@ -5712,6 +5922,11 @@ var setUp2=function(){
     $iframeLike=$('<iframe src="//www.facebook.com/plugins/likebox.php?href=https%3A%2F%2Fwww.facebook.com%2Fgavott&amp;width&amp;height=62&amp;colorscheme=light&amp;show_faces=false&amp;header=true&amp;stream=false&amp;show_border=false&amp;appId=237613486273256" scrolling="no" frameborder="0" style="border:none; overflow:hidden; height:62px;" allowTransparency="true"></iframe>');
   }else{$iframeLike=$('<span>');}
 
+  $formLoginDiv=formLoginDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto', 'text-align':'left'});
+  $formLoginFoot=formLoginFootExtend($('<div>'));
+  $loginSelectorDiv=loginSelectorDivExtend($('<div>'));//.css({flex:'1 1 0', overflow:'auto'});
+  //$loginSelectorFoot=loginSelectorFootExtend($('<div>'));
+  
   //var $tmp=$('<span>').append('&equiv;').css({height:'0.9em',width:'0.9em',display:'inline-block'});
   //$moreButton=$('<button>').append($tmp).css({'margin-left':'0.6em','margin-right':'1em'}); 
   $moreButton=$('<button>').append(langHtml.VendorEntry).addClass('flexWidth').css({'width':'initial','font-size':'0.7em'}); //'&equiv;'
@@ -5721,9 +5936,12 @@ var setUp2=function(){
   $convertIDDiv=convertIDDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
   $convertIDFoot=convertIDFootExtend($('<div>'));
   
+   
+  $createUserDiv=createUserDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto', 'text-align':'left'});
+  $createUserFoot=createUserFootExtend($('<div>')); 
   
-  $loginWEmailDiv=loginWEmailDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $loginWEmailFoot=loginWEmailFootExtend($('<div>')); 
+  $changePWPop=changePWPopExtend($('<div>')).css({'text-align':'left'});
+  $forgottPWPop=forgottPWPopExtend($('<div>')).css({'text-align':'left'});
   
   
   $settingDiv=settingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'}); 
@@ -5759,10 +5977,11 @@ var setUp2=function(){
 
 
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
-  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'payDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'loginWEmailDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv');
+  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'payDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');
   
-  //  List of foots: admin, pay, vendorSetting, priceSetting, paymentList, userSetting, reportV, reportR, vendorInfo, filter, markSelector, columnSelector, columnSorter, table, map, team, setting, more, loginWEmail
-  StrMainDiv.push('footDiv', 'quickDivOuter', 'mapFoot', 'filterFoot', 'tableFoot', 'userSettingFoot', 'vendorSettingFoot', 'priceSettingFoot', 'payFoot', 'vendorInfoFoot', 'adminFoot', 'reportVFoot', 'reportRFoot', 'moreFoot', 'loginWEmailFoot', 'convertIDFoot', 'settingFoot', 'columnSelectorFoot', 'columnSorterFoot', 'markSelectorFoot', 'paymentListFoot', 'teamFoot');
+  
+  //  List of foots: admin, pay, vendorSetting, priceSetting, paymentList, userSetting, reportV, reportR, vendorInfo, filter, markSelector, columnSelector, columnSorter, table, map, team, setting, more, createUser
+  StrMainDiv.push('footDiv', 'quickDivOuter', 'mapFoot', 'filterFoot', 'tableFoot', 'userSettingFoot', 'vendorSettingFoot', 'priceSettingFoot', 'payFoot', 'vendorInfoFoot', 'adminFoot', 'reportVFoot', 'reportRFoot', 'moreFoot', 'formLoginFoot', 'createUserFoot', 'convertIDFoot', 'settingFoot', 'columnSelectorFoot', 'columnSorterFoot', 'markSelectorFoot', 'paymentListFoot', 'teamFoot');
 
   var MainDiv=[];
   for(var i=0;i<StrMainDiv.length;i++){
@@ -5937,9 +6156,21 @@ var setUp2=function(){
     scalableTog(1);
     return true;
   }
-  $loginWEmailDiv.setVis=function(){
-    var $tmp=$loginWEmailDiv.add($loginWEmailFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $loginWEmailDiv.setUp();
+  $formLoginDiv.setVis=function(){
+    var $tmp=$formLoginDiv.add($formLoginFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $formLoginDiv.setUp();
+    scalableTog(1);
+    return true;
+  }
+  //$loginSelectorDiv.setVis=function(){
+    //var $tmp=$loginSelectorDiv.add($loginSelectorFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    //$loginSelectorDiv.setUp();
+    //scalableTog(1);
+    //return true;
+  //}
+  $createUserDiv.setVis=function(){
+    var $tmp=$createUserDiv.add($createUserFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $createUserDiv.setUp();
     scalableTog(1);
     return true;
   }

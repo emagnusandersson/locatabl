@@ -150,6 +150,17 @@ copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[na
         return [err, undefined];
     }
 }*/
+isEmpty=function(v){ 
+  if(typeof v=='undefined') return true;
+  if(typeof v=='number') return v==0;
+  if(typeof v=='string') return v.length==0;
+  if(typeof v=='object') {
+    if(v===null) return true;
+    if(v instanceof Array) return v.length==0;
+    return Object.keys(v).length==0;
+  }
+}
+isSet=function(v){ return !isEmpty(v); }
 
 
 //
@@ -166,21 +177,21 @@ parseQS=function(str){
 
 
 
-extractLoc=function(obj,strObjName){   // Ex: eval(extractLoc(objMy,'objMy'));
-  var Str=[];  for(var key in obj) Str.push(key+'='+strObjName+'.'+key);
-  var str=''; if(Str.length) str='var '+Str.join(', ')+';';  return str;
-}
+//extractLoc=function(obj,strObjName){   // Ex: eval(extractLoc(objMy,'objMy'));
+  //var Str=[];  for(var key in obj) Str.push(key+'='+strObjName+'.'+key);
+  //var str=''; if(Str.length) str='var '+Str.join(', ')+';';  return str;
+//}
 //extract=function(obj){  for(var key in obj){  window[key]=obj[key];  }  }
-extract=function(obj,par){
-  if(typeof par=='undefined') par=app; for(var key in obj){
-    par[key]=obj[key];
-  }
-}
-extractLocSome=function(strObjName,arrSome){  // Ex: eval(extractLocSome('objMy',['a','b']));
-  if(typeof arrSome=='string') arrSome=[arrSome];
-  var len=arrSome.length, Str=Array(len);  for(var i=0;i<len;i++) { var key=arrSome[i]; Str[i]=key+'='+strObjName+'.'+key; }
-  return 'var '+Str.join(', ')+';';
-}
+//extract=function(obj,par){
+  //if(typeof par=='undefined') par=app; for(var key in obj){
+    //par[key]=obj[key];
+  //}
+//}
+//extractLocSome=function(strObjName,arrSome){  // Ex: eval(extractLocSome('objMy',['a','b']));
+  //if(typeof arrSome=='string') arrSome=[arrSome];
+  //var len=arrSome.length, Str=Array(len);  for(var i=0;i<len;i++) { var key=arrSome[i]; Str[i]=key+'='+strObjName+'.'+key; }
+  //return 'var '+Str.join(', ')+';';
+//}
 
 //
 // Data Formatting
@@ -298,6 +309,7 @@ gauss_ms=function(m,s){  // returns random number with normal distribution: N(m,
 //
 // Math
 //
+minOfTwo=function(a,b){return a<b?a:b;} // Keeping the format as opposed to Math.min
 
 isNumber=function(n){ return !isNaN(parseFloat(n)) && isFinite(n);}
 sign=function(val){if(val<0) return -1; else if(val>0) return 1; else return 0;}

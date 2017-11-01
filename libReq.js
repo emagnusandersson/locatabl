@@ -236,8 +236,8 @@ app.reqIndex=function*() {
   }
 
 
-  //this.sessionLogin={userInfoFrIP:0};
-  //yield* setRedis(flow, req.sessionID+'_Login', this.sessionLogin, maxLoginUnactivity); 
+  //this.sessionLoginIdP={};
+  //yield* setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity); 
 
   //boVideo=1;
   
@@ -333,6 +333,8 @@ try {\n\
   var uCommon=req.strSchemeLong+wwwCommon;
   var uJQuery='https://code.jquery.com/jquery-latest.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-latest.js";      Str.push("<script src='"+uJQuery+"'></script>");
 
+  Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
+  
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
 
     // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
@@ -373,6 +375,8 @@ try {\n\
 </script>\n";
   }
   Str.push(strTracker);
+  
+  Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit'></script>");
 
   Str.push("</head>");
   Str.push('<body style="visibility:hidden">');
@@ -390,7 +394,20 @@ strLang="+JSON.stringify(strLang)+";\n\
 coordApprox="+JSON.stringify(coordApprox)+";\n\
 boTLS="+JSON.stringify(req.boTLS)+";\n\
 UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
+strReCaptchaSiteKey="+JSON.stringify(strReCaptchaSiteKey)+";\n\
+strSalt="+JSON.stringify(strSalt)+";\n\
 </script>\n\
+<form  id=formLogin>\n\
+<label name=email>Email</label><input type=email name=email>\n\
+<label name=password>Password</label><input type=password name=password>\n\
+<button type=submit name=submit class=highStyle value=\"Sign in\">Sign in</button> \n\
+</form>\n\
+<form  id=formCreateAccount>\n\
+<label name=name>Full name</label><input type=text name=name>\n\
+<label name=email>Email</label><input type=email name=email>\n\
+<label name=password>Password</label><input type=password name=password>\n\
+<label name=passwordB>Password again</label><input type=password name=passwordB>\n\
+</form>\n\
 </body>\n\
 </html>");
 //response_type="+JSON.stringify(response_type)+";\n\
@@ -398,6 +415,35 @@ UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
 
   var str=Str.join('\n');   res.writeHead(200, "OK", {'Content-Type': 'text/html'});   res.end(str);    
 }
+
+
+
+
+/******************************************************************************
+ * reqLoginWLink
+ ******************************************************************************/
+app.reqLoginWLink=function*(){
+  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var userTab=site.TableName.userTab;
+  var objQS=req.objQS;
+  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var code=objQS.code;
+  var redisVar=code+'_LoginWLink';
+  var email=yield* getRedis(flow, redisVar);
+  if(!email) {  res.out200('No such code'); return;  }
+  //if(email!=inObj.email) {  res.out200('email does not match'); return; }
+
+
+  var sql="SELECT idUser FROM "+userTab+" WHERE email=?;", Val=[email];
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+  if(results.length==0) { res.out200('No such email in the database'); return;}
+  
+  var idUser=results[0].idUser;    yield *setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+
+  res.end("You are now logged in, close this tab, go back the web app and reload.");
+}
+
+
 
 
 /******************************************************************************
@@ -471,8 +517,140 @@ window.close();\n\
 }
 
 
+app.reqVerifyEmailReturn=function*() {
+  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var userTab=site.TableName.userTab;
+  var objQS=req.objQS;
+  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var codeIn=objQS.code;
+  var redisVar=codeIn+'_verifyEmail', idUser=yield* getRedis(flow, redisVar);
+  
+  if(idUser===null) { res.out200('No such code'); return;}
+
+  var Sql=[], Val=[];
+  Sql.push("UPDATE "+userTab+" SET boEmailVerified=1 WHERE idUser=?;");
+  Val.push(idUser);
+
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+
+  var c=results.affectedRows, mestmp; 
+  if(c==1) { mestmp="Email verified"; } else {mestmp="Error (Nothing done)"; }
+  res.end(mestmp);
+}
+
+app.reqVerifyPWResetReturn=function*() {
+  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var userTab=site.TableName.userTab;
+  var objQS=req.objQS;
+  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var codeIn=objQS.code;
+  var redisVar=codeIn+'_verifyPWReset', email=yield* getRedis(flow, redisVar);
+  
+  if(email===null) { res.out200('No such code'); return;}
+
+  var password=randomHash();
+  var passwordHash=SHA1(password+strSalt);
+
+  var Sql=[], Val=[];
+  Sql.push("UPDATE "+userTab+" SET password=? WHERE email=?;");
+  Val.push(passwordHash, email);
+
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+
+  var c=results.affectedRows, mestmp; 
+  if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
+
+
+  var wwwSite=req.wwwSite;
+  var strTxt='<h3>New password on '+wwwSite+'</h3> \n\
+<p>Your new password on '+wwwSite+' is '+password+'</p>';
+  
+  if(boDbg) wwwSite="closeby.market";
+  const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Password reset', html: strTxt }; sgMail.send(msg);
+  res.end("A new password has been generated and sent to your email address.");
+}
+
+app.reqVerifyEmailNCreateUserReturn=function*() {
+  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var {userTab, vendorTab}=site.TableName;
+  var objQS=req.objQS;
+  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var codeIn=objQS.code;
+  
+  var redisVar=codeIn+'_verifyEmailNCreateUser', objT=yield* getRedis(flow, redisVar, true);   if(!objT) { res.out200('No such code'); return;}
+  var {name, email, password}=objT;
+
+  
+  var Sql=[], Val=[];
+  Sql.push("INSERT INTO "+userTab+" (email, nameIP, password, tCreated) VALUES (?, ?, ?, now()) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
+  Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
+  Val.push(email, name, password, name);
+  Sql.push("INSERT INTO "+vendorTab+" (idUser, created, lastPriceChange, posTime, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, now(), now(), now(), now(), 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
+  Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
+
+  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
+  
+  if(payLev==0) {
+    Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
+  }
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+  var c=results[0].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
+  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  
+  var boIns=site.boGotNewVendors=Number(results[3][0].boInserted);
+  site.nUser=Number(results[4][0].n);
+  var tmp=boIns?'created':'updated';
+  var Str=["<!DOCTYPE html><html><head>\n\
+<meta name='viewport' id='viewportMy' content='initial-scale=1'/>\n\
+</head><body>"];
+  var uSite=req.strSchemeLong+req.wwwSite
+  if(boIns) Str.push("An account has been created. Go back to <a href=\""+uSite+"\">"+req.wwwSite+"</a> and you can login with the email / password you selected."); else Str.push("Your account was updated.");
+  //Str.push("<a href=\"javascript:window.open('','_self').close();\">close</a>, ");
+  //Str.push("<a href=\""+uSite+"\">"+req.wwwSite+"</a>");
+  Str.push('</body></html>');
+  res.end(Str.join('\n'));
+}
+
+
+ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Prop=site.Prop, {userTab, vendorTab}=site.TableName;
+  var Ou={}; 
+  var objT=this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
+  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
+
+  if(inObj.email) email=inObj.email;
+  var Sql=[], Val=[];
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
+  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image,   email, nameIP, image);
+  Sql.push("INSERT INTO "+vendorTab+" (idUser,created, lastPriceChange, posTime, tLastWriteOfTA, histActive) VALUES (@idUser, now(), now(), now(), now(), 1 ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
+  Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
+
+  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
+  
+  if(payLev==0) {
+    Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
+  }
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var c=results[0].affectedRows; if(c!=1) return [new Error(c+" userTab rows affected")];
+  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  
+  var boIns=site.boGotNewVendors=Number(results[3][0].boInserted);
+  site.nUser=Number(results[4][0].n);
+  var  tmpMes='Data '+(boIns?'inserted':'updated'); this.mes(tmpMes);
+  return [null, [Ou]];
+}
+
+
+
 /******************************************************************************
- * reqStatic
+ * reqStatic (request for static files)
  ******************************************************************************/
 app.reqStatic=function*() {
   var req=this.req, res=this.res, flow=req.flow, site=req.site; this.pool=DB[site.db].pool;
@@ -511,15 +689,14 @@ app.reqStatic=function*() {
 app.reqMonitor=function*(){
   var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
   var timeCur=unixNow(); boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
-  var site=req.site, siteName=site.siteName, objQS=req.objQS;
-  var userTab=site.TableName.userTab, vendorTab=site.TableName.vendorTab;
+  var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, vendorTab}=site.TableName;
   var flow=req.flow;
 
   if(boRefresh){ 
     var Sql=[];
-    //var where="!(idIP REGEXP '^Dummy')";      if(siteName=='demo') where="(idIP REGEXP '^Dummy')";
-    var where="!(idIP REGEXP '^Dummy')";      if(req.wwwSite.substr(0,4)=='demo') where="(idIP REGEXP '^Dummy')";
-    Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND "+where+";");
+    //var where="!(idOpenId REGEXP '^Dummy')";      if(siteName=='demo') where="(idOpenId REGEXP '^Dummy')";
+    var where="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";      if(req.wwwSite.substr(0,4)=='demo') where="(idOpenId REGEXP '^Dummy')";
+    Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND ("+where+");");
     Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser WHERE "+where+";");
 
     var sql=Sql.join('\n'), Val=[];
@@ -548,7 +725,7 @@ app.reqMonitor=function*(){
 
 
 /******************************************************************************
- * reqStat
+ * reqStat (request for status of the tables)
  ******************************************************************************/
 var makeTHead=function(K){
   var strD=''; 
@@ -575,14 +752,13 @@ app.reqStat=function*(){
   var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
   var flow=req.flow;
 
-  var siteName=site.siteName, objQS=req.objQS;
-  var userTab=site.TableName.userTab, vendorTab=site.TableName.vendorTab;
+  var siteName=site.siteName, objQS=req.objQS, {userTab, vendorTab}=site.TableName;
 
   var Sql=[];
-  var where="!(idIP REGEXP '^Dummy')";
+  var where="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";
   Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE "+where+";");
   
-  var strCols="u.idUser, IP, idIP, displayName, homeTown, currency, boShow, posTime, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, timeAccumulated, hideTimer";
+  var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, posTime, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, timeAccumulated, hideTimer";
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+vendorTab+" s ON u.idUser=s.idUser WHERE "+where+" \
     UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+vendorTab+" s ON u.idUser=s.idUser  WHERE "+where+";");
@@ -681,8 +857,10 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   var siteName=SiteName[iSite]
   var site=Site[siteName]; 
   var Prop=site.Prop, TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
-  eval(extractLoc(TableName,'TableName'));
-  eval(extractLoc(ViewName,'ViewName'));
+  //eval(extractLoc(TableName,'TableName'));
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  //eval(extractLoc(ViewName,'ViewName'));
+  var {histView}=site.ViewName;
 
   var StrTabName=object_values(TableName);
   var tmp=StrTabName.join(', ');
@@ -696,44 +874,30 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   var engine='INNODB';  //engine='MyISAM';
   var auto_increment=1;
 
-  var strIPEnum="ENUM('"+Prop.IP.Enum.join("', '")+"')";
-  var strIPDefault=Prop.IP.Enum[0];
+  //var strIPEnum="ENUM('"+Prop.IP.Enum.join("', '")+"')";
+  //var strIPDefault=Prop.IP.Enum[0];
 
 
     // Create users
   SqlTab.push("CREATE TABLE "+userTab+" ( \n\
   idUser int(4) NOT NULL auto_increment, \n\
-  IP "+strIPEnum+" CHARSET utf8 NOT NULL DEFAULT '"+strIPDefault+"', \n\
-  idIP varchar(128) CHARSET utf8 NOT NULL, \n\
+  tCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP, \n\
+  idFB varchar(128) CHARSET utf8 NULL, \n\
+  idIdPlace varchar(128) CHARSET utf8 NULL, \n\
+  idOpenId varchar(128) CHARSET utf8 NULL, \n\
+  email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', \n\
   nameIP varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
   image varchar(256) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', \n\
+  password char(40) NOT NULL DEFAULT '', \n\
   PRIMARY KEY (idUser), \n\
-  UNIQUE KEY (IP,idIP) \n\
+  UNIQUE KEY (idFB), \n\
+  UNIQUE KEY (idIdPlace), \n\
+  UNIQUE KEY (idOpenId), \n\
+  UNIQUE KEY (email) \n\
   ) AUTO_INCREMENT = "+auto_increment+", ENGINE="+engine+" COLLATE "+collate+""); 
   
-    // Create users
-  //SqlTab.push("CREATE TABLE "+userTab+" ( \n\
-  //idUser int(4) NOT NULL auto_increment, \n\
-  //IP "+strIPEnum+" CHARSET utf8 NOT NULL DEFAULT '"+strIPDefault+"', \n\
-  //idIP varchar(128) CHARSET utf8 NOT NULL, \n\
-  //nameIP varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  //image varchar(256) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  //PRIMARY KEY (idUser), \n\
-  //UNIQUE KEY (IP,idIP) \n\
-  //) AUTO_INCREMENT = "+auto_increment+", ENGINE="+engine+" COLLATE "+collate+""); 
 
-    // Create users
-  //SqlTab.push("CREATE TABLE "+userTab+" ( \n\
-  //idUser int(4) NOT NULL auto_increment, \n\
-  //idFB varchar(128) CHARSET utf8 NOT NULL, \n\
-  //idIdPlace varchar(128) CHARSET utf8 NOT NULL, \n\
-  //imageFB varchar(256) CHARSET utf8 NULL, \n\
-  //imageIdPlace varchar(256) CHARSET utf8 NULL, \n\
-  //PRIMARY KEY (idUser), \n\
-  //UNIQUE KEY idFB, \n\
-  //UNIQUE KEY idIdPlace \n\
-  //) AUTO_INCREMENT = "+auto_increment+", ENGINE="+engine+" COLLATE "+collate+""); 
+  //IP "+strIPEnum+" CHARSET utf8 NOT NULL DEFAULT '"+strIPDefault+"', \n\
 
     // Create vendorTab
   var arrCols=[];
@@ -924,12 +1088,14 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
   
   var site=Site[siteName]; 
   var Prop=site.Prop, TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
-  eval(extractLoc(TableName,'TableName'));
-  eval(extractLoc(ViewName,'ViewName'));
+  //eval(extractLoc(TableName,'TableName'));
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  //eval(extractLoc(ViewName,'ViewName'));
+  var {histView}=site.ViewName;
 
 
-  var strIPEnum="ENUM('"+Prop.IP.Enum.join("', '")+"')";
-  var strIPDefault=Prop.IP.Enum[0];
+  //var strIPEnum="ENUM('"+Prop.IP.Enum.join("', '")+"')";
+  //var strIPDefault=Prop.IP.Enum[0];
 
 
   //VShow "+siteName+"TimeAccumulatedUpdOne -> UPDATE "+vendorTab+" SET boShow=1, posTime=now(), hideTime=date_add(now(), INTERVALL hideTimer SECOND) WHERE idUser=id
@@ -1011,16 +1177,23 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IIP "+strIPEnum+", IidIP varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboReporter INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboReporter INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
-      DECLARE Vc, Vn, intMax INT; \n\
       START TRANSACTION; \n\
       IF IidUser IS NOT NULL THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, IP-1 AS IP, idIP, nameIP, image, email FROM "+userTab+" WHERE idUser=IidUser;\n\
+        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idUser=IidUser;\n\
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT 'idUserNotFound' AS mess; LEAVE proc_label; END IF; \n\
+      ELSEIF IidFB IS NOT NULL THEN \n\
+        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idFB=IidFB;\n\
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idFB not found: ', IidFB) AS mess; LEAVE proc_label; END IF; \n\
+        SET IidUser=@idUserTmp; \n\
+      ELSEIF IidIdPlace IS NOT NULL THEN \n\
+        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idIdPlace=IidIdPlace;\n\
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idIdPlace not found: ', IidIdPlace) AS mess; LEAVE proc_label; END IF; \n\
+        SET IidUser=@idUserTmp; \n\
       ELSE \n\
-        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, IP-1 AS IP, idIP, nameIP, image, email FROM "+userTab+" WHERE IP=IIP AND idIP=IidIP;\n\
-        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('IP / idIP not found: ', IIP, ' / ', IidIP) AS mess; LEAVE proc_label; END IF; \n\
+        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idOpenId=IidOpenId;\n\
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idOpenId not found: ', IidOpenId) AS mess; LEAVE proc_label; END IF; \n\
         SET IidUser=@idUserTmp; \n\
       END IF;\n\
       IF IboVendor THEN \n\
@@ -1035,93 +1208,47 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
     END");
 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"vendorSetup");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"vendorSetup(IidUser INT, IIP "+strIPEnum+", IidIP varchar(128), InameIP varchar(128), Iimage varchar(256), Iemail varchar(65), OUT OboInserted INT, OUT OidUser INT) \n\
-    BEGIN \n\
-      DECLARE Vc INT; \n\
-      START TRANSACTION; \n\
-      IF IidUser IS NOT NULL THEN \n\
-        UPDATE "+userTab+" SET IP=IIP, idIP=IidIP, nameIP=InameIP, image=Iimage, email=Iemail WHERE idUser=IidUser; \n\
-        SET OidUser=IidUser; \n\
-      ELSE \n\
-        INSERT INTO "+userTab+" (IP, idIP, nameIP, image, email) VALUES (IIP, IidIP, InameIP, Iimage, Iemail) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), nameIP=InameIP, image=Iimage, email=Iemail; \n\
-        SET OidUser=LAST_INSERT_ID(); \n\
-      END IF;\n\
-       \n\
-      INSERT INTO "+vendorTab+" (idUser,created, lastPriceChange, posTime, tLastWriteOfTA, histActive) VALUES (OidUser, now(), now(), now(), now(), 1 ) \n\
-        ON DUPLICATE KEY UPDATE idUser=idUser; \n\
-       \n\
-      SET OboInserted=(ROW_COUNT()=1); \n\
-       \n\
-      COMMIT; \n\
-    END");
-  var id='100002646477985';
+
 /*
-      SELECT idUser, count(*) INTO OidUser,Vc FROM "+userTab+" WHERE IP=IIP AND idIP=IidIP; \n\
+      SELECT idUser, count(*) INTO OidUser,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB; \n\
       IF Vc=0 THEN \n\
-        INSERT INTO "+userTab+" (IP,idIP) VALUES (IIP,IidIP);  \n\
+        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);  \n\
         SELECT LAST_INSERT_ID() INTO OidUser; \n\
       END IF; \n\
 CLIENT_FOUND_ROWS
 */
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MergeID");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"MergeID(IIPOld "+strIPEnum+", IidIPOld varchar(128), IIPNew "+strIPEnum+", IidIPNew varchar(128), OUT OboOk INT, OUT Omess varchar(128)) \n\
-    proc_label:BEGIN \n\
-      DECLARE VidUserNew, VidUserOld INT; \n\
-      DECLARE VnameIPNew varchar(128); \n\
-      DECLARE VimageNew varchar(256); \n\
-      DECLARE VemailNew varchar(65); \n\
-      START TRANSACTION; \n\
-      SET OboOk=1; \n\
-      SELECT SQL_CALC_FOUND_ROWS idUser INTO VidUserOld FROM "+userTab+"  WHERE IP=IIPOld AND idIP=IidIPOld;\n\
-      IF FOUND_ROWS()=0 THEN SET OboOk=0, Omess='Old id does not exist'; ROLLBACK; LEAVE proc_label; END IF; \n\
-      SELECT SQL_CALC_FOUND_ROWS idUser, nameIP, image, email INTO VidUserNew, VnameIPNew, VimageNew, VemailNew FROM "+userTab+" WHERE IP=IIPNew AND idIP=IidIPNew;\n\
-      IF FOUND_ROWS()=0 THEN SET OboOk=0, Omess='New id does not exist'; ROLLBACK; LEAVE proc_label; END IF; \n\
-\n\
-      DELETE FROM "+userTab+" WHERE idUser=VidUserNew; \n\
-      UPDATE "+userTab+" SET IP=IIPNew, idIP=IidIPNew, nameIP=VnameIPNew, image=VimageNew, email=VemailNew WHERE idUser=VidUserOld; \n\
-      COMMIT; \n\
-    END");
+
   
     //IF VcreatedA<VcreatedB THEN SET VidUserNew=VidUserA, VidUserOld=VidUserB; ELSE SET VidUserNew=VidUserB, VidUserOld=VidUserA; END IF; \n\
 
 
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"vendorSetup");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"userSetup");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"userSetup(IidUser INT, IIP "+strIPEnum+", IidIP varchar(128), InameIP varchar(128), Iimage varchar(256), Iemail varchar(65), OUT OboInserted INT, OUT OidUser INT) \n\
-    BEGIN \n\
-      START TRANSACTION; \n\
-      IF IidUser IS NOT NULL THEN \n\
-        UPDATE "+userTab+" SET IP=IIP, idIP=IidIP, nameIP=InameIP, image=Iimage, email=Iemail WHERE idUser=IidUser; \n\
-        SET OidUser=IidUser; \n\
-      ELSE \n\
-        INSERT INTO "+userTab+" (IP, idIP, nameIP, image, email) VALUES (IIP, IidIP, InameIP, Iimage, Iemail ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), nameIP=InameIP, image=Iimage, email=Iemail; \n\
-        SET OboInserted=(ROW_COUNT()=1), OidUser=LAST_INSERT_ID(); \n\
-      END IF;\n\
-      COMMIT; \n\
-    END");
-    
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"reporterSetup");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"reporterSetup(IIP "+strIPEnum+", IidIP varchar(128), InameIP varchar(128), Iimage varchar(256), Iemail varchar(65), OUT OboInserted INT, OUT OidReporter INT) \n\
-    BEGIN \n\
-      START TRANSACTION; \n\
-      INSERT INTO "+userTab+" (IP, idIP, nameIP, image, email) VALUES (IIP, IidIP, InameIP, Iimage, Iemail ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), nameIP=InameIP, image=Iimage, email=Iemail; \n\
-      SET OboInserted=(ROW_COUNT()=1), OidReporter=LAST_INSERT_ID(); \n\
-      COMMIT; \n\
-    END");
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MergeID");
 
 /*
-    SELECT idUser, count(*) INTO OidReporter,Vc FROM "+userTab+" WHERE IP=IIP AND idIP=IidIP; \n\
+    SELECT idUser, count(*) INTO OidReporter,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB; \n\
       IF Vc=0 THEN \n\
-        INSERT INTO "+userTab+" (IP,idIP) VALUES (IIP,IidIP);  \n\
+        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);  \n\
         SELECT LAST_INSERT_ID() INTO OidReporter; \n\
       END IF; \n\
 
       SELECT LAST_INSERT_ID() INTO OidReporter; \n\
 */
-  //SqlFunction.push("INSERT INTO "+userTab+" (IP,idIP) VALUES ('fb',$id)"); 
+  //SqlFunction.push("INSERT INTO "+userTab+" (IP,idFB) VALUES ('fb',$id)"); 
 
-
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"setPassword");
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"setPassword(IidUser int(4), IpwOld VARCHAR(40), IpwNew VARCHAR(40)) \n\
+    proc_label:BEGIN \n\
+      DECLARE VpwOld VARCHAR(40); \n\
+      SELECT password INTO VpwOld FROM "+userTab+" WHERE idUser=IidUser; \n\
+      IF FOUND_ROWS()!=1 THEN SELECT CONCAT('Found ', FOUND_ROWS(), ' users') AS mess; LEAVE proc_label; END IF; \n\
+      IF VpwOld!=IpwOld THEN SELECT 'Old password does not match' AS mess; LEAVE proc_label; END IF; \n\
+      UPDATE "+userTab+" SET password=IpwNew WHERE idUser=IidUser; \n\
+      SELECT 'Password changed' AS mess; \n\
+    END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UseRebateCode");
   SqlFunction.push("CREATE PROCEDURE "+siteName+"UseRebateCode(Icode varchar(128), IidUser INT, OUT OmonthsToAdd INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
@@ -1399,8 +1526,10 @@ app.SetupSql.prototype.createDummies=function(SiteName){
 
   var TableName=site.TableName, ViewName=site.ViewName, Prop=site.Prop;
   var Enum={};   for(var name in Prop) {if('Enum' in Prop[name]) Enum[name]=Prop[name].Enum.concat([]); }   //extend(Enum,site.Enum);
-  eval(extractLoc(TableName,'TableName'));
-  eval(extractLoc(ViewName,'ViewName'));
+  //eval(extractLoc(TableName,'TableName'));
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  //eval(extractLoc(ViewName,'ViewName'));
+  var {histView}=site.ViewName;
   //var VendorUpdF=site.VendorUpdF;
 
   var makeEnumRandF=function(name){  var enumT=Enum[name]; return enumT[randomInt(0, enumT.length-1)];  };
@@ -1515,12 +1644,12 @@ app.SetupSql.prototype.createDummies=function(SiteName){
 
   var ValAll=[], SqlAll=[];
   var AddressT={};
-  for(var i=1;i<nData+1;i++){  
-      // Add a call to vendorSetup and add values
-    var tmp="Dummy"+i, person={idIP:tmp, displayName:tmp, tel:"07000000"+i};
+  for(var i=1;i<nData+1;i++){
+
+    var tmp="dummy"+i, Tmp=ucfirst(tmp), person={idFB:tmp, email:tmp+'@example.com', displayName:Tmp, tel:"07000000"+i};
     var ValCurU=[];
 
-    var idTmp=i+1,  sqlCurU="("+idTmp+", 'openid', '"+person.idIP+"', 'Dummy', 'me@example.com')"; 
+    var idTmp=i+1,  sqlCurU="("+idTmp+", null, null, '"+Tmp+"', '"+person.email+"', '"+Tmp+"', null)"; 
 
             // Add a query to update vendorTab and add values
     var AddressT=extend(AddressT,getRandomPostAddress());
@@ -1555,7 +1684,7 @@ app.SetupSql.prototype.createDummies=function(SiteName){
   }
 
   var tmp=SqlAllU.join(",");
-  SqlDummies.push("INSERT INTO "+userTab+" (idUser, IP, idIP, nameIP, email) VALUES "+tmp);
+  SqlDummies.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image) VALUES "+tmp);
   
   var tmp=SqlAllV.join(",");
   SqlDummies.push("INSERT INTO "+vendorTab+" (idUser, "+strName+") VALUES "+tmp);
@@ -1575,7 +1704,7 @@ app.SetupSql.prototype.createDummies=function(SiteName){
   for(var j=0;j<10;j++){ //loop through drivers
     for(var i=0;i<nReporter;i++){
       var idRep=IdReporter[i], iRep=(i+j)%nReporter, strRep=StrReport[iRep], iAns=(i+2*j)%nReporter, strAns=StrAns[iAns];
-      SqlDummies.push("INSERT INTO "+reportTab+" (idVendor, idReporter, comment, answer, created, modified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now() FROM "+userTab+" WHERE idIP REGEXP '^Dummy' AND idUser%10="+j);
+      SqlDummies.push("INSERT INTO "+reportTab+" (idVendor, idReporter, comment, answer, created, modified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now() FROM "+userTab+" WHERE idOpenId REGEXP '^Dummy' AND idUser%10="+j);
     }
   }
   }
@@ -1591,11 +1720,17 @@ app.SetupSql.prototype.createDummy=function(SiteName){
 
   var site=Site[siteName]; 
   var TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
-  eval(extractLoc(TableName,'TableName'));
+  //eval(extractLoc(TableName,'TableName'));
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  //eval(extractLoc(ViewName,'ViewName'));
+  var {histView}=site.ViewName;
 
   var id=100002646477985;
-  SqlDummy.push("CALL "+siteName+"vendorSetup(null, 'fb', "+id+", 'Minnie the Moocher', 'http://example.com/abc.jpg', 'me@example.com', @boInserted, @idUser)");
-  SqlDummy.push("CALL "+siteName+"reporterSetup('fb', "+id+", 'Minnie the Moocher', 'http://example.com/abc.jpg, 'me@example.com'', @boInserted, @idReporter)"); //echo sqlToVar(SqlFunction.push("SELECT @boInserted"));
+
+  
+  SqlDummy.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES ("+id+", "+id+", "+id+", '"+id+"@example.com', 'Minnie the Moocher', 'http://example.com/abc.jpg', MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=Iemail, '"+id+"@example.com', 'Minnie the Moocher', 'http://example.com/abc.jpg';")
+  SqlDummy.push("INSERT INTO "+vendorTab+" (idUser, created, lastPriceChange, posTime, tLastWriteOfTA, histActive) VALUES (LAST_INSERT_ID(), now(), now(), now(), now(), 1 ) \n\
+        ON DUPLICATE KEY UPDATE idUser=idUser;");
 
   SqlDummy.push("UPDATE "+vendorTab+" SET terminationDate=DATE_ADD(now(),INTERVAL 10 YEAR)"); 
   SqlDummy.push("REPLACE INTO "+adminTab+" (idUser,boApproved,created) VALUES (@idUser,1,now())"); 
