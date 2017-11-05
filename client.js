@@ -1180,8 +1180,9 @@ doHistPush=function(obj){
 
   if((boChrome || boOpera) && !boTouch)  history.boFirstScroll=true;
 
-  var indNew=history.state.ind+1; console.log(indNew);
-  history.pushState({hash:history.state.hash, ind:indNew}, strHistTitle, uCanonical);
+  var indNew=history.state.ind+1;
+  stateTrans={hash:history.state.hash, ind:indNew};  // Should be called stateLast perhaps
+  history.pushState(stateTrans, strHistTitle, uCanonical);
   history.StateMy=history.StateMy.slice(0,indNew);
   history.StateMy[indNew]=obj;
 }
@@ -1362,6 +1363,11 @@ var messExtend=function($el){
   }
   $el.setMess=function(str,time,boRot){  
     $el.html(str);  clearTimeout(messTimer); 
+    if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
+    if(boRot) $el.append($imgBusy);
+  };
+  $el.appendMess=function(str,time,boRot){  
+    $el.append(str);  clearTimeout(messTimer); 
     if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
     if(boRot) $el.append($imgBusy);
   };
@@ -2387,36 +2393,6 @@ getOAuthCode=function*(flow){
 }
 
 
-var loginWLinkDivExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'loginWLinkDiv';}
-  $el.setUp=function(){
-    $inpEmail.val('');    //$inpPW.val('');
-  }
-
-  var sendEmail=function(){
-    var vec=[['sendLoginLink',{email:$inpEmail.val()}]];   majax(oAJAX,vec);   return false;
-  }
-  var $divHead=$('<h3>').append('Log in with email.');
-
-  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {sendEmail();return false;}} );
-  var $butSendLink=$('<button>').append('Send login link to email address.').click(sendEmail);
-
-  var $rows=$([]).push($divHead, $inpEmail, $butSendLink); //, $inpPW, $butLogin
-  $rows.css({display:'block', 'margin':'1em 0em 1em 0.6em'});
-  $el.append($rows);
- 
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var loginWLinkFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Log in with your email').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv'); 
-  return $el;
-}
-
 
 idPLoginDivExtend=function($el){
 
@@ -2546,7 +2522,10 @@ var createUserDivExtend=function($el){
     setMess('',null,true); 
   }
   var saveRet=function(data){
-    if(data.boOK) $messEndDiv.append('Check your mailbox, an email was sent which contains a link which will create the account.'); 
+    if(data.boOK){
+      var strTmp='Check your mailbox, an email was sent which contains a link which will create the account.';
+      setMess(strTmp);  $messEndDiv.append(strTmp);
+    } 
   }
     
   var lPWMin=boDbg?2:6; 
@@ -2554,9 +2533,9 @@ var createUserDivExtend=function($el){
   $el.setUp=function(){ 
     if($divReCaptcha.is(':empty')){
       grecaptcha.render($divReCaptcha[0], {sitekey:strReCaptchaSiteKey});
-      $messDiv.html('');  $messEndDiv.html('');
-      return true;
     }
+    $messDiv.html('');  $messEndDiv.html('');
+    return true;
   }
   $el.cb=null;
   
@@ -2575,16 +2554,10 @@ var createUserDivExtend=function($el){
   
   var $messDiv=$('<div>').css({color:'red'});
   
-  //var $labName=$('<label>').append('Full name'),  $labEmail=$('<label>').append('Email'); 
-  //var $inpName=$('<input>'), $inpEmail=$('<input type=email>');
-  //var $labPass=$('<label>').append('Password'),  $labPassB=$('<label>').append('Password again');  
-  //var $inpPass=$('<input type=password placeholder="at least '+lPWMin+' characters">'),  $inpPassB=$('<input type=password >');
-  //$inpName.add($inpEmail).add($inpPass).add($inpPassB).css({display:'block', 'margin-bottom':'0.5em'});
 
   var $buttonVerifyNCreate=$("<button>").text('Verify email and create account').click(save).addClass('flexWidth').css({'margin':'0.5em 0em 0.3em'})
   var $messEndDiv=$('<div>');
 
-  //$el.append($h1, $el.$divDisclaimerW, $messDiv,   $labName, $inpName, $labEmail, $inpEmail, $labPass, $inpPass, $labPassB, $inpPassB, $divReCaptcha, $buttonVerifyNCreate, $messEndDiv);
   $el.append($h1, $el.$divDisclaimerW, $messDiv,   $formCreateAccount, $divReCaptcha, $buttonVerifyNCreate, $messEndDiv);
   return $el;
 }
@@ -5678,7 +5651,7 @@ setUp1=function(){
 
   
   $imgBusy=$('<img>').prop({src:uBusy});
-  $messageText=messExtend($("<span>"));  window.setMess=$messageText.setMess;  window.resetMess=$messageText.resetMess;  $body.append($messageText);
+  $messageText=messExtend($("<span>"));  window.setMess=$messageText.setMess;  window.resetMess=$messageText.resetMess;  window.appendMess=$messageText.appendMess;  $body.append($messageText);
 
   $busyLarge=$('<img>').prop({src:uBusyLarge}).css({position:'fixed',top:'50%',left:'50%','margin-top':'-42px','margin-left':'-42px','z-index':'1000',border:'black solid 1px'}).hide();
   $body.append($busyLarge);
@@ -5701,9 +5674,9 @@ setUp1=function(){
     if(text!='') { helpBub[strName]=$('<div>').html(text); }
   }
 
-  $H1=$('h1:eq(0)').detach()
+  $H1=$('h1:eq(0)').detach();
   $H1.css({background:'#ff0', "box-sizing":"border-box", border:'solid 1px',color:'black','font-size':'1.6em','font-weight':'bold','text-align':'center',
-      padding:'0.4em 0em 0.4em 0em',margin:'0em 0em 0em 0em'}); 
+      padding:'0.4em 0em 0.4em 0em',margin:'0em 0em 0em 0em'});
   //$divH1=$('<div>').append($H1); //$divH1.css({}); 
   
   //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
@@ -5725,10 +5698,26 @@ setUp1=function(){
   stateTrans=stateLoadedNew;
   history.StateMy=[];
   //alert("reExecute");
-
-  bindEvent(window,'popstate', function(event) {
-    //alert('popstate');
+  //iPop=0;
+  $poporder=$('<div>').html('poporder'); $iLoad=$('<div>').html('iLoad'); $iPopstate=$('<div>').html('iPopstate'); $stateMyT=$('<div>').html('stateMyT'); $indT=$('<div>').html('indT'); $dirT=$('<div>').html('dirT');
+  $butClearCounter=$('<button>').append('ClearCounter').click(function(){
+    setItem('iLoad', 0);  setItem('iPopstate', 0);  setItem('iPagehide', 0);  setItem('iBeforeunload', 0);
+    $iLoad.html('iLoad:'); $iPopstate.html('iPopstate:'); $poporder.html('poporder:');
+  });
+  $aNext=$('<a>').prop({href:'http://192.168.0.5:5000/transport/lib/image/help.png'}).append('next');
+  $divDbg=$('<div>').append($iLoad,$iPopstate,$poporder, $butClearCounter, $aNext, $stateMyT, $indT, $dirT).css({flex:'0 0 0'});
+  boDbgL=0;
+  window.addEventListener('popstate', function(event) {  
+    var iPopstate=getItem('iPopstate'); setItem('iPopstate', iPopstate+1);
+    $iPopstate.append(iPopstate+',');
+    $poporder.append('pop'+iPopstate+',');
+    $stateMyT.html(Object.keys(history.StateMy));
+    $indT.append('<font style="color:red">'+stateTrans.ind+'</font>'+history.state.ind+', ');
+    
     var dir=history.state.ind-stateTrans.ind;
+    if(Math.abs(dir)>1) alert('dir=',dir);
+    $dirT.append(dir+',');
+    //$body.append(' iPop'+(++iPop));
     //console.log("stateTrans.ind: "+stateTrans.ind+", history.state.ind: "+history.state.ind);
     var boSameHash=history.state.hash==stateTrans.hash; //alert("Error: typeof stateTrans: "+Object.keys(stateTrans));
     if(boSameHash){
@@ -5743,7 +5732,13 @@ setUp1=function(){
       //$obj.setVis();       $body.scrollTop(tmpObj.scroll);
 
       var stateMy=history.StateMy[history.state.ind];
-      if(typeof stateMy!='object' ) {var tmpStr=window.location.href +" Error: typeof stateMy: "+(typeof stateMy); if(!boEpiphany) alert(tmpStr); else  console.log(tmpStr); return; }
+      if(typeof stateMy!='object' ) {
+        
+        //var tmpStr=window.location.href +" Error: typeof stateMy: "+(typeof stateMy)+', history.state.ind:'+history.state.ind+', history.StateMy.length:'+history.StateMy.length+', Object.keys(history.StateMy):'+Object.keys(history.StateMy);
+        //if(!boEpiphany) alert(tmpStr); else  console.log(tmpStr);
+        //debugger;
+        return;
+      }
       var $view=stateMy.$view;
       $view.setVis();
       if(typeof $view.getScroll=='function') {
@@ -5761,16 +5756,20 @@ setUp1=function(){
 
       stateTrans=$.extend({},tmpObj);
     }else{
+      //$body.append('≠'); 
       stateTrans=history.state; $.extend(stateTrans,{hash:randomHash()}); history.replaceState(stateTrans,'',uCanonical);
       history.go(sign(dir));
     }
   });  
-
   if(boFF){
-    $(window).bind('beforeunload', function(){   });
+    window.addEventListener('beforeunload', function(){   });
   } 
   //$(window).bind('beforeunload', function(){  console.log("beforeunload"); });
 
+
+  var iLoad=getItem('iLoad'); setItem('iLoad', iLoad+1);
+  $iLoad.append(iLoad+',');
+  $poporder.append('load'+iLoad+',');
 
   oAJAX={
     url:uBE,
@@ -5978,6 +5977,7 @@ var setUp2=function(){
 
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
   StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'payDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');
+  if(boDbgL) StrMainDiv.unshift('divDbg');
   
   
   //  List of foots: admin, pay, vendorSetting, priceSetting, paymentList, userSetting, reportV, reportR, vendorInfo, filter, markSelector, columnSelector, columnSorter, table, map, team, setting, more, createUser
@@ -6003,7 +6003,7 @@ var setUp2=function(){
 
   //$mapDivs=$H1.add($mapFoot).add($mapDiv).add($footDiv);  $mapDivs.show();
   $H1.add($footDiv).add($mapFoot).add($mapDiv).show();
-
+  if(boDbgL) $divDbg.show();
   $filterDiv.hide();
 
 
@@ -6057,6 +6057,7 @@ var setUp2=function(){
   
 
   $mainDivsTogglable=$MainDiv.not($loginInfo.add($H1));
+  if(boDbgL) $mainDivsTogglable=$MainDiv.not($loginInfo.add($H1).add($divDbg));
 
   
   scalableTog=function(boOn){

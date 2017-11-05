@@ -296,6 +296,7 @@ var flow=( function*(){
         //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
         else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
         else if(pathName=='/debug'){    debugger  }
+        else if(pathName=='/prev.html'){        yield* reqPrev.call(objReqRes);        }
         else if(pathName=='/'+googleSiteVerification) res.end('google-site-verification: '+googleSiteVerification);
         else {res.out404("404 Not Found\n"); return; }
       }

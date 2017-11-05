@@ -169,6 +169,21 @@ response_type="+JSON.stringify(response_type)+";\n\
 }
 
 
+/******************************************************************************
+ * reqPrev
+ ******************************************************************************/
+app.reqPrev=function*() {
+  var req=this.req, res=this.res;
+  res.end('<!DOCTYPE html>\n\
+<html><head>\n\
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n\
+<meta name="viewport" id="viewportMy" content="initial-scale=1" />\n\
+<meta name="robots" content="noindex">\n\
+</head><body>\n\
+<p>Prev\n\
+<p><a href='+req.uSite+'>index</a>\n\
+</body></html>');
+}
 
 /******************************************************************************
  * reqIndex
@@ -206,7 +221,7 @@ app.reqIndex=function*() {
   var strLangBrowser=getBrowserLang(req); if(!checkIfLangIsValid(strLangBrowser)){ strLangBrowser='en'; }
 
   var ua=req.headers['user-agent']||''; ua=ua.toLowerCase();
-  var boMSIE=RegExp('/msie/').test(ua), boAndroid=RegExp('/android/').test(ua), boFireFox=RegExp('/firefox/').test(ua), boIOS= RegExp('/iPhone|iPad|iPod/i').test(ua);
+  var boMSIE=RegExp('msie').test(ua), boAndroid=RegExp('android').test(ua), boFireFox=RegExp('firefox').test(ua), boIOS= RegExp('iPhone|iPad|iPod','i').test(ua);
   if(/facebookexternalhit/.test(ua)) {
     objQS.lang='en'; 
   }
@@ -262,7 +277,7 @@ app.reqIndex=function*() {
 
 
 
-  var strTmp='';  if(boAndroid && boFireFox) {  strTmp=", width=device-width'";}    
+  var strTmp='';  //if(boAndroid && boFireFox) {  strTmp=", width=device-width'";}    
   var strTmpB=''; //if(boAndroid || boIOS) strTmpB=", user-scalable=no";
 
   Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1"+strTmp+strTmpB+"'/>");

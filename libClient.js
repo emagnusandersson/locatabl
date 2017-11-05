@@ -9,13 +9,13 @@ setItem=function(name,value){  if(typeof value=='undefined') value=null; localSt
 getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!==null) tmp=JSON.parse(tmp);   return tmp;   }
 setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
 
-bindEvent=function(element, type, handler){
-   if(element.addEventListener){
-      element.addEventListener(type, handler, false);
-   } else{
-      element.attachEvent('on'+type, handler);
-   }
-}
+//bindEvent=function(element, type, handler){
+   //if(element.addEventListener){
+      //element.addEventListener(type, handler, false);
+   //} else{
+      //element.attachEvent('on'+type, handler);
+   //}
+//}
 
 
 
