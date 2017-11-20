@@ -54,7 +54,7 @@ mysqlCommitNRelease=function*(flow, connection){
 
 
 
-  // accountMergeTwo: Logging in from an non-logged-in state with a IdP (which includes email). And since idIdP and email may point to different accounts, those should be merged.
+  // accountMergeTwo: Logging in from a non-logged-in state with a IdP (which includes email). And since idIdP and email may point to different accounts, those should be merged.
   // Called "accountMergeTwo" since a maximum of two accounts (idIdP- and email-) accounts are merged.
   //
   // Only one of IidFB, IidIdPlace and IidOpenId should be non-null.
@@ -65,9 +65,9 @@ accountMergeTwo=function*(objArg){
   var StrMes=[];
   var sql="SELECT * FROM "+userTab+" WHERE idFB=? OR idIdPlace=? OR idOpenId=? OR email=? ORDER BY tCreated;";
   var Val=[idFB, idIdPlace, idOpenId, email];
-  var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-  var c=results.length;
-  //if(c==0) {
+  var [err, resultsU]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
+  var nU=resultsU.length;
+  //if(nU==0) {
     //if(objArg.boCreate){
       //var Sql=[];
       //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) );");
@@ -77,64 +77,70 @@ accountMergeTwo=function*(objArg){
       //Ou.idUser=results[1][0].idUser;
     //}
   //}else
-  if(c==1) {
-    var rowT=results[0];
+  if(nU==1) {
+    var rowT=resultsU[0];
     var sql="UPDATE "+userTab+" SET idFB=IF(? IS NULL, idFB, ?), idIdPlace=IF(? IS NULL, idIdPlace, ?), idOpenId=IF(? IS NULL, idOpenId, ?), email=IF(? IS NULL, email, ?), nameIP=IF(? IS NULL, nameIP, ?), image=IF(? IS NULL, image, ?) WHERE idUser=?;";
     var Val=[idFB, idFB, idIdPlace, idIdPlace, idOpenId, idOpenId, email, email, nameIP, nameIP, image, image,   rowT.idUser]; 
     var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
     Ou.idUser=rowT.idUser;
-  }else if(c==2) {
-    var rowT=results[0], rowD=results[1], idUserU=rowT.idUser, idUserD=rowD.idUser;  // Suffix U for userTab, V for vendorTab (analogouly with accountMergeThree (see below)) and D for Delete
-    idFB=idFB||rowT.idFB||rowD.idFB;
-    idIdPlace=idIdPlace||rowT.idIdPlace||rowD.idIdPlace;
-    idOpenId=idOpenId||rowT.idOpenId||rowD.idOpenId;
-    email=rowT.email||rowD.email||email;
+  }else if(nU==2) {
+    var row0=resultsU[0], row1=resultsU[1];
+    idFB=idFB||row0.idFB||row1.idFB;
+    idIdPlace=idIdPlace||row0.idIdPlace||row1.idIdPlace;
+    idOpenId=idOpenId||row0.idOpenId||row1.idOpenId;
+    email=email||row0.email||row1.email;
+    var iBest=indexOfMin([row0.tCreated,row1.tCreated]);
+    var idUserUBest=resultsU[iBest].idUser,  idUserUD=resultsU[1-iBest].idUser;    // Suffix D for deleted.
     
 
       // Now check which vendorTab row to keep
-    var sql="SELECT donatedAmount, created, posTime, histActive, tLastWriteOfTA, timeAccumulated, terminationDate, lastPriceChange FROM "+vendorTab+" WHERE idUser=? OR idUser=? ORDER BY created;";
-    var Val=[idUserU,idUserD];
-    var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-    var c=results.length;
-    if(c==1) {
-      var rowA=results[0];
-      if(idUserU!=rowA.idUser) {
-        var sql="UPDATE "+vendorTab+" SET idUser=? WHERE idUser=?;";  var Val=[idUserU, rowA.idUser];
+    var sql="SELECT idUser, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, created, histActive, timeAccumulated, terminationDate FROM "+vendorTab+" WHERE idUser=? OR idUser=?;";
+    var Val=[idUserUBest,idUserUD];
+    var [err, resultsV]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
+    var nV=resultsV.length;
+    if(nV==1) {
+      var rowA=resultsV[0];
+      if(idUserUBest!=rowA.idUser) {
+        var sql="UPDATE "+vendorTab+" SET idUser=? WHERE idUser=?;";  var Val=[idUserUBest, rowA.idUser];
         var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-        var c=results[0].affectedRows; StrMes.push(c+" rows from vendorTab changed idUser.");
+        var c=results.affectedRows; StrMes.push(c+" rows from vendorTab changed idUser.");
       }
     }
-    else if(c==2) {
-      var rowA=results[0], rowD=results[1];
-      var donatedAmount=rowA.donatedAmount||rowD.donatedAmount;
-      var created=minOfTwo(rowA.created,rowD.created);
-      var iBest=rowA.timeAccumulated<rowD.timeAccumulated, tLastWriteOfTA=results[iBest].tLastWriteOfTA, histActive=results[iBest].histActive, posTime=results[iBest].posTime;
-      var idUserVBest=results[iBest].idUser;
+    else if(nV==2) {
+      var row0=resultsV[0], row1=resultsV[1];
+      var donatedAmount=row0.donatedAmount+row1.donatedAmount;
+      var nMonthsStartOffer=Math.max(row0.nMonthsStartOffer,row1.nMonthsStartOffer);
+      var coordinatePrecisionM=Math.max(row0.coordinatePrecisionM,row1.coordinatePrecisionM);
+      var terminationDate=maxKeepType(row0.terminationDate,row1.terminationDate);
+      var created=minKeepType(row0.created,row1.created);
+      var iBest=indexOfMax([row0.timeAccumulated,row1.timeAccumulated]);
+      var idUserVBest=resultsV[iBest].idUser,  idUserVD=resultsV[1-iBest].idUser;
       
-      var sql="DELETE FROM "+vendorTab+" WHERE idUser=?;";  var Val=[idUserD];
+      var sql="DELETE FROM "+vendorTab+" WHERE idUser=?;";  var Val=[idUserVD];
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-      var c=results[0].affectedRows; StrMes.push(c+" rows from vendorTab deleted.");
+      var c=results.affectedRows; StrMes.push(c+" rows from vendorTab deleted.");
       
-      var sql="UPDATE "+vendorTab+" SET created=?, timeAccumulated=?, tLastWriteOfTA=?, histActive=?, posTime=? WHERE idUser=?;";  var Val=[created, timeAccumulated, tLastWriteOfTA, histActive, posTime, idUserVBest];
+      var sql="UPDATE "+vendorTab+" SET idUser=?, created=?, donatedAmount=?, nMonthsStartOffer=?, coordinatePrecisionM=?, terminationDate=? WHERE idUser=?;";
+      var Val=[idUserUBest, created, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, terminationDate, idUserVBest];
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-      var c=results[0].affectedRows; StrMes.push(c+" rows from vendorTab updated.");
+      var c=results.affectedRows; StrMes.push(c+" rows from vendorTab updated.");
     }
     
     
-    var sql="DELETE FROM "+userTab+" WHERE idUser=?;";  var Val=[idUserD];
+    var sql="DELETE FROM "+userTab+" WHERE idUser=?;";  var Val=[idUserUD];
     var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-    var c=results[0].affectedRows; StrMes.push(c+" rows from userTab deleted.");
+    var c=results.affectedRows; StrMes.push(c+" rows from userTab deleted.");
     
-    var sql="UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=?, password=MD5(RAND())) WHERE idUser=?;";  var Val=[idFB,idIdPlace,idOpenId,email,nameIP,image,idUserU];
+    var sql="UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=? WHERE idUser=?;";  var Val=[idFB,idIdPlace,idOpenId,email,nameIP,image,idUserUBest];
     var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-    var c=results[0].affectedRows; StrMes.push(c+" rows from userTab updated.");
-    Ou.idUser=idUserU;
+    var c=results.affectedRows; StrMes.push(c+" rows from userTab updated.");
+    Ou.idUser=idUserUBest;
   }
   return [null,Ou];
 }
 
    
-  // accountMergeThree: logging from an logged-in state (corresponding to the row that "idUser"-input points to) with a IdP (which includes email). And since idIdP and email and idUser may point to  three different accounts, those should be merged.
+  // accountMergeThree: logging from a logged-in state (corresponding to the row that "idUser"-input points to) with an IdP (which includes email). And since idIdP and email and idUser may point to three different accounts, those should be merged.
   // Called "accountMergeThree" since a maximum of three rows are pointed to by the input variables (idUser (already logged in account) and idIdP/email from the new account).
   //
   // Only one of IidFB, IidIdPlace and IidOpenId should be non-null.
@@ -146,9 +152,9 @@ accountMergeThree=function*(objArg){
   var StrMes=[];
   var sql="SELECT * FROM "+userTab+" WHERE idUser=? OR idFB=? OR idIdPlace=? OR idOpenId=? OR email=? ORDER BY tCreated";
   var Val=[idUser, idFB, idIdPlace, idOpenId, email];
-  var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-  var c=results.length;
-  //if(c==0) {
+  var [err, resultsU]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
+  var nU=resultsU.length;
+  //if(nU==0) {
     //if(objArg.boCreate){
       //var Sql=[];
       //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) );");
@@ -158,70 +164,73 @@ accountMergeThree=function*(objArg){
       //Ou.idUser=results[1][0].idUser;
     //}
   //}else
-  if(c==1) {
-    var rowT=results[0];
+  if(nU==1) {
+    var rowT=resultsU[0];
     var sql="UPDATE "+userTab+" SET idFB=IF(? IS NULL, idFB, ?), idIdPlace=IF(? IS NULL, idIdPlace, ?), idOpenId=IF(? IS NULL, idOpenId, ?), email=IF(? IS NULL, email, ?), nameIP=IF(? IS NULL, nameIP, ?), image=IF(? IS NULL, image, ?) WHERE idUser=?;";
     var Val=[idFB, idFB, idIdPlace, idIdPlace, idOpenId, idOpenId, email, email, nameIP, nameIP, image, image,   rowT.idUser]; 
     var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
     Ou.idUser=rowT.idUser;
-  }else if(c>=2) {
-    var tCreated=intMax, iBestU, ValU=[];
-    for(var i=0;i<c;i++){
-      var rowT=results[i];
+  }else if(nU>=2) {
+    var tCreated=Infinity, iBestU=0, ValU=[];
+    for(var i=0;i<nU;i++){
+      var rowT=resultsU[i];
       idFB=idFB||rowT.idFB;  idIdPlace=idIdPlace||rowT.idIdPlace;  idOpenId=idOpenId||rowT.idOpenId;  email=email||rowT.email;
       if(rowT.tCreated<tCreated) {tCreated=rowT.tCreated; iBestU=i;}
-      ValU.push(results[i].idUser);
+      ValU.push(resultsU[i].idUser);
     }
-    var rowBest=results[iBestU], idUserU=rowBest.idUser;
+    var rowBest=resultsU[iBestU], idUserUBest=rowBest.idUser;
     
  
       // Now check which vendorTab row to keep
-    var strQMark=array_fill(c-1,'?').join(', ');
-    var sql="SELECT donatedAmount, created, posTime, histActive, tLastWriteOfTA, timeAccumulated, terminationDate, lastPriceChange FROM "+vendorTab+" WHERE idUser IN("+strQMark+");";
-    var [err, results]=yield* mysqlQuery(flow, con, sql, ValU); if(err) return [err];
-    var c=results.length;
-    if(c==1) {
-      var rowT=results[0];
-      if(idUserU!=rowT.idUser) {
-        var sql="UPDATE "+vendorTab+" SET idUser=? WHERE idUser=?;";  var Val=[idUserU, rowT.idUser];
+    var strQMark=array_fill(nU,'?').join(', ');
+    var sql="SELECT idUser, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, created, histActive, timeAccumulated, terminationDate FROM "+vendorTab+" WHERE idUser IN("+strQMark+");";
+    var [err, resultsV]=yield* mysqlQuery(flow, con, sql, ValU); if(err) return [err];
+    var nV=resultsV.length;
+    if(nV==1) {
+      var rowT=resultsV[0];
+      if(idUserUBest!=rowT.idUser) {
+        var sql="UPDATE "+vendorTab+" SET idUser=? WHERE idUser=?;";  var Val=[idUserUBest, rowT.idUser];
         var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-        var c=results[0].affectedRows; StrMes.push(c+" rows from vendorTab changed idUser.");
+        var c=results.affectedRows; StrMes.push(c+" rows from vendorTab changed idUser.");
       }
-    } else if(c>=2) {
-        // Select one vendorTab-row, delete the others, update the selected row, change the rows idUser to idUserU
-      var donatedAmount=0, created=intMax, timeAccumulated=0, iBest, Val=[];
-      for(var i=0;i<c;i++){
-        var rowT=results[i];
+    } else if(nV>=2) {
+        // Select one vendorTab-row, delete the others, update the selected row, change the rows idUser to idUserUBest
+      var donatedAmount=0, nMonthsStartOffer=0, coordinatePrecisionM=0, terminationDate=0, created=Infinity, timeAccumulated=0, iBest=0, Val=[];
+      for(var i=0;i<nV;i++){
+        var rowT=resultsV[i];
         donatedAmount+=rowT.donatedAmount;
+        if(rowT.nMonthsStartOffer>nMonthsStartOffer) nMonthsStartOffer=rowT.nMonthsStartOffer;
+        if(rowT.coordinatePrecisionM>coordinatePrecisionM) coordinatePrecisionM=rowT.coordinatePrecisionM;
+        if(rowT.terminationDate>terminationDate) terminationDate=rowT.terminationDate;;
         if(rowT.created<created) {created=rowT.created;}
         if(rowT.timeAccumulated>timeAccumulated) {timeAccumulated=rowT.timeAccumulated; iBest=i;}
-        Val.push(results[i].idUser);
+        Val.push(resultsV[i].idUser);
       }
-      var rowBest=results[iBest], tLastWriteOfTA=rowBest.tLastWriteOfTA, histActive=rowBest.histActive, posTime=rowBest.posTime;
+      var rowBest=resultsV[iBest];
       var idUserVBest=rowBest.idUser
       Val.splice(iBest,1);
       
-      var strQMark=array_fill(c-1,'?').join(', ');
+      var strQMark=array_fill(nV-1,'?').join(', ');
       var sql="DELETE FROM "+vendorTab+" WHERE idUser IN("+strQMark+");";
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-      var c=results[0].affectedRows; StrMes.push(c+" rows from vendorTab deleted.");
+      var c=results.affectedRows; StrMes.push(c+" rows from vendorTab deleted.");
       
-      var sql="UPDATE "+vendorTab+" SET idUser=?, donatedAmount=?, created=?, timeAccumulated=?, tLastWriteOfTA=?, histActive=?, posTime=? WHERE idUser=?;";
-      var Val=[idUserU, donatedAmount, created, timeAccumulated, tLastWriteOfTA, histActive, posTime, idUserVBest];
+      var sql="UPDATE "+vendorTab+" SET idUser=?, created=?, donatedAmount=?, nMonthsStartOffer=?, coordinatePrecisionM=?, terminationDate=? WHERE idUser=?;";
+      var Val=[idUserUBest, created, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, terminationDate, idUserVBest];
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-      var c=results[0].affectedRows; StrMes.push(c+" rows from vendorTab updated.");
+      var c=results.affectedRows; StrMes.push(c+" rows from vendorTab updated.");
     }
     
     ValU.splice(iBestU,1);
     var strQMark=array_fill(ValU.length,'?').join(', ');
     var sql="DELETE FROM "+userTab+" WHERE idUser IN("+strQMark+");";
     var [err, results]=yield* mysqlQuery(flow, con, sql, ValU); if(err) return [err];
-    var c=results[0].affectedRows; StrMes.push(c+" rows from userTab deleted.");
+    var c=results.affectedRows; StrMes.push(c+" rows from userTab deleted.");
     
-    var sql="UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=?, password=MD5(RAND())) WHERE idUser=?;";  var Val=[idFB,idIdPlace,idOpenId,email,nameIP,image,idUserU];
+    var sql="UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=? WHERE idUser=?;";  var Val=[idFB,idIdPlace,idOpenId,email,nameIP,image,idUserUBest];
     var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
-    var c=results[0].affectedRows; StrMes.push(c+" rows from userTab updated.");
-    Ou.idUser=idUserU;
+    var c=results.affectedRows; StrMes.push(c+" rows from userTab updated.");
+    Ou.idUser=idUserUBest;
   }
   return [null,Ou];
 }

@@ -408,7 +408,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
   Val.push(email);
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  if(results.length) { return [new ErrorClient('Email already exists.')];}
+  if(results.length) { return [new ErrorClient('Account (email) already exists.')];}
   
 
     // Store temporarily
@@ -772,9 +772,9 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
  
   var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for vendors as well as any visitor) 
   var {idUser,coordinatePrecisionM}=vendor;
-  var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj[0],inObj[1]); inObj[0]=xtmp; inObj[1]=ytmp;
+  var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj.x,inObj.y);
 
-  var sql="UPDATE "+site.TableName.vendorTab+" SET x=?, y=? WHERE idUser=? ", Val=[inObj[0],inObj[1],idUser];
+  var sql="UPDATE "+site.TableName.vendorTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   return [null, [Ou]];
 }
@@ -808,7 +808,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
   
   var zoom=Number(inObj.zoom), boCalcZoom=zoom==-1?1:0; 
   this.VPSize=inObj.VPSize;  
-  this.pC=inObj.pC; var xC=Number(this.pC[0]), yC=Number(this.pC[1]), wVP=Number(this.VPSize[0]), hVP=Number(this.VPSize[1]); 
+  this.pC=inObj.pC; var xC=Number(this.pC.x), yC=Number(this.pC.y), wVP=Number(this.VPSize[0]), hVP=Number(this.VPSize[1]); 
   //Sql.push("SET @xC="+xC+"; SET @yC="+yC+"; SET @wVP="+wVP+"; SET @hVP="+hVP+";
   
 
@@ -860,7 +860,7 @@ ReqBE.prototype.getList=function*(inObj){
   if(this.zoom>1){
     var projs=new MercatorProjection();
     //var sw, ne, tmp=projs.getBounds(inObj.pC,this.zoom,inObj.VPSize);   sw=tmp[0]; ne=tmp[1];  xl=sw[0]; xh=ne[0]; yl=ne[1]; yh=sw[1];
-    var sw, ne, tmp=projs.getBounds(this.pC,this.zoom,this.VPSize);   sw=tmp[0]; ne=tmp[1];  xl=sw[0]; xh=ne[0]; yl=ne[1]; yh=sw[1];
+    var {sw, ne}=projs.getBounds(this.pC,this.zoom,this.VPSize); xl=sw.x; xh=ne.x; yl=ne.y; yh=sw.y;
   }  else {xl=0; xh=256; yl=0; yh=256;}
   if(xh-xl>256) {xl=0; xh=256;}
   [xl]=normalizeAng(xl,128,256);   [xh]=normalizeAng(xh,128,256);
@@ -961,7 +961,7 @@ ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
 
   if(inObj.email) email=inObj.email;
   
-    // An entry in userTab may exist if the user is a reporter. However an entry in vendorTab is something one can assume does not exist.
+    // An entry in userTab may exist (if the user is a reporter). However an entry in vendorTab is something one can assume does not exist.
   var Sql=[], Val=[];
   Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
@@ -977,7 +977,7 @@ ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
   }
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var c=results[0][0].affectedRows; if(c!=1) return [new Error(c+" userTab rows affected")];
+  var c=results[0].affectedRows; if(c!=1) return [new Error(c+" userTab rows affected")];
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
   var boIns=site.boGotNewVendors=Number(results[3][0].boInserted);
@@ -985,7 +985,6 @@ ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
   var  tmpMes='Data '+(boIns?'inserted':'updated'); this.mes(tmpMes);
   return [null, [Ou]];
 }
-
 
 ReqBE.prototype.VUpdate=function*(inObj){ // writing needSession
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Prop=site.Prop, {userTab, vendorTab}=site.TableName;
@@ -1066,12 +1065,12 @@ ReqBE.prototype.VShow=function*(inObj){  // writing needSession
   var Ou={};
   var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var {idUser,coordinatePrecisionM}=vendor;
-  var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj[0],inObj[1]); inObj[0]=xtmp; inObj[1]=ytmp;
+  var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj.x,inObj.y);
 
   var Sql=[], Val=[];
   Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne("+idUser+");"); 
   Sql.push("UPDATE "+vendorTab+" SET x=?, y=?, boShow=1, posTime=now(), histActive=histActive|1 WHERE idUser="+idUser+";");
-  Val=[inObj[0],inObj[1]];
+  Val=[xtmp,ytmp];
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   this.mes('Vendor visible');      

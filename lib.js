@@ -44,6 +44,16 @@ calcLabel=function(Label,strName){ return Label[strName]||ucfirst(strName); }
 
 arr_max=function(arr){return Math.max.apply(null, arr);}
 arr_min=function(arr){return Math.min.apply(null, arr);}
+indexOfMax=function(arr) {
+  if (arr.length===0) return -1;
+  var valBest=arr[0], iBest=0;      for (var i=1; i<arr.length; i++) {      if(arr[i]>valBest) { iBest=i; valBest=arr[i]; }         }
+  return iBest;
+}
+indexOfMin=function(arr) {
+  if (arr.length===0) return -1;
+  var valBest=arr[0], iBest=0;      for (var i=1; i<arr.length; i++) {      if(arr[i]<valBest) { iBest=i; valBest=arr[i]; }         }
+  return iBest;
+}
 
 arrArrange=function(arrV,arrI){
   var arrNew=[]; if(typeof arrV=='string') arrNew='';
@@ -265,9 +275,7 @@ getSuitableTimeUnit=function(t){ // t in seconds
 }
 
 
-UTC2ReadableDiff=function(tdiff,boLong,boArr){
-  if(typeof boLong =='undefined' ) boLong=0;
-  if(typeof boArr =='undefined' ) boArr=0;
+UTC2ReadableDiff=function(tdiff,boLong=0,boArr=0){
   //var tmp;  tmp=approxTimeDuration(tdiff,boLong,boArr);
   var [ttmp,indA]=getSuitableTimeUnit(tdiff), n=Math.round(ttmp);
   if(indA=='m') indA='min';
@@ -300,8 +308,7 @@ gauss=function(){   // returns random number with normal distribution N(0,1)  (m
   return u;
 }
 
-gauss_ms=function(m,s){  // returns random number with normal distribution: N(m,s)  (mean=m,  std dev=s)
-  if(typeof m=='undefined') m=0; if(typeof s=='undefined') s=1;
+gauss_ms=function(m=0,s=1){  // returns random number with normal distribution: N(m,s)  (mean=m,  std dev=s)
   return gauss()*s+m;
 }
 
@@ -309,7 +316,8 @@ gauss_ms=function(m,s){  // returns random number with normal distribution: N(m,
 //
 // Math
 //
-minOfTwo=function(a,b){return a<b?a:b;} // Keeping the format as opposed to Math.min
+minKeepType=function(){var valBest=Infinity; for(var i=0;i<arguments.length;i++){ if(arguments[i]<valBest) valBest=arguments[i];} return valBest;} // Keeping the type as opposed to Math.min
+maxKeepType=function(){var valBest=-Infinity; for(var i=0;i<arguments.length;i++){ if(arguments[i]>valBest) valBest=arguments[i];} return valBest;} // Keeping the type as opposed to Math.max
 
 isNumber=function(n){ return !isNaN(parseFloat(n)) && isFinite(n);}
 sign=function(val){if(val<0) return -1; else if(val>0) return 1; else return 0;}
@@ -334,10 +342,7 @@ closest2Val=function(v, val){
   }
   return [v[best_i],best_i];
 }
-normalizeAng=function(angIn, angCenter, lapSize){
-  if(typeof angCenter=='undefined') angCenter=0;
-  if(typeof lapSize=='undefined') lapSize=twoPi;
-
+normalizeAng=function(angIn, angCenter=0, lapSize=twoPi){
   var angOut,nLapsCorrection;
   var lapSizeHalf=lapSize/2;
 
@@ -428,12 +433,12 @@ MercatorProjection.prototype.fromPointToLatLngV = function(point){
   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI/2);
   return [lat, lng];
 };
-MercatorProjection.prototype.getBounds=function(c,z,size){
+MercatorProjection.prototype.getBounds=function(pC,z,size){
   var zf=Math.pow(2, z)*2;
   var dw=size[0]/zf, dh=size[1]/zf;
-  var sw=[c[0]-dw, c[1]+dh];
-  var ne=[c[0]+dw, c[1]-dh];
-  return [sw,ne];
+  var sw={x:pC.x-dw, y:pC.y+dh};
+  var ne={x:pC.x+dw, y:pC.y-dh};
+  return {sw:sw,ne:ne};
 }
 
 

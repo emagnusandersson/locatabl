@@ -353,7 +353,7 @@ try {\n\
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
 
     // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
-  var boDbgT=boDbg; if(boIOS) boDbgT=0;
+  var boDbgT=boDbg; if(boIOS) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
   
     // Include stylesheets
   var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<link rel="stylesheet" href="'+uCommon+pathTmp+'?v='+vTmp+'" type="text/css">');
@@ -623,7 +623,8 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
 <meta name='viewport' id='viewportMy' content='initial-scale=1'/>\n\
 </head><body>"];
   var uSite=req.strSchemeLong+req.wwwSite
-  if(boIns) Str.push("An account has been created. Go back to <a href=\""+uSite+"\">"+req.wwwSite+"</a> and you can login with the email / password you selected."); else Str.push("Your account was updated.");
+  //if(boIns) Str.push("An account has been created. Go back to <a href=\""+uSite+"\">"+req.wwwSite+"</a>."); else Str.push("Your account was updated."); //and you can login with the email / password you 
+  if(boIns) Str.push("Account created! Please return to your previous browser / tab and hit reload to continue."); else Str.push("Your account was updated."); //and you can login with the email / password you selected
   //Str.push("<a href=\"javascript:window.open('','_self').close();\">close</a>, ");
   //Str.push("<a href=\""+uSite+"\">"+req.wwwSite+"</a>");
   Str.push('</body></html>');
@@ -631,36 +632,6 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
 }
 
 
-ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Prop=site.Prop, {userTab, vendorTab}=site.TableName;
-  var Ou={}; 
-  var objT=this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
-  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
-
-  if(inObj.email) email=inObj.email;
-  var Sql=[], Val=[];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
-  Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
-  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image,   email, nameIP, image);
-  Sql.push("INSERT INTO "+vendorTab+" (idUser,created, lastPriceChange, posTime, tLastWriteOfTA, histActive) VALUES (@idUser, now(), now(), now(), now(), 1 ) ON DUPLICATE KEY UPDATE idUser=idUser;");
-  //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
-  Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
-
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
-  
-  if(payLev==0) {
-    Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
-  }
-  var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var c=results[0].affectedRows; if(c!=1) return [new Error(c+" userTab rows affected")];
-  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
-  
-  var boIns=site.boGotNewVendors=Number(results[3][0].boInserted);
-  site.nUser=Number(results[4][0].n);
-  var  tmpMes='Data '+(boIns?'inserted':'updated'); this.mes(tmpMes);
-  return [null, [Ou]];
-}
 
 
 

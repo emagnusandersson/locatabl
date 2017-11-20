@@ -24,7 +24,8 @@ leafLoginWLink="loginWLink";
 leafVerifyPWResetReturn='verifyPWReset';
 leafVerifyEmailNCreateUserReturn='verifyEmailNCreateUser';
 
-hideTimerDefault=30*24*3600; //minutes
+hideTimerDefault=30*24*3600;
+hideTimerDefault=365*24*3600;
 if(boDbg) hideTimerDefault=30*60;
 
    // DB- TableNameProt
