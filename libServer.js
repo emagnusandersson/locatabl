@@ -4,7 +4,7 @@
 // At lat=0 (y=128), a world coordinate unit will be p2m meters
 // At lat=arccos(0.5), (lat=+-60 or y=128+-53.66), a world coordinate unit will be p2m/2 meters
 // At lat=arccos(0.25), (lat=+-75.52 or y=128+-84.08), a world coordinate unit will be p2m/4 meters
-roundXY=function(resM,x,y){
+roundXY=function(resM,x,y){  // The higher resM  the more the position will be rounded
   var resT=resM;
   if(Math.abs(y-128)>53.66) resT=Math.round(resT/2);
   if(Math.abs(y-128)>84.08) resT=Math.round(resT/2);

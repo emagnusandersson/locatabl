@@ -9,14 +9,6 @@ setItem=function(name,value){  if(typeof value=='undefined') value=null; localSt
 getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!==null) tmp=JSON.parse(tmp);   return tmp;   }
 setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
 
-//bindEvent=function(element, type, handler){
-   //if(element.addEventListener){
-      //element.addEventListener(type, handler, false);
-   //} else{
-      //element.attachEvent('on'+type, handler);
-   //}
-//}
-
 
 
 //
@@ -323,7 +315,8 @@ makeMarkerBubble=function(strText){
   ctx.font = "Symbol";
     // Write text
   ctx.fillStyle = "black";     for(var i in arrText){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
-  return canvas.toDataURL("image/png");
+  //return canvas.toDataURL("image/png");
+  return {url:canvas.toDataURL("image/png"), anchor:{x:widthBox/2, y:heightImg}};
 }
 
 

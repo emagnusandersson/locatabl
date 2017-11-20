@@ -155,7 +155,7 @@ var flow=( function*(){
 
   StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'client.js', 'lang/en.js', 'clientPubKeyStore.js', 'stylesheets/style.css']; //, 'clientMergeID.js'
   //'Site/'+siteName+'/'+siteName+'200.png', wwwIcon16, wwwIcon114
-  if(boDbg){
+  if(1){  // boDbg
     fs.watch('.',function (ev,filename) {
       var StrFile=['filter.js','client.js', 'clientPubKeyStore.js'];  //, 'clientMergeID.js'
         //console.log(filename+' changed: '+ev);
