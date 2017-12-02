@@ -54,9 +54,11 @@ sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
 specialistDefault={user:0,reporter:0,vendor:0,team:0,marketer:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
-p2m=1e5; m2p=1/p2m;  // p2m: Point (world coordinate) to meter... (Should be earthCircumference/256 = 4e7/256 = 156250 which I round to 1e5 [m])
-var len=arrCoordinatePrecisionM.length;
-arrCoordinatePrecision=Array(len); for(var i=0;i<len;i++) arrCoordinatePrecision[i]=arrCoordinatePrecisionM[i]*m2p;
+wc2m=1e5;   // wc2m: Point (world coordinate) to meter (at equator) (Should be earthCircumference/256 = 4e7/256 = 156250 which I round to 1e5 [m])
+wc2m=40074784/256;
+m2wc=1/wc2m;
+//var len=arrCoordinatePrecisionM.length;
+//arrCoordinatePrecision=Array(len); for(var i=0;i<len;i++) arrCoordinatePrecision[i]=arrCoordinatePrecisionM[i]*m2wc;
   //arrCoordinatePrecision=array(0.00001,0.00002,0.00005,0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2); 
 
 //Enum=[];
@@ -136,7 +138,7 @@ this.rewriteSite=function(site){
   boImgOwn:            {b:'011000110',type:'BOOL', default:0},
   linkTeam:            {b:'101000000'},
   nReport:             {b:'001110000'},
-  coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:0},
+  coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:10000},
   dist:                {b:'000010000'}
   };
   extend(Prop,tmp);

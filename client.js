@@ -495,7 +495,7 @@ CreatorPlugin.transportPrice=function(){
       $span.html('('+Number(comparePrice.dist).toFixed(2)+' '+distUnit+', '+comparePrice.time+' '+langHtml.timeUnit.min[1]+')');};
     var $span=$('<span>');
     var $butPricePref=$("<button>").append($span).click(function(){$comparePriceDataPop.openFunc(func); return false;});
-    if(!boTouch) popupHoverM($butPricePref,$('<div>').html(langHtml.pricePref.pop));
+    if(!boTouch) popupHoverJQ($butPricePref,$('<div>').html(langHtml.pricePref.pop));
     $el.append($butPricePref);
     //$el.setUp();
 
@@ -507,7 +507,7 @@ CreatorPlugin.transportPrice=function(){
 
     var $span=$('<span>').css({'font-size':'0.7em'});
     var $butPricePref=$("<button>").text(langHtml.Change).addClass('smallButt').css({padding:'0.3em 0.1em'}).click(function(){$comparePriceDataPop.openFunc(func); return false;});
-    if(!boTouch) popupHoverM($butPricePref,$('<div>').html(langHtml.pricePref.pop));
+    if(!boTouch) popupHoverJQ($butPricePref,$('<div>').html(langHtml.pricePref.pop));
     $el.append($span, $butPricePref);
     //$el.setUp();
 
@@ -1813,7 +1813,7 @@ var vendorSettingDivExtend=function($el){
   $el.createDivs=function(){
     for(var i=0;i<$el.StrProp.length;i++){
       var strName=$el.StrProp[i];
-      var $imgH=''; if(strName in $el.helpBub ) {    var $imgH=$imgHelp.clone();   popupHoverM($imgH,$el.helpBub[strName]);         }
+      var $imgH=''; if(strName in $el.helpBub ) {    var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,$el.helpBub[strName]);         }
 
       //var strLabel=ucfirst(strName)+': '; if(strName in langHtml.label) strLabel=langHtml.label[strName]+': ';
       var strLabel=calcLabel(langHtml.label, strName)+': ';
@@ -1918,7 +1918,7 @@ var priceSettingDivExtend=function($el){
   $el.createDivs=function(){
     for(var i=0;i<$el.StrProp.length;i++){
       var strName=$el.StrProp[i];
-      var $imgH=''; if(strName in helpBub ) {    var $imgH=$imgHelp.clone();   popupHoverM($imgH,helpBub[strName]);         }
+      var $imgH=''; if(strName in helpBub ) {    var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,helpBub[strName]);         }
 
       //var strLabel=ucfirst(strName)+': '; if(strName in langHtml.label) strLabel=langHtml.label[strName]+': ';
       var strLabel=calcLabel(langHtml.label, strName)+': ';
@@ -2027,7 +2027,7 @@ var quickDivExtend=function($el){
   for(var i=0;i<arrHideTime.length;i++) arrHideTime[i]*=60;
   for(var i=0;i<arrHideTime.length;i++){  var str=UTC2ReadableDiff(arrHideTime[i]),  $opt=$("<option>").text(str).val(arrHideTime[i]);   $el.$selHideTimer.append($opt);    }
 
-  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverM($imgH,$('<div>').append(langHtml.quickHelp));
+  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$('<div>').append(langHtml.quickHelp));
 
   //var $spanDragMess=$('<span>').append(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'0em','white-space':'nowrap'}).hide();
   var $spanDragMess=$('<span>').append(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();
@@ -2069,12 +2069,52 @@ var input2object=function($el){
  */
 
 
+var vendorIntroDivExtend=function($el){
+"use strict"
+  var save=function(){ 
+    resetMess();  
+    //$el.find(':text').each(function(){var tmp=$(this).val().trim(); $(this).val(tmp); });
+    //if(!entryTestWMyName($el,arrMustBeSet,arrPosNum,arrPosNumOrEmpty)) return;
+    //var o1=input2object($el);
+    var strTel=$inpTel.val().trim(); $inpTel.val(strTel); //if(strTel.length==0) {setMess('telephone number can not be empty'); return; }
+    var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
+    var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
+    var o1={tel:strTel, displayName:nameT, currency:curT};
+    var vec=[['VIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
+    var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
+    $body.append($iframeConversion);
+
+    setMess('',null,true);  
+  }
+  $el.setUp=function(){  var  $tmp=$inpTel.val(''); $inpTel.focus();  return true;  }
+  $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
+ 
+  $el=popUpExtend($el);  
+  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em'}); 
+
+  
+  var $helpPopup=$('<div>').html(langHtml.driverTextPopup.tel);
+  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$helpPopup);
+         
+  var $head=$('<h3>').append(langHtml.introHead);
+  var $pBread=$('<p>').append("Make sure to enter at least some contact info either here or in the settings.");
+  //var $pBread=$('<p>').append("A telephone number is needed for customers to contact you. You may want to use a separate phone for this.");
+  var $inpTel=$('<input type=tel>').prop({placeholder:'Tel'}).attr({myName:'tel'}).css({width:'70%', 'box-sizing':'border-box'}).keypress( function(e){ if(e.which==13) {save();return false;}} );
+  var $telDiv=$('<div>').append($inpTel,$imgH); //langHtml.Tel,': ',
+
+  var $saveButton=$('<button>').append('Continue').click(save).css({display:'block', 'margin':'1em auto'});
+  $el.append($head,$pBread,$telDiv,$saveButton).css({padding:'0.5em'}); 
+
+  return $el;
+}
+
+/*
 var vendorIntroDivExtend=function($el){
 "use strict"
   var save=function(){
     resetMess();
-    var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('telephone number can not be empty'); return; }
+    var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('email field can not be empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
     var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
     var o1={email:strEmail, displayName:nameT, currency:curT};
@@ -2093,7 +2133,7 @@ var vendorIntroDivExtend=function($el){
 
 
   var $helpPopup=$('<div>').html(langHtml.driverTextPopup.contactEmail);
-  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverM($imgH,$helpPopup);
+  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$helpPopup);
 
   var $head=$('<h3>').append(langHtml.introHead);
   var $pBread=$('<p>').append(langHtml.introBread);
@@ -2106,6 +2146,7 @@ var vendorIntroDivExtend=function($el){
 
   return $el;
 }
+*/
 
 var reporterIntroDivExtend=function($el){
 "use strict"
@@ -2130,7 +2171,7 @@ var reporterIntroDivExtend=function($el){
 
 
   var $helpPopup=$('<div>').html(langHtml.driverTextPopup.contactEmail);
-  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverM($imgH,$helpPopup);
+  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$helpPopup);
 
   var $head=$('<h3>').append(langHtml.introHead);
   var $pBread=$('<p>').append(langHtml.introBread);
@@ -2283,7 +2324,7 @@ var userSettingDivExtend=function($el){
   var $divNameIP=$('<div>').append('Name: ', $spanNameIP);
 
   var $bub=$('<div>').html("This email is not shown to the public, however it allows you to login if the Id-provider is changed.");
-  var $imgH=$imgHelp.clone();  popupHoverM($imgH,$bub);
+  var $imgH=$imgHelp.clone();  popupHoverJQ($imgH,$bub);
   var $divEmail=$('<div>').append('Contact email: ', $inpEmail, $butEmail, $imgH);
   var $divRefresh=$('<div>').append('Refetch data: ', $buttRefetch);
   var $divHead=$('<div>').append('Data from Id-provider (user info): ').css({'margin-bottom':'0.5em','font-weight':'bold'});
@@ -2293,7 +2334,7 @@ var userSettingDivExtend=function($el){
   var $divPW=$('<div>').append('Change password: ', $buttChangePW);
 
       // deleteDiv
-  var $imgH=$imgHelp.clone(); popupHoverM($imgH,$('<div>').html(langHtml.deleteBox.help));
+  var $imgH=$imgHelp.clone(); popupHoverJQ($imgH,$('<div>').html(langHtml.deleteBox.help));
   var $butDelete=$('<button>').append(langHtml.DeleteAccount).css({'margin-right':'1em'}).click(function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
   var $deleteDiv=$('<div>').append($butDelete); //,$imgH
 
@@ -2434,10 +2475,10 @@ formLoginDivExtend=function($el){
 
   var $messDiv=$('<div>').css({color:'red'});
   var $buttForgot=$('<a>').prop({href:''}).text('Forgot your password?').click(function(){  $forgottPWPop.openFunc(); return false; });
-  var $imgH=popupHoverM($imgHelp.clone(), $('<div>').html("A new password is generated and sent to the email address."));
+  var $imgH=popupHoverJQ($imgHelp.clone(), $('<div>').html("A new password is generated and sent to the email address."));
   var $divForgot=$('<div>').css({'margin-top':'1em'}).append($buttForgot, $imgH);
   var $butSendLink=$('<a>').prop({href:''}).text('Login with email link').click(sendEmail);
-  var $imgH=popupHoverM($imgHelp.clone(), $('<div>').html("An email is sent with a link which will log you in. Your password is not changed."));
+  var $imgH=popupHoverJQ($imgHelp.clone(), $('<div>').html("An email is sent with a link which will log you in. Your password is not changed."));
   var $divSendLink=$('<div>').css({'margin-top':'1em'}).append($butSendLink, $imgH);
 
   var $buttonCreateAccount=$('<button>').addClass('highStyle').append('Create an account').click(function(){
@@ -2479,8 +2520,15 @@ var loginSelectorDivExtend=function($el){
 
 
 
-  var $divHead=$('<h3>').append('Sign in / Create account, using ...').css({'text-align':'center'});
+  var $divHead=$('<h3>').append('Sign in / Create account').css({'text-align':'center'});
 
+  var emailToggleEventF=function(){
+    var now=Date.now(); if(now>timeSpecialR+1000*10) {timeSpecialR=now; nSpecialReq=0;}    nSpecialReq++;
+    //if(nSpecialReq==3) { nSpecialReq=0;boAllowEmailLogin=!boAllowEmailLogin; $divRight.toggle(boAllowEmailLogin);   }
+    if(nSpecialReq==3) { nSpecialReq=0; $divRight.toggle();   }
+  }
+  var timeSpecialR=0, nSpecialReq=0;
+  $divHead.click(emailToggleEventF);
 
 
   var cssCol={display:'inline-block','box-sizing': 'border-box',padding:'1em',flex:1}; //width:'50%',
@@ -2488,9 +2536,9 @@ var loginSelectorDivExtend=function($el){
     doHistPush({$view:$formLoginDiv});
     $formLoginDiv.setVis();
   });
-  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
-  var $divRight=$('<div>').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).append( $buttonViaEmail);
-  var $divRow=$('<div>').append($divLeft, $divRight).css({display: 'flex', 'justify-content':'space-around'});
+  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb, 'Email, name and image are used. However you can change what is shown to customers. Nothing is sent to Facebook.' ); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
+  var $divRight=$('<div>').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).append( $buttonViaEmail);        $divRight.hide();
+  var $divRow=$('<div>').append($divLeft, $divRight).css({display: 'flex', 'justify-content':'space-around'});  //
 
 
   $divHead.css({display:'block', 'margin':'1em 0em 1em 0.6em'});
@@ -2967,7 +3015,7 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
   //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $reportCommentButt=reportCommentButtExtend($('<button>')).html(langHtml.vote.writeComment+' ('+langHtml.IdProviderNeeded+')').css({'margin-right':'1em'});
   var $bub=$('<div>').html(langHtml.writeReportPopup);
-  var $imgH=$imgHelp.clone();  popupHoverM($imgH,$bub);
+  var $imgH=$imgHelp.clone();  popupHoverJQ($imgH,$bub);
 
   var $tBody=$('<tbody>'),   $table=$('<table>').append($tBody).css({'width':'100%'});//.addClass('reportTab');
 
@@ -3189,7 +3237,7 @@ var vendorInfoDivExtend=function($el){
   $el.createContainers=function(){
     for(var i=0;i<StrPropMain.length;i++){
       var strName=StrPropMain[i], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      var $imgH=''; if(strName in helpBub && Number(Prop[strName].b[bFlip.help])) { $imgH=$imgHelp.clone();   popupHoverM($imgH,helpBub[strName]); }
+      var $imgH=''; if(strName in helpBub && Number(Prop[strName].b[bFlip.help])) { $imgH=$imgHelp.clone();   popupHoverJQ($imgH,helpBub[strName]); }
 
       var strDisp,strMargRight,strWW; if(Number(Prop[strName].b[bFlip.block])) {strDisp='block'; strMargRight='0em'; strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
 
@@ -4052,7 +4100,7 @@ var mapDivExtend=function($el){
           $board.append($tile);
         }
       }
-      $board.append($glas);
+      $board.append($glasBack, $glas); // To place the $glasBack and $glas last in the $board
     }else{
     }
     zCur=1;
@@ -4093,81 +4141,116 @@ var mapDivExtend=function($el){
   // Markers
   //
 
-  $el.drawMarkers=function(){
-    $markers.each(function(i){
-      var $i=$(this), x=$i.data('x'), y=$i.data('y'), left=x*zoomFacW-pixBoardX, top=y*zoomFacW-pixBoardY;
+  var ArrMarkerT=function(){
+    var arr=[]; $.extend(arr,ArrMarkerT.tmpPrototype);
+    //$.extend(this,[]);
+    return arr;
+  }
+  ArrMarkerT.tmpPrototype={};
+  ArrMarkerT.tmpPrototype.condAddMarker=function(){
+    var $Marker=this;
+    for(var i=$Marker.length; i<nMTab;i++){
+      var $img=new MarkerT(); $img.data('ind',i);
+      $img.css({transform:'translate(-50%, -100%)', position:'absolute', 'z-index':1, position: 'absolute'});
+      $img.on('click',MarkerT.prototype.funcInfoClick);
+      if(!boTouch){
+        $img.on('mouseover',MarkerT.prototype.funcOver);
+        $img.on('mouseout',MarkerT.prototype.funcOut);
+      }
+      $Marker.push($img);
+      $glas.append($img);
+      var $divUnCertain=$('<div>').css({width:'40px',height:'40px', border:'solid 1px red', background:'pink', opacity:0.4, position:'absolute', transform:'translate(-50%, -50%)'});
+      $DivUnCertain.push($divUnCertain);
+      $glasBack.append($divUnCertain);
+    }
+  }
+  ArrMarkerT.tmpPrototype.setMarkers=function(){
+    var $Marker=this;
+    $el.hideGroupOverlay();
+    $Marker.condAddMarker();
+    for(var i=0;i<nMTab;i++){
+      var $img=$Marker[i];
+      $img.makeOneRowIconObj(i);
+      $img.data('objMarkerMultCache', null);
+      MarkerT.prototype.setImg($img);
+      $img.data({x:MTab[i].x, y:MTab[i].y, coordinatePrecisionM:MTab[i].coordinatePrecisionM});
+      $img.show(); 
+    }
+    for(var i=nMTab;i<$Marker.length;i++){ $Marker[i].hide(); }
+    $DivUnCertain.hide(); $DivUnCertain.slice(0,nMTab).show();
+  }
+  $el.setMarkers=function(){$el.$Marker.setMarkers();}
+  ArrMarkerT.tmpPrototype.hideMarkers=function(){ for(var i=0;i<this.length;i++) this[i].hide();   $DivUnCertain.hide(); }
+  ArrMarkerT.tmpPrototype.drawMarkers=function(){
+    for(var i=0;i<nMTab;i++){
+      var $i=this[i], x=$i.data('x'), y=$i.data('y'), left=x*zoomFacW-pixBoardX, top=y*zoomFacW-pixBoardY;
       $i.css({left:left,top:top});
-    });
+      var resM=$i.data('coordinatePrecisionM');
+      var lat=merProj.fromYToLat(y);
+      var resWC=resM2resWC(resM,lat);
+      var w=resWC*zoomFacW, h=resWC*zoomFacW;
+      $DivUnCertain.eq(i).css({left:left, top:top, width:w+'px', height:h+'px'});
+    };
   }
-  $el.drawMe=function(){
-    var left=$el.pWCMe.x*zoomFacW-pixBoardX, top=$el.pWCMe.y*zoomFacW-pixBoardY;    $imgCurLoc.css({left:left,top:top});
+  $el.$Marker=new ArrMarkerT();
+  var $DivUnCertain=$([]);
+  
+  
+  var MarkerT=function(){
+    $.extend(this,$('<img>'));
   }
-  var ObjMarkerOneCache=Array(maxVendor);
-  var ObjMarkerMultCache=Array(maxVendor);
-  var arrFuncOverData=[];
-  var makeOneRowIcon=function(i){
-    if(i>=nMTab) {return makeMarkerBubble('  ');}
-    var urlData;
-    var strName=colOneMark;
-    var tmp=MTab[i][strName], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-    if('setMapF' in tmpObj)  tmp=tmpObj.setMapF(i);
-    if(typeof tmp!='object'){
-      if((typeof tmp=='string' && tmp.length==0) || tmp===null){tmp='  ';}
-      return makeMarkerBubble(tmp);
-    }else return tmp;
-    //return urlData;
+  MarkerT.prototype.makeOneRowIconObj=function(i){
+    var objTmp;
+    if(i>=nMTab) objTmp=makeMarkerBubble('  ');
+    else{
+      var strName=colOneMark;
+      var tmp=MTab[i][strName], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
+      if('setMapF' in tmpObj)  tmp=tmpObj.setMapF(i);
+      if(typeof tmp!='object'){
+        if((typeof tmp=='string' && tmp.length==0) || tmp===null){tmp='  ';}
+        objTmp=makeMarkerBubble(tmp);
+      }else objTmp=tmp;
+    }
+    this.data('objMarkerOne', objTmp);
   }
-  var makeMultiRowIcon=function(i){
+  MarkerT.prototype.arrFuncOverData=[]; // Just for reducing garbage
+  MarkerT.prototype.makeMultiRowIconObj=function(i){
     if(i>=nMTab) {console.log('err');}
     var k=0;
     //for(var jSel in ColsShow){
     for(var j=0;j<ColsShow.length;j++){
       var strName=ColsShow[j], tmp, tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
       if('setMapMF' in tmpObj) {  var tmp=tmpObj.setMapMF(i);  } else tmp=MTab[i][strName];
-      if(typeof tmp=='string') { arrFuncOverData[k]=calcLabel(langHtml.label, strName)+': '+tmp; k++; }
+      if(typeof tmp=='string' || typeof tmp=='number') { this.arrFuncOverData[k]=calcLabel(langHtml.label, strName)+': '+tmp; k++; }
     }
-    arrFuncOverData.length=k;
-    var tmp=arrFuncOverData.join('\n');
+    this.arrFuncOverData.length=k;
+    var tmp=this.arrFuncOverData.join('\n');
     return makeMarkerBubble(tmp);
   }
-  var funcOver=function() {
+  MarkerT.prototype.funcOver=function() {
     var $img=$(this), i=$img.data('ind');
-    var obj; if(ObjMarkerMultCache[i]) obj=ObjMarkerMultCache[i]; else obj=makeMultiRowIcon(i);
+    var obj=$img.data('objMarkerMultCache');
+    if(!obj) { obj=MarkerT.prototype.makeMultiRowIconObj(i); $img.data('objMarkerMultCache',obj); }
     var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y, strTrans='-'+xTrans+'px, -'+yTrans+'px';
     $img.prop({src:obj.url}).css({width:'', height:'', background:'', transform:'translate('+strTrans+')', 'z-index':maxZ}); 
+    $DivUnCertain.eq(i).css({opacity:0.7});
     return false;
   }
-  var funcOut=function(){
+  MarkerT.prototype.funcOut=function(){
     var $img=$(this), i=$img.data('ind');
-    setMarker($img,ObjMarkerOneCache[i]);
-    $img.css({'z-index':markerZ[i]});
+    MarkerT.prototype.setImg($img);
+    $img.css({'z-index':maxVendor-i});
+    $DivUnCertain.eq(i).css({opacity:0.4});
   }
-  var funcInfoClick=function(){
+  MarkerT.prototype.funcInfoClick=function(){
     var i=$(this).data('ind');
     $vendorInfoDiv.setContainers(i);
     $vendorInfoDiv.setVis();
     doHistPush({$view:$vendorInfoDiv});
     return false;
   }
-  var $markers=$([]);
-  var condAddMarker=function(){
-    var $markersN;
-    for(var i=$markers.length; i<nMTab;i++){
-      var $img=$('<img>').css({position: 'absolute'}).data('ind',i);
-      if(typeof $markersN=='undefined') $markersN=$([]);    $markersN.push($img);
-    }
-    if(typeof $markersN!='undefined'){
-      $markersN.css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1});
-      $markersN.on('click',funcInfoClick);
-      if(!boTouch){
-        $markersN.on('mouseover',funcOver);
-        $markersN.on('mouseout',funcOut);
-      }
-      $markers.push($markersN);
-    }
-  }
-
-  var setMarker=function($img,obj){
+  MarkerT.prototype.setImg=function($img){
+    var obj=$img.data('objMarkerOne');
     var strScale=''
     if(typeof obj=='object' && obj.origin){
       var zT=obj.zoom; strScale='scale('+zT+')';
@@ -4183,25 +4266,11 @@ var mapDivExtend=function($el){
     if(typeof obj=='object' && obj.anchor){  var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y; strTrans='-'+xTrans+'px, -'+yTrans+'px';  }
     $img.css({transform:'translate('+strTrans+') '+strScale});
   }
-  $el.setMarkers=function(){
-    $el.hideGroupOverlay();
-    condAddMarker();
-    for(var i=0;i<nMTab;i++){
-      var objMarker=makeOneRowIcon(i);
-      ObjMarkerOneCache[i]=objMarker; ObjMarkerMultCache[i]=null;
-      var $img=$markers.eq(i);
-      setMarker($img,objMarker);
-      $img.data({x:MTab[i].x, y:MTab[i].y});
-    }
-    $glas.append($markers);
-    $markers.hide(); $markers.slice(0,nMTab).show();
-  }
-  var markerZ=Array(maxVendor); for(var i=0; i<maxVendor; i++) { markerZ[i]=maxVendor-i; } //first mark on top (highest Z)
-
-
-  $el.hideMarkers=function(){ $markers.hide();}
+  
+  
+  
   $el.hideGroupOverlay=function(){ $imgGroupOverlay.hide();}
-  //$el.showMarkers=function(){ $markers.show();}
+  //$el.showMarkers=function(){ $Marker.show();}
   var strFont="8pt Arial";
   var ctxMeas = document.createElement("canvas").getContext("2d");  ctxMeas.font = strFont;     // Create context for measuring text width
   $el.calcOverlayBounds=function(w,h,arr){
@@ -4213,7 +4282,7 @@ var mapDivExtend=function($el){
     return arr;
   }
   $el.setGroupOverlay=function(){
-    $el.hideMarkers();
+    $el.$Marker.hideMarkers();
     var zoomFac=zoomFacW; // zoomFacW zoom factor written.
 
     //var pointMerZ={x:pWCC.x*zoomFac,y:pWCC.y*zoomFac};
@@ -4268,6 +4337,10 @@ var mapDivExtend=function($el){
     //$el.drawMe();
   //}
 
+  $el.drawMe=function(){
+    var left=$el.pWCMe.x*zoomFacW-pixBoardX, top=$el.pWCMe.y*zoomFacW-pixBoardY;    $imgCurLoc.css({left:left,top:top});
+  }
+  
   var maxZ=intMax;
   $el.pWCMe={x:128,y:128};
   var pWCC={x:128,y:128};
@@ -4287,13 +4360,14 @@ var mapDivExtend=function($el){
   $glas.css({'box-sizing': 'border-box'});
   $glas.css({width:"calc(200% + 512px)",height:"calc(200% + 512px)"});
   if(boDbg) $glas.css({border:'pink solid'});
+  var $glasBack=$glas.clone();
 
   var $imgCurLoc=$('<img>').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}).prop({src:uMyMarker});
   var $imgGroupOverlay = $('<img>').css({transform:'translate(-50%, -50%)', position:'absolute'}).hide();
   $glas.append($imgCurLoc, $imgGroupOverlay);
   
   if(boDbg) $board.append($divPivotDbg);
-  $board.append($glas);
+  $board.append($glasBack, $glas);
 
   if(!boTouch){
     if(boFF) $glas[0].addEventListener("DOMMouseScroll", myMousewheel, false);
@@ -4319,7 +4393,7 @@ var mapDivExtend=function($el){
   //$el[0].addEventListener("idle", function(){ $el.storeVar(); });
   $el[0].addEventListener('idle', function(){
     if($el.is(':visible')) $el.storeVar();
-    $el.hideMarkers();
+    $el.$Marker.hideMarkers();
     $mapDiv.drawMe();
     if(window.loadTabStart) loadTabStart();
   });
@@ -4328,6 +4402,679 @@ var mapDivExtend=function($el){
   $el.css({position: 'relative',overflow:'hidden'});
   $el.$board=$board;
   return $el;
+}
+
+
+// MTab and nMTab is expected as global variables
+
+//
+// Naming conventions:
+// Prefixes:
+//   Prefixes to zoom variables: (hopefully I'm consistent)
+// zoom, zoomFac or sometimes zFac: zoomFactor (integer) of a world coordinate (see below)
+// zoomR: same as zoom but real (that is with decimals)
+// zoomLev=log2(zoomFac): 2-logaritm of zoomFactor. Function to convert back:  zoomFac=Math.pow(2,zoomLev)
+// z: "relative zoom" to the last time the tiles where laid out. Typically zoomR will be equal to z*zoom.
+//
+//   Coordinate-prefixes:
+// frame: coordinate from upper left corner of el (dom-tree resolution).
+// pWC={x:x,y:y}  (point with world coordinate):  where x resp y ∈ [0,256) regardles of zoom
+// pix={x:x,y:y}: (scaled world coordinate) pix.x=pWC.x*zFac (same for y) (for whatever zFac that is currently used)
+// brd: same as pix although with origo at the board origo (upper left coorner of the board)
+//
+
+
+// State variables:
+//   pWCC keeps the state (must be set) before laying out the tiles (calling setTile)
+//   zoomFacW: zoom factor written (when the tiles where placed)
+//   zCur, leftCur, topCur:  Quick access of the css "transform" parameter of elBoard
+//
+//   TouO: array of touches (only used on touch deviced)
+//   xavgL, yavgL: (only used with "mouse"-panning)
+//   pixBoardX, pixBoardY: (I forgotten what these are) 
+
+
+
+//pixMult=function(pixT,fac){pixT.x*=fac; pixT.y*=fac;}
+boDbgCheckered=0;
+pixMult=function(pixT,fac){return {x:pixT.x*fac, y:pixT.y*fac};}
+var mapDivExtendI=function(el){
+  var leftCurStart, topCurStart; // If leftCur resp topCur has changed relative to these at gesture end, then the 'idle'-event is fired.
+  
+  //
+  // Touch events
+  //
+
+  var handleStart=function(evt) {
+    evt.stopPropagation();
+    //evt.preventDefault(); // Allow default, to allow click-event
+    var Tou = evt.touches;
+    storeTouches(Tou);
+    if(Tou.length==1) {leftCurStart=leftCur; topCurStart=topCur;}
+  }
+
+  var TouO=[];
+  var storeTouches=function(Tou){
+    TouO=[];
+    for(var i=0; i<Tou.length; i++) { var t=Tou[i]; TouO[i]={pageX:t.pageX, pageY:t.pageY, identifier:t.identifier};}
+  }
+  var getStoredTouch=function(identifier) {
+    for (var i=0; i<TouO.length; i++) {
+      if(TouO[i].identifier == identifier) { return TouO[i]; }
+    }
+    return null;
+  }
+
+  var calcD=function(tA,tB){  var xD=tB.pageX-tA.pageX, yD=tB.pageY-tA.pageY;  return Math.sqrt(xD*xD +yD*yD);  }
+  var calcTwoTouchCenterNDist=function(Tou){
+    var tA=Tou[0], tB=Tou[1], xA=tA.pageX, xB=tB.pageX, xavg=(xA+xB)/2,     yA=tA.pageY, yB=tB.pageY, yavg=(yA+yB)/2;
+    var d=calcD(tA,tB);
+    return {x:xavg, y:yavg, d:d};
+  }
+
+  var zCur,leftCur,topCur;  // Quick access of the css "transform" parameter of elBoard
+  var panNZoom=function(Tou,boEnd){
+    var TouL=[];    for(var i=0;i<Tou.length;i++){    var touT=getStoredTouch(Tou[i].identifier); if(touT) TouL.push(touT);      }
+    var mode=TouL.length;
+    if(mode==1){
+      var xavgL=TouL[0].pageX, yavgL=TouL[0].pageY;
+      var xavg=Tou[0].pageX, yavg=Tou[0].pageY;
+      var dXScreen=xavg-xavgL;    leftCur+=dXScreen;
+      var dYScreen=yavg-yavgL;    topCur+=dYScreen;
+      boundTransformVariables();
+      elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    }else if(mode==2){
+
+      var doub=calcTwoTouchCenterNDist(Tou);
+      var doubL=calcTwoTouchCenterNDist(TouL);
+
+      var rat=doub.d/doubL.d;
+      var zL=zCur;
+      zCur=rat*zL;
+      var posEl=findPos(el), leftContainer=posEl.x, topContainer=posEl.y;
+      //var leftContainer=el.offset().left,  topContainer=el.offset().top;
+      var widthBox=el.clientWidth, heightBox=el.clientHeight;
+
+
+      var brdTilePiv=calcBrdTilePiv(doubL.x-leftContainer, doubL.y-topContainer, zL, leftCur, topCur);
+      [leftCur,topCur]=calcLeftTop(doub.x-leftContainer, doub.y-topContainer, zCur, brdTilePiv);
+
+ 
+      boundTransformVariables();
+      elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+      elDivPivotDbg.css({left:brdTilePiv.x+'px',top:brdTilePiv.y+'px'}); // little black square
+    }
+    else if(mode==0){ // boEnd
+
+      var zL=zCur;
+      var zCurLev=round(log2(zCur)); zCur=Math.pow(2,zCurLev);
+      var posEl=findPos(el), leftContainer=posEl.x, topContainer=posEl.y;
+      //var leftContainer=el.offset().left,  topContainer=el.offset().top;
+      var widthBox=el.clientWidth, heightBox=el.clientHeight;
+
+      var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zL, leftCur, topCur);
+      [leftCur,topCur]=calcLeftTop(widthBox/2, heightBox/2, zCur, brdTilePiv);
+
+      boundTransformVariables();
+      elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+
+        // Converting to pWCC
+      var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
+      var pixC={x:pixBoardX*zCur+brdTilePiv.x*zCur, y:pixBoardY*zCur+brdTilePiv.y*zCur};
+      pWCC=pixMult(pixC,1/(zCur*zoomFacW));
+
+      var zoomFacRTmp=zCur*zoomFacW, zoomLevT=round(log2(zoomFacRTmp));//, zFacNew=Math.pow(2,zoomLevT);
+      var boRefresh=el.setTile(zoomLevT);
+      if(leftCurStart!=leftCur || topCurStart!=topCur) {  el.dispatchEvent(new Event('idle'));  }
+    }
+  }
+  elDivPivotDbg=createElement('div'); elDivPivotDbg.css({position:'absolute',background:'black',width:'5px',height:'5px','z-index':5});
+  var pixBoardX, pixBoardY
+
+  var handleMove=function(evt) {
+    evt.stopPropagation();
+    evt.preventDefault(); // Prevent default, to prevent iOS-zoom
+    var Tou=evt.touches;
+    panNZoom(Tou,0);
+    storeTouches(Tou);
+  }
+  var handleEnd=function(evt) {
+    evt.stopPropagation();
+    //evt.preventDefault(); // Allow default, to allow click-event 
+    var Tou=evt.touches;
+    panNZoom(Tou,1);
+    storeTouches(Tou);
+    //return false;
+  }
+  var handleCancel=function(evt) {
+    evt.stopPropagation();
+    //evt.preventDefault(); // Allow default, to allow click-event
+    var Tou=evt.touches;
+    panNZoom(Tou,1);
+    storeTouches(Tou);
+    strMess=' C'+Tou.length;
+    setMess(strMess);
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////
+
+  //
+  // Mouse events
+  //
+  
+  var myMousewheel=function(e) {
+    //var rat; if(boFF) rat=e.detail>=0?0.5:2; else  rat=e.originalEvent.wheelDelta>=0?2:0.5;
+    var rat; if(boFF) rat=e.detail>=0?0.5:2; else  rat=e.wheelDelta>=0?2:0.5;
+    var xavg=e.pageX, yavg=e.pageY;
+
+    leftCurStart=leftCur; topCurStart=topCur;
+    var zL=zCur;
+    zCur=rat;
+    var posEl=findPos(el), leftContainer=posEl.x, topContainer=posEl.y;
+    //var leftContainer=el.offset().left,  topContainer=el.offset().top;
+    var widthBox=el.clientWidth, heightBox=el.clientHeight;
+
+
+    var brdTilePiv=calcBrdTilePiv(xavg-leftContainer, yavg-topContainer, zL, leftCur, topCur);
+    [leftCur,topCur]=calcLeftTop(xavg-leftContainer, yavg-topContainer, zCur, brdTilePiv);
+
+    boundTransformVariables();
+    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+
+      // Converting to pWCC; (might seem unnecessary, in a future version the amount of statevariables might be reduced) See comment below on state variables
+    var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
+    var pixC={x:pixBoardX*zCur+brdTilePiv.x*zCur, y:pixBoardY*zCur+brdTilePiv.y*zCur};
+    pWCC=pixMult(pixC,1/(zCur*zoomFacW));
+
+    var zoomFacRTmp=zCur*zoomFacW, zoomLevT=round(log2(zoomFacRTmp));//, zFacNew=Math.pow(2,zoomLevT);
+    var boRefresh=el.setTile(zoomLevT);
+    if(leftCurStart!=leftCur || topCurStart!=topCur) {  el.dispatchEvent(new Event('idle'));  }
+
+  }
+  var xavgL, yavgL;
+  var panF=function(e){
+    var xavg=e.pageX, yavg=e.pageY;
+    var dXScreen=xavg-xavgL;    leftCur=leftCur+dXScreen;
+    var dYScreen=yavg-yavgL;    topCur=topCur+dYScreen;
+    boundTransformVariables();
+    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    
+    setMess('topCur: '+round(topCur-dYScreen)+', dYScreen: '+round(dYScreen)+', topCur: '+round(topCur));
+    xavgL=xavg; yavgL=yavg;
+  }
+  var myMousedown=function(e){
+    var e = e || window.event; if(e.which==3) return;
+    xavgL=e.pageX; yavgL=e.pageY;
+    document.on('mousemove',myMousemove); document.on('mouseup',myMouseup);
+    elGlas.css({cursor:'move'});
+    e.preventDefault();
+    leftCurStart=leftCur;topCurStart=topCur;
+  }
+  var myMouseup=function(e){
+    panF(e);
+    document.off('mousemove',myMousemove); document.off('mouseup',myMouseup);
+    elGlas.css({cursor:''});
+    e.preventDefault();
+    boundTransformVariables();
+    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    //pixC=calcPixC();
+    pWCC=pixMult(calcPixC(),1/zoomFacW);
+    //var zFac=round(zCur)*zoomFacW, zLev=log2(zFac);
+    var zoomLevT=log2(zoomFacW);
+    var boRefresh=el.setTile(zoomLevT);
+    if(leftCurStart!=leftCur || topCurStart!=topCur) {  el.dispatchEvent(new Event('idle'));  }
+
+  }
+  var myMousemove=function(e){
+    panF(e);
+    e.preventDefault();
+  };
+
+
+  //
+  // Handy functions
+  //
+
+  var calcBrdTilePiv=function(framePivX, framePivY, z, left, top){
+    var brdTilePivX=framePivX/z  -left/z ;
+    var brdTilePivY=framePivY/z  -top/z ;
+    return {x:brdTilePivX,y:brdTilePivY};
+  }
+
+  var calcLeftTop=function(framePivX, framePivY, z, brdTilePiv){
+    var left=framePivX  -brdTilePiv.x*z ;
+    var top=framePivY  -brdTilePiv.y*z ;
+    return [left,top];
+  }
+
+
+  var calcPixC=function(){
+    var widthBox=el.clientWidth, heightBox=el.clientHeight;
+    var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
+    var pixCN={x:pixBoardX+brdTilePiv.x, y:pixBoardY+brdTilePiv.y};
+    return pixCN;
+  }
+
+  var boundTransformVariables=function(){ // Bounds zCur, leftCur and topCur (so that the world doesn't gets dragged out of frame or gets zoomed unnecessary small) (should perhaps be a property of elBoard)
+    var zL=zCur;
+    var zoomFac=zCur*zoomFacW;
+    var widthBox=el.clientWidth, heightBox=el.clientHeight, minDim=Math.min(widthBox,heightBox);
+    var zoomFacWorld=minDim/WCMAX;  // zoomFacWorld: The zoom factor that will make the whole world fit into el
+    var zoomLevCenter=Math.floor(log2(zoomFacWorld)), zoomFacCenter=Math.pow(2,zoomLevCenter);  // Smallest allowed zoom; "The world" will be centered if below this level
+
+    var brdTilePiv=calcBrdTilePiv(0, 0, zCur, leftCur, topCur);
+    var pixFrameNorth=pixBoardY +brdTilePiv.y,   pixFrameSouth=pixFrameNorth+heightBox/zCur;
+
+    //var brdTilePivY=-topCur/zCur ;
+    //var pixFrameNorth=pixBoardY +brdTilePivY,   pixFrameSouth=pixFrameNorth+heightBox/zCur;
+
+    var zCurN=zCur,leftCurN=leftCur,topCurN=topCur;
+    var boBound=0;
+    if(zoomFac<=zoomFacWorld) {
+      if(zoomFac<=zoomFacCenter){
+        zoomFac=zoomFacCenter; zCurN=zoomFac/zoomFacW;
+      }
+      boBound=1;
+
+      leftCurN=-WCMID*zoomFac +pixBoardX*zCurN +widthBox/2;
+      topCurN=-WCMID*zoomFac +pixBoardY*zCurN  +heightBox/2;
+    }else {
+      var boSpaceAbove=pixFrameNorth<0;
+      var boSpaceBelow=pixFrameSouth>WCMAX*zoomFacW;
+      if(boSpaceAbove) {
+        boBound=1;
+
+        topCurN=pixBoardY*zCur +(zCur-1)*heightBox/2;
+        topCurN=pixBoardY*zCur;
+      }
+      else if(boSpaceBelow) {
+        boBound=1;
+
+        topCurN=-WCMAX*zoomFac +pixBoardY*zCur +heightBox  +(zCur-1)*heightBox/2;
+        topCurN=-WCMAX*zoomFac +pixBoardY*zCur +heightBox;
+      }
+    }
+    zCur=zCurN; leftCur=round(leftCurN); topCur=round(topCurN);
+  }
+
+  el.setTile=function(zoomLev){
+    var [widthBox, heightBox]=el.getVPSize();
+
+    var boRefresh=0;
+
+    var zoomFac=Math.pow(2,zoomLev);
+    var pixC=pixMult(pWCC,zoomFac);
+    var pixFrameX=pixC.x-widthBox/2, iTileRFirst=pixFrameX/TILESIZE, iTileFirst=Math.floor(iTileRFirst);  leftCur=-(iTileRFirst-iTileFirst)*TILESIZE;
+    var pixFrameY=pixC.y-heightBox/2, jTileRFirst=pixFrameY/TILESIZE, jTileFirst=Math.floor(jTileRFirst); topCur=-(jTileRFirst-jTileFirst)*TILESIZE;
+    leftCur=round(leftCur); topCur=round(topCur);
+    pixBoardX=pixFrameX+leftCur; pixBoardY=pixFrameY+topCur;
+      var nTileX=Math.ceil(widthBox/TILESIZE)+1, nTileY=Math.ceil(heightBox/TILESIZE)+1;
+
+    if(iTileFirst!=iTileFirstLast || jTileFirst!=jTileFirstLast || zoomLev!=zoomLevLast || drLev!=drLevLast){
+      boRefresh=1; iTileFirstLast=iTileFirst; jTileFirstLast=jTileFirst; zoomLevLast=zoomLev; drLevLast=drLev;}
+    zoomFacW=zoomFac;
+    if(boRefresh){
+      var zoomLevPlusDRLev=zoomLev+drLev;
+      var elTileTmp=elBoard.childNodes;
+      //elTileTmp.forEach(function(el){if(el.nodeName=='IMG'){ TileStack.push(el); el.remove();} });
+      for(var i=elTileTmp.length-1;i>=0;i--){var elA=elTileTmp.item(i); if(elA.nodeName=='IMG'){ TileStack.push(elA); elA.src=''; elA.remove();} } 
+      //TileStack.concat(elTileTmp);
+      var iTileZ=iTileFirst, jTileZ=jTileFirst;
+      for(var i=0;i<nTileX;i++){
+        var iTile=iTileZ+i, left=i*TILESIZE;
+        for(var j=0;j<nTileY;j++){
+          var jTile=jTileZ+j, top=j*TILESIZE;
+          [iTile]=normalizeAng(iTile, zoomFac/2*dr, zoomFac*dr);
+          var boBlue=0, [,nCorrectionY]=normalizeAng(jTile, zoomFac/2*dr, zoomFac*dr);
+
+          var wTmp;
+          if(nCorrectionY<0) wTmp=uImageFolder+'northPole.png';
+          else if(nCorrectionY>0) wTmp=uImageFolder+'southPole.png';
+          else {
+            if(zoomLevPlusDRLev>=0) wTmp=uMapSourceDir+'/'+zoomLevPlusDRLev+'/'+iTile+'/'+jTile+'.png';
+            else wTmp=uImageFolder+'mapm'+(-zoomLevPlusDRLev)+'.png';
+            //else if(zoomLev==-1) wTmp='mapm1.png';
+            //else if(zoomLev==-2) wTmp='mapm2.png';
+            //else if(zoomLev==-3) wTmp='mapm3.png';
+            if(boDbgCheckered) { 
+              var byte0=zoomFac%8, byte1=zoomFac>>8; 
+              var boIOddOpac=iTile%(2*byte1)>=byte1, boJOddOpac=jTile%(2*byte1)>=byte1, floatOpacity=0.7;  if(byte1 &&  (boIOddOpac+boJOddOpac)%2) floatOpacity=0.4; 
+              wTmp='/lib/image/'+(zoomLevPlusDRLev%8)+'.png';
+            }
+          }
+          var elTile; if(TileStack.length) elTile=TileStack.pop(); else { elTile=createElement('img').css({position:'absolute',opacity:0.7});  } //,border:'solid 1px grey'
+          elTile.src=wTmp; elTile.css({left:left+'px',top:top+'px', 'transform-origin':'left top', transform:'scale('+1/dr+')'});
+          if(boDbgCheckered) elTile.css({opacity:floatOpacity});
+          elBoard.append(elTile);
+        }
+      }
+      elBoard.appendChildren(elGlasBack, elGlas); // To place the elGlasBack and elGlas last in the elBoard
+    }else{
+    }
+    zCur=1;
+    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    return boRefresh;
+  }
+
+
+  el.setCentNMe=function(latLng){
+    if(window.boVideo) latLng=latLngDebug;
+    var tmp=el.pWCMe=merProj.fromLatLngToPoint(latLng);   pWCC={x:tmp.x, y:tmp.y};
+  }
+  el.getMapStatus=function(){
+    //if(!el.storedPWCC || !el.storedZoom || !el.storedVPSize) el.storeVar();
+    //return {pC:el.storedPWCC, zoom:el.storedZoom, VPSize:el.storedVPSize};
+    if(!el.storedVPSize) el.storeVar();
+    return {pC:pWCC, zoom:log2(zoomFacW), VPSize:el.storedVPSize};
+  }
+  el.getPWCC=function(){
+    //if(!el.storedPWCC) el.storedPWCC=pWCC;    return el.storedPWCC;
+    return pWCC;
+  }
+  el.storeVar=function(){    // Store values for times when the map is not visible.
+    //el.storedPWCC=pWCC;
+    //el.storedZoom=zoomFacW;
+    el.storedVPSize=[Number(String(el.clientWidth)), Number(String(el.clientHeight))];
+  }
+  el.set1=function(zoomLevel, latLngFirst){
+    el.setCentNMe(latLngFirst);
+  }
+  el.getVPSize=function(){
+    //if(el.is(':visible')) el.storedVPSize=[Number(String(el.clientWidth)), Number(String(el.clientHeight))];
+    if(isVisible(el)) el.storedVPSize=[Number(String(el.clientWidth)), Number(String(el.clientHeight))];
+    return el.storedVPSize;
+  }
+  
+  
+  //
+  // Markers
+  //
+
+  var ArrMarkerT=function(){
+    var arr=[]; extend(arr,ArrMarkerT.tmpPrototype);
+    return arr;
+  }
+  ArrMarkerT.tmpPrototype={};
+  ArrMarkerT.tmpPrototype.condAddMarker=function(){
+    var arrMarker=this;
+    for(var i=this.length; i<nMTab;i++){
+      var elImg=new MarkerT(); elImg.dataInd=i;
+      elImg.css({transform:'translate(-50%, -100%)', position:'absolute', 'z-index':1, position: 'absolute'});
+      elImg.on('click',MarkerT.tmpPrototype.funcInfoClick);
+      if(!boTouch){
+        elImg.on('mouseover',MarkerT.tmpPrototype.funcOver);
+        elImg.on('mouseout',MarkerT.tmpPrototype.funcOut);
+      }
+      this.push(elImg);
+      elGlas.append(elImg);
+      var elDivUnCertain=createElement('div').css({width:'40px',height:'40px', border:'solid 1px red', background:'pink', opacity:0.4, position:'absolute', transform:'translate(-50%, -50%)'});
+      arrDivUnCertain.push(elDivUnCertain);
+      elGlasBack.append(elDivUnCertain);
+    }
+  }
+  ArrMarkerT.tmpPrototype.setMarkers=function(){
+    el.hideGroupOverlay();
+    this.condAddMarker();
+    for(var i=0;i<nMTab;i++){
+      var elImg=this[i];
+      elImg.makeOneRowIconObj(i);
+      elImg.dataObjMarkerMultCache=null;
+      MarkerT.tmpPrototype.setImg(elImg);
+      elImg.dataX=MTab[i].x; elImg.dataY=MTab[i].y; elImg.dataCoordinatePrecisionM=MTab[i].coordinatePrecisionM;
+      elImg.style.display=''; 
+      arrDivUnCertain[i].style.display='';
+    }
+    for(var i=nMTab;i<this.length;i++){
+      this[i].style.display='none';
+      arrDivUnCertain[i].style.display='none';
+    }
+     
+  }
+  el.setMarkers=function(){el.arrMarker.setMarkers();}
+  el.drawMarkers=function(){el.arrMarker.drawMarkers();}
+  ArrMarkerT.tmpPrototype.hideMarkers=function(){ for(var i=0;i<this.length;i++) {this[i].style.display='none';   arrDivUnCertain[i].style.display='none';} }
+  ArrMarkerT.tmpPrototype.drawMarkers=function(){
+    for(var i=0;i<nMTab;i++){
+      var elImg=this[i], x=elImg.dataX, y=elImg.dataY, left=x*zoomFacW-pixBoardX, top=y*zoomFacW-pixBoardY;
+      elImg.css({left:left+'px',top:top+'px'});
+      var resM=elImg.dataCoordinatePrecisionM;
+      var lat=merProj.fromYToLat(y);
+      var resWC=resM2resWC(resM,lat);
+      var w=resWC*zoomFacW, h=resWC*zoomFacW;
+      arrDivUnCertain[i].css({left:left+'px', top:top+'px', width:w+'px', height:h+'px'});
+    };
+  }
+  el.arrMarker=new ArrMarkerT();
+  var arrDivUnCertain=[];
+  
+  
+  var MarkerT=function(){
+    var elImg=createElement('img');
+    extend(elImg, MarkerT.tmpPrototype);
+    return elImg;
+  }
+  MarkerT.tmpPrototype={};
+  MarkerT.tmpPrototype.makeOneRowIconObj=function(i){
+    var objTmp;
+    if(i>=nMTab) objTmp=makeMarkerBubble('  ');
+    else{
+      var strName=colOneMark;
+      var tmp=MTab[i][strName], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
+      if('setMapF' in tmpObj)  tmp=tmpObj.setMapF(i);
+      if(typeof tmp!='object'){
+        if((typeof tmp=='string' && tmp.length==0) || tmp===null){tmp='  ';}
+        objTmp=makeMarkerBubble(tmp);
+      }else objTmp=tmp;
+    }
+    this.dataObjMarkerOne=objTmp;
+  }
+  MarkerT.tmpPrototype.arrFuncOverData=[]; // Just for reducing garbage
+  MarkerT.tmpPrototype.makeMultiRowIconObj=function(i){
+    if(i>=nMTab) {console.log('err');}
+    var k=0;
+    //for(var jSel in ColsShow){
+    for(var j=0;j<ColsShow.length;j++){
+      var strName=ColsShow[j], tmp, tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
+      if('setMapMF' in tmpObj) {  var tmp=tmpObj.setMapMF(i);  } else tmp=MTab[i][strName];
+      if(typeof tmp=='string' || typeof tmp=='number') { this.arrFuncOverData[k]=calcLabel(langHtml.label, strName)+': '+tmp; k++; }
+    }
+    this.arrFuncOverData.length=k;
+    var tmp=this.arrFuncOverData.join('\n');
+    return makeMarkerBubble(tmp);
+  }
+  MarkerT.tmpPrototype.funcOver=function() {
+    var elImg=this, i=elImg.dataInd;
+    var obj=elImg.dataObjMarkerMultCache;
+    if(!obj) { obj=MarkerT.tmpPrototype.makeMultiRowIconObj(i); elImg.dataObjMarkerMultCache=obj; }
+    var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y, strTrans='-'+xTrans+'px, -'+yTrans+'px';
+    elImg.src=obj.url; elImg.css({width:'', height:'', background:'', transform:'translate('+strTrans+')', 'z-index':maxZ}); 
+    arrDivUnCertain[i].css({opacity:0.7});
+    return false;
+  }
+  MarkerT.tmpPrototype.funcOut=function(){
+    var elImg=this, i=elImg.dataInd;
+    MarkerT.tmpPrototype.setImg(elImg);
+    elImg.css({'z-index':maxVendor-i});
+    arrDivUnCertain[i].css({opacity:0.4});
+  }
+  MarkerT.tmpPrototype.funcInfoClick=function(){
+    var i=this.dataInd;
+    $vendorInfoDiv.setContainers(i);
+    $vendorInfoDiv.setVis();
+    doHistPush({$view:$vendorInfoDiv});
+    return false;
+  }
+  MarkerT.tmpPrototype.setImg=function(elImg){
+    var obj=elImg.dataObjMarkerOne;
+    var strScale=''
+    if(typeof obj=='object' && obj.origin){
+      var zT=obj.zoom; strScale='scale('+zT+')';
+      var wSc=obj.size.width,  hSc=obj.size.height;
+      var lef=-obj.origin.x, to=-obj.origin.y;
+      elImg.src=uOnePixTransparent; elImg.css({width:wSc+'px', height:hSc+'px', background:'url('+obj.url+') '+lef+'px '+to+'px '});
+    } else {
+      var urlT;
+      if(typeof obj=='object') urlT=obj.url; else if(typeof obj=='string') urlT=obj;
+      elImg.src=urlT; elImg.css({width:'', height:''});
+    }
+    var strTrans='-50%, -100%';
+    if(typeof obj=='object' && obj.anchor){  var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y; strTrans='-'+xTrans+'px, -'+yTrans+'px';  }
+    elImg.css({transform:'translate('+strTrans+') '+strScale});
+  }
+  
+  
+  
+  el.hideGroupOverlay=function(){ elImgGroupOverlay.style.display='none';}
+  //el.showMarkers=function(){ arrMarker.style.display='';}
+  var strFont="8pt Arial";
+  var ctxMeas = document.createElement("canvas").getContext("2d");  ctxMeas.font = strFont;     // Create context for measuring text width
+  el.calcOverlayBounds=function(w,h,arr){
+    if(typeof arr=='undefined') arr=Array(2);
+    arr[0]=w/2; arr[1]=h/2;
+    arr[0]=2*w; arr[1]=2*h;
+    //arr[0]=200+w; arr[1]=200+h;
+    arr[0]=w; arr[1]=h;
+    return arr;
+  }
+  el.setGroupOverlay=function(MGroupTab){
+    el.MGroupTab=MGroupTab;
+    el.arrMarker.hideMarkers();
+    var zoomFac=zoomFacW; // zoomFacW zoom factor written.
+
+    //var pointMerZ={x:pWCC.x*zoomFac,y:pWCC.y*zoomFac};
+    //var pWCC={x:pixC.x/zoomFac,y:pixC.y/zoomFac};
+    var pixC=pixMult(pWCC,zoomFac);
+    var [widthBox, heightBox]=el.storedVPSize;
+
+
+    var arrT=el.calcOverlayBounds(widthBox,heightBox); var w=arrT[0], h=arrT[1];
+    var canvas = document.createElement("canvas"), ctx = canvas.getContext("2d");
+
+    //var xWCL=pWCC.x-w/2/zoomFac, xWCH=pWCC.x+w/2/zoomFac, yWCL=pWCC.y-h/2/zoomFac, yWCH=pWCC.y+h/2/zoomFac;
+    //var xL=pixC.x-w/2, xH=pixC.x+w/2, yL=pixC.y-h/2, yH=pixC.y+h/2;
+    //var pWCSW = {x:xMerL, y:yMerH}, pWCNE = {x:xMerH, y:yMerL};
+    //var latLngSW=merProj.fromPointToLatLng(pWCSW,true), latLngNE=merProj.fromPointToLatLng(pWCNE,true);
+    //elImgGroupOverlay.bounds_=[latLngSW, latLngNE];
+    //elImgGroupOverlay.boundsDim_=[w,h];
+    //elImgGroupOverlay.css({left:xL,top:yL});
+    //elImgGroupOverlay.css({width:w,height:h});
+
+    canvas.width=w;   canvas.height=h;
+    var wH=w/2, hH=h/2;
+    //var pointXMin=pointMerZ.x-wH, pointXMax=pointMerZ.x+wH, pointYMin=pointMerZ.y-hH, pointYMax=pointMerZ.y+hH;
+    //pointXMin=Math.round(pointXMin/xDiv)*xDiv; pointXMax=Math.round(pointXMax/xDiv)*xDiv; pointYMin=Math.round(pointYMin/yDiv)*yDiv; pointYMax=Math.round(pointYMax/yDiv)*yDiv;
+
+
+    var lenMGroupTab=el.MGroupTab.length;
+    for(var i = 0; i < lenMGroupTab; i++) {
+      //var tmpPoint = new google.maps.Point(MGroupTab[i][0], MGroupTab[i][1]);
+      var xZ=el.MGroupTab[i][0]*zoomFac, yZ=el.MGroupTab[i][1]*zoomFac;
+      var nD=el.MGroupTab[i][2], str=nD+'';
+      var cx=xZ-pixC.x+wH, cy=yZ-pixC.y+hH;
+      var widthText=ctxMeas.measureText(str).width;
+      var widthBox=widthText+4, heightBox=10,  widthBoxHalf=widthBox/2, heightBoxHalf=heightBox/2,  wTH=widthBox/2, hTH=heightBox/2;
+
+      ctx.beginPath(); ctx.moveTo(cx-wTH, cy-hTH); ctx.lineTo(cx+wTH,cy-hTH);  ctx.lineTo(cx+wTH, cy+hTH); ctx.lineTo(cx-wTH, cy+hTH);   ctx.closePath();   ctx.fillStyle="#FF7777"; ctx.fill();
+      ctx.fillStyle = "black";     ctx.fillText(str, cx-widthText/2, cy+heightBoxHalf-1 );    // Write text
+    }
+
+    elImgGroupOverlay.src=canvas.toDataURL("image/png");//.css({background:'green'});
+    elImgGroupOverlay.style.display='';
+  }
+  el.drawGroupOverlay=function(){
+    //var pixC=pixMult(pWCC,zoomFacW);
+    //var arrT=el.calcOverlayBounds(el.width(),el.height()); var w=arrT[0], h=arrT[1];
+    //var xL=pixC.x-w/2, xH=pixC.x+w/2, yL=pixC.y-h/2, yH=pixC.y+h/2;
+    var left=pWCC.x*zoomFacW-pixBoardX, top=pWCC.y*zoomFacW-pixBoardY;
+    elImgGroupOverlay.css({left:left+'px', top:top+'px'});
+  }
+  //el.drawMarkersW=function(){
+    //if(nMTab) el.drawMarkers(); else {el.setGroupOverlay(); el.drawGroupOverlay(); }
+    //el.drawMe();
+  //}
+
+  el.drawMe=function(){
+    var left=el.pWCMe.x*zoomFacW-pixBoardX, top=el.pWCMe.y*zoomFacW-pixBoardY;    elImgCurLoc.css({left:left+'px', top:top+'px'});
+  }
+  
+  var maxZ=intMax;
+  el.pWCMe={x:128,y:128};
+  var pWCC={x:128,y:128};
+  var iTileFirstLast=-1, jTileFirstLast=-1, zoomLevLast=-20, drLevLast=-20;
+  var TileStack=[];
+  var arrInd=[];
+  var elBoard=createElement('div').css({position:'absolute','box-sizing': 'border-box'});
+  
+  //elBoard.css({width:2*256,height:2*256}); //,border:'solid 3px red' ,'zoom':0.5
+  elBoard.css({width:'100%',height:'100%'}); //,border:'solid 3px red' ,'zoom':0.5
+  elBoard.css({'transform-origin':'left top'}); //,border:'solid 3px red' ,'zoom':0.5
+  //elBoard.css({width:50,height:50}); //,border:'solid 3px red' ,'zoom':0.5
+  //var elPinDiv=createElement('div').css({position:'relative', width:'100%',height:'100%'});
+
+  elGlas=createElement('div').css({position:'absolute', top:0, left:0, width:'512',height:'512'});
+  //elGlas=createElement('div').css({position:'absolute', top:0, left:0, width:"calc(100% + 256px)",height:"calc(100% + 256px)"});
+  elGlas.css({'box-sizing': 'border-box'});
+  elGlas.css({width:"calc(200% + 512px)",height:"calc(200% + 512px)"});
+  if(boDbg) elGlas.css({border:'pink solid'});
+  var elGlasBack=elGlas.cloneNode(true);
+
+  var elImgCurLoc=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}); elImgCurLoc.src=uMyMarker;
+  var elImgGroupOverlay = createElement('img').css({transform:'translate(-50%, -50%)', position:'absolute', display:'none'});
+  elGlas.appendChildren(elImgCurLoc, elImgGroupOverlay);
+  
+  if(boDbg) elBoard.append(elDivPivotDbg);
+  elBoard.appendChildren(elGlasBack, elGlas);
+
+  if(!boTouch){
+    if(boFF) elGlas.on("DOMMouseScroll", myMousewheel, false);
+    else {
+      //elGlas.bind('mousewheel', myMousewheel);
+      elGlas.on("mousewheel", myMousewheel, false);
+    }
+    elGlas.on('mousedown',myMousedown);
+  }
+
+
+  elGlas.on("touchstart", handleStart, false);
+  elGlas.on("touchend", handleEnd, false);
+  elGlas.on("touchcancel", handleCancel, false);
+  //elGlas.on("touchleave", handleEnd, false);
+  elGlas.on("touchmove", handleMove, false);
+  
+  
+  el.on("myResize", function(){
+    el.storeVar();
+  });
+  //el.on("idle", function(){ el.storeVar(); });
+  el.on('idle', function(){
+    if(isVisible(el)) el.storeVar();
+    el.arrMarker.hideMarkers();
+    el.drawMe();
+    if(window.loadTabStart) loadTabStart();
+  });
+
+  el.append(elBoard);
+  el.css({position: 'relative',overflow:'hidden'});
+  el.elBoard=elBoard;
+  return el;
+}
+
+  // JQuery wrapper
+var mapDivExtend=function($el){
+  $el.toString=function(){return 'mapDiv';}
+  mapDivExtendI($el[0]);
+  $el.setMarkers=$el[0].setMarkers; 
+  $el.drawMarkers=$el[0].drawMarkers; 
+  $el.setGroupOverlay=$el[0].setGroupOverlay; 
+  $el.drawGroupOverlay=$el[0].drawGroupOverlay; 
+  $el.drawMe=$el[0].drawMe;
+  $el.set1=$el[0].set1; 
+  $el.setTile=$el[0].setTile; 
+  $el.setCentNMe=$el[0].setCentNMe; 
+  $el.getMapStatus=$el[0].getMapStatus; 
+  $el.getPWCC=$el[0].getPWCC; 
+  return $el
 }
 
 
@@ -4360,7 +5107,7 @@ timeStampButtExtend=function($el,colName){
   $el.addClass('smallButt');
   $el.setStat();
   var $bub=$('<div>').html(langHtml.tsPopup);
-  popupHoverM($el,$bub);
+  popupHoverJQ($el,$bub);
   return $el;
 }
 
@@ -4382,7 +5129,7 @@ var markSelectorDivExtend=function($el){
     for(var i=0;i<StrPropMain.length;i++){
       var strName=StrPropMain[i];
       var $rb=$('<input>').prop({"type":"radio",name:'markSel'}).val(strName);
-      var $imgH=''; if(strName in helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverM($imgH,helpBub[strName]);  }
+      var $imgH=''; if(strName in helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverJQ($imgH,helpBub[strName]);  }
       var $tdL=$('<td>').append(calcLabel(langHtml.label, strName),' ',$imgH), $tdRB=$('<td>').append($rb);//, $tdIM=$('<td>').append($imgH);
       var $r=$('<tr>').append($tdL,$tdRB).attr({name:strName});
       $table.append($r);
@@ -4454,7 +5201,7 @@ var columnSelectorDivExtend=function($el){
     for(var i=0;i<StrPropMain.length;i++){
       var strName=StrPropMain[i];
       var $cb=$('<input>').prop({"type":"checkbox"}).val(strName);
-      var $imgH=''; if(strName in helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverM($imgH,helpBub[strName]);  }
+      var $imgH=''; if(strName in helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverJQ($imgH,helpBub[strName]);  }
       var $tdL=$('<td>').append(calcLabel(langHtml.label, strName),' ',$imgH), $tdCB=$('<td>').append($cb);
       var $r=$('<tr>').append($tdL,$tdCB).attr({name:strName});
       $table.append($r);
@@ -4703,7 +5450,7 @@ var tHeadLabelExtend=function($el){
     for(var i=0;i<ColsTmp.length;i++){
       var strName=ColsTmp[i], jtmp=colsFlip[strName];
       var canvas=headerCanvas[strName], $div=$('<div>').append(canvas);
-      var $imgH=''; if(strName in helpBub) { var $imgH=$imgHelp.clone();   popupHoverM($imgH,helpBub[strName]); }
+      var $imgH=''; if(strName in helpBub) { var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,helpBub[strName]); }
       var $imgSort=$('<img data-type=sort>');
       var $h=$("<th>").append($div,$imgH,$imgSort).addClass('unselectable').attr('name',strName);
       if(jtmp>0) $h.click(thClick).css({cursor:'pointer'});
@@ -5072,10 +5819,11 @@ var getHistRet=function(data){
   var zoomLevel;  if('zoom' in data) zoomLevel=data.zoom;
   var HistPHP=data.Hist||[];
   if('NVendor' in data) $filterInfoSpan.setNVendor(data.NVendor);
-  $mapDiv.MGroupTab=data.groupTab||[];
+  //$mapDiv.MGroupTab=data.groupTab||[];
+  var MGroupTab=data.groupTab||[];
 
 
-  var boGroupTmp=Boolean($mapDiv.MGroupTab.length);
+  var boGroupTmp=Boolean(MGroupTab.length);
   $tableDiv.$toManyMess.toggle(boGroupTmp);
   $tableFoot.$buttShowSelect.toggle(!boGroupTmp);
   $tableButton.prop({disabled:boGroupTmp});  $tableButton.children('img').css({opacity:boGroupTmp?0.4:1});
@@ -5093,15 +5841,15 @@ var getHistRet=function(data){
     else{
       if(boFirstLoadTab) {
         google.maps.event.addListenerOnce($mapDiv.map, 'bounds_changed', function(){
-          $mapDiv.setGroupOverlay();  }); // Need to wait, since get_bounds will be called within $mapDiv.setGroupOverlay();
-      }else{ $mapDiv.setGroupOverlay();  }
+          $mapDiv.setGroupOverlay(MGroupTab);  }); // Need to wait, since get_bounds will be called within $mapDiv.setGroupOverlay();
+      }else{ $mapDiv.setGroupOverlay(MGroupTab);  }
     }
   }else{
     if(boFirstLoadTab) {
       $mapDiv.set1(zoomLevel, latLngFirstTmp);
       var boRefresh=$mapDiv.setTile(zoomLevel);
     }
-    if(nMTab) {$mapDiv.setMarkers(); $mapDiv.drawMarkers();} else {$mapDiv.setGroupOverlay(); $mapDiv.drawGroupOverlay(); }
+    if(nMTab) {$mapDiv.setMarkers(); $mapDiv.drawMarkers();} else {$mapDiv.setGroupOverlay(MGroupTab); $mapDiv.drawGroupOverlay(); }
     $mapDiv.drawMe();
   }
 
@@ -5342,7 +6090,7 @@ var teamDivExtend=function($el){
   var $hList=$('<div>').html('A list of drivers who wants to belong to your team. Mark those who you approve.');
 
   var $hImg0=$imgHelp.clone(), $hImg1=$imgHelp.clone(), $hImg2=$imgHelp.clone(); $hImg0.add($hImg1).add($hImg2).css({'margin-left':'1em'});
-  popupHoverM($hImg0,$hId);   popupHoverM($hImg1,$hLink);   popupHoverM($hImg2,$hList);
+  popupHoverJQ($hImg0,$hId);   popupHoverJQ($hImg1,$hLink);   popupHoverJQ($hImg2,$hList);
 
 
 
@@ -5464,17 +6212,17 @@ var moreDivExtend=function($el){
   $iframeLike.css({'float':'right',clear:'both'});
   //$iframeLike.css({display:'block'});
 
-  //var $hovWhyIsFBNeeded=$hovHelp.clone().text(langHtml.WhyIsFBNeededQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.WhyIsFBNeededA);     popupHoverM(//$hovWhyIsFBNeeded,$bub,15000);
+  //var $hovWhyIsFBNeeded=$hovHelp.clone().text(langHtml.WhyIsFBNeededQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.WhyIsFBNeededA);     popupHoverJQ(//$hovWhyIsFBNeeded,$bub,15000);
   //var $NothingIsWrittenToYourFBFlow=$('<div>').append(langHtml.NothingIsWrittenToYourFBFlow);
   //var $YouCanUseCustomImage=$('<div>').append(langHtml.YouCanUseCustomImage);
-  //var $YouCanDeleteYourAccount=$('<div>').append(langHtml.YouCanDeleteYourAccount);
+  var $NoteYouCanDeleteYourAccount=$('<div>').append(langHtml.NoteYouCanDeleteYourAccount);
   //var $FBToPreventMultipleAccounts=$('<div>').append(langHtml.FBToPreventMultipleAccounts);
   //var $aPrivacyPolicy=$('<a>').prop({href:'https://closeby.market/Privacy_policy_2016-Oct-12'}).append("Privacy policy 2016-Oct-12");
   //var $aDisclaimer=$('<a>').prop({href:'https://closeby.market/Disclaimer_2016-Oct-12'}).append("Disclaimer 2016-Oct-12").css({display:'block'});
   var $aMoreAboutWhyAnIdPIsUsed=$('<a>').prop({href:'https://closeby.market/WhyIsAnIdPUsed'}).append(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
 
   //var $opt=$([]).push($pWiki, $langSpan, $buttLoginVendor, $buttLoginTeam, $teamApprovedMess);
-  var $rows=$([]).push($divOrdinal, $loginSelectorDiv, $pWiki, $buttLoginTeam, $teamApprovedMess);  // $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanUseCustomImage, $YouCanDeleteYourAccount, $langSpan
+  var $rows=$([]).push($divOrdinal, $loginSelectorDiv, $NoteYouCanDeleteYourAccount, $pWiki, $buttLoginTeam, $teamApprovedMess);  // $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanUseCustomImage, , $langSpan, $NoteYouCanDeleteYourAccount
   var $topDivA=$('<div>').append($iframeLike).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,  , $aMoreAboutWhyAnIdPIsUsed
   $rows.css({'margin':'1em 0em 1em 0.6em'});
   $el.append($topDivA,$rows);
@@ -5491,8 +6239,6 @@ var moreFootExtend=function($el){
 
 
 
-
-
 /********************************************************************************************************************
  ********************************************************************************************************************/
 
@@ -5501,6 +6247,7 @@ var moreFootExtend=function($el){
 setUp1=function(){
   emptyObj={}
 
+  elHtml=document.documentElement;  elBody=document.body
   $body=$('body');  $html=$('html');
   $bodyNHtml=$body.add($html);
   //$bodyNHtml=$body;
@@ -5511,7 +6258,6 @@ setUp1=function(){
   $window=$(window);
 
   browser=getBrowser();
-
   boTouch = Boolean('ontouchstart' in document.documentElement);  //boTouch=1;
 
   var ua=navigator.userAgent, uaLC = ua.toLowerCase(); //alert(ua);
@@ -5563,6 +6309,16 @@ setUp1=function(){
   drLev=log2(dr);
   drLev=Math.floor(drLev); //drLev=0;
   dr=Math.pow(2,drLev);
+
+  //if(typeof URLSearchParams!='undefined') {
+    //searchParams = new URLSearchParams(window.location.search);
+    //window.boEmulator=searchParams.get('boEmulator');    window.startFilter=searchParams.get('idTeam');
+  //} else {
+    //console.log('This browser does not support URLSearchParams');
+    //window.boEmulator=null;    window.startFilter=null;
+  //}
+  var strHash=window.location.hash||"&",  params=parseQS(strHash.substring(1));
+  window.boEmulator=params.boEmulator||null;   window.startFilter=params.idTeam||null;   window.boVideo=params.boVideo||null;
 
   if(boIOS  || boIE) strBackSymbol='◄'; else strBackSymbol='◀';
 
@@ -5939,7 +6695,7 @@ var setUp2=function(){
   //$vendorButton=$('<button>').append('&equiv;');
   $quickDiv=quickDivExtend($('<div>'));
   $payButton=payButtonExtend($('<button>').append(langHtml.vendorPay.head));
-  $payDiv=payDivExtend($('<div>').append(langHtml.vendorPay.div)).css({flex:'1 1 0', overflow:'auto'});
+  $payDiv={};//payDivExtend($('<div>').append(langHtml.vendorPay.div)).css({flex:'1 1 0', overflow:'auto'});
   $payFoot=payFootExtend($('<div>'));
   $userSettingButton=$('<button>').append(langHtml.UserInfo);
   $userSettingDiv=userSettingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
@@ -6095,7 +6851,7 @@ var setUp2=function(){
 
 
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
-  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'payDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');
+  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');    //, 'payDiv'
   if(boDbgL) StrMainDiv.unshift('divDbg');
 
 
@@ -6387,22 +7143,21 @@ var setUp2=function(){
 
   var tmpFGeoSuccess=function(pos){
     //tmpFUseApprox=doNothing;
-    clearTimeout(timerCoordApprox);
+    if(typeof timerCoordApprox!='undefined') clearTimeout(timerCoordApprox);
     //clearTimeout(timerGeoNotOK);
     boFirstPosOK=1;
     boGeoOK=true; setItem('boGeoOK',boGeoOK);
     var latLng={lat:pos.coords.latitude, lng:pos.coords.longitude};
-    if(!boApproxCalled ) firstAJAXCall(latLng);
-    else { 
+    if(typeof boApproxCalled!='undefined') { 
       $mapDiv.setCentNMe(latLng);
       if(boMapGoogle){ $mapDiv.map.setOptions({center: latLng}); $mapDiv.curMarker.setPosition(latLng); }
-    }
+    } else firstAJAXCall(latLng);
+    
   }
 
   if(boEmulator){ tmpFGeoSuccess(posDebug); }else{ navigator.geolocation.getCurrentPosition(function(pos){tmpFGeoSuccess(pos);}, geoError,{timeout:20000,maximumAge:60000});  }
   //, {maximumAge:Infinity, timeout:5000,enableHighAccuracy:false}
   //setMess('... getting position ... ',null,true);
-  boApproxCalled=false;
   var tmpFUseApprox=function(){
     var latLng={lat:coordApprox[0],lng:coordApprox[1]};  if(boVideo) latLng=latLngDebug;
     boApproxCalled=true;
@@ -6410,7 +7165,6 @@ var setUp2=function(){
   }
   //var tmpFGeoNotOK=function(){ boGeoOK=false; setItem('boGeoOK',boGeoOK); }
   boGeoOK=getItem('boGeoOK');  if(boGeoOK===null) boGeoOK=false;
-  //timerCoordApprox=null;
   //var tTmp=2; if(boAndroid && boGeoOK) tTmp=10;
   var tTmp=2; if(boGeoOK) tTmp=10;
   timerCoordApprox=setTimeout(tmpFUseApprox,(tTmp)*1000);

@@ -208,7 +208,9 @@ FBToPreventMultipleAccounts:'En ID tjänst (Facebook) används för att förhind
 //(Annars skulle någon illvillig kunna skapa typ 100-tals konton och på så sätt sabotera tjänsten)
 NothingIsWrittenToYourFBFlow:'Inget skrivs på ditt Facebookflöde.',
 YouCanUseCustomImage:'Du kan använda en separat bild, namn etc.',
-YouCanDeleteYourAccount:'Du kan radera all data (radera ditt konto) och komma tillbaka senare, så många gånger du vill.',
+//NoteYouCanDeleteYourAccount:'Obs! Du kan radera all data (radera ditt konto) och komma tillbaka senare, så många gånger du vill.',
+FacebookIsRecommended:'Facebook rekommenderas (snabbare att logga in, färre lösenord att komma ihåg).',
+NoteYouCanDeleteYourAccount:'Du kan radera kontot och komma tillbaka senare, så många gånger du vill.',
 moreInfoOnFAQ:'Mer info (FAQ-sida)',
 
 vendorPay:{

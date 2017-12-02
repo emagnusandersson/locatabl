@@ -1,16 +1,13 @@
 
 
 
-// At lat=0 (y=128), a world coordinate unit will be p2m meters
-// At lat=arccos(0.5), (lat=+-60 or y=128+-53.66), a world coordinate unit will be p2m/2 meters
-// At lat=arccos(0.25), (lat=+-75.52 or y=128+-84.08), a world coordinate unit will be p2m/4 meters
-roundXY=function(resM,x,y){  // The higher resM  the more the position will be rounded
-  var resT=resM;
-  if(Math.abs(y-128)>53.66) resT=Math.round(resT/2);
-  if(Math.abs(y-128)>84.08) resT=Math.round(resT/2);
-  if(resT<1)resT=1;
-  var resP=resT*m2p;
-  var xA=Math.round(x/resP)*resP,  yA=Math.round(y/resP)*resP;  return [xA,yA];
+ 
+// At lat=0 (y=128), a world coordinate unit will be wc2m meters
+// At lat=arccos(0.5), (lat=+-60 or y=128+-53.66), a world coordinate unit will be wc2m/2 meters
+// At lat=arccos(0.25), (lat=+-75.52 or y=128+-84.08), a world coordinate unit will be wc2m/4 meters
+roundXY=function(resM,x,y,lat){
+  var resWC=resM2resWC(resM,lat);
+  var xA=Math.round(x/resWC)*resWC,  yA=Math.round(y/resWC)*resWC;  return [xA,yA];
 }
 
 

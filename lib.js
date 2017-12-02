@@ -137,11 +137,11 @@ Str_moveM=function(arr,strRefVal,arrMove,boBefore){
 // Object
 //
 
+copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[name]=b[name]; } return a; }
 object_values=function(obj){
   var arr=[];      for(var name in obj) arr.push(obj[name]);
   return arr;
 }
-
 copy=function(o, isdeep){
     if (o===undefined || o===null || ['string', 'number', 'boolean'].indexOf(typeof o)!==-1)
         return o;
@@ -151,7 +151,6 @@ copy=function(o, isdeep){
             n[k]= isdeep? copy(o[k], isdeep) : o[k];
     return n;
 }
-copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[name]=b[name]; } return a; }
 
 /*JSON.myParse=function(str){
     try{
@@ -325,6 +324,7 @@ sign=function(val){if(val<0) return -1; else if(val>0) return 1; else return 0;}
 round=Math.round; sqrt=Math.sqrt;
 log2=function(x){return Math.log(x)/Math.log(2);}
 twoPi=2*Math.PI;
+r2deg=180/Math.PI;  deg2r=Math.PI/180;
 if(typeof(Number.prototype.toRad) === "undefined"){  Number.prototype.toRad = function(){  return this * Math.PI / 180; }   }
 Math.log2=function(val) {  return Math.log(val) / Math.LN2; }
 Math.log10=function(val) {  return Math.log(val) / Math.LN10; }
@@ -387,52 +387,33 @@ approxDist=function(mWhole,boArr){
 //
 
 var TILE_SIZE = 256;
-
 degreesToRadians=function(deg){  return deg*(Math.PI/180);  }
 radiansToDegrees=function(rad){  return rad/(Math.PI/180);  }
-
 MercatorProjection=function(){
-  this.pOrg = [TILE_SIZE/2, TILE_SIZE/2];
+  this.pOrg = {x:TILE_SIZE/2,y:TILE_SIZE/2};
   this.pixelsPerLonDegree_ = TILE_SIZE/360;
   this.pixelsPerLonRadian_ = TILE_SIZE/(2*Math.PI);
 }
-MercatorProjection.prototype.fromLatLngToPoint = function(latLng, opt_point){
-  var point = opt_point || new google.maps.Point(0, 0);
-  var xOrg=this.pOrg[0], yOrg=this.pOrg[1];
-  var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else if(typeof latLng.lat=='function') {lat=latLng.lat(); lng=latLng.lng();} else { lat=latLng.lat; lng=latLng.lng;}
-  point.x = xOrg + lng * this.pixelsPerLonDegree_;
-
-  var siny = bound(Math.sin(degreesToRadians(lat)), -0.9999, 0.9999);
-  point.y = yOrg + 0.5 * Math.log((1 + siny) / (1 - siny)) * -this.pixelsPerLonRadian_;
-  return point;
-};
 MercatorProjection.prototype.fromLatLngToPointV=function(latLng){
-  //var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else { lat=latLng.lat(); lng=latLng.lng();}
   var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else if(typeof latLng.lat=='function') {lat=latLng.lat(); lng=latLng.lng();} else { lat=latLng.lat; lng=latLng.lng;}
-  var pOut=Array(2);
-  var xOrg=this.pOrg[0], yOrg=this.pOrg[1];
-  pOut[0]=xOrg+lng*this.pixelsPerLonDegree_;
+  var xOrg=this.pOrg.x, yOrg=this.pOrg.y;
+  var xOut=xOrg+lng*this.pixelsPerLonDegree_;
 
   var siny = bound(Math.sin(degreesToRadians(lat)), -0.9999, 0.9999);
-  pOut[1]=yOrg + 0.5*Math.log( (1+siny)/(1-siny) ) * -this.pixelsPerLonRadian_;
-  return pOut;
+  var yOut=yOrg + 0.5*Math.log((1+siny)/(1-siny)) * -this.pixelsPerLonRadian_;
+  return [xOut,yOut];
 }
-MercatorProjection.prototype.fromPointToLatLng = function(point,noWrap){
+MercatorProjection.prototype.fromLatLngToPoint = function(latLng){  var [x,y]=this.fromLatLngToPointV(latLng);  return {x:x,y:y};   };
+MercatorProjection.prototype.fromPointToLatLngV = function(point,noWrap=1){
   var x, y;    if(point instanceof Array) {x=point[0]; y=point[1]; } else { x=point.x; y=point.y;}
-  var xOrg=this.pOrg[0], yOrg=this.pOrg[1];
-  var lng = (x - xOrg) / this.pixelsPerLonDegree_;
-  var latRadians = (y - yOrg) / -this.pixelsPerLonRadian_;
-  var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI/2);
-  return new google.maps.LatLng(lat, lng, noWrap);
-};
-MercatorProjection.prototype.fromPointToLatLngV = function(point){
-  var x, y;    if(point instanceof Array) {x=point[0]; y=point[1]; } else { x=point.x; y=point.y;}
-  var xOrg=this.pOrg[0], yOrg=this.pOrg[1];
+  var xOrg=this.pOrg.x, yOrg=this.pOrg.y;
   var lng = (x-xOrg) / this.pixelsPerLonDegree_;
   var latRadians = (y-yOrg) / -this.pixelsPerLonRadian_;
   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI/2);
+  if(noWrap) [lng]=normalizeAng(lng,0,360);
   return [lat, lng];
 };
+MercatorProjection.prototype.fromPointToLatLng = function(point,noWrap=1){  var [lat,lng]=this.fromPointToLatLngV(point, noWrap);  return {lat:lat,lng:lng};  };
 MercatorProjection.prototype.getBounds=function(pC,z,size){
   var zf=Math.pow(2, z)*2;
   var dw=size[0]/zf, dh=size[1]/zf;
@@ -440,8 +421,17 @@ MercatorProjection.prototype.getBounds=function(pC,z,size){
   var ne={x:pC.x+dw, y:pC.y-dh};
   return {sw:sw,ne:ne};
 }
+MercatorProjection.prototype.fromYToLat = function(y){
+  var yOrg=this.pOrg.y;
+  var latRadians = (y - yOrg) / -this.pixelsPerLonRadian_;
+  var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI/2);
+  return lat;
+};
 
-
+resM2resWC=function(resMEquator,lat){
+  var divisor=Math.cos(deg2r*lat), resT=resMEquator/divisor;  if(resT<1)resT=1;
+  var resWC=resT*m2wc; return resWC;
+}  
 
 
 

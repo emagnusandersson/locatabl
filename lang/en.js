@@ -142,7 +142,7 @@ labOrdinalB:'You can delete your account at any time.',
 
 Info:'Info',
 OtherJobs:'Other jobs/services...',
-OtherMapApps:'Other mappers',
+OtherMapApps:'Other map apps',
 ComparisonTable:'Comparison table',
 FilterTitle:'Filter (hide uninteresting <span nom="vendors">vendors</span>)',
 
@@ -211,7 +211,9 @@ FBToPreventMultipleAccounts:'An ID provider (Facebook) is used to prevent people
 //(Otherwise some mischievous person could create like 100\'s of accounts and effectively sabotage the service)
 NothingIsWrittenToYourFBFlow:'Nothing is written to your Facebook flow.',
 YouCanUseCustomImage:"You can use custom image, display name etc.",
-YouCanDeleteYourAccount:'You can delete all your data (delete your account), and come back at a later timepoint as many times as you want.',
+//NoteYouCanDeleteYourAccount:'Note! You can delete all your data (delete your account), and come back at a later timepoint as many times as you want.',
+FacebookIsRecommended:'Facebook is recommended (quicker to sign up, no need to remember a new password).',
+NoteYouCanDeleteYourAccount:'Note! You can delete your account and come back later as many times as you want.',
 moreInfoOnFAQ:'More info (FAQ)',
 
 vendorPay:{

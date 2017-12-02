@@ -109,7 +109,7 @@ loginDivExtend=function($el){
   var $mess=$('<span>').css({"margin-left":"0.3em"});
   var strButtonSize='2em';
   var $fbIm=$('<img>').click(function(){popupWin(strIPPrim);}).prop({src:uLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
-  var $fbHelp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html(langHtml.helpLoginVendor);     popupHoverM($fbHelp,$bub);  
+  var $fbHelp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html(langHtml.helpLoginVendor);     popupHoverJQ($fbHelp,$bub);  
 
   var $label=$('<span>').append('Login first, then click yes: ').css({'font-size':'1.3em','font-weight':'bold'});
   $el.append($label,$fbIm,$mess); //,$fbHelp
@@ -284,7 +284,7 @@ setUp=function(){
   $divKey=$('<div>').append(pubKey).hide().css({'font-weight':'bold'});
   $headA=$('<div>').append('You are now on ',$tmpB, ' with one part of a ',$aTmp,'.',$buttonShowKey,$divKey).css({'margin-top':'0.5em'});
 
-  var $imgTmp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html("Storing the key will allow the sender (the owner of the other part of the key pair) to write certain data on this site: (position (lat/lang), visibility (on/off), hideTimer)");     popupHoverM($imgTmp,$bub);  
+  var $imgTmp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html("Storing the key will allow the sender (the owner of the other part of the key pair) to write certain data on this site: (position (lat/lang), visibility (on/off), hideTimer)");     popupHoverJQ($imgTmp,$bub);  
   $headB=$('<div>').append('Do you want to store this key?',$imgTmp);
   //<b>position</b>, <b>last activity</b> and <b>visibility</b>
 
