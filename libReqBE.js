@@ -638,6 +638,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
     var idIdPlace=objGraph.id, email=objGraph.email, nameIP=objGraph.name, image=objGraph.image;
   }
 
+  if(typeof email=='undefined') { return [new ErrorClient("Email is required (incase the site changes Id-provider)")];}
   if(typeof idFB=='undefined') { return [new Error("Error idFB is empty")];}
   if(typeof nameIP=='undefined' ) {nameIP=idFB;}
   this.sessionLoginIdP={IP:strIP, idFB:idFB, idIdPlace, idOpenId, email:email, nameIP:nameIP, image:image};
@@ -772,7 +773,9 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
  
   var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for vendors as well as any visitor) 
   var {idUser,coordinatePrecisionM}=vendor;
-  var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj.x,inObj.y);
+  var {x,y}=inObj;
+  var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
+  var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
 
   var sql="UPDATE "+site.TableName.vendorTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -1065,7 +1068,9 @@ ReqBE.prototype.VShow=function*(inObj){  // writing needSession
   var Ou={};
   var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var {idUser,coordinatePrecisionM}=vendor;
-  var [xtmp,ytmp]=roundXY(coordinatePrecisionM,inObj.x,inObj.y);
+  var {x,y}=inObj;
+  var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
+  var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
 
   var Sql=[], Val=[];
   Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne("+idUser+");"); 
@@ -1390,7 +1395,7 @@ ReqBE.prototype.getSetting=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;
   var Ou={};
-  var Str=['payLev','boTerminationCheck','boShowTeam'];
+  var Str=['payLev','boTerminationCheck','boShowTeam','boAllowEmailAccountCreation'];
   if(!isAWithinB(inObj,Str)) {this.mes('Illegal invariable'); return [null, [Ou]]; }
   for(var i=0;i<inObj.length;i++){ var name=inObj[i]; Ou[name]=app[name]; }
   return [null, [Ou]];
@@ -1400,7 +1405,7 @@ ReqBE.prototype.setSetting=function*(inObj){
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var StrApp=[],  StrServ=[];
-  if(this.sessionUserInfoFrDB.admin) StrApp=['payLev','boTerminationCheck','boShowTeam'];  
+  if(this.sessionUserInfoFrDB.admin) StrApp=['payLev','boTerminationCheck','boShowTeam','boAllowEmailAccountCreation'];  
   var Str=StrApp.concat(StrServ);
   var Key=Object.keys(inObj);
   if(!isAWithinB(Key, Str)) { this.mes('Illegal invariable'); return [null, [Ou]];}
@@ -1408,6 +1413,7 @@ ReqBE.prototype.setSetting=function*(inObj){
   return [null, [Ou]];    
 }
 
+  // obsolete
 ReqBE.prototype.getDBSetting=function*(inObj){ 
   var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;
@@ -1421,6 +1427,7 @@ ReqBE.prototype.getDBSetting=function*(inObj){
   return [null, [Ou]];
 }
 
+  // obsolete
 ReqBE.prototype.setDBSetting=function*(inObj){ 
   var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;

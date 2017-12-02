@@ -214,7 +214,7 @@ readFileToCache=function*(flow, strFileName) {
 
 CacheUriT=function(){
   var self=this;
-  this.set=function*(flow, key,buf,type,boZip,boUglify){
+  this.set=function*(flow, key, buf, type, boZip, boUglify){
     var eTag=crypto.createHash('md5').update(buf).digest('hex'); 
     //if(boUglify) {
       //var objU; objU=UglifyJS.minify(bufO.toString(), {fromString: true});

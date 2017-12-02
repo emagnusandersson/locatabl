@@ -75,9 +75,10 @@ app.reqCurlEnd=function*(){
     if(boShow){
       if(!("lat" in inObj || "lng" in inObj)){this.mesO('"lng" or "lat" are not set'); return;}
       if(!("hideTimer" in inObj)) {this.mesO('"hideTimer" is not set'); return;} 
-      var projs=new MercatorProjection(),   tmp=projs.fromLatLngToPointV([inObj["lat"],inObj["lng"]]),  x=tmp[0],  y=tmp[1], hideTimer=inObj.hideTimer; 
-    }else{var x=0, y=0, hideTimer=0;}
-    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(sixPub, iSeqN, x, y, boShow, hideTimer);
+      var {lat,lng}=inObj;
+      var projs=new MercatorProjection(),   tmp=projs.fromLatLngToPointV([lat, lng]),  x=tmp[0],  y=tmp[1], hideTimer=inObj.hideTimer; 
+    }else{var x=128, y=128, lat=0, hideTimer=0;}
+    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(sixPub, iSeqN, x, y, lat, boShow, hideTimer);
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
   }
   var sql=Sql.join('\n');
@@ -122,9 +123,8 @@ app.reqPubKeyStore=function*(){
 
   //var uCommon='http://'+wwwCommon;
   var uCommon=req.strSchemeLong+wwwCommon;
-  //var uJQuery='https://code.jquery.com/jquery-latest.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-latest.js";      Str.push("<script src='"+uJQuery+"'></script>");
-  var uJQuery='https://code.jquery.com/jquery-3.2.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.2.1.min.js";
-  Str.push('<script src="'+uJQuery+'" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>');
+  var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
+  Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
  
 
           // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
@@ -188,16 +188,14 @@ app.reqPrev=function*() {
 /******************************************************************************
  * reqIndex
  ******************************************************************************/
+
+// Stuff that varies with index call parameters: site, lang, boTLS
+// Allways same: coordApprox;
+// Not used: strLangBrowser
 app.reqIndex=function*() {
   var req=this.req, res=this.res;
   var objQS=req.objQS;
   var site=req.site, siteName=site.siteName, wwwSite=req.wwwSite, uSite=req.uSite;
-  var boEmulator=0; if("boEmulator" in objQS) {boEmulator=Number(objQS.boEmulator);}
-  var startFilter=null; if("idTeam" in objQS) {idTeam=Number(objQS.idTeam).toString(); startFilter=idTeam;}
-
-  //if("boVideo" in objQS) {req.session.boVideo=Number(objQS.boVideo);}   var boVideo=req.session.boVideo|0;
-  //var boVideo=0;
-  //if("boVideo" in objQS) boVideo=Number(objQS.boVideo);
 
   var ip='';
     // AppFog ipClient
@@ -221,7 +219,7 @@ app.reqIndex=function*() {
   var strLangBrowser=getBrowserLang(req); if(!checkIfLangIsValid(strLangBrowser)){ strLangBrowser='en'; }
 
   var ua=req.headers['user-agent']||''; ua=ua.toLowerCase();
-  var boMSIE=RegExp('msie').test(ua), boAndroid=RegExp('android').test(ua), boFireFox=RegExp('firefox').test(ua), boIOS= RegExp('iPhone|iPad|iPod','i').test(ua);
+  var boMSIE=RegExp('msie').test(ua), boAndroid=RegExp('android').test(ua), boFireFox=RegExp('firefox').test(ua), boIOS= RegExp('iPhone|iPad|iPod','i').test(ua), boUC= RegExp('ucbrowser','i').test(ua);
   if(/facebookexternalhit/.test(ua)) {
     objQS.lang='en'; 
   }
@@ -242,20 +240,16 @@ app.reqIndex=function*() {
 
   var requesterCacheTime=getRequesterTime(req.headers);
 
-  res.setHeader("Cache-Control", "must-revalidate");  res.setHeader('Last-Modified',bootTime.toUTCString());
+  res.setHeader("Cache-Control", "must-revalidate");  res.setHeader('Last-Modified',tIndexMod.toUTCString());
 
-  //if(boVideo==0 && boEmulator==0){ // In normal case ...
-  if(1){ 
-    if(requesterCacheTime && requesterCacheTime>=bootTime) { res.out304(); return false;   } 
-    res.statusCode=200;   
-  }
+  if(requesterCacheTime && requesterCacheTime>=tIndexMod && 0) { res.out304(); return false;   } 
+  res.statusCode=200;   
+  
 
 
   //this.sessionLoginIdP={};
   //yield* setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity); 
 
-  //boVideo=1;
-  
   var Str=[];
   Str.push('<!DOCTYPE html>\n\
 <html xmlns="http://www.w3.org/1999/xhtml"\n\
@@ -267,7 +261,7 @@ app.reqIndex=function*() {
   //<meta name="apple-mobile-web-app-capable" content="yes" /> 
 
 
-  var tmpIcon=wwwIcon16; if('wwwIcon16' in site) tmpIcon=site.wwwIcon16;  var uIcon16=req.strSchemeLong+tmpIcon;  //+'?v='+strBootTime
+  var tmpIcon=wwwIcon16; if('wwwIcon16' in site) tmpIcon=site.wwwIcon16;  var uIcon16=req.strSchemeLong+tmpIcon;
   var tmpIcon=wwwIcon114; if('wwwIcon114' in site) tmpIcon=site.wwwIcon114;  var uIcon114=req.strSchemeLong+tmpIcon;
   var tmpIcon=wwwIcon200; if('wwwIcon200' in site) tmpIcon=site.wwwIcon200;  var uIcon200=req.strSchemeLong+tmpIcon;
   Str.push('<link rel="icon" type="image/png" href="'+uIcon16+'" />');
@@ -337,30 +331,54 @@ app.reqIndex=function*() {
   var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
   Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
   
+  //function\([^=\)]*=[^=\)]
+  //\[[^\]]*\]=
+  //\{[^\}]*\}=
+  //function\s*\*\(
+  
   Str.push('<script>\n\
+  (function(){\n\
 try {\n\
   eval("(function *(){})");\n\
 } catch(err) {\n\
-  alert("This browser does not seem to support generators:\\n"+ err);\n\
-}</script>');
+  alert("This browser does not support generators:\\n"+ err); return;\n\
+}\n\
+try {\n\
+  eval("(function(a=0){})");\n\
+} catch(err) {\n\
+  alert("This browser does not support default parameters:\\n"+ err); return;\n\
+}\n\
+var tmpf=function(){return {a:1};};\n\
+try {\n\
+  eval("var {a}=tmpf();");\n\
+} catch(err) {\n\
+  alert("This browser does not support destructuring assignment:\\n"+ err); return;\n\
+}\n\
+var tmpf=function(){return [1];}\n\
+try {\n\
+  eval("[a]=tmpf();");\n\
+} catch(err) {\n\
+  alert("This browser does not support destructuring assignment with arrays:\\n"+ err); return;\n\
+}\n\
+})();</script>');
 
   //var uCommon='http://'+wwwCommon;
   var uCommon=req.strSchemeLong+wwwCommon;
-  var uJQuery='https://code.jquery.com/jquery-latest.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-latest.js";      Str.push("<script src='"+uJQuery+"'></script>");
+  var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
+  Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
 
   Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
   
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
 
     // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
-  var boDbgT=boDbg; if(boIOS) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
+  var boDbgT=boDbg; if(boIOS || boUC) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
   
     // Include stylesheets
   var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<link rel="stylesheet" href="'+uCommon+pathTmp+'?v='+vTmp+'" type="text/css">');
 
     // Include site specific JS-files
   var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbgT) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'"></script>');
-
 
     // Include JS-files
   var StrTmp=['filter.js', 'lib.js', 'libClient.js', 'client.js', 'lang/en.js'];
@@ -400,9 +418,6 @@ try {\n\
 
   Str.push("\n<script type=\"text/javascript\" language=\"JavaScript\" charset=\"UTF-8\">\n\
 \n\
-boVideo="+JSON.stringify(boVideo)+";\n\
-boEmulator="+JSON.stringify(boEmulator)+";\n\
-startFilter="+JSON.stringify(startFilter)+";\n\
 \n\
 strLang="+JSON.stringify(strLang)+";\n\
 \n\
@@ -411,6 +426,7 @@ boTLS="+JSON.stringify(req.boTLS)+";\n\
 UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
 strReCaptchaSiteKey="+JSON.stringify(strReCaptchaSiteKey)+";\n\
 strSalt="+JSON.stringify(strSalt)+";\n\
+m2wc="+JSON.stringify(m2wc)+";\n\
 </script>\n\
 <form  id=formLogin>\n\
 <label name=email>Email</label><input type=email name=email>\n\
@@ -505,8 +521,8 @@ app.reqImage=function*() {
  * reqLoginBack
  ******************************************************************************/
 app.reqLoginBack=function*(){
-  var req=this.req, res=this.res, site=req.site, objQS=req.objQS;
-  var wwwLoginScopeTmp=null; if('wwwLoginScope' in site) wwwLoginScopeTmp=site.wwwLoginScope;
+  var req=this.req;
+  var wwwLoginScopeTmp=null; if('wwwLoginScope' in req.site) wwwLoginScopeTmp=req.site.wwwLoginScope;
   var uSite=req.strSchemeLong+req.wwwSite;
 
   var Str=[];
@@ -1057,7 +1073,8 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   ('boShowTeam','0'), \
   ('tLastWriteOfHA',floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )), \
   ('boGotNewVendors','0'), \
-  ('nUser','0')"); 
+  ('nUser','0'), \
+  ('boAllowEmailAccountCreation','0')"); 
 
   }
   if(boDropOnly) return SqlTabDrop;
@@ -1294,7 +1311,7 @@ CLIENT_FOUND_ROWS
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, IboShow TINYINT, IhideTimer INT, \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, \n\
       OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, VIdUser, ViSeq, VresM INT; \n\
@@ -1314,7 +1331,7 @@ CLIENT_FOUND_ROWS
       SET Vc=FOUND_ROWS(); \n\
       IF Vc=0 THEN SET OboOk=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF; \n\
       IF VresM<1 THEN SET VresM=1; END IF; \n\
-      CALL roundXY(VresM, Ix, Iy, Ix, Iy); \n\
+      CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy); \n\
   \n\
       UPDATE "+vendorTab+" SET x=Ix, y=Iy, boShow=IboShow, hideTimer=IhideTimer, posTime=now(), histActive=histActive|1 WHERE idUser=VIdUser; \n\
       SET OboOK=1, Omess='';\n\
@@ -1418,17 +1435,35 @@ app.SetupSql.prototype.funcGen=function(boDropOnly){
     END");
 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS roundXY");
-  SqlFunction.push("CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE) \n\
-    proc_label:BEGIN \n\
-      DECLARE resT DOUBLE; \n\
-      DECLARE resP DOUBLE; \n\
-      SET resT=resM; \n\
-      IF ABS(y-128)>53.66 THEN SET resT=ROUND(resT/2); END IF; \n\
-      IF ABS(y-128)>84.08 THEN SET resT=ROUND(resT/2); END IF;\n\
-      SET resP=resT*"+m2p+", Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP; \n\
-    END");
+  //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS roundXY");
+  //SqlFunction.push("CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE) \n\
+    //proc_label:BEGIN \n\
+      //DECLARE resT DOUBLE; \n\
+      //DECLARE resP DOUBLE; \n\
+      //SET resT=resM; \n\
+      //IF ABS(y-128)>53.66 THEN SET resT=ROUND(resT/2); END IF; \n\
+      //IF ABS(y-128)>84.08 THEN SET resT=ROUND(resT/2); END IF;\n\
+      //SET resP=resT*"+m2wc+", Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP; \n\
+    //END");
 
+
+  SqlFunctionDrop.push("DROP FUNCTION IF EXISTS resM2resP");
+  SqlFunctionDrop.push("DROP FUNCTION IF EXISTS resM2resWC");
+  SqlFunction.push("CREATE FUNCTION resM2resWC(resM DOUBLE, lat DOUBLE) RETURNS DOUBLE DETERMINISTIC\n\
+    BEGIN \n\
+      DECLARE resT, fac DOUBLE; \n\
+      SET fac=COS("+deg2r+"*lat); \n\
+      SET resT=fac*resM; \n\
+      IF resT<1 THEN SET resT=1; END IF; \n\
+      RETURN resT*"+m2wc+"; \n\
+    END");
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS roundXY");
+  SqlFunction.push("CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, lat DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE) \n\
+    proc_label:BEGIN \n\
+      DECLARE resP DOUBLE; \n\
+      SET resP=resM2resWC(resM,lat), Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP; \n\
+    END");
+    
   if(boDropOnly) return SqlFunctionDrop;
   else return array_merge(SqlFunctionDrop, SqlFunction);
 }
