@@ -86,6 +86,7 @@ var flow=( function*(){
   maxLoginUnactivity=10*60;
   leafLoginBack="loginBack.html"; 
   boVideo=0;
+  boMapGoogle=0;
   
   port=argv.p||argv.port||5000;
   if(argv.h || argv.help) {helpTextExit(); return;}
