@@ -506,10 +506,10 @@ CreatorPlugin.transportPrice=function(){
     $el.setUp=function(){    $span.html(Number(comparePrice.dist).toFixed(2)+' '+distUnit+'<br>'+comparePrice.time+' min<br>');  };
 
     var $span=$('<span>').css({'font-size':'0.7em'});
-    var $butPricePref=$("<button>").text(langHtml.Change).addClass('smallButt').css({padding:'0.3em 0.1em'}).click(function(){$comparePriceDataPop.openFunc(func); return false;});
+    var $butPricePref=$("<button>").append($span).addClass('smallButt').css({padding:'0.3em 0.1em'}).click(function(){$comparePriceDataPop.openFunc(func); return false;}); //, langHtml.Change
     if(!boTouch) popupHoverJQ($butPricePref,$('<div>').html(langHtml.pricePref.pop));
-    $el.append($span, $butPricePref);
-    //$el.setUp();
+    //$el.append($span, $butPricePref);
+    $el.append($butPricePref);
 
     return $el;
   };
@@ -2192,7 +2192,7 @@ var reporterIntroDivExtend=function($el){
 
 var vendorDivExtend=function($el){
 "use strict"
-  var $butts=$([]).push($userSettingButton, $vendorSettingButton, $priceSettingButton, $payButton).css({margin:'1em 0.1em'});
+  var $butts=$([]).push($userSettingButton, $vendorSettingButton, $priceSettingButton).css({margin:'1em 0.1em'});  //, $payButton
   var $h=$('<p>').append(langHtml.UserSettings).css({'font-weight':'bold'});
   $el.append($h,$butts);
   return $el;
@@ -3423,7 +3423,7 @@ var filterInfoSpanExtend=function($el){
  *******************************************************************************************************************/
 
 
-
+if(boMapGoogle){
 var MyOverlay=function( options )  {
 "use strict"
   //this.latLng_=options.position;
@@ -3498,9 +3498,8 @@ MyOverlay.prototype.draw = function()  {
   //setMess('r');
   //this.$div.css({left:0,top:0,width:widthCanvas,height:heightCanvas,background:'green'});
 };
-
+}
 //groupOverlay = new MyOverlay( { map: map, 'position': map.getCenter() } );
-
 
 
 var doNothing=function(){};
@@ -5459,7 +5458,7 @@ var tHeadLabelExtend=function($el){
       $r.append($h);
     }
 
-    var $th=$r.children('th');
+    var $th=$r.children('th');   //if(boIE) $th.css({ 'box-shadow':'-0.5px 0px 0 1px black inset'});
     $sortImages=$th.children('img[data-type=sort]').prop({src:uUnsorted});
     $sortImages.css({display:'block',zoom:1.5,'margin':'auto','margin-top':'0.3em','margin-bottom':'0.3em'});
 
@@ -5648,7 +5647,7 @@ var tableDivExtend=function($el){
 
   $el.$toManyMess=$('<div>').html(langHtml.toManyMess).hide();
 
-  var $table=$('<table>').css({background:'#fff', margin:'1em auto 0em'}); //display:'inline-table',
+  var $table=$('<table>').css({background:'#fff', margin:'0em auto 0em'}); //display:'inline-table',
   var $tBody=$("<tbody>");
 
   $table.append($tBody);
@@ -6116,7 +6115,7 @@ var settingDivExtend=function($el){
 "use strict"
   $el.toString=function(){return 'settingDiv';}
   $el.setUp=function(){
-    var boMapGoogle=Number(getItem('boMapGoogle')); $selMapType.val(boMapGoogle);
+    //var boMapGoogle=Number(getItem('boMapGoogle')); $selMapType.val(boMapGoogle);
   }
   var $buttShowMarkSelect=$('<button id=buttShowMarkSelect>').append(langHtml.ChangeMapMarker).click(function(){
     $markSelectorDiv.setUp();
@@ -6125,7 +6124,7 @@ var settingDivExtend=function($el){
   });
 
   var changeMapType=function(){
-    var boMapGoogle=Number($selMapType.val()); setItem('boMapGoogle',boMapGoogle);    $pMapType.append($spanMess);
+    //var boMapGoogle=Number($selMapType.val()); setItem('boMapGoogle',boMapGoogle);    $pMapType.append($spanMess);
   };
   var $selMapType=$('<select>').change(changeMapType), $spanMess=$('<span>').append(' Now press reload to refresh ...');
   var arrT=['Open street map', 'Google maps'];
@@ -6133,7 +6132,8 @@ var settingDivExtend=function($el){
   var $pMapType=$('<p>').css({'margin-top':'1em'}).append('Change map type: ',$selMapType);
 
 
-  var $opt=$([]).push($buttShowMarkSelect, $pMapType, $vendorDiv, $adminButton, $teamButton);    $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
+  var $opt=$([]).push($buttShowMarkSelect, $vendorDiv, $adminButton, $teamButton);  //, $pMapType
+  $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
   $vendorDiv.css({'margin':'1em 0.6em 1em 0.6em'});
 
   $el.append($opt);
@@ -6285,7 +6285,7 @@ setUp1=function(){
       //alert(dr);
       //$('#viewportMy').prop('content','initial-scale='+sc);
       //$bodyNHtml.css({"overflow-x":"hidden"});
-      $bodyNHtml.css({"height":"100%", "overflow":"scroll" , "-webkit-overflow-scrolling":"touch"});  // , position:'fixed'
+      $bodyNHtml.css({"-webkit-overflow-scrolling":"touch", "overflow":"scroll" });  // "height":"100%", "-webkit-overflow-scrolling":"touch"
 
     } else if(boFF){
       dr=window.devicePixelRatio;
@@ -6744,7 +6744,7 @@ var setUp2=function(){
   $paymentListDiv=paymentListDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
   $paymentListFoot=paymentListFootExtend($('<div>'));
 
-  boMapGoogle=getItem('boMapGoogle');
+  //boMapGoogle=getItem('boMapGoogle');
   if(boMapGoogle) $mapDiv=mapDivExtendGoogle($("<div>")); else $mapDiv=mapDivExtend($("<div>"));
   //$mapDiv.css({'margin-top':'0.9em'});  //,display:'inline-block','margin-top':'1px'
   $mapDiv.css({overflow:'hidden'});
@@ -6790,7 +6790,7 @@ var setUp2=function(){
 
   $tableDiv=tableDivExtend($("<div>")).css({flex:'1 1 0', overflow:'auto'});
   $tableFoot=tableFootExtend($("<div>"));
-  $tableDiv.$table.prepend($tHeadLabel);
+  $tableDiv.$table.prepend($tHeadLabel);  $tableDiv.$table.addClass('tableDiv');  //.css({'border-top':'0px'});
 
   if(0){
     $iframeLike=$('<iframe src="//www.facebook.com/plugins/likebox.php?href=https%3A%2F%2Fwww.facebook.com%2Fgavott&amp;width&amp;height=62&amp;colorscheme=light&amp;show_faces=false&amp;header=true&amp;stream=false&amp;show_border=false&amp;appId=237613486273256" scrolling="no" frameborder="0" style="border:none; overflow:hidden; height:62px;" allowTransparency="true"></iframe>');
@@ -7112,7 +7112,7 @@ var setUp2=function(){
   //$H1.add($footDiv).css({'width':'800px'});
 
   $mainDivsNonFixWidth.css({display:'inline-block','text-align':'left'});
-  $tableDiv.children('table').css({'margin-top':'1em'});
+  $tableDiv.children('table'); //.css({'margin-top':'1em'});
   $mainDivsNonFixWidth.hide(); // Seems this line is needed because otherwise these divs will be visible untill first ajax returns
 
   //if(!boTouch)

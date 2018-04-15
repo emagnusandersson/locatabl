@@ -52,8 +52,11 @@ transform:rotate(-90deg);
 }
 
 
-table {border-width:1px;border-style:solid;border-collapse:collapse;font-size:inherit}
+table {border-width:1px;border-style:solid;border-collapse:collapse;font-size:inherit; box-sizing: border-box}
 td,th {border-width:inherit;border-style:inherit }
+.tableDiv {border-width:0px;}
+.tableDiv td, .tableDiv th {box-shadow:0 0 0.3em 0.1em darkgrey inset}
+.tableDiv th {position:sticky; position: -webkit-sticky; top:0px; background:white; z-index:1}
 tr {border-width:inherit;border-style:inherit }
 tbody,thead {border-width:inherit;border-style:inherit }
 

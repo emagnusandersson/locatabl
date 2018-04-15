@@ -329,7 +329,7 @@ app.reqIndex=function*() {
 
 
   var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
-  Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
+  if(typeof boGoogleMap!='undefined' && boGoogleMap) Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
   
   //function\([^=\)]*=[^=\)]
   //\[[^\]]*\]=
@@ -427,6 +427,7 @@ UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
 strReCaptchaSiteKey="+JSON.stringify(strReCaptchaSiteKey)+";\n\
 strSalt="+JSON.stringify(strSalt)+";\n\
 m2wc="+JSON.stringify(m2wc)+";\n\
+boMapGoogle="+JSON.stringify(boMapGoogle)+";\n\
 </script>\n\
 <form  id=formLogin>\n\
 <label name=email>Email</label><input type=email name=email>\n\
