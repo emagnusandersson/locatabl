@@ -1307,9 +1307,9 @@ popUpExtend=function($el){
 
 var toastExtend=function($el){
   var hideToast=function(){  $el.fadeOut(400);  }
-  $el.showToast=function(){
+  $el.showToast=function(t=4000){
     $el.fadeIn(0);
-    t=setTimeout(hideToast, 4000);
+    t=setTimeout(hideToast, t);
   }
   var t;
   $el.click(function(){clearTimeout(t); hideToast();});
@@ -1497,12 +1497,11 @@ var seeUnActivePopExtend=function($el){
 
 var dummyShowingToastExtend=function($el){
 "use strict"
-  $el=toastExtend($el);
+  $el=toastExtend($el);  $el.css({bottom:'10em'});
   var $im=$('<img>').prop({src:uDummy}).css({margin:'auto',display:'block'});
   var $p1=$('<span>').append(langHtml.DummiesShowingMess);
-  var $p2=$('<span>').append($im);
   //var $ok=$('<button>').append(langHtml.OK).click($el.closePop).css({display:'block','margin-top':'1em'});
-  $el.append($p1,$im);
+  $el.append($p1);  //,$im
   return $el;
 }
 
@@ -2536,7 +2535,7 @@ var loginSelectorDivExtend=function($el){
     doHistPush({$view:$formLoginDiv});
     $formLoginDiv.setVis();
   });
-  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb, 'Email, name and image are used. However you can change what is shown to customers. Nothing is sent to Facebook.' ); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
+  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb, 'Name and image are shown to the public. Nothing is written to your Facebook flow.' ); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
   var $divRight=$('<div>').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).append( $buttonViaEmail);        $divRight.hide();
   var $divRow=$('<div>').append($divLeft, $divRight).css({display: 'flex', 'justify-content':'space-around'});  //
 
@@ -5871,7 +5870,7 @@ var getHistRet=function(data){
   if(boFirstLoadTab)  $footDiv.css({visibility:''});
 
   //if(siteName!='demo' && boShowDummy) $dummyShowingToast.showToast();
-  if(boShowDummy && document.domain.substr(0,4)!='demo') $dummyShowingToast.showToast();
+  if(boShowDummy && document.domain.substr(0,4)!='demo') $dummyShowingToast.showToast(12000);
   boFirstLoadTab=0;
 };
 
