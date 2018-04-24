@@ -318,7 +318,8 @@ WaitingForYourPositionHelp:'No collected data is saved',
 //DummiesShowingMess:'No real <span nom="vendors">vendors</span> are visible right now.',
 //DummiesShowingMess:'Since no <span nom="vendors">vendors</span> are visible right now, some dummies are shown.',
 //DummiesShowingMess:'Showing dummies.',
-DummiesShowingMess:'No real <span nom="vendors">vendors</span> (only dummies) are visible right now.',
+//DummiesShowingMess:'No real <span nom="vendors">vendors</span> (only dummies) are visible right now.',
+DummiesShowingMess:'No <span nom="vendors">vendors</span> are visible right now.<br> Are you a <span nom="vendor">vendor</span>? Sign in now and you\'ll be one of the first to appear.',
 //DummiesShowingMess2:'These will be removed once more people begin to use the site.',
 
 

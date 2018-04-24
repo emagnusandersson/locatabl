@@ -823,7 +823,8 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
     var whereDummyFilter="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";
     Sql.push("SELECT (@boShowDummy:=count(u.idUser)<1) AS boShowDummy FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND ("+whereDummyFilter+");");
     Sql.push("SELECT count(u.idUser) AS nUserReal FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE  "+whereDummyFilter+";");
-    Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=@boShowDummy, posTime=now() WHERE idOpenId REGEXP '^Dummy';");  
+    //Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=@boShowDummy, posTime=now() WHERE idOpenId REGEXP '^Dummy';");  
+    Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=0, posTime=now() WHERE idOpenId REGEXP '^Dummy';");  
 
     
     //strCond=array_filter(Where).join(' AND '); if(strCond.length>0) strCond='AND '+strCond;
@@ -846,7 +847,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
       var z=Math.log2(zFac/2);
       zoom=Math.floor(z);
       zoom=bound(zoom,0,15);
-    } else zoom=15;
+    } else zoom=4; //zoom=15;
   }
   this.zoom=zoom;
   return [null, [Ou]];
