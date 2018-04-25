@@ -861,7 +861,7 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   var site=Site[siteName]; 
   var Prop=site.Prop, TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
   //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
 
@@ -998,17 +998,17 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
 
 
 
-    // Create reportTab
-  SqlTab.push("CREATE TABLE "+reportTab+" ( \n\
+    // Create complaintTab
+  SqlTab.push("CREATE TABLE "+complaintTab+" ( \n\
   idVendor  int(4) NOT NULL, \n\
-  idReporter int(4) NOT NULL, \n\
+  idComplainer int(4) NOT NULL, \n\
   comment text CHARSET utf8, \n\
   answer text CHARSET utf8, \n\
   created TIMESTAMP NOT NULL default 0, \n\
   modified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
-  UNIQUE KEY (idVendor,idReporter), \n\
+  UNIQUE KEY (idVendor,idComplainer), \n\
   FOREIGN KEY (idVendor) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  FOREIGN KEY (idReporter) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \n\
+  FOREIGN KEY (idComplainer) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \n\
   ) ENGINE="+engine+" COLLATE "+collate+"");
 
 
@@ -1093,7 +1093,7 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
   var site=Site[siteName]; 
   var Prop=site.Prop, TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
   //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
 
@@ -1181,7 +1181,7 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboReporter INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboComplainer INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       START TRANSACTION; \n\
       IF IidUser IS NOT NULL THEN \n\
@@ -1201,13 +1201,13 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
         SET IidUser=@idUserTmp; \n\
       END IF;\n\
       IF IboVendor THEN \n\
-        SELECT "+strColTmp+" FROM ("+vendorTab+" v LEFT JOIN "+teamTab+" dis on dis.idUser=v.idTeam) WHERE v.idUser=IidUser; \n\
+        SELECT "+strColTmp+" FROM ("+vendorTab+" v LEFT JOIN "+teamTab+" tea on tea.idUser=v.idTeam) WHERE v.idUser=IidUser; \n\
         SELECT count(paymentNumber) AS n FROM "+paymentTab+" p WHERE idUser=IidUser; \n\
       ELSE SELECT 1 FROM dual WHERE 0; SELECT 1 FROM dual WHERE 0; END IF; \n\
       IF IboTeam THEN  SELECT * FROM "+teamTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
       IF IboMarketer THEN  SELECT * FROM "+marketerTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
       IF IboAdmin THEN SELECT * FROM "+adminTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboReporter THEN SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      IF IboComplainer THEN SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
       COMMIT; \n\
     END");
 
@@ -1230,16 +1230,17 @@ CLIENT_FOUND_ROWS
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"vendorSetup");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"userSetup");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"reporterSetup");
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"complainerSetup");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MergeID");
 
 /*
-    SELECT idUser, count(*) INTO OidReporter,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB; \n\
+    SELECT idUser, count(*) INTO OidComplainer,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB; \n\
       IF Vc=0 THEN \n\
         INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);  \n\
-        SELECT LAST_INSERT_ID() INTO OidReporter; \n\
+        SELECT LAST_INSERT_ID() INTO OidComplainer; \n\
       END IF; \n\
 
-      SELECT LAST_INSERT_ID() INTO OidReporter; \n\
+      SELECT LAST_INSERT_ID() INTO OidComplainer; \n\
 */
   //SqlFunction.push("INSERT INTO "+userTab+" (IP,idFB) VALUES ('fb',$id)"); 
 
@@ -1255,18 +1256,18 @@ CLIENT_FOUND_ROWS
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UseRebateCode");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"UseRebateCode(Icode varchar(128), IidUser INT, OUT OmonthsToAdd INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"UseRebateCode(Icode varchar(128), IidUser INT, OUT OmonthsToAdd INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, intMax INT; \n\
       START TRANSACTION; \n\
       SELECT SQL_CALC_FOUND_ROWS months INTO OmonthsToAdd FROM "+rebateCodeTab+" WHERE code=Icode AND validTill>now() AND nLeft!=0; \n\
       SELECT FOUND_ROWS() INTO Vc; \n\
-      IF Vc!=1 THEN SET OboOk=0, Omess=CONCAT('rebateCode is not valid, count=',Vc); ROLLBACK; LEAVE proc_label; END IF; \n\
+      IF Vc!=1 THEN SET OboOK=0, Omess=CONCAT('rebateCode is not valid, count=',Vc); ROLLBACK; LEAVE proc_label; END IF; \n\
   \n\
       SELECT SQL_CALC_FOUND_ROWS nMonthsStartOffer INTO Vn FROM "+vendorTab+" WHERE idUser=IidUser; \n\
       SELECT FOUND_ROWS() INTO Vc; \n\
-      IF Vc!=1 THEN SET OboOk=0, Omess=CONCAT('Vc=',Vc); ROLLBACK; LEAVE proc_label; END IF; \n\
-      IF Vn!=0 THEN SET OboOk=0, Omess='Only one startoffer'; ROLLBACK; LEAVE proc_label; END IF; \n\
+      IF Vc!=1 THEN SET OboOK=0, Omess=CONCAT('Vc=',Vc); ROLLBACK; LEAVE proc_label; END IF; \n\
+      IF Vn!=0 THEN SET OboOK=0, Omess='Only one startoffer'; ROLLBACK; LEAVE proc_label; END IF; \n\
   \n\
       SET intMax="+intMax+"; \n\
       UPDATE "+vendorTab+" SET nMonthsStartOffer=OmonthsToAdd, \n\
@@ -1286,17 +1287,16 @@ CLIENT_FOUND_ROWS
       DECLARE Vc, Vn, ViSeq INT; \n\
       SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM "+pubKeyTab+" WHERE pubKey=Ikey; \n\
       SET Vc=FOUND_ROWS(); \n\
-      IF Vc>1 THEN SET OboOk=0, Omess=CONCAT('pubKey exist multiple times Vc=',Vc); LEAVE proc_label; END IF; \n\
-      IF Vc=0 THEN SET OboOk=0, Omess='No such pubKey stored!'; LEAVE proc_label; END IF; \n\
+      IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('pubKey exist multiple times Vc=',Vc); LEAVE proc_label; END IF; \n\
+      IF Vc=0 THEN SET OboOK=0, Omess='No such pubKey stored!'; LEAVE proc_label; END IF; \n\
   \n\
-      IF iSeqN<=ViSeq THEN SET OboOk=0, Omess='Sequence error, try refresh the keys'; LEAVE proc_label; END IF; \n\
+      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the keys'; LEAVE proc_label; END IF; \n\
       UPDATE "+pubKeyTab+" SET iSeq=iSeqN WHERE idUser=OidUser; \n\
-      SET OboOk=1, Omess=''; \n\
+      SET OboOK=1, Omess=''; \n\
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetValuesToController(Ikey varchar(256), iSeqN INT, \n\
-       OUT OboShow TINYINT, OUT OtDiff INT, OUT OboOk INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetValuesToController(Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, VIdUser, ViSeq, intMax INT; \n\
       CALL "+siteName+"GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess); \n\
@@ -1305,15 +1305,14 @@ CLIENT_FOUND_ROWS
   \n\
       SELECT SQL_CALC_FOUND_ROWS boShow, UNIX_TIMESTAMP(posTime)+hideTimer -UNIX_TIMESTAMP(now()) INTO OboShow, OtDiff FROM "+vendorTab+" WHERE idUser=VidUser;\n\
       SET Vc=FOUND_ROWS(); \n\
-      IF Vc=0 THEN SET OboOk=0, Omess='No such idUser!';  LEAVE proc_label; END IF; \n\
+      IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF; \n\
       IF OtDiff<0 THEN SET OboShow=0; END IF; \n\
       SET OboOK=1, Omess=''; \n\
   \n\
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, \n\
-      OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, VIdUser, ViSeq, VresM INT; \n\
       START TRANSACTION; \n\
@@ -1321,21 +1320,20 @@ CLIENT_FOUND_ROWS
       IF OboOK=0 THEN ROLLBACK; LEAVE proc_label; END IF; \n\
       CALL "+siteName+"TimeAccumulatedUpdOne(VidUser); \n\
   \n\
-      IF IboShow=0 THEN  # If hiding\n\
+      IF IboShow=0 THEN  \n\
         UPDATE "+vendorTab+" SET boShow=IboShow, posTime=now(), histActive=histActive|1 WHERE idUser=VIdUser; \n\
         SET OboOK=1, Omess='';\n\
-        COMMIT; LEAVE proc_label; \n\
+        # COMMIT; LEAVE proc_label; \n\
+      ELSE \n\
+        SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM "+vendorTab+" WHERE idUser=VIdUser; \n\
+        SET Vc=FOUND_ROWS(); \n\
+        IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF; \n\
+        IF VresM<1 THEN SET VresM=1; END IF; \n\
+        CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy); \n\
+    \n\
+        UPDATE "+vendorTab+" SET x=Ix, y=Iy, boShow=IboShow, hideTimer=IhideTimer, posTime=now(), histActive=histActive|1 WHERE idUser=VIdUser; \n\
+        SET OboOK=1, Omess='';\n\
       END IF; \n\
-  \n\
-         # If showing \n\
-      SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM "+vendorTab+" WHERE idUser=VIdUser; \n\
-      SET Vc=FOUND_ROWS(); \n\
-      IF Vc=0 THEN SET OboOk=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF; \n\
-      IF VresM<1 THEN SET VresM=1; END IF; \n\
-      CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy); \n\
-  \n\
-      UPDATE "+vendorTab+" SET x=Ix, y=Iy, boShow=IboShow, hideTimer=IhideTimer, posTime=now(), histActive=histActive|1 WHERE idUser=VIdUser; \n\
-      SET OboOK=1, Omess='';\n\
       COMMIT; \n\
     END");
 
@@ -1348,7 +1346,7 @@ CLIENT_FOUND_ROWS
         CALL copyTable('"+vendorImageTab+"_dup','"+vendorImageTab+"'); \n\
         CALL copyTable('"+teamTab+"_dup','"+teamTab+"'); \n\
         CALL copyTable('"+teamImageTab+"_dup','"+teamImageTab+"'); \n\
-        CALL copyTable('"+reportTab+"_dup','"+reportTab+"'); \n\
+        CALL copyTable('"+complaintTab+"_dup','"+complaintTab+"'); \n\
         CALL copyTable('"+paymentTab+"_dup','"+paymentTab+"'); \n\
         CALL copyTable('"+marketerTab+"_dup','"+marketerTab+"'); \n\
         CALL copyTable('"+rebateCodeTab+"_dup','"+rebateCodeTab+"'); \n\
@@ -1365,7 +1363,7 @@ RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
              "+vendorImageTab+" TO "+vendorImageTab+"_dup,\n\
              "+teamTab+" TO "+teamTab+"_dup,\n\
              "+teamImageTab+" TO "+teamImageTab+"_dup,\n\
-             "+reportTab+" TO "+reportTab+"_dup,\n\
+             "+complaintTab+" TO "+complaintTab+"_dup,\n\
              "+paymentTab+" TO "+paymentTab+"_dup,\n\
              "+marketerTab+" TO "+marketerTab+"_dup,\n\
              "+rebateCodeTab+" TO "+rebateCodeTab+"_dup,\n\
@@ -1381,7 +1379,7 @@ RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
         DELETE FROM "+vendorImageTab+" WHERE 1; \n\
         DELETE FROM "+teamTab+" WHERE 1; \n\
         DELETE FROM "+teamImageTab+" WHERE 1; \n\
-        DELETE FROM "+reportTab+" WHERE 1; \n\
+        DELETE FROM "+complaintTab+" WHERE 1; \n\
         DELETE FROM "+paymentTab+" WHERE 1; \n\
         DELETE FROM "+marketerTab+" WHERE 1; \n\
         DELETE FROM "+rebateCodeTab+" WHERE 1; \n\
@@ -1393,7 +1391,7 @@ RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
         INSERT INTO "+vendorImageTab+" SELECT * FROM "+vendorImageTab+"_dup; \n\
         INSERT INTO "+teamTab+" SELECT * FROM "+teamTab+"_dup; \n\
         INSERT INTO "+teamImageTab+" SELECT * FROM "+teamImageTab+"_dup; \n\
-        INSERT INTO "+reportTab+" SELECT * FROM "+reportTab+"_dup; \n\
+        INSERT INTO "+complaintTab+" SELECT * FROM "+complaintTab+"_dup; \n\
         INSERT INTO "+paymentTab+" SELECT * FROM "+paymentTab+"_dup; \n\
         INSERT INTO "+marketerTab+" SELECT * FROM "+marketerTab+"_dup; \n\
         INSERT INTO "+rebateCodeTab+" SELECT * FROM "+rebateCodeTab+"_dup; \n\
@@ -1409,7 +1407,7 @@ RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
         DROP TABLE IF EXISTS "+vendorImageTab+"_dup; \n\
         DROP TABLE IF EXISTS "+teamTab+"_dup; \n\
         DROP TABLE IF EXISTS "+teamImageTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+reportTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+complaintTab+"_dup; \n\
         DROP TABLE IF EXISTS "+paymentTab+"_dup; \n\
         DROP TABLE IF EXISTS "+marketerTab+"_dup; \n\
         DROP TABLE IF EXISTS "+rebateCodeTab+"_dup; \n\
@@ -1549,7 +1547,7 @@ app.SetupSql.prototype.createDummies=function(SiteName){
   var TableName=site.TableName, ViewName=site.ViewName, Prop=site.Prop;
   var Enum={};   for(var name in Prop) {if('Enum' in Prop[name]) Enum[name]=Prop[name].Enum.concat([]); }   //extend(Enum,site.Enum);
   //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
   //var VendorUpdF=site.VendorUpdF;
@@ -1714,19 +1712,19 @@ app.SetupSql.prototype.createDummies=function(SiteName){
 
   //var idPre='10000',  idNum=2646477985;
   //var idPre='10000000000000';  idNum=0;
-  //var IdReporter=[idPre+(idNum+1), idPre+(idNum+2), idPre+(idNum+5)];
-  var IdReporter=[2, 3, 4];
+  //var IdComplainer=[idPre+(idNum+1), idPre+(idNum+2), idPre+(idNum+5)];
+  var IdComplainer=[2, 3, 4];
   //var StrName=['Al Alba', 'Bob Bee', 'Cody Colt'];
 
-  var StrReport=['He never answered the phone', 'No good', 'Bad bad bad'];
+  var StrComplaint=['He never answered the phone', 'No good', 'Bad bad bad'];
   var StrAns=['I was on the toilet', "Sorry, I'm a bit new.", ''];
 
-  var nReporter=IdReporter.length;
+  var nComplainer=IdComplainer.length;
 
   for(var j=0;j<10;j++){ //loop through drivers
-    for(var i=0;i<nReporter;i++){
-      var idRep=IdReporter[i], iRep=(i+j)%nReporter, strRep=StrReport[iRep], iAns=(i+2*j)%nReporter, strAns=StrAns[iAns];
-      SqlDummies.push("INSERT INTO "+reportTab+" (idVendor, idReporter, comment, answer, created, modified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now() FROM "+userTab+" WHERE idOpenId REGEXP '^Dummy' AND idUser%10="+j);
+    for(var i=0;i<nComplainer;i++){
+      var idRep=IdComplainer[i], iRep=(i+j)%nComplainer, strRep=StrComplaint[iRep], iAns=(i+2*j)%nComplainer, strAns=StrAns[iAns];
+      SqlDummies.push("INSERT INTO "+complaintTab+" (idVendor, idComplainer, comment, answer, created, modified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now() FROM "+userTab+" WHERE idOpenId REGEXP '^Dummy' AND idUser%10="+j);
     }
   }
   }
@@ -1743,7 +1741,7 @@ app.SetupSql.prototype.createDummy=function(SiteName){
   var site=Site[siteName]; 
   var TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
   //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, reportTab, adminTab, settingTab, userTab}=site.TableName;
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
 
@@ -1876,7 +1874,7 @@ ReqSql.prototype.toBrowser=function(objSetupSql){
 
 
 app.createDumpCommand=function(){ 
-  var strCommand='', StrTabType=['user','vendor','vendorImage','team','teamImage','setting','report','rebateCode','pubKey','payment','marketer','admin'];
+  var strCommand='', StrTabType=['user','vendor','vendorImage','team','teamImage','setting','complaint','rebateCode','pubKey','payment','marketer','admin'];
   for(var i=0;i<StrTabType.length;i++){
     var strTabType=StrTabType[i], StrTab=[];
     for(var j=0;j<SiteName.length;j++){

@@ -128,11 +128,11 @@
 //VUpdate (vendorSettingDiv, priceSettingDiv)
 //VHide (quickDiv)
 //VIntroCB (vendorIntroDiv)
-//RIntroCB (reporterIntroDiv)
+//RIntroCB (complainerIntroDiv)
 //UUpdate (userSettingDiv)
-//loginGetGraph (userSettingDiv, convertIDDiv, reportCommentButt, moreDiv)
+//loginGetGraph (userSettingDiv, convertIDDiv, complaintCommentButt, moreDiv)
 //VUpdate (convertIDDiv, uploadPosNLoadTabStart)
-//reportUpdateComment (reportCommentPop)
+//complaintUpdateComment (complaintCommentPop)
 //(nothing really) (loadTabStart, firstAJAXCall, teamDiv)
 
 
@@ -255,8 +255,8 @@ ReqBE.prototype.go=function*(){
   if(caller=='index'){
       // Arrays of functions
     arrCSRF=['UUpdate','VIntroCB','RIntroCB','VSetPosCond','VUpdate','VShow','VHide','VDelete','SUseRebateCode','teamLoad','teamSaveName','teamSave','rebateCodeCreate','adminMonitorClear',
-    'reportUpdateComment','reportUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
-    arrNoCSRF=['setupById','setUpCond','setUp','getList','getGroupList','getHist','VPaymentList','adminNVendor','reportOneGet','reportVGet','reportRGet','logout','getSetting'];  // ,'testA','testB'
+    'complaintUpdateComment','complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
+    arrNoCSRF=['setupById','setUpCond','setUp','getList','getGroupList','getHist','VPaymentList','adminNVendor','complaintOneGet','complaintVGet','complaintRGet','logout','getSetting'];  // ,'testA','testB'
     allowed=arrCSRF.concat(arrNoCSRF);
 
       // Assign boCheckCSRF and boSetNewCSRF
@@ -487,12 +487,14 @@ ReqBE.prototype.changePW=function*(inObj){
   var Sql=[], Val=[];
   //Sql.push("UPDATE "+userTab+" SET password=? WHERE password=? AND idUser=?;");
   //Val.push(inObj.password, inObj.passwordOld, idUser);
+  Sql.push("START TRANSACTION;");
   Sql.push("CALL "+siteName+"setPassword(?,?,?);"); Val.push(idUser, passwordOld, passwordNew);
+  Sql.push("COMMIT;");
 
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
 
-  var mess=results[0][0].mess;
+  var mess=results[1][0].mess;
   if(mess=='Password changed') Ou.boOK=1;
   this.mes(mess); 
   
@@ -647,14 +649,14 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   
   var [err,con]=yield*mysqlGetConnection(flow, this.pool);  if(err) return [err];   this.con=con;
   var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
-  if(['vendorFun', 'reporterFun', 'teamFun', 'marketerFun', 'adminFun', 'refreshFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
+  if(['vendorFun', 'complainerFun', 'teamFun', 'marketerFun', 'adminFun', 'refreshFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
     var [err, result]=yield *this[strFun](inObj);  if(err) return [err];
   }
   if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
   return [null, [Ou]];
 }
 
-ReqBE.prototype.reporterFun=function*(){
+ReqBE.prototype.complainerFun=function*(){
   var Ou={};
   var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
   return [null, Ou];
@@ -733,7 +735,7 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   
   var StrRole=null; if(inObj && typeof inObj=='object' && 'Role' in inObj) StrRole=inObj.Role;
   
-  var StrRoleAll=['vendor','team','marketer','admin','reporter'];
+  var StrRoleAll=['vendor','team','marketer','admin','complainer'];
   if(typeof StrRole=='undefined' || !StrRole) StrRole=StrRoleAll; 
   if(typeof StrRole=='string') StrRole=[StrRole];
 
@@ -744,8 +746,8 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   if(!idUser) { idUser=yield* getRedis(flow, req.sessionID+'_LoginIdUser'); }
   var BoTest={};
   for(var i=0;i<StrRoleAll.length;i++) { var strRole=StrRoleAll[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
-  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.vendor, BoTest.team, BoTest.marketer, BoTest.admin, BoTest.reporter];
-  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, @OboOk, @Omess);");
+  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.vendor, BoTest.team, BoTest.marketer, BoTest.admin, BoTest.complainer];
+  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, @OboOK, @Omess);");
   var sql=Sql.join('\n');
   
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -757,7 +759,7 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
     var res=results[3], c=res.length; if(BoTest.team) userInfoFrDBUpd.team=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.team=='object') extend(userInfoFrDBUpd.team,userInfoFrDBU);
     var res=results[4], c=res.length; if(BoTest.marketer) userInfoFrDBUpd.marketer=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.marketer=='object') extend(userInfoFrDBUpd.marketer,userInfoFrDBU); 
     var res=results[5], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.admin=='object') extend(userInfoFrDBUpd.admin,userInfoFrDBU);
-    var res=results[6]; if(BoTest.reporter ) {   var  c=res[0].n;  userInfoFrDBUpd.reporter=c?{idUser:userInfoFrDBUpd.user.idUser, c:c}:0;    }
+    var res=results[6]; if(BoTest.complainer ) {   var  c=res[0].n;  userInfoFrDBUpd.complainer=c?{idUser:userInfoFrDBUpd.user.idUser, c:c}:0;    }
   } else extend(userInfoFrDBUpd, specialistDefault);
   
   extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
@@ -823,8 +825,8 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
     var whereDummyFilter="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";
     Sql.push("SELECT (@boShowDummy:=count(u.idUser)<1) AS boShowDummy FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND ("+whereDummyFilter+");");
     Sql.push("SELECT count(u.idUser) AS nUserReal FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE  "+whereDummyFilter+";");
-    //Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=@boShowDummy, posTime=now() WHERE idOpenId REGEXP '^Dummy';");  
-    Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=0, posTime=now() WHERE idOpenId REGEXP '^Dummy';");  
+    if(typeof buDbgShowDummies=='undefined') Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=0, posTime=now() WHERE idOpenId REGEXP '^Dummy';"); 
+    else Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=@boShowDummy, posTime=now() WHERE idOpenId REGEXP '^Dummy';");   
 
     
     //strCond=array_filter(Where).join(' AND '); if(strCond.length>0) strCond='AND '+strCond;
@@ -856,7 +858,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
 //ReqBE.prototype.addMapCond=function*(inObj){}
 
 ReqBE.prototype.getList=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, vendorTab, teamTab, reportTab, reportTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, vendorTab, teamTab, complaintTab, complaintTab}=site.TableName;
   var strCol=this.strCol;
   var Ou={};
   this.tab=[];this.NVendor=[0,0];
@@ -873,7 +875,7 @@ ReqBE.prototype.getList=function*(inObj){
   
   var Sql=[];
   var WhereTmp=this.Where.concat([this.whereMap,"boShow=1",this.termCond]),  strCond=array_filter(WhereTmp).join(' AND ');
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM (("+vendorTab+" v NATURAL JOIN "+userTab+" u) LEFT JOIN "+teamTab+" dis on dis.idUser=v.idTeam) LEFT JOIN "+reportTab+" rb ON rb.idVendor=v.idUser \
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM (("+vendorTab+" v NATURAL JOIN "+userTab+" u) LEFT JOIN "+teamTab+" tea on tea.idUser=v.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idVendor=v.idUser \
 WHERE "+strCond+" GROUP BY v.idUser ORDER BY posTime DESC LIMIT 0, "+maxVendor+";");
 
   Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
@@ -965,7 +967,7 @@ ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
 
   if(inObj.email) email=inObj.email;
   
-    // An entry in userTab may exist (if the user is a reporter). However an entry in vendorTab is something one can assume does not exist.
+    // An entry in userTab may exist (if the user is a complainer). However an entry in vendorTab is something one can assume does not exist.
   var Sql=[], Val=[];
   Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
@@ -1184,9 +1186,9 @@ ReqBE.prototype.rebateCodeCreate=function*(inObj){  // writing needSession
 }
 
 
-ReqBE.prototype.reportUpdateComment=function*(inObj){
+ReqBE.prototype.complaintUpdateComment=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var {userTab,reportTab}=site.TableName;
+  var {userTab,complaintTab}=site.TableName;
   var Ou={};
   var objT=this.sessionUserInfoFrDB.user||this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
   var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
@@ -1199,12 +1201,12 @@ ReqBE.prototype.reportUpdateComment=function*(inObj){
   var Sql=[], Val=[];
   Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image,   email, nameIP, image);
   Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
-  Sql.push("SELECT @idReporter:=LAST_INSERT_ID() AS idUser;");
+  Sql.push("SELECT @idComplainer:=LAST_INSERT_ID() AS idUser;");
   
-  Sql.push("INSERT INTO "+reportTab+" (idVendor,idReporter,comment,created) VALUES (?,@idReporter,?,now()) ON DUPLICATE KEY UPDATE comment=?, modified=now();");
+  Sql.push("INSERT INTO "+complaintTab+" (idVendor,idComplainer,comment,created) VALUES (?,@idComplainer,?,now()) ON DUPLICATE KEY UPDATE comment=?, modified=now();");
   Val.push(idVendor,comment,comment);
-  Sql.push("DELETE FROM "+reportTab+" WHERE comment IS NULL AND answer IS NULL;");
-  Sql.push("SELECT count(*) AS n FROM "+reportTab+" WHERE idReporter=@idReporter;"); 
+  Sql.push("DELETE FROM "+complaintTab+" WHERE comment IS NULL AND answer IS NULL;");
+  Sql.push("SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=@idComplainer;"); 
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var StrMes=[];
@@ -1221,20 +1223,20 @@ ReqBE.prototype.reportUpdateComment=function*(inObj){
 
   return [null, [Ou]];
 }
-ReqBE.prototype.reportUpdateAnswer=function*(inObj){
+ReqBE.prototype.complaintUpdateAnswer=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
-  var reportTab=site.TableName.reportTab;
+  var complaintTab=site.TableName.complaintTab;
   var Ou={};
   var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
 
-  var idReporter=inObj.idReporter;
+  var idComplainer=inObj.idComplainer;
   var idVendor=user.idUser;
   var answer=inObj.answer;  answer=answer.substr(0,10000);
   if(answer.length==0) answer=null;
   var Sql=[], Val=[];
-  Sql.push("UPDATE "+reportTab+" SET answer=? WHERE idVendor=? AND idReporter=?;");
-  Val.push(answer,idVendor,idReporter);
-  Sql.push("DELETE FROM "+reportTab+" WHERE  comment IS NULL AND answer IS NULL;");
+  Sql.push("UPDATE "+complaintTab+" SET answer=? WHERE idVendor=? AND idComplainer=?;");
+  Val.push(answer,idVendor,idComplainer);
+  Sql.push("DELETE FROM "+complaintTab+" WHERE  comment IS NULL AND answer IS NULL;");
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var StrMes=[];
@@ -1245,17 +1247,17 @@ ReqBE.prototype.reportUpdateAnswer=function*(inObj){
   return [null, [Ou]];
 }
 
-ReqBE.prototype.reportOneGet=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, reportTab}=site.TableName;
+ReqBE.prototype.complaintOneGet=function*(inObj){
+  var req=this.req, flow=req.flow, site=req.site, {userTab, complaintTab}=site.TableName;
   var Ou={};   
   //debugger
-  var {user, vendor, reporter}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
-  var idReporter, idVendor;
-  if('idReporter' in inObj) idReporter=inObj.idReporter;  else if(reporter) idReporter=reporter.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
+  var {user, vendor, complainer}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var idComplainer, idVendor;
+  if('idComplainer' in inObj) idComplainer=inObj.idComplainer;  else if(complainer) idComplainer=complainer.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   if('idVendor' in inObj) idVendor=inObj.idVendor; else if(vendor) idVendor=vendor.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   
-  var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+reportTab+" r ON u.idUser=r.idVendor WHERE idVendor=? AND idReporter=? "; 
-  var Val=[idVendor,idReporter];
+  var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+complaintTab+" r ON u.idUser=r.idVendor WHERE idVendor=? AND idComplainer=? "; 
+  var Val=[idVendor,idComplainer];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var c=results.length; 
   var mestmp; if(c>0){ Ou.row=results[0]; mestmp="Feedback fetched"; }else{ Ou.row={}; mestmp="No existing feedback";}
@@ -1265,14 +1267,14 @@ ReqBE.prototype.reportOneGet=function*(inObj){
 
 
 
-ReqBE.prototype.reportVGet=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, reportTab}=site.TableName;
+ReqBE.prototype.complaintVGet=function*(inObj){
+  var req=this.req, flow=req.flow, site=req.site, {userTab, complaintTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
   
   var idVendor=inObj.idVendor;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS idReporter, nameIP, image, comment, answer, UNIX_TIMESTAMP(created) AS created FROM "+reportTab+" r JOIN "+userTab+" u ON r.idReporter=u.idUser WHERE idVendor=? ORDER BY created DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS idComplainer, nameIP, image, comment, answer, UNIX_TIMESTAMP(created) AS created FROM "+complaintTab+" r JOIN "+userTab+" u ON r.idComplainer=u.idUser WHERE idVendor=? ORDER BY created DESC LIMIT "+offset+","+rowCount+";"); 
   Val.push(idVendor);
   Sql.push("SELECT FOUND_ROWS() AS n;");
   var sql=Sql.join("\n ");
@@ -1282,15 +1284,15 @@ ReqBE.prototype.reportVGet=function*(inObj){
   Ou.nTot=results[1][0].n;
   return [null, [Ou]];
 }
-ReqBE.prototype.reportRGet=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, vendorTab, reportTab}=site.TableName;
+ReqBE.prototype.complaintRGet=function*(inObj){
+  var req=this.req, flow=req.flow, site=req.site, {userTab, vendorTab, complaintTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
 
-  var idReporter=inObj.idReporter;
+  var idComplainer=inObj.idComplainer;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser, idFB, idIdPlace, idOpenId, image, displayName, boImgOwn, imTag, comment, answer, UNIX_TIMESTAMP(r.created) AS created FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser JOIN "+reportTab+" r ON u.idUser=r.idVendor WHERE idReporter=? ORDER BY r.created DESC LIMIT "+offset+","+rowCount+";"); 
-  Val.push(idReporter); 
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser, idFB, idIdPlace, idOpenId, image, displayName, boImgOwn, imTag, comment, answer, UNIX_TIMESTAMP(r.created) AS created FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser JOIN "+complaintTab+" r ON u.idUser=r.idVendor WHERE idComplainer=? ORDER BY r.created DESC LIMIT "+offset+","+rowCount+";"); 
+  Val.push(idComplainer); 
   Sql.push("SELECT FOUND_ROWS() AS n;"); 
   var sql=Sql.join("\n ");
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];

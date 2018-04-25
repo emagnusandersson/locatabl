@@ -11,7 +11,7 @@ On:'On',
 Off:'Off',
 Save:'Save',
 Delete:'Delete',
-Reporter:'Reporter', // The one who files a report
+Complainer:'Complainer', // The one who files a complaint
 Vehicle:'Vehicle',
 Brand:'Brand',  // Vehicle brand
 Independent:'Independent',
@@ -67,7 +67,7 @@ ChangeMapMarker:'Change map marker',
 Prices:'Prices',
 UserInfo:'User info',
 UserSettings:'User settings',
-DriverSettings:'Driver settings',
+VendorSettings:'Driver settings',
 Deadline:'Deadline',
 PaymentList:'List of payments',
 
@@ -103,17 +103,17 @@ PositionETC:'Position etc',
 Contact:'Contact',
 Prices:'Prices',
 
-reports:'Reports',
+complaints:'Complaints',
 vote:{
-deleteReport:'Delete report',
+deleteComplaint:'Delete complaint',
 deleteAnswer:'Delete answer',
 answer:'Answer',
-writeComment:'Write Report'
+writeComment:'Write Complaint'
 },
 
 Answer:'Answer',
 Change:'Change',
-Report:'Report',
+Complaint:'Complaint',
 Back:'⇦',
 
 
@@ -169,7 +169,7 @@ shiftEnd:'When do you end for the day.<br>Useful for customers that wants to boo
 
 
 
-writeReportPopup:'<span nom="theVendor">The vendor</span> may delete his account, which means that all collected reputation data (including reports) are deleted.',
+writeComplaintPopup:'<span nom="theVendor">The vendor</span> may delete his account, which means that all collected reputation data (including complaints) are deleted.',
 
 quickHelp:'Set the timer and click "On" to become visible.<p>Click "Off" to hide.',
   
@@ -178,7 +178,7 @@ pricePref:{pop:"Change distance and time"},
 
 
   //login
-loginInfo:{'reporter':'reporter',
+loginInfo:{'complainer':'complainer',
 'vendor':'vendor',
 'team':'team',
 'marketer':'marketer',
@@ -213,7 +213,8 @@ NothingIsWrittenToYourFBFlow:'Nothing is written to your Facebook flow.',
 YouCanUseCustomImage:"You can use custom image, display name etc.",
 //NoteYouCanDeleteYourAccount:'Note! You can delete all your data (delete your account), and come back at a later timepoint as many times as you want.',
 FacebookIsRecommended:'Facebook is recommended (quicker to sign up, no need to remember a new password).',
-NoteYouCanDeleteYourAccount:'Note! You can delete your account and come back later as many times as you want.',
+//NoteYouCanDeleteYourAccount:'Note! If you don\'t like the service you can delete your account and come back later as many times as you want.',
+NoteYouCanDeleteYourAccount:'Note! If you don\'t like the site you can delete your account (all data about you) whenever you want. So feel free to try it out.',
 moreInfoOnFAQ:'More info (FAQ)',
 
 vendorPay:{
@@ -319,7 +320,7 @@ WaitingForYourPositionHelp:'No collected data is saved',
 //DummiesShowingMess:'Since no <span nom="vendors">vendors</span> are visible right now, some dummies are shown.',
 //DummiesShowingMess:'Showing dummies.',
 //DummiesShowingMess:'No real <span nom="vendors">vendors</span> (only dummies) are visible right now.',
-DummiesShowingMess:'No <span nom="vendors">vendors</span> are visible right now.<br> Are you a <span nom="vendor">vendor</span>? Sign in now and you\'ll be one of the first to appear.',
+DummiesShowingMess:'No <span nom="vendors">vendors</span> are visible right now.<br> Are you a <span nom="vendor">vendor</span>? Sign in now and be one of the pioneers.',
 //DummiesShowingMess2:'These will be removed once more people begin to use the site.',
 
 
@@ -409,7 +410,7 @@ idTeam:'Team',
 idTeamWanted:'idTeam',
 linkTeam:'',
 bla:'',
-nReport:'Reports',
+nComplaint:'Complaints',
 histActive:'Active days per last-<span></span>-days',
 timeAccumulated:'Accumulated time as visible',
 tLastWriteOfTA:'',
@@ -497,7 +498,7 @@ idTeam:'',
 idTeamWanted:'<p>Being in a team/company with a brand that the customers recognize, can give the customers extra confidence.</p><p>Read more in the FAQ on how to join/create a team.</p>',
 linkTeam:'',
 bla:'',
-nReport:'',
+nComplaint:'',
 histActive:'Number of days with any activity during the last <span></span> days',
 timeAccumulated:'',
 tLastWriteOfTA:'',

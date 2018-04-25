@@ -21,7 +21,7 @@ CreatorPlugin.general=function(){
   StrPropContact=site.StrPropContact; StrPropPos=site.StrPropPos; StrPropRep=site.StrPropRep;
 
     // StrPropMain: rows in vendorInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, tableDiv
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', StrPropContact, 'currency', 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', StrPropContact, 'currency', 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
 
@@ -110,12 +110,12 @@ CreatorPlugin.general=function(){
     //var tmpIP=function(iMTab,$c){  return enumIP[Number( MTab[iMTab].IP )]; };
     //$.extend(Prop.IP, { setInfo:tmpIP, sortTabF:tmpIP, setTabF:tmpIP, setMapF:tmpIP, setMapMF:tmpIP });
 
-      // nReport
-    var tmpSetNReport=function(iMTab,$c){   $c.children('button')[0].mySet(iMTab);   };
-    var tmpCrNReport=function($c){  $c.append(  $(reportButtonExtend($('<button>')[0]))  ); };
-    $.extend(Prop.nReport, {
-      setInfo:tmpSetNReport, crInfo:tmpCrNReport,
-      setTabF:tmpSetNReport, crTabF:tmpCrNReport
+      // nComplaint
+    var tmpSetNComplaint=function(iMTab,$c){   $c.children('button')[0].mySet(iMTab);   };
+    var tmpCrNComplaint=function($c){  $c.append(  $(complaintButtonExtend($('<button>')[0]))  ); };
+    $.extend(Prop.nComplaint, {
+      setInfo:tmpSetNComplaint, crInfo:tmpCrNComplaint,
+      setTabF:tmpSetNComplaint, crTabF:tmpCrNComplaint
     });
 
       // idTeam
@@ -276,7 +276,7 @@ CreatorPlugin.transportProt=function(){
   ColsShowDefaultRS= ['image', 'displayName'];
   colOneMarkDefault='vehicleType';
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'currency', 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'currency', 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','vehicleType','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Vehicle','Contact','Price','Position','Reputation'];
 
@@ -402,7 +402,7 @@ CreatorPlugin.transportPrice=function(){
 
   StrPropTransportProtPrice=site.StrPropTransportProtPrice;
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','vehicleType','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Vehicle','Contact','Price','Position','Reputation'];
 
@@ -629,7 +629,7 @@ CreatorPlugin.transportPrice=function(){
 //0123456789abcdef
 
 CreatorPlugin.transportUrgent=function(){
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'standingByMethod','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'standingByMethod','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
 
   //enumStandingByMethod=Enum.standingByMethod;
   enumStandingByMethod=Prop.standingByMethod.Enum;
@@ -656,7 +656,7 @@ CreatorPlugin.transportUrgent=function(){
 //0123456789abcdef
 
 CreatorPlugin.night=function(){
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrPropContact, 'shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrPropContact, 'shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
 
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
@@ -703,7 +703,7 @@ CreatorPlugin.taxi=function(){
 
   //StrPropTaxi=['nPassengers', 'extraSeat', 'childSeat', 'wheelChairPlaces'];
   var StrPropTaxi=site.StrPropTaxi;
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'idDriverGovernment', 'vehicleType', 'brand', StrPropTaxi, StrPropContact, 'standingByMethod','shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'idDriverGovernment', 'vehicleType', 'brand', StrPropTaxi, StrPropContact, 'standingByMethod','shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
 
   $comparePriceDataPop.setDefault(10,15); // Arg: dist, time
 
@@ -747,7 +747,7 @@ CreatorPlugin.transport=function(){
   //var StrCompact=['generalCargo', 'tailLift', 'loaderCrane', 'tipper', 'loadableFromTheSide', 'iso20', 'iso40', 'tiltBed', 'sideLift', 'rollerContainer', 'otherContainer'];
   var StrCompact=site.StrTransportBool;
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', 'brand','payload', StrCompact, StrPropContact, 'standingByMethod','shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', 'brand','payload', StrCompact, StrPropContact, 'standingByMethod','shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
 
   $comparePriceDataPop.setDefault(10,15); // Arg: dist, time
 
@@ -804,7 +804,7 @@ CreatorPlugin.cleaner=function(){
   //var StrCleanerBool=['boHome','boOffice','boIndustrial', 'boGotEquipment'];
   var StrBool=site.StrCleanerBool;
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrBool, StrPropContact, 'shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrBool, StrPropContact, 'shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
 
@@ -867,7 +867,7 @@ CreatorPlugin.windowcleaner=function(){
 
   var StrBool=site.StrCleanerBool;
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrBool, StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrBool, StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
 
@@ -921,7 +921,7 @@ CreatorPlugin.lawnmower=function(){
   colOneMarkDefault='vehicleType';
 
   var StrBool=site.StrToolBool;
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrBool, 'cuttingWidth', StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrBool, 'cuttingWidth', StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','vehicleType','pushMower','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Vehicle','Tools','Contact','Price','Position','Reputation'];
 
@@ -978,7 +978,7 @@ CreatorPlugin.snowremoval=function(){
   colOneMarkDefault='vehicleType';
 
   var StrBool=site.StrToolBool;
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrBool, StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrBool, StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','vehicleType','shovel','tel','currency','dist','created'];
   StrGroupMain=['Vendor','Vehicle','Tools','Contact','Price','Position','Reputation'];
 
@@ -1068,7 +1068,7 @@ CreatorPlugin.fruitpicker=function(){
   ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'pricePerHour'];
   colOneMarkDefault='vehicleType';
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrPropContact, 'pricePerHour', 'lastPriceChange', StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrPropContact, 'pricePerHour', 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','tel','pricePerHour','dist','created'];
   StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
 
@@ -1106,7 +1106,7 @@ CreatorPlugin.programmer=function(){
   var StrProgrammerLang=site.StrProgrammerLang;
   var StrSpec=StrProgrammerLang.concat('otherLang');
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', StrPropContact, 'pricePerHour', 'lastPriceChange', StrSpec, StrPropPos, StrPropRep, 'nReport');
+  StrPropMain=[].concat('image', 'idTeam', 'displayName', StrPropContact, 'pricePerHour', 'lastPriceChange', StrSpec, StrPropPos, StrPropRep, 'nComplaint');
   StrGroupFirstMain=['image','tel','pricePerHour','dist','c','created'];
   StrGroupMain=['Vendor','Contact','Price','Position','Languages','Reputation'];
 
@@ -1538,13 +1538,13 @@ var agreementStartExtend=function($el){
   var $d0=$('<span>').append(langHtml.agreement[0]), $d1=$('<span>').append(langHtml.agreement[1]);
 
   var dateLocal=[];
-  var vStr=['agreementReporterHead','agreementVendorHead'];
+  var vStr=['agreementComplainerHead','agreementVendorHead'];
   var dateText=[];
   for(var i=0;i<vStr.length;i++){
     var arrT=langHtml[vStr[i]].match(/(\d\d\d\d)-(\d\d)-(\d\d)/);
     dateText[i]=(new Date(arrT[1],arrT[2],arrT[3]))/1000;
   }
-  var dateTextComp=[0,0]; dateTextComp[0]=dateText[0];  // dateTextComp: date of text to compare with dateLocal (for reporter resp vendor) (vendor shall read both texts)
+  var dateTextComp=[0,0]; dateTextComp[0]=dateText[0];  // dateTextComp: date of text to compare with dateLocal (for complainer resp vendor) (vendor shall read both texts)
   for(var i=0;i<vStr.length;i++){
     if(dateText[i]>dateTextComp[1]) dateTextComp[1]=dateText[i];
   }
@@ -1869,7 +1869,7 @@ var vendorSettingFootExtend=function($el){
 "use strict"
   var $buttonSave=$('<button>').click($vendorSettingDiv.save).append(langHtml.Save).addClass('flexWidth').css({'float':'left', 'margin-right':'.2em'});
   var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append(langHtml.DriverSettings).addClass('footDivLabel');
+  var $span=$('<span>').append(langHtml.VendorSettings).addClass('footDivLabel');
   $el.append($buttonBack, $buttonSave, $span).addClass('footDiv');
   return $el;
 }
@@ -2147,7 +2147,7 @@ var vendorIntroDivExtend=function($el){
 }
 */
 
-var reporterIntroDivExtend=function($el){
+var complainerIntroDivExtend=function($el){
 "use strict"
   var save=function(){
     resetMess();
@@ -2192,7 +2192,7 @@ var reporterIntroDivExtend=function($el){
 var vendorDivExtend=function($el){
 "use strict"
   var $butts=$([]).push($userSettingButton, $vendorSettingButton, $priceSettingButton).css({margin:'1em 0.1em'});  //, $payButton
-  var $h=$('<p>').append(langHtml.UserSettings).css({'font-weight':'bold'});
+  var $h=$('<p>').append("Settings for logged in user").css({'font-weight':'bold'});
   $el.append($h,$butts);
   return $el;
 }
@@ -2347,7 +2347,7 @@ var userSettingDivExtend=function($el){
 var userSettingFootExtend=function($el){
 "use strict"
   var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('User info').addClass('footDivLabel');
+  var $span=$('<span>').append('User settings').addClass('footDivLabel');
   $el.append($buttonBack,$span).addClass('footDiv');
   return $el;
 }
@@ -2535,7 +2535,7 @@ var loginSelectorDivExtend=function($el){
     doHistPush({$view:$formLoginDiv});
     $formLoginDiv.setVis();
   });
-  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb, 'Name and image are shown to the public. Nothing is written to your Facebook flow.' ); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
+  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb, 'Your Facebook email is used to allow you to login without Facebook (not shown to the public). <br>Your Facebook name and image are used as defaults (can be changed in the settings). <br>Nothing is written to your Facebook flow.' ); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
   var $divRight=$('<div>').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).append( $buttonViaEmail);        $divRight.hide();
   var $divRow=$('<div>').append($divLeft, $divRight).css({display: 'flex', 'justify-content':'space-around'});  //
 
@@ -2726,7 +2726,7 @@ var convertIDDivExtend=function($el){
 
   var $headA=$('<h2>').append('This site has changed ID-provider').css({'margin-top':'0.5em'});
   var $headB=$('<div>').append('<p>Before '+strIPAltLong+' was used as ID-provider now '+strIPPrimLong+' is used instead. Sorry if you think its an inconvenience.<p>Login with '+strIPPrimLong+' (You\'ll be asked to create an account if you don\'t have one).').css({'margin-top':'0.5em'});
-  var $headC=$('<div>').append('<p>After that login with your old ('+strIPAltLong+') ID to convert reputation (for vendors) and comments (for reporters/vendors) to the '+strIPPrimLong+' ID.').css({'margin-top':'0.5em'});
+  var $headC=$('<div>').append('<p>After that login with your old ('+strIPAltLong+') ID to convert reputation (for vendors) and comments (for complainers/vendors) to the '+strIPPrimLong+' ID.').css({'margin-top':'0.5em'});
 
 
   var timerClosePoll;
@@ -2782,29 +2782,29 @@ var convertIDFootExtend=function($el){
 /*******************************************************************************************************************
  *******************************************************************************************************************
  *
- * Reporter divs
+ * Complainer divs
  *
  *  Summary:
- *  $reportCommentPop   // Popup where a reporter can write a report
- *  $reportAnswerPop    // Popup where a vendor can answer a report
- *  $reportCommentButt  // Opens $reportCommentPop, placed in $reportVDiv
- *  $reportAnswerButt   // Opens $reportAnswerPop, placed in $reportVDiv
- *  $reportVDiv         // List of reporters reports on a certain Vendor
- *  $reportRDiv         // List of reports from a certain Reporter
+ *  $complaintCommentPop   // Popup where a complainer can write a complaint
+ *  $complaintAnswerPop    // Popup where a vendor can answer a complaint
+ *  $complaintCommentButt  // Opens $complaintCommentPop, placed in $complaintVDiv
+ *  $complaintAnswerButt   // Opens $complaintAnswerPop, placed in $complaintVDiv
+ *  $complaintVDiv         // List of complainers complaints on a certain Vendor
+ *  $complaintRDiv         // List of complaints from a certain Complainer
  *
  *******************************************************************************************************************
  *******************************************************************************************************************/
 
 
 
-var reportCommentPopExtend=function($el){
+var complaintCommentPopExtend=function($el){
 "use strict"
-  $el.toString=function(){return 'reportCommentPop';}
+  $el.toString=function(){return 'complaintCommentPop';}
   $el.openFunc=function(idV){
     idVendor=idV;  $idVendor.html(idV);
 
     if(isSet(sessionLoginIdP) || typeof userInfoFrDB.user=='object'){} else {setMess('not logged in'); return;}
-    var o1={idVendor:idVendor}, vec=[['reportOneGet',o1,reportCommentOneGet]];   majax(oAJAX,vec);
+    var o1={idVendor:idVendor}, vec=[['complaintOneGet',o1,complaintCommentOneGet]];   majax(oAJAX,vec);
     $el.setVis();
     $comment.focus();
   };
@@ -2815,10 +2815,10 @@ var reportCommentPopExtend=function($el){
   $el.closeFunc=function(){    doHistBack();    }
   var sendFunc=function() {
     var o1={idVendor:idVendor,comment:$comment.val().trim()};
-    var vec=[['reportUpdateComment',o1], $reportVDiv.getLoadObj(), ['setupById']];   majax(oAJAX,vec);
+    var vec=[['complaintUpdateComment',o1], $complaintVDiv.getLoadObj(), ['setupById']];   majax(oAJAX,vec);
     doHistBack();
   }
-  var reportCommentOneGet=function(data){
+  var complaintCommentOneGet=function(data){
     var row;
     var tmp=data.row;   if(typeof tmp==="undefined")  row=[]; else row=tmp;
     var tmp=row.comment;   if(typeof tmp==="undefined")  tmp=''; $comment.val(tmp);
@@ -2830,10 +2830,10 @@ var reportCommentPopExtend=function($el){
 
   var idVendor, $idVendor=$('<span>');
 
-  var $commentHead=$('<div>').html(langHtml.Report+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
+  var $commentHead=$('<div>').html(langHtml.Complaint+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
   var $comment=$('<textarea>').css({display:'block',margin:'0em 0em 0.7em'});  $comment.keypress( function(e){ if(e.which==13) {sendFunc();return false;}} );
   var $save=$('<button>').html(langHtml.Save).click(function(){sendFunc();});
-  var $del=$('<button>').html(langHtml.vote.deleteReport).click(function(){$comment.val(''); sendFunc();});
+  var $del=$('<button>').html(langHtml.vote.deleteComplaint).click(function(){$comment.val(''); sendFunc();});
   var $cancel=$('<button>').html(langHtml.Cancel).click(doHistBack);
   //var $butts=$([]).push($save, $del, $cancel).css({margin:'0.5em 0'});
   var $butts=$([]).push($save, $del, $cancel).css({margin:'0.5em 0'});
@@ -2854,13 +2854,13 @@ var reportCommentPopExtend=function($el){
 }
 
 
-var reportAnswerPopExtend=function($el){
-  $el.toString=function(){return 'reportAnswerPop';}
+var complaintAnswerPopExtend=function($el){
+  $el.toString=function(){return 'complaintAnswerPop';}
   $el.openFunc=function(idR){
-    idReporter=idR;  $idReporter.html(idR);
-    var o1={idReporter:idReporter}, vec=[['reportOneGet',o1,reportAnswerOneGet]];   majax(oAJAX,vec);
+    idComplainer=idR;  $idComplainer.html(idR);
+    var o1={idComplainer:idComplainer}, vec=[['complaintOneGet',o1,complaintAnswerOneGet]];   majax(oAJAX,vec);
     $answer.focus();
-    doHistPush({$view:$reportAnswerPop});
+    doHistPush({$view:$complaintAnswerPop});
     $el.setVis();
     $answer.focus();
   };
@@ -2870,13 +2870,13 @@ var reportAnswerPopExtend=function($el){
   }
   $el.closeFunc=function(){    doHistBack();    }
   var sendFunc=function() {
-    var o1={idReporter:idReporter,answer:$answer.val().trim()};
-    var vecG; if($reportVDiv.css('display')!='none') { vecG=$reportVDiv.getLoadObj(); }  else { vecG=$reportRDiv.getLoadObj(); }
-    var vec=[['reportUpdateAnswer',o1],vecG];   majax(oAJAX,vec);
+    var o1={idComplainer:idComplainer,answer:$answer.val().trim()};
+    var vecG; if($complaintVDiv.css('display')!='none') { vecG=$complaintVDiv.getLoadObj(); }  else { vecG=$complaintRDiv.getLoadObj(); }
+    var vec=[['complaintUpdateAnswer',o1],vecG];   majax(oAJAX,vec);
     doHistBack();
   }
 
-  var reportAnswerOneGet=function(data){
+  var complaintAnswerOneGet=function(data){
     var row;
     var tmp=data.row;   if(typeof tmp==="undefined")  row=[]; else row=tmp;
     var tmp=row.comment;   if(typeof tmp==="undefined")  tmp=''; $comment.html(tmp);
@@ -2885,9 +2885,9 @@ var reportAnswerPopExtend=function($el){
   //$el=popUpExtend($el);
   //$el.css({'max-width':'16em', padding: '1em'});
 
-  var idReporter, $idReporter=$('<span>');
+  var idComplainer, $idComplainer=$('<span>');
 
-  var $commentHead=$('<div>').html(langHtml.Report+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
+  var $commentHead=$('<div>').html(langHtml.Complaint+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
   var $comment=$('<div>');
   var $answerHead=$('<div>').html(langHtml.vote.answer+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
   var $answer=$('<textarea>').css({display:'block',margin:'0em 0em 0.7em'}); $answer.keypress( function(e){ if(e.which==13) {sendFunc();return false;}} );
@@ -2911,37 +2911,37 @@ var reportAnswerPopExtend=function($el){
 }
 
     //if(Object.keys(sessionLoginIdP).length || typeof userInfoFrDB.user=='object'){
-var reportCommentButtExtend=function($el){    // Opens $reportCommentPop, placed in $reportVDiv
+var complaintCommentButtExtend=function($el){    // Opens $complaintCommentPop, placed in $complaintVDiv
 "use strict"
   $el.click(function(e){
     e.stopPropagation();
     var flow=(function*(){
       if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
         var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
-        var oT={IP:strIPPrim, fun:'reporterFun', caller:'index', code:code};
+        var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code:code};
         var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       }
-      doHistPush({$view:$reportCommentPop});   $reportCommentPop.openFunc($reportVDiv.idVendor);
+      doHistPush({$view:$complaintCommentPop});   $complaintCommentPop.openFunc($complaintVDiv.idVendor);
     })(); flow.next();
   });
   return $el;
 }
 
 
-var reportAnswerButtExtend=function($el){    // Opens $reportAnswerPop, placed in $reportVDiv
+var complaintAnswerButtExtend=function($el){    // Opens $complaintAnswerPop, placed in $complaintVDiv
 "use strict"
   $el.click(function(e){
     e.stopPropagation();
-    var idReporter=$el.closest('tr').data('idReporter');
-    $reportAnswerPop.openFunc(idReporter);
+    var idComplainer=$el.closest('tr').data('idComplainer');
+    $complaintAnswerPop.openFunc(idComplainer);
   });
   return $el;
 }
 
 
-var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
+var complaintVDivExtend=function($el){    // Complainers complaints on a certain Vendor
 "use strict"
-  $el.toString=function(){return 'reportVDiv';}
+  $el.toString=function(){return 'complaintVDiv';}
   $el.setUp=function(idV){
     var iMTab=$tableDiv.getMTabInd(idV);
     rowVendor=MTab[iMTab];
@@ -2954,18 +2954,18 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
     $vendorListCtrlDiv.mySet(iMTab);
   }
   $el.getLoadObj=function(){
-    var oGet={offset:offset,rowCount:rowCount,idVendor:$el.idVendor};  return ['reportVGet',oGet,$el.reportVGetRet];
+    var oGet={offset:offset,rowCount:rowCount,idVendor:$el.idVendor};  return ['complaintVGet',oGet,$el.complaintVGetRet];
   }
   $el.load=function(){
-    setMess('... fetching reports on a vendor ... ',15,true);  majax(oAJAX,[$el.getLoadObj()]);
+    setMess('... fetching complaints on a vendor ... ',15,true);  majax(oAJAX,[$el.getLoadObj()]);
     $el.boLoaded=1;
   }
   var makeImgClickFun=function(idR,image){return function(){
-    $reportRDiv.setUp(idR,image); $reportRDiv.load();
-    $reportRDiv.setVis();
-    doHistPush({$view:$reportRDiv});
+    $complaintRDiv.setUp(idR,image); $complaintRDiv.load();
+    $complaintRDiv.setVis();
+    doHistPush({$view:$complaintRDiv});
   }}
-  $el.reportVGetRet=function(data){
+  $el.complaintVGetRet=function(data){
     var nTot,nCur,tmp;
     tmp=data.nTot;   if(typeof tmp!="undefined")  nTot=tmp;
     tmp=data.nCur;   if(typeof tmp!="undefined")  nCur=tmp;
@@ -2974,11 +2974,11 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
 
     $tBody.empty();
     for(var i=0; i<tab.length; i++) {
-      var idReporterTmp=tab[i].idReporter;
+      var idComplainerTmp=tab[i].idComplainer;
       var image=tab[i].image;
-      var tmp=image;
-      var $img=$('<img>').prop({src:tmp}).css({'float':'left'});
-      $img.click(makeImgClickFun(idReporterTmp,image));
+      var strTmp=image || uVendorImage+idComplainerTmp;
+      var $img=$('<img>').prop({src:strTmp}).css({'float':'left', width:"50px", height:"50px", background:"eee"});
+      $img.click(makeImgClickFun(idComplainerTmp,image));
 
       var d=(new Date(tab[i].created*1000)).toLocaleDateString(),   $created=$('<p>').append(d).css({'font-weight':'bold'});
       var $comm=$('<p>').append(tab[i].comment);
@@ -2991,14 +2991,14 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
 
       var $butAns=''
       if(userInfoFrDB.vendor && $el.idVendor==userInfoFrDB.vendor.idUser){
-        var idR=tab[i].idReporter;
+        var idR=tab[i].idComplainer;
         var strtmp='';if(strAns) strtmp=langHtml.Change; else strtmp=langHtml.Answer;
-        $butAns=reportAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'});
+        $butAns=complaintAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'});
       }
 
       var $td=$('<td>').append($img,$created,$comm,$ans,$butAns);
       if(strAns) $ans.append($butAns);
-      var $row=$('<tr>').data({idReporter:idR}).append($td);  $tBody.append($row);
+      var $row=$('<tr>').data({idComplainer:idR}).append($td);  $tBody.append($row);
     }
 
 
@@ -3012,45 +3012,46 @@ var reportVDivExtend=function($el){    // Reporters reports on a certain Vendor
   var tab=[], rowVendor, $imgVendor=$('<img>').css({'vertical-align':'middle'}), $nameSpan=$('<span>');
   var $vendorInfo=$('<div>').append(langHtml.Vendor,': ',$imgVendor,' ',$nameSpan).css({'margin':'0.5em',display:'inline-block'}); //,'float':'right'
   //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
-  var $reportCommentButt=reportCommentButtExtend($('<button>')).html(langHtml.vote.writeComment+' ('+langHtml.IdProviderNeeded+')').css({'margin-right':'1em'});
-  var $bub=$('<div>').html(langHtml.writeReportPopup);
+  var $complaintCommentButt=complaintCommentButtExtend($('<button>')).html(langHtml.vote.writeComment+' ('+langHtml.IdProviderNeeded+')').css({'margin-right':'1em'});
+  var $bub=$('<div>').html(langHtml.writeComplaintPopup);
   var $imgH=$imgHelp.clone();  popupHoverJQ($imgH,$bub);
 
-  var $tBody=$('<tbody>'),   $table=$('<table>').append($tBody).css({'width':'100%'});//.addClass('reportTab');
+  var $tBody=$('<tbody>'),   $table=$('<table>').append($tBody).css({'width':'100%'});//.addClass('complaintTab');
 
   var $butPrev=$('<button>').append('Prev page').click(function(){ offset-=rowCount; offset=offset>=0?offset:0; $el.load();});
   var $butNext=$('<button>').append('Next page').click(function(){ offset+=rowCount; $el.load();});
   var $infoSpan=$('<span>').css({'white-space':'nowrap'});
-  $el.$topDiv=$('<div>').append($reportCommentButt).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
+  $el.$topDiv=$('<div>').append($complaintCommentButt).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
   $el.append($el.$topDiv,$vendorInfo,$table,$butPrev,$butNext,$infoSpan);
 
   var offset=0,rowCount=20;
   $el.css({'text-align':'left'});
   return $el;
 }
-var reportVFootExtend=function($el){
+var complaintVFootExtend=function($el){
 "use strict"
   var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Vendor reports').addClass('footDivLabel');
+  var $span=$('<span>').append('Complaints on a vendor').addClass('footDivLabel');
   $el.append($buttonBack,$span).addClass('footDiv');
   return $el;
 }
 
-var reportRDivExtend=function($el){  // Reports from a certain Reporter
+var complaintRDivExtend=function($el){  // Complaints from a certain Complainer
 "use strict"
-  $el.toString=function(){return 'reportRDiv';}
+  $el.toString=function(){return 'complaintRDiv';}
   $el.setUp=function(idR,image){
-    idReporter=idR;
-    $imgReporter.prop({src:image});
+    idComplainer=idR;
+    var strTmp=image || uVendorImage+idComplainer;
+    $imgComplainer.prop({src:strTmp});
   }
   $el.getLoadObj=function(){
-    var oGet={offset:offset,rowCount:rowCount,idReporter:idReporter};  return ['reportRGet',oGet,$el.reportRGetRet];
+    var oGet={offset:offset,rowCount:rowCount,idComplainer:idComplainer};  return ['complaintRGet',oGet,$el.complaintRGetRet];
   }
   $el.load=function(){
-    setMess('... fetching reports from a reporter  ... ',15,true); majax(oAJAX,[$el.getLoadObj()]);
+    setMess('... fetching complaints from a complainer  ... ',15,true); majax(oAJAX,[$el.getLoadObj()]);
     $el.boLoaded=1;
   }
-  $el.reportRGetRet=function(data){
+  $el.complaintRGetRet=function(data){
     var nTot,nCur,tmp;
     tmp=data.nTot;   if(typeof tmp!="undefined")  nTot=tmp;
     tmp=data.nCur;   if(typeof tmp!="undefined")  nCur=tmp;
@@ -3075,12 +3076,12 @@ var reportRDivExtend=function($el){  // Reports from a certain Reporter
       var $butAns=''
       if(userInfoFrDB.vendor && tab[i].idUser==userInfoFrDB.vendor.idUser){
         var strtmp='';if(strAns) strtmp=langHtml.Change; else strtmp=langHtml.Answer;
-        var $butAns=reportAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'});
+        var $butAns=complaintAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'});
       }
 
       var $td=$('<td>').append($img,$created,$comm,$ans,$butAns);
       if(strAns) $ans.prepend($img,$butAns);
-      var $row=$('<tr>').data({idReporter:idReporter}).append($td);    $tBody.append($row);
+      var $row=$('<tr>').data({idComplainer:idComplainer}).append($td);    $tBody.append($row);
     }
 
 
@@ -3091,26 +3092,26 @@ var reportRDivExtend=function($el){  // Reports from a certain Reporter
   }
 
   $el.boLoaded=0;
-  var idReporter, tab=[], $imgReporter=$('<img>').css({'vertical-align':'middle'});
-  var $reporterInfo=$('<div>').append(langHtml.Reporter,': ',$imgReporter);
+  var idComplainer, tab=[], $imgComplainer=$('<img>').css({'vertical-align':'middle'});
+  var $complainerInfo=$('<div>').append(langHtml.Complainer,': ',$imgComplainer);
   //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em'});
 
-  var $tBody=$('<tbody>'),   $table=$('<table>').append($tBody).css({'width':'100%'});//.addClass('reportTab');
+  var $tBody=$('<tbody>'),   $table=$('<table>').append($tBody).css({'width':'100%'});//.addClass('complaintTab');
 
   var $butPrev=$('<button>').append('Prev page').click(function(){ offset-=rowCount; offset=offset>=0?offset:0; $el.load();});
   var $butNext=$('<button>').append('Next page').click(function(){ offset+=rowCount; $el.load();});
   var $infoSpan=$('<span>').css({'white-space':'nowrap'});
   var $topDiv=$('<div>').css({'margin-top':'1em'}); // .append($buttonBack)
-  $el.append($topDiv,$reporterInfo,$table,$butPrev,$butNext,$infoSpan);
+  $el.append($topDiv,$complainerInfo,$table,$butPrev,$butNext,$infoSpan);
 
   var offset=0,rowCount=20;
   $el.css({'text-align':'left'});
   return $el;
 }
-var reportRFootExtend=function($el){
+var complaintRFootExtend=function($el){
 "use strict"
   var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Reports from reporter').addClass('footDivLabel');
+  var $span=$('<span>').append('Complaints from complainer').addClass('footDivLabel');
   $el.append($buttonBack,$span).addClass('footDiv');
   return $el;
 }
@@ -3292,7 +3293,7 @@ var vendorListCtrlDivExtend=function($el){ // The little map and up/down arrows
     else {$trt=$el.$tr.prev(); if($trt.length==0) $trt=$tableDiv.$tBody.children(':eq('+(nMTab-1)+')'); }
     var iTmp=$trt.data('iMTab');
     $vendorInfoDiv.setContainers(iTmp);
-    if($reportVDiv.is(':visible')){$reportVDiv.setUp(MTab[iTmp].idUser); $reportVDiv.load(); }
+    if($complaintVDiv.is(':visible')){$complaintVDiv.setUp(MTab[iTmp].idUser); $complaintVDiv.load(); }
   }
   var $buttonPrev=$('<button>').html('&#x25b2;').click(function(){tmpf(-1);}).css({display:'block','margin':'0em'});
   var $buttonNext=$('<button>').html('&#x25bc;').click(function(){tmpf(1);}).css({display:'block','margin':'1.5em 0em 0em'});
@@ -3757,651 +3758,6 @@ var mapDivExtendGoogle=function($el){
   return $el;
 }
 
-// $mapDiv.MGroupTab is to be assigned before calling $mapDiv.setGroupOverlay();
-// MTab and nMTab is expected as global variables
-
-//
-// Naming conventions:
-// Prefixes:
-//   Prefixes to zoom variables: (hopefully I'm consistent)
-// zoom, zoomFac or sometimes zFac: zoomFactor (integer) of a world coordinate (see below)
-// zoomR: same as zoom but real (that is with decimals)
-// zoomLev=log2(zoomFac): 2-logaritm of zoomFactor. Function to convert back:  zoomFac=Math.pow(2,zoomLev)
-// z: "relative zoom" to the last time the tiles where laid out. Typically zoomR will be equal to z*zoom.
-//
-//   Coordinate-prefixes:
-// frame: coordinate from upper left corner of $mapDiv (dom-tree resolution).
-// pWC={x:x,y:y}  (point with world coordinate):  where x resp y ∈ [0,256) regardles of zoom
-// pix={x:x,y:y}: (scaled world coordinate) pix.x=pWC.x*zFac (same for y) (for whatever zFac that is currently used)
-// brd: same as pix although with origo at the board origo (upper left coorner of the board)
-//
-
-
-// State variables:
-//   pWCC keeps the state (must be set) before laying out the tiles (calling setTile)
-//   zoomFacW: zoom factor written (when the tiles where placed)
-//   zCur, leftCur, topCur:  Quick access of the css "transform" parameter of $board
-//
-//   TouO: array of touches (only used on touch deviced)
-//   xavgL, yavgL: (only used with "mouse"-panning)
-//   pixBoardX, pixBoardY: (I forgotten what these are) 
-
-
-
-//pixMult=function(pixT,fac){pixT.x*=fac; pixT.y*=fac;}
-boDbgCheckered=0;
-pixMult=function(pixT,fac){return {x:pixT.x*fac, y:pixT.y*fac};}
-var mapDivExtend=function($el){
-  $el.toString=function(){return 'mapDiv';}
-  var leftCurStart, topCurStart; // If leftCur resp topCur has changed relative to these at gesture end, then the 'idle'-event is fired.
-  
-  //
-  // Touch events
-  //
-
-  var handleStart=function(evt) {
-    evt.stopPropagation();
-    //evt.preventDefault(); // Allow default, to allow click-event
-    var Tou = evt.touches;
-    storeTouches(Tou);
-    if(Tou.length==1) {leftCurStart=leftCur; topCurStart=topCur;}
-  }
-
-  var TouO=[];
-  var storeTouches=function(Tou){
-    TouO=[];
-    for(var i=0; i<Tou.length; i++) { var t=Tou[i]; TouO[i]={pageX:t.pageX, pageY:t.pageY, identifier:t.identifier};}
-  }
-  var getStoredTouch=function(identifier) {
-    for (var i=0; i<TouO.length; i++) {
-      if(TouO[i].identifier == identifier) { return TouO[i]; }
-    }
-    return null;
-  }
-
-  var calcD=function(tA,tB){  var xD=tB.pageX-tA.pageX, yD=tB.pageY-tA.pageY;  return Math.sqrt(xD*xD +yD*yD);  }
-  var calcTwoTouchCenterNDist=function(Tou){
-    var tA=Tou[0], tB=Tou[1], xA=tA.pageX, xB=tB.pageX, xavg=(xA+xB)/2,     yA=tA.pageY, yB=tB.pageY, yavg=(yA+yB)/2;
-    var d=calcD(tA,tB);
-    return {x:xavg, y:yavg, d:d};
-  }
-
-  var zCur,leftCur,topCur;  // Quick access of the css "transform" parameter of $board
-  var panNZoom=function(Tou,boEnd){
-    var TouL=[];    for(var i=0;i<Tou.length;i++){    var touT=getStoredTouch(Tou[i].identifier); if(touT) TouL.push(touT);      }
-    var mode=TouL.length;
-    if(mode==1){
-      var xavgL=TouL[0].pageX, yavgL=TouL[0].pageY;
-      var xavg=Tou[0].pageX, yavg=Tou[0].pageY;
-      var dXScreen=xavg-xavgL;    leftCur+=dXScreen;
-      var dYScreen=yavg-yavgL;    topCur+=dYScreen;
-      boundTransformVariables();
-      $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
-    }else if(mode==2){
-
-      var doub=calcTwoTouchCenterNDist(Tou);
-      var doubL=calcTwoTouchCenterNDist(TouL);
-
-      var rat=doub.d/doubL.d;
-      var zL=zCur;
-      zCur=rat*zL;
-      var leftContainer=$el.offset().left,  topContainer=$el.offset().top;
-      var widthBox=$el.width(), heightBox=$el.height();
-
-
-      var brdTilePiv=calcBrdTilePiv(doubL.x-leftContainer, doubL.y-topContainer, zL, leftCur, topCur);
-      [leftCur,topCur]=calcLeftTop(doub.x-leftContainer, doub.y-topContainer, zCur, brdTilePiv);
-
- 
-      boundTransformVariables();
-      $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
-      $divPivotDbg.css({left:brdTilePiv.x+'px',top:brdTilePiv.y+'px'}); // little black square
-    }
-    else if(mode==0){ // boEnd
-
-      var zL=zCur;
-      var zCurLev=round(log2(zCur)); zCur=Math.pow(2,zCurLev);
-      var leftContainer=$el.offset().left,  topContainer=$el.offset().top;
-      var widthBox=$el.width(), heightBox=$el.height();
-
-      var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zL, leftCur, topCur);
-      [leftCur,topCur]=calcLeftTop(widthBox/2, heightBox/2, zCur, brdTilePiv);
-
-      boundTransformVariables();
-      $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
-
-        // Converting to pWCC
-      var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
-      var pixC={x:pixBoardX*zCur+brdTilePiv.x*zCur, y:pixBoardY*zCur+brdTilePiv.y*zCur};
-      pWCC=pixMult(pixC,1/(zCur*zoomFacW));
-
-      var zoomFacRTmp=zCur*zoomFacW, zoomLevT=round(log2(zoomFacRTmp));//, zFacNew=Math.pow(2,zoomLevT);
-      var boRefresh=$el.setTile(zoomLevT);
-      if(leftCurStart!=leftCur || topCurStart!=topCur) {  $el[0].dispatchEvent(new Event('idle'));  }
-    }
-  }
-  $divPivotDbg=$('<div>').css({position:'absolute',background:'black',width:'5px',height:'5px','z-index':5});
-  var pixBoardX, pixBoardY
-
-  var handleMove=function(evt) {
-    evt.stopPropagation();
-    evt.preventDefault(); // Prevent default, to prevent iOS-zoom
-    var Tou=evt.touches;
-    panNZoom(Tou,0);
-    storeTouches(Tou);
-  }
-  var handleEnd=function(evt) {
-    evt.stopPropagation();
-    //evt.preventDefault(); // Allow default, to allow click-event 
-    var Tou=evt.touches;
-    panNZoom(Tou,1);
-    storeTouches(Tou);
-    //return false;
-  }
-  var handleCancel=function(evt) {
-    evt.stopPropagation();
-    //evt.preventDefault(); // Allow default, to allow click-event
-    var Tou=evt.touches;
-    panNZoom(Tou,1);
-    storeTouches(Tou);
-    strMess=' C'+Tou.length;
-    setMess(strMess);
-  }
-
-
-  //////////////////////////////////////////////////////////////////////////
-
-  //
-  // Mouse events
-  //
-  
-  var myMousewheel=function(e) {
-    //var rat; if(boFF) rat=e.detail>=0?0.5:2; else  rat=e.originalEvent.wheelDelta>=0?2:0.5;
-    var rat; if(boFF) rat=e.detail>=0?0.5:2; else  rat=e.wheelDelta>=0?2:0.5;
-    var xavg=e.pageX, yavg=e.pageY;
-
-    leftCurStart=leftCur; topCurStart=topCur;
-    var zL=zCur;
-    zCur=rat;
-    var leftContainer=$el.offset().left,  topContainer=$el.offset().top;
-    var widthBox=$el.width(), heightBox=$el.height();
-
-
-    var brdTilePiv=calcBrdTilePiv(xavg-leftContainer, yavg-topContainer, zL, leftCur, topCur);
-    [leftCur,topCur]=calcLeftTop(xavg-leftContainer, yavg-topContainer, zCur, brdTilePiv);
-
-    boundTransformVariables();
-    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
-
-      // Converting to pWCC; (might seem unnecessary, in a future version the amount of statevariables might be reduced) See comment below on state variables
-    var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
-    var pixC={x:pixBoardX*zCur+brdTilePiv.x*zCur, y:pixBoardY*zCur+brdTilePiv.y*zCur};
-    pWCC=pixMult(pixC,1/(zCur*zoomFacW));
-
-    var zoomFacRTmp=zCur*zoomFacW, zoomLevT=round(log2(zoomFacRTmp));//, zFacNew=Math.pow(2,zoomLevT);
-    var boRefresh=$el.setTile(zoomLevT);
-    if(leftCurStart!=leftCur || topCurStart!=topCur) {  $el[0].dispatchEvent(new Event('idle'));  }
-
-  }
-  var xavgL, yavgL;
-  var panF=function(e){
-    var xavg=e.pageX, yavg=e.pageY;
-    var dXScreen=xavg-xavgL;    leftCur=leftCur+dXScreen;
-    var dYScreen=yavg-yavgL;    topCur=topCur+dYScreen;
-    boundTransformVariables();
-    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
-    
-    setMess('topCur: '+round(topCur-dYScreen)+', dYScreen: '+round(dYScreen)+', topCur: '+round(topCur));
-    xavgL=xavg; yavgL=yavg;
-  }
-  var myMousedown=function(e){
-    var e = e || window.event; if(e.which==3) return;
-    xavgL=e.pageX; yavgL=e.pageY;
-    $(document).on('mousemove',myMousemove).on('mouseup',myMouseup);
-    $glas.css({cursor:'move'});
-    e.preventDefault();
-    leftCurStart=leftCur;topCurStart=topCur;
-  }
-  var myMouseup=function(e){
-    panF(e);
-    $(document).off('mousemove').off('mouseup');
-    $glas.css({cursor:''});
-    e.preventDefault();
-    boundTransformVariables();
-    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
-    //pixC=calcPixC();
-    pWCC=pixMult(calcPixC(),1/zoomFacW);
-    //var zFac=round(zCur)*zoomFacW, zLev=log2(zFac);
-    var zoomLevT=log2(zoomFacW);
-    var boRefresh=$el.setTile(zoomLevT);
-    if(leftCurStart!=leftCur || topCurStart!=topCur) {  $el[0].dispatchEvent(new Event('idle'));  }
-
-  }
-  var myMousemove=function(e){
-    panF(e);
-    e.preventDefault();
-  };
-
-
-  //
-  // Handy functions
-  //
-
-  var calcBrdTilePiv=function(framePivX, framePivY, z, left, top){
-    var brdTilePivX=framePivX/z  -left/z ;
-    var brdTilePivY=framePivY/z  -top/z ;
-    return {x:brdTilePivX,y:brdTilePivY};
-  }
-
-  var calcLeftTop=function(framePivX, framePivY, z, brdTilePiv){
-    var left=framePivX  -brdTilePiv.x*z ;
-    var top=framePivY  -brdTilePiv.y*z ;
-    return [left,top];
-  }
-
-
-  var calcPixC=function(){
-    var widthBox=$el.width(), heightBox=$el.height();
-    var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
-    var pixCN={x:pixBoardX+brdTilePiv.x, y:pixBoardY+brdTilePiv.y};
-    return pixCN;
-  }
-
-  var boundTransformVariables=function(){ // Bounds zCur, leftCur and topCur (so that the world doesn't gets dragged out of frame or gets zoomed unnecessary small) (should perhaps be a property of $board)
-    var zL=zCur;
-    var zoomFac=zCur*zoomFacW;
-    var widthBox=$el.width(), heightBox=$el.height(), minDim=Math.min(widthBox,heightBox);
-    var zoomFacWorld=minDim/WCMAX;  // zoomFacWorld: The zoom factor that will make the whole world fit into $el
-    var zoomLevCenter=Math.floor(log2(zoomFacWorld)), zoomFacCenter=Math.pow(2,zoomLevCenter);  // Smallest allowed zoom; "The world" will be centered if below this level
-
-    var brdTilePiv=calcBrdTilePiv(0, 0, zCur, leftCur, topCur);
-    var pixFrameNorth=pixBoardY +brdTilePiv.y,   pixFrameSouth=pixFrameNorth+heightBox/zCur;
-
-    //var brdTilePivY=-topCur/zCur ;
-    //var pixFrameNorth=pixBoardY +brdTilePivY,   pixFrameSouth=pixFrameNorth+heightBox/zCur;
-
-    var zCurN=zCur,leftCurN=leftCur,topCurN=topCur;
-    var boBound=0;
-    if(zoomFac<=zoomFacWorld) {
-      if(zoomFac<=zoomFacCenter){
-        zoomFac=zoomFacCenter; zCurN=zoomFac/zoomFacW;
-      }
-      boBound=1;
-
-      leftCurN=-WCMID*zoomFac +pixBoardX*zCurN +widthBox/2;
-      topCurN=-WCMID*zoomFac +pixBoardY*zCurN  +heightBox/2;
-    }else {
-      var boSpaceAbove=pixFrameNorth<0;
-      var boSpaceBelow=pixFrameSouth>WCMAX*zoomFacW;
-      if(boSpaceAbove) {
-        boBound=1;
-
-        topCurN=pixBoardY*zCur +(zCur-1)*heightBox/2;
-        topCurN=pixBoardY*zCur;
-      }
-      else if(boSpaceBelow) {
-        boBound=1;
-
-        topCurN=-WCMAX*zoomFac +pixBoardY*zCur +heightBox  +(zCur-1)*heightBox/2;
-        topCurN=-WCMAX*zoomFac +pixBoardY*zCur +heightBox;
-      }
-    }
-    zCur=zCurN; leftCur=round(leftCurN); topCur=round(topCurN);
-  }
-
-  $el.setTile=function(zoomLev){
-    //var widthBox=$el.width(), heightBox=$el.height();
-    var [widthBox, heightBox]=$el.getVPSize();
-
-    var boRefresh=0;
-
-    var zoomFac=Math.pow(2,zoomLev);
-    var pixC=pixMult(pWCC,zoomFac);
-    var pixFrameX=pixC.x-widthBox/2, iTileRFirst=pixFrameX/TILESIZE, iTileFirst=Math.floor(iTileRFirst);  leftCur=-(iTileRFirst-iTileFirst)*TILESIZE;
-    var pixFrameY=pixC.y-heightBox/2, jTileRFirst=pixFrameY/TILESIZE, jTileFirst=Math.floor(jTileRFirst); topCur=-(jTileRFirst-jTileFirst)*TILESIZE;
-    leftCur=round(leftCur); topCur=round(topCur);
-    pixBoardX=pixFrameX+leftCur; pixBoardY=pixFrameY+topCur;
-      var nTileX=Math.ceil(widthBox/TILESIZE)+1, nTileY=Math.ceil(heightBox/TILESIZE)+1;
-
-    if(iTileFirst!=iTileFirstLast || jTileFirst!=jTileFirstLast || zoomLev!=zoomLevLast || drLev!=drLevLast){
-      boRefresh=1; iTileFirstLast=iTileFirst; jTileFirstLast=jTileFirst; zoomLevLast=zoomLev; drLevLast=drLev;}
-    zoomFacW=zoomFac;
-    if(boRefresh){
-      var zoomLevPlusDRLev=zoomLev+drLev;
-      var $tileTmp=$board.children('img').detach(); TileStack.concat($tileTmp);
-      var iTileZ=iTileFirst, jTileZ=jTileFirst;
-      for(var i=0;i<nTileX;i++){
-        var iTile=iTileZ+i, left=i*TILESIZE;
-        for(var j=0;j<nTileY;j++){
-          var jTile=jTileZ+j, top=j*TILESIZE;
-          [iTile]=normalizeAng(iTile, zoomFac/2*dr, zoomFac*dr);
-          var boBlue=0, [,nCorrectionY]=normalizeAng(jTile, zoomFac/2*dr, zoomFac*dr);
-
-          var wTmp;
-          if(nCorrectionY<0) wTmp=uImageFolder+'northPole.png';
-          else if(nCorrectionY>0) wTmp=uImageFolder+'southPole.png';
-          else {
-            if(zoomLevPlusDRLev>=0) wTmp=uMapSourceDir+'/'+zoomLevPlusDRLev+'/'+iTile+'/'+jTile+'.png';
-            else wTmp=uImageFolder+'mapm'+(-zoomLevPlusDRLev)+'.png';
-            //else if(zoomLev==-1) wTmp='mapm1.png';
-            //else if(zoomLev==-2) wTmp='mapm2.png';
-            //else if(zoomLev==-3) wTmp='mapm3.png';
-            if(boDbgCheckered) { 
-              var byte0=zoomFac%8, byte1=zoomFac>>8; 
-              var boIOddOpac=iTile%(2*byte1)>=byte1, boJOddOpac=jTile%(2*byte1)>=byte1, floatOpacity=0.7;  if(byte1 &&  (boIOddOpac+boJOddOpac)%2) floatOpacity=0.4; 
-              wTmp='/lib/image/'+(zoomLevPlusDRLev%8)+'.png';
-            }
-          }
-          var $tile; if(TileStack.length) $tile=$(TileStack.pop()); else $tile=$('<img>').css({position:'absolute',opacity:0.7}); //,border:'solid 1px grey'
-          $tile.prop({src:wTmp}).css({left:left+'px',top:top+'px', 'transform-origin':'left top', transform:'scale('+1/dr+')'});
-          if(boDbgCheckered) $tile.css({opacity:floatOpacity});
-          $board.append($tile);
-        }
-      }
-      $board.append($glasBack, $glas); // To place the $glasBack and $glas last in the $board
-    }else{
-    }
-    zCur=1;
-    $board.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
-    return boRefresh;
-  }
-
-
-  $el.setCentNMe=function(latLng){
-    if(window.boVideo) latLng=latLngDebug;
-    var tmp=$el.pWCMe=merProj.fromLatLngToPoint(latLng);   pWCC={x:tmp.x, y:tmp.y};
-  }
-  $el.getMapStatus=function(){
-    //if(!$el.storedPWCC || !$el.storedZoom || !$el.storedVPSize) $el.storeVar();
-    //return {pC:$el.storedPWCC, zoom:$el.storedZoom, VPSize:$el.storedVPSize};
-    if(!$el.storedVPSize) $el.storeVar();
-    return {pC:pWCC, zoom:log2(zoomFacW), VPSize:$el.storedVPSize};
-  }
-  $el.getPWCC=function(){
-    //if(!$el.storedPWCC) $el.storedPWCC=pWCC;    return $el.storedPWCC;
-    return pWCC;
-  }
-  $el.storeVar=function(){    // Store values for times when the map is not visible.
-    //$el.storedPWCC=pWCC;
-    //$el.storedZoom=zoomFacW;
-    $el.storedVPSize=[Number(String($el.width())), Number(String($el.height()))];
-  }
-  $el.set1=function(zoomLevel, latLngFirst){
-    $el.setCentNMe(latLngFirst);
-  }
-  $el.getVPSize=function(){
-    if($el.is(':visible')) $el.storedVPSize=[Number(String($el.width())), Number(String($el.height()))];
-    return $el.storedVPSize;
-  }
-  
-  
-  //
-  // Markers
-  //
-
-  var ArrMarkerT=function(){
-    var arr=[]; $.extend(arr,ArrMarkerT.tmpPrototype);
-    //$.extend(this,[]);
-    return arr;
-  }
-  ArrMarkerT.tmpPrototype={};
-  ArrMarkerT.tmpPrototype.condAddMarker=function(){
-    var $Marker=this;
-    for(var i=$Marker.length; i<nMTab;i++){
-      var $img=new MarkerT(); $img.data('ind',i);
-      $img.css({transform:'translate(-50%, -100%)', position:'absolute', 'z-index':1, position: 'absolute'});
-      $img.on('click',MarkerT.prototype.funcInfoClick);
-      if(!boTouch){
-        $img.on('mouseover',MarkerT.prototype.funcOver);
-        $img.on('mouseout',MarkerT.prototype.funcOut);
-      }
-      $Marker.push($img);
-      $glas.append($img);
-      var $divUnCertain=$('<div>').css({width:'40px',height:'40px', border:'solid 1px red', background:'pink', opacity:0.4, position:'absolute', transform:'translate(-50%, -50%)'});
-      $DivUnCertain.push($divUnCertain);
-      $glasBack.append($divUnCertain);
-    }
-  }
-  ArrMarkerT.tmpPrototype.setMarkers=function(){
-    var $Marker=this;
-    $el.hideGroupOverlay();
-    $Marker.condAddMarker();
-    for(var i=0;i<nMTab;i++){
-      var $img=$Marker[i];
-      $img.makeOneRowIconObj(i);
-      $img.data('objMarkerMultCache', null);
-      MarkerT.prototype.setImg($img);
-      $img.data({x:MTab[i].x, y:MTab[i].y, coordinatePrecisionM:MTab[i].coordinatePrecisionM});
-      $img.show(); 
-    }
-    for(var i=nMTab;i<$Marker.length;i++){ $Marker[i].hide(); }
-    $DivUnCertain.hide(); $DivUnCertain.slice(0,nMTab).show();
-  }
-  $el.setMarkers=function(){$el.$Marker.setMarkers();}
-  ArrMarkerT.tmpPrototype.hideMarkers=function(){ for(var i=0;i<this.length;i++) this[i].hide();   $DivUnCertain.hide(); }
-  ArrMarkerT.tmpPrototype.drawMarkers=function(){
-    for(var i=0;i<nMTab;i++){
-      var $i=this[i], x=$i.data('x'), y=$i.data('y'), left=x*zoomFacW-pixBoardX, top=y*zoomFacW-pixBoardY;
-      $i.css({left:left,top:top});
-      var resM=$i.data('coordinatePrecisionM');
-      var lat=merProj.fromYToLat(y);
-      var resWC=resM2resWC(resM,lat);
-      var w=resWC*zoomFacW, h=resWC*zoomFacW;
-      $DivUnCertain.eq(i).css({left:left, top:top, width:w+'px', height:h+'px'});
-    };
-  }
-  $el.$Marker=new ArrMarkerT();
-  var $DivUnCertain=$([]);
-  
-  
-  var MarkerT=function(){
-    $.extend(this,$('<img>'));
-  }
-  MarkerT.prototype.makeOneRowIconObj=function(i){
-    var objTmp;
-    if(i>=nMTab) objTmp=makeMarkerBubble('  ');
-    else{
-      var strName=colOneMark;
-      var tmp=MTab[i][strName], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      if('setMapF' in tmpObj)  tmp=tmpObj.setMapF(i);
-      if(typeof tmp!='object'){
-        if((typeof tmp=='string' && tmp.length==0) || tmp===null){tmp='  ';}
-        objTmp=makeMarkerBubble(tmp);
-      }else objTmp=tmp;
-    }
-    this.data('objMarkerOne', objTmp);
-  }
-  MarkerT.prototype.arrFuncOverData=[]; // Just for reducing garbage
-  MarkerT.prototype.makeMultiRowIconObj=function(i){
-    if(i>=nMTab) {console.log('err');}
-    var k=0;
-    //for(var jSel in ColsShow){
-    for(var j=0;j<ColsShow.length;j++){
-      var strName=ColsShow[j], tmp, tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      if('setMapMF' in tmpObj) {  var tmp=tmpObj.setMapMF(i);  } else tmp=MTab[i][strName];
-      if(typeof tmp=='string' || typeof tmp=='number') { this.arrFuncOverData[k]=calcLabel(langHtml.label, strName)+': '+tmp; k++; }
-    }
-    this.arrFuncOverData.length=k;
-    var tmp=this.arrFuncOverData.join('\n');
-    return makeMarkerBubble(tmp);
-  }
-  MarkerT.prototype.funcOver=function() {
-    var $img=$(this), i=$img.data('ind');
-    var obj=$img.data('objMarkerMultCache');
-    if(!obj) { obj=MarkerT.prototype.makeMultiRowIconObj(i); $img.data('objMarkerMultCache',obj); }
-    var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y, strTrans='-'+xTrans+'px, -'+yTrans+'px';
-    $img.prop({src:obj.url}).css({width:'', height:'', background:'', transform:'translate('+strTrans+')', 'z-index':maxZ}); 
-    $DivUnCertain.eq(i).css({opacity:0.7});
-    return false;
-  }
-  MarkerT.prototype.funcOut=function(){
-    var $img=$(this), i=$img.data('ind');
-    MarkerT.prototype.setImg($img);
-    $img.css({'z-index':maxVendor-i});
-    $DivUnCertain.eq(i).css({opacity:0.4});
-  }
-  MarkerT.prototype.funcInfoClick=function(){
-    var i=$(this).data('ind');
-    $vendorInfoDiv.setContainers(i);
-    $vendorInfoDiv.setVis();
-    doHistPush({$view:$vendorInfoDiv});
-    return false;
-  }
-  MarkerT.prototype.setImg=function($img){
-    var obj=$img.data('objMarkerOne');
-    var strScale=''
-    if(typeof obj=='object' && obj.origin){
-      var zT=obj.zoom; strScale='scale('+zT+')';
-      var wSc=obj.size.width,  hSc=obj.size.height;
-      var lef=-obj.origin.x, to=-obj.origin.y;
-      $img.prop({src:uOnePixTransparent}).css({width:wSc+'px', height:hSc+'px', background:'url('+obj.url+') '+lef+'px '+to+'px '});
-    } else {
-      var urlT;
-      if(typeof obj=='object') urlT=obj.url; else if(typeof obj=='string') urlT=obj;
-      $img.prop({src:urlT}).css({width:'', height:''});
-    }
-    var strTrans='-50%, -100%';
-    if(typeof obj=='object' && obj.anchor){  var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y; strTrans='-'+xTrans+'px, -'+yTrans+'px';  }
-    $img.css({transform:'translate('+strTrans+') '+strScale});
-  }
-  
-  
-  
-  $el.hideGroupOverlay=function(){ $imgGroupOverlay.hide();}
-  //$el.showMarkers=function(){ $Marker.show();}
-  var strFont="8pt Arial";
-  var ctxMeas = document.createElement("canvas").getContext("2d");  ctxMeas.font = strFont;     // Create context for measuring text width
-  $el.calcOverlayBounds=function(w,h,arr){
-    if(typeof arr=='undefined') arr=Array(2);
-    arr[0]=w/2; arr[1]=h/2;
-    arr[0]=2*w; arr[1]=2*h;
-    //arr[0]=200+w; arr[1]=200+h;
-    arr[0]=w; arr[1]=h;
-    return arr;
-  }
-  $el.setGroupOverlay=function(){
-    $el.$Marker.hideMarkers();
-    var zoomFac=zoomFacW; // zoomFacW zoom factor written.
-
-    //var pointMerZ={x:pWCC.x*zoomFac,y:pWCC.y*zoomFac};
-    //var pWCC={x:pixC.x/zoomFac,y:pixC.y/zoomFac};
-    var pixC=pixMult(pWCC,zoomFac);
-    var [widthBox, heightBox]=$el.storedVPSize;
-
-
-    var arrT=$el.calcOverlayBounds(widthBox,heightBox); var w=arrT[0], h=arrT[1];
-    var canvas = document.createElement("canvas"), ctx = canvas.getContext("2d");
-
-    //var xWCL=pWCC.x-w/2/zoomFac, xWCH=pWCC.x+w/2/zoomFac, yWCL=pWCC.y-h/2/zoomFac, yWCH=pWCC.y+h/2/zoomFac;
-    //var xL=pixC.x-w/2, xH=pixC.x+w/2, yL=pixC.y-h/2, yH=pixC.y+h/2;
-    //var pWCSW = {x:xMerL, y:yMerH}, pWCNE = {x:xMerH, y:yMerL};
-    //var latLngSW=merProj.fromPointToLatLng(pWCSW,true), latLngNE=merProj.fromPointToLatLng(pWCNE,true);
-    //$imgGroupOverlay.bounds_=[latLngSW, latLngNE];
-    //$imgGroupOverlay.boundsDim_=[w,h];
-    //$imgGroupOverlay.css({left:xL,top:yL});
-    //$imgGroupOverlay.css({width:w,height:h});
-
-    canvas.width=w;   canvas.height=h;
-    var wH=w/2, hH=h/2;
-    //var pointXMin=pointMerZ.x-wH, pointXMax=pointMerZ.x+wH, pointYMin=pointMerZ.y-hH, pointYMax=pointMerZ.y+hH;
-    //pointXMin=Math.round(pointXMin/xDiv)*xDiv; pointXMax=Math.round(pointXMax/xDiv)*xDiv; pointYMin=Math.round(pointYMin/yDiv)*yDiv; pointYMax=Math.round(pointYMax/yDiv)*yDiv;
-
-
-    var lenMGroupTab=$el.MGroupTab.length;
-    for(var i = 0; i < lenMGroupTab; i++) {
-      //var tmpPoint = new google.maps.Point(MGroupTab[i][0], MGroupTab[i][1]);
-      var xZ=$el.MGroupTab[i][0]*zoomFac, yZ=$el.MGroupTab[i][1]*zoomFac;
-      var nD=$el.MGroupTab[i][2], str=nD+'';
-      var cx=xZ-pixC.x+wH, cy=yZ-pixC.y+hH;
-      var widthText=ctxMeas.measureText(str).width;
-      var widthBox=widthText+4, heightBox=10,  widthBoxHalf=widthBox/2, heightBoxHalf=heightBox/2,  wTH=widthBox/2, hTH=heightBox/2;
-
-      ctx.beginPath(); ctx.moveTo(cx-wTH, cy-hTH); ctx.lineTo(cx+wTH,cy-hTH);  ctx.lineTo(cx+wTH, cy+hTH); ctx.lineTo(cx-wTH, cy+hTH);   ctx.closePath();   ctx.fillStyle="#FF7777"; ctx.fill();
-      ctx.fillStyle = "black";     ctx.fillText(str, cx-widthText/2, cy+heightBoxHalf-1 );    // Write text
-    }
-
-    $imgGroupOverlay.prop({src:canvas.toDataURL("image/png")});//.css({background:'green'});
-    $imgGroupOverlay.show();
-  }
-  $el.drawGroupOverlay=function(){
-    //var pixC=pixMult(pWCC,zoomFacW);
-    //var arrT=$el.calcOverlayBounds($el.width(),$el.height()); var w=arrT[0], h=arrT[1];
-    //var xL=pixC.x-w/2, xH=pixC.x+w/2, yL=pixC.y-h/2, yH=pixC.y+h/2;
-    var left=pWCC.x*zoomFacW-pixBoardX, top=pWCC.y*zoomFacW-pixBoardY;
-    $imgGroupOverlay.css({left:left,top:top});
-  }
-  //$el.drawMarkersW=function(){
-    //if(nMTab) $el.drawMarkers(); else {$el.setGroupOverlay(); $el.drawGroupOverlay(); }
-    //$el.drawMe();
-  //}
-
-  $el.drawMe=function(){
-    var left=$el.pWCMe.x*zoomFacW-pixBoardX, top=$el.pWCMe.y*zoomFacW-pixBoardY;    $imgCurLoc.css({left:left,top:top});
-  }
-  
-  var maxZ=intMax;
-  $el.pWCMe={x:128,y:128};
-  var pWCC={x:128,y:128};
-  var iTileFirstLast=-1, jTileFirstLast=-1, zoomLevLast=-20, drLevLast=-20;
-  var TileStack=[];
-  var arrInd=[];
-  $board=$('<div>').css({position:'absolute','box-sizing': 'border-box'});
-  
-  //$board.css({width:2*256,height:2*256}); //,border:'solid 3px red' ,'zoom':0.5
-  $board.css({width:'100%',height:'100%'}); //,border:'solid 3px red' ,'zoom':0.5
-  $board.css({'transform-origin':'left top'}); //,border:'solid 3px red' ,'zoom':0.5
-  //$board.css({width:50,height:50}); //,border:'solid 3px red' ,'zoom':0.5
-  //var $pinDiv=$('<div>').css({position:'relative', width:'100%',height:'100%'});
-
-  $glas=$('<div>').css({position:'absolute', top:0, left:0, width:'512',height:'512'});
-  //$glas=$('<div>').css({position:'absolute', top:0, left:0, width:"calc(100% + 256px)",height:"calc(100% + 256px)"});
-  $glas.css({'box-sizing': 'border-box'});
-  $glas.css({width:"calc(200% + 512px)",height:"calc(200% + 512px)"});
-  if(boDbg) $glas.css({border:'pink solid'});
-  var $glasBack=$glas.clone();
-
-  var $imgCurLoc=$('<img>').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}).prop({src:uMyMarker});
-  var $imgGroupOverlay = $('<img>').css({transform:'translate(-50%, -50%)', position:'absolute'}).hide();
-  $glas.append($imgCurLoc, $imgGroupOverlay);
-  
-  if(boDbg) $board.append($divPivotDbg);
-  $board.append($glasBack, $glas);
-
-  if(!boTouch){
-    if(boFF) $glas[0].addEventListener("DOMMouseScroll", myMousewheel, false);
-    else {
-      //$glas.bind('mousewheel', myMousewheel);
-      $glas[0].addEventListener("mousewheel", myMousewheel, false);
-    }
-    $glas.on('mousedown','',myMousedown);
-  }
-
-
-  var el = $glas[0];
-  el.addEventListener("touchstart", handleStart, false);
-  el.addEventListener("touchend", handleEnd, false);
-  el.addEventListener("touchcancel", handleCancel, false);
-  //el.addEventListener("touchleave", handleEnd, false);
-  el.addEventListener("touchmove", handleMove, false);
-  
-  
-  $el[0].addEventListener("myResize", function(){
-    $el.storeVar();
-  });
-  //$el[0].addEventListener("idle", function(){ $el.storeVar(); });
-  $el[0].addEventListener('idle', function(){
-    if($el.is(':visible')) $el.storeVar();
-    $el.$Marker.hideMarkers();
-    $mapDiv.drawMe();
-    if(window.loadTabStart) loadTabStart();
-  });
-
-  $el.append($board);
-  $el.css({position: 'relative',overflow:'hidden'});
-  $el.$board=$board;
-  return $el;
-}
-
 
 // MTab and nMTab is expected as global variables
 
@@ -4806,7 +4162,7 @@ var mapDivExtendI=function(el){
       }
       this.push(elImg);
       elGlas.append(elImg);
-      var elDivUnCertain=createElement('div').css({width:'40px',height:'40px', border:'solid 1px red', background:'pink', opacity:0.4, position:'absolute', transform:'translate(-50%, -50%)'});
+      var elDivUnCertain=createElement('div').css({width:'40px',height:'40px', border:'solid 1px red', background:'pink', opacity:flUncertainOpacityOff, position:'absolute', transform:'translate(-50%, -50%)'});
       arrDivUnCertain.push(elDivUnCertain);
       elGlasBack.append(elDivUnCertain);
     }
@@ -4852,6 +4208,7 @@ var mapDivExtendI=function(el){
     extend(elImg, MarkerT.tmpPrototype);
     return elImg;
   }
+  var flUncertainOpacityOff=0.2, flUncertainOpacityOn=0.4;
   MarkerT.tmpPrototype={};
   MarkerT.tmpPrototype.makeOneRowIconObj=function(i){
     var objTmp;
@@ -4887,14 +4244,14 @@ var mapDivExtendI=function(el){
     if(!obj) { obj=MarkerT.tmpPrototype.makeMultiRowIconObj(i); elImg.dataObjMarkerMultCache=obj; }
     var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y, strTrans='-'+xTrans+'px, -'+yTrans+'px';
     elImg.src=obj.url; elImg.css({width:'', height:'', background:'', transform:'translate('+strTrans+')', 'z-index':maxZ}); 
-    arrDivUnCertain[i].css({opacity:0.7});
+    arrDivUnCertain[i].css({opacity:flUncertainOpacityOn});
     return false;
   }
   MarkerT.tmpPrototype.funcOut=function(){
     var elImg=this, i=elImg.dataInd;
     MarkerT.tmpPrototype.setImg(elImg);
     elImg.css({'z-index':maxVendor-i});
-    arrDivUnCertain[i].css({opacity:0.4});
+    arrDivUnCertain[i].css({opacity:flUncertainOpacityOff});
   }
   MarkerT.tmpPrototype.funcInfoClick=function(){
     var i=this.dataInd;
@@ -5495,13 +4852,13 @@ thumbDisExtend=function(el){
   var $img=$('<img>');    $(el).prop({target:"_blank"}).append($img);    return el;
 }
 
-reportButtonExtend=function(el){
+complaintButtonExtend=function(el){
 "use strict"
-  el.mySet=function(iMTab){    var rT=MTab[iMTab]; idUser=rT.idUser;   $(el).html(rT.nReport);     }
+  el.mySet=function(iMTab){    var rT=MTab[iMTab]; idUser=rT.idUser;   $(el).html(rT.nComplaint);     }
   $(el).click(function(){
-    $reportVDiv.setUp(idUser); $reportVDiv.load();
-    $reportVDiv.setVis();
-    doHistPush({$view:$reportVDiv});
+    $complaintVDiv.setUp(idUser); $complaintVDiv.load();
+    $complaintVDiv.setVis();
+    doHistPush({$view:$complaintVDiv});
   });
   var idUser;      return el;
 }
@@ -5619,7 +4976,7 @@ var tableDivExtend=function($el){
       }
       $tBody.append($row);
     }
-    var tmp='td:not([name=tel],[name=displayEmail],[name=nReport])'; //,[name=link]
+    var tmp='td:not([name=tel],[name=displayEmail],[name=nComplaint])'; //,[name=link]
     $tBody.on('click',tmp,function(){
       var iMTab=$(this).parent().data('iMTab');
       $vendorInfoDiv.setContainers(iMTab);
@@ -6085,7 +5442,7 @@ var teamDivExtend=function($el){
 
   var $hId=$('<div>').html('Inform the team members of this number, they should enter it in their repective settings tab.');
   var $hLink=$('<div>').html('A link to any other site of yours.');
-  var $hList=$('<div>').html('A list of drivers who wants to belong to your team. Mark those who you approve.');
+  var $hList=$('<div>').html('A list of vendors who wants to belong to your team. Mark those who you approve.');
 
   var $hImg0=$imgHelp.clone(), $hImg1=$imgHelp.clone(), $hImg2=$imgHelp.clone(); $hImg0.add($hImg1).add($hImg2).css({'margin-left':'1em'});
   popupHoverJQ($hImg0,$hId);   popupHoverJQ($hImg1,$hLink);   popupHoverJQ($hImg2,$hList);
@@ -6094,7 +5451,7 @@ var teamDivExtend=function($el){
 
   $el.append('Team-Id: ',$el.$id,',',$hImg0,'<br>',
           'Thumb image: ',$thumb,' ',$buttUploadImage,' &nbsp;&nbsp;(will be shrunk to fit a 50 x 50 pixel square)<br>',
-          'Link: (optional)',$el.$link,' &nbsp;',$buttSaveName,$hImg1,'<hr>','<b>List of drivers</b>',$hImg2,$el.$divList);
+          'Link: (optional)',$el.$link,' &nbsp;',$buttSaveName,$hImg1,'<hr>','<b>List of vendors</b>',$hImg2,$el.$divList);
   //$el.append('Link: ',$el.$link,$buttSaveName,'<br>',$a,'<hr>',$el.$divList);
   //$el.append('Name: ',$el.$name,'<br>Link: ',$el.$link,'<br>',$buttSaveName,'<hr>',$el.$divList);
 
@@ -6164,7 +5521,7 @@ var moreDivExtend=function($el){
 "use strict"
   $el.toString=function(){return 'moreDiv';}
   $el.setUp=function(){
-    var nNext=nUserReal+1;
+    var nNext=nUserReal+1; if(nNext==13) nNext=14;
     var ending=makeOrdinalEndingEn(nNext);
     $nNext.html(nNext); //+ending
   }
@@ -6469,7 +5826,7 @@ setUp1=function(){
   replaceNom(langHtml,'gettingStartedLink');
   replaceNom(langHtml,'toManyMess');
   replaceNom(langHtml,'SeeUnActivePopMess');
-  replaceNom(langHtml,'writeReportPopup');
+  replaceNom(langHtml,'writeComplaintPopup');
   replaceNom(langHtml,'introHead');
   replaceNom(langHtml,'LoginSingInAsVendor');
 
@@ -6696,7 +6053,7 @@ var setUp2=function(){
   $payButton=payButtonExtend($('<button>').append(langHtml.vendorPay.head));
   $payDiv={};//payDivExtend($('<div>').append(langHtml.vendorPay.div)).css({flex:'1 1 0', overflow:'auto'});
   $payFoot=payFootExtend($('<div>'));
-  $userSettingButton=$('<button>').append(langHtml.UserInfo);
+  $userSettingButton=$('<button>').append(langHtml.UserSettings);
   $userSettingDiv=userSettingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
   $userSettingFoot=userSettingFootExtend($('<div>'));
   $vendorSettingButton=$('<button>').append(langHtml.VendorSettings);
@@ -6728,13 +6085,13 @@ var setUp2=function(){
     doHistPush({$view:$teamDiv});
   });
   $teamApprovedMess=$("<div>").css({display:'block'}).append('Team/brand not approved, Contact '+domainName+' to become approved.');
-  $reportVDiv=reportVDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $reportVFoot=reportVFootExtend($('<div>'));
-  $reportRDiv=reportRDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $reportRFoot=reportRFootExtend($('<div>'));
+  $complaintVDiv=complaintVDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $complaintVFoot=complaintVFootExtend($('<div>'));
+  $complaintRDiv=complaintRDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
+  $complaintRFoot=complaintRFootExtend($('<div>'));
 
-  $reportCommentPop=reportCommentPopExtend($('<div>')).css({border:'1px solid #000'});
-  $reportAnswerPop=reportAnswerPopExtend($('<div>')).css({border:'1px solid #000'});
+  $complaintCommentPop=complaintCommentPopExtend($('<div>')).css({border:'1px solid #000'});
+  $complaintAnswerPop=complaintAnswerPopExtend($('<div>')).css({border:'1px solid #000'});
 
   //$agreementStart=agreementStartExtend($('<div>'));
   //if(boFirstVisit) $agreementStart.setLocalDates(1);
@@ -6850,12 +6207,12 @@ var setUp2=function(){
 
 
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
-  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'vendorInfoDiv', 'adminDiv', 'reportVDiv', 'reportRDiv', 'moreDiv', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'reportCommentPop', 'reportAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');    //, 'payDiv'
+  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'vendorInfoDiv', 'adminDiv', 'complaintVDiv', 'complaintRDiv', 'moreDiv', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'complaintCommentPop', 'complaintAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');    //, 'payDiv'
   if(boDbgL) StrMainDiv.unshift('divDbg');
 
 
-  //  List of foots: admin, pay, vendorSetting, priceSetting, paymentList, userSetting, reportV, reportR, vendorInfo, filter, markSelector, columnSelector, columnSorter, table, map, team, setting, more, createUser
-  StrMainDiv.push('footDiv', 'quickDivOuter', 'mapFoot', 'filterFoot', 'tableFoot', 'userSettingFoot', 'vendorSettingFoot', 'priceSettingFoot', 'payFoot', 'vendorInfoFoot', 'adminFoot', 'reportVFoot', 'reportRFoot', 'moreFoot', 'formLoginFoot', 'createUserFoot', 'convertIDFoot', 'settingFoot', 'columnSelectorFoot', 'columnSorterFoot', 'markSelectorFoot', 'paymentListFoot', 'teamFoot');
+  //  List of foots: admin, pay, vendorSetting, priceSetting, paymentList, userSetting, complaintV, complaintR, vendorInfo, filter, markSelector, columnSelector, columnSorter, table, map, team, setting, more, createUser
+  StrMainDiv.push('footDiv', 'quickDivOuter', 'mapFoot', 'filterFoot', 'tableFoot', 'userSettingFoot', 'vendorSettingFoot', 'priceSettingFoot', 'payFoot', 'vendorInfoFoot', 'adminFoot', 'complaintVFoot', 'complaintRFoot', 'moreFoot', 'formLoginFoot', 'createUserFoot', 'convertIDFoot', 'settingFoot', 'columnSelectorFoot', 'columnSorterFoot', 'markSelectorFoot', 'paymentListFoot', 'teamFoot');
 
   var MainDiv=[];
   for(var i=0;i<StrMainDiv.length;i++){
@@ -7008,16 +6365,16 @@ var setUp2=function(){
     scalableTog(1);
     return true;
   }
-  $reportVDiv.setVis=function(){
-    if($reportVDiv.boLoaded==0) return false;
-    var $tmp=$reportVDiv.add($reportVFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $reportVDiv.$topDiv.append($vendorListCtrlDiv);
+  $complaintVDiv.setVis=function(){
+    if($complaintVDiv.boLoaded==0) return false;
+    var $tmp=$complaintVDiv.add($complaintVFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $complaintVDiv.$topDiv.append($vendorListCtrlDiv);
     scalableTog(1);
     return true;
   }
-  $reportRDiv.setVis=function(){
-    if($reportRDiv.boLoaded==0) return false;
-    var $tmp=$reportRDiv.add($reportRFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $complaintRDiv.setVis=function(){
+    if($complaintRDiv.boLoaded==0) return false;
+    var $tmp=$complaintRDiv.add($complaintRFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }

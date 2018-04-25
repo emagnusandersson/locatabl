@@ -29,7 +29,7 @@ hideTimerDefault=365*24*3600;
 if(boDbg) hideTimerDefault=30*60;
 
    // DB- TableNameProt
-StrTableKey=["pubKey","vendor","vendorImage","payment","team","teamImage","marketer","rebateCode","report","admin","setting","user"]; 
+StrTableKey=["pubKey","vendor","vendorImage","payment","team","teamImage","marketer","rebateCode","complaint","admin","setting","user"]; 
 StrViewsKey=["hist"]; 
 TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
 ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
@@ -52,7 +52,7 @@ sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
 
 
-specialistDefault={user:0,reporter:0,vendor:0,team:0,marketer:0,admin:0};
+specialistDefault={user:0,complainer:0,vendor:0,team:0,marketer:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
 wc2m=1e5;   // wc2m: Point (world coordinate) to meter (at equator) (Should be earthCircumference/256 = 4e7/256 = 156250 which I round to 1e5 [m])
 wc2m=40074784/256;
@@ -137,13 +137,13 @@ this.rewriteSite=function(site){
   idTeamWanted:        {b:'110000110',type:'INT(4)', default:0},
   boImgOwn:            {b:'011000110',type:'BOOL', default:0},
   linkTeam:            {b:'101000000'},
-  nReport:             {b:'001110000'},
+  nComplaint:             {b:'001110000'},
   coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:10000},
   dist:                {b:'000010000'}
   };
   extend(Prop,tmp);
   site.StrOrderDB=Object.keys(tmp);
-  //StrOrderDB=['index', 'idUser', 'idFB', 'idIdPlace', 'idOpenId', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'nMonthsStartOffer', 'nPayment', 'imTag', 'imTagTeam', 'idTeam', 'idTeamWanted', 'boImgOwn', 'linkTeam', 'nReport', 'coordinatePrecisionM', 'dist', 'image']
+  //StrOrderDB=['index', 'idUser', 'idFB', 'idIdPlace', 'idOpenId', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'nMonthsStartOffer', 'nPayment', 'imTag', 'imTagTeam', 'idTeam', 'idTeamWanted', 'boImgOwn', 'linkTeam', 'nComplaint', 'coordinatePrecisionM', 'dist', 'image']
   Prop.donatedAmount.feat={kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]};
   Prop.homeTown.feat={kind:'B'};
   Prop.idTeam.feat={kind:'BN'};
@@ -176,16 +176,16 @@ this.rewriteSite=function(site){
   //Prop.idUser.selOneF=function(){ return "(@idUser:=u.idUser)";};
   Prop.link.selOneF=function(){ return "v.link";};
   Prop.imTag.selOneF=function(){ return "v.imTag";};
-  Prop.imTagTeam.selOneF=function(){ return "dis.imTag";};
+  Prop.imTagTeam.selOneF=function(){ return "tea.imTag";};
   Prop.posTime.selOneF=Prop.tLastWriteOfTA.selOneF=Prop.terminationDate.selOneF=Prop.lastPriceChange.selOneF=selTimeF;
 
   Prop.created.selF=function(){ return "UNIX_TIMESTAMP(v.created)";};
   //Prop.idUser.selF=function(){ return "u.idUser";};
   Prop.link.selF=function(){ return "v.link";};
   Prop.imTag.selF=function(){ return "v.imTag";};
-  Prop.imTagTeam.selF=function(){return "dis.imTag";};
-  Prop.linkTeam.selF=function(){return "dis.link";};
-  Prop.nReport.selF=function(){return "sum(rb.created IS NOT NULL)";};
+  Prop.imTagTeam.selF=function(){return "tea.imTag";};
+  Prop.linkTeam.selF=function(){return "tea.link";};
+  Prop.nComplaint.selF=function(){return "sum(rb.created IS NOT NULL)";};
   Prop.histActive.selF=function(){return sqlHistActiveColCount;};
   Prop.posTime.selF=Prop.tLastWriteOfTA.selF=Prop.terminationDate.selF=Prop.lastPriceChange.selF=selTimeF;
 
@@ -688,5 +688,8 @@ TLSDataExtend=function(){
     item.context=tls.createSecureContext({        key:  item.strKey,        cert: item.strCert      });//.context;
   }
 }
+
+
+
 
 

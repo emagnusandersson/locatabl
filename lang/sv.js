@@ -12,7 +12,7 @@ On:'On',
 Off:'Off',
 Save:'Spara',
 Delete:'Radera',
-Reporter:'Rapportör',
+Complainer:'Klagare',
 Vehicle:'Fordon',
 Brand:'Märke',
 Independent:'Oberoende',
@@ -104,17 +104,17 @@ PositionETC:'Position etc',
 Contact:'Kontakt',
 Prices:'Priser',
 
-reports:'Rapporter',
+complaints:'Klagomål',
 vote:{
-deleteReport:'Radera rapport',
+deleteComplaint:'Radera klagomål',
 deleteAnswer:'Radera svar',
 answer:'Svar',
-writeComment:'Skriv rapport'
+writeComment:'Skriv klagomål'
 },
 
 Answer:'Svara',
 Change:'Ändra',
-Report:'Rapport',
+Complaint:'Klagomål',
 Back:'⇦',
 
 
@@ -168,7 +168,7 @@ standingByMethod:'Hur väntar du',
 shiftEnd:'När slutar du för dagen.<br>Bra för kunder som vill boka i förväg eller som vill åka längre sträckor'
 },
 
-writeReportPopup:'<span nom="theVendor">Entreprenören</span> kan radera sitt konto, vilket gör att all ryktes data (inklusive rapporter) raderas.',
+writeComplaintPopup:'<span nom="theVendor">Entreprenören</span> kan radera sitt konto, vilket gör att all ryktes data (inklusive klagomål) raderas.',
 
 quickHelp:'Sätt timern och klicka på "On" för att bli synlig.<p>Klicka "Off" för att bli dold.',
 
@@ -177,7 +177,7 @@ pricePref:{pop:"Ändra avstånd och tid"},
 
 
   //login
-loginInfo:{'reporter':'rapportör',
+loginInfo:{'complainer':'klagare',
 'vendor':'entreprenör',
 'team':'team',
 'marketer':'försäljare',
@@ -316,7 +316,8 @@ WaitingForYourPositionHelp:'Ingen insamlad data sparas',
 //DummiesShowingMess:'Inga riktiga <span nom="vendors">entreprenörer</span> är synliga just nu.',
 //DummiesShowingMess:'Eftersom inga <span nom="vendors">entreprenörer</span> är synliga just nu, visas några dummies.',
 //DummiesShowingMess:'Visar demo-<span nom="vendors">entreprenörer</span>.',
-DummiesShowingMess:'Inga riktiga <span nom="vendors">entreprenörer</span>  (bara "dummies") är synliga just nu.',
+//DummiesShowingMess:'Inga riktiga <span nom="vendors">entreprenörer</span>  (bara "dummies") är synliga just nu.',
+DummiesShowingMess:'Inga <span nom="vendors">entreprenörer</span> är synliga just nu. Är du en <span nom="vendor">entreprenör</span>? Logga in och bli en av pionjärerna.',
 //DummiesShowingMess2:'Dessa kommer att tas bort varefter fler använder sajten.',
 
 
@@ -405,7 +406,7 @@ idTeam:'Lag',
 idTeamWanted:'idTeam',
 linkTeam:'',
 bla:'',
-nReport:'Rapporter',
+nComplaint:'Klagomål',
 histActive:'Aktiva dagar de senaste <span></span> dagarna',
 timeAccumulated:'Ackumulerad tid som synlig',
 tLastWriteOfTA:'',
@@ -495,7 +496,7 @@ idTeam:'',
 idTeamWanted:'<p>Att vara med i ett lag/företag med ett varumärke som kunderna känner igen, kan ge kunderna extra förtroende.</p><p>Läs mer i FAQ om hur man går med (eller skapar) ett lag.</p>',
 linkTeam:'',
 bla:'',
-nReport:'',
+nComplaint:'',
 histActive:'Antal aktiva dagar under de senaste <span></span> dagarna',
 timeAccumulated:'',
 tLastWriteOfTA:'',
