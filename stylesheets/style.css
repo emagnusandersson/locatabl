@@ -208,7 +208,7 @@ button.fixWidth{width:2rem;height:1.8rem}
 }
 
 
-.reportTab {
+.complaintTab {
   background-color: #ffffff;
   background-image: -webkit-gradient(linear, left top, right top, from(#ffffff), to(#ffff33));
   background-image: -webkit-linear-gradient(left, #ffffff, #ffff33);

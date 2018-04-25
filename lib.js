@@ -56,7 +56,8 @@ indexOfMin=function(arr) {
 }
 
 arrArrange=function(arrV,arrI){
-  var arrNew=[]; if(typeof arrV=='string') arrNew='';
+  var n=arrI.length, arrNew;
+  if(typeof arrV=='string') arrNew=''; else arrNew=Array(n);
   //for(var i=0;i<arrI.length;i++){    arrNew.push(arrV[arrI[i]]);    }
   for(var i=0;i<arrI.length;i++){    arrNew[i]=arrV[arrI[i]];    }
   return arrNew;
