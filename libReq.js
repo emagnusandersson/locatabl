@@ -1181,7 +1181,7 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboVendor INT, IboTeam INT, IboMarketer INT, IboAdmin INT, IboComplainer INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboVendor INT, IboTeam INT, IboAdmin INT, IboComplainer INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       START TRANSACTION; \n\
       IF IidUser IS NOT NULL THEN \n\
@@ -1205,7 +1205,6 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
         SELECT count(paymentNumber) AS n FROM "+paymentTab+" p WHERE idUser=IidUser; \n\
       ELSE SELECT 1 FROM dual WHERE 0; SELECT 1 FROM dual WHERE 0; END IF; \n\
       IF IboTeam THEN  SELECT * FROM "+teamTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboMarketer THEN  SELECT * FROM "+marketerTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
       IF IboAdmin THEN SELECT * FROM "+adminTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
       IF IboComplainer THEN SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
       COMMIT; \n\
@@ -1348,28 +1347,13 @@ CLIENT_FOUND_ROWS
         CALL copyTable('"+teamImageTab+"_dup','"+teamImageTab+"'); \n\
         CALL copyTable('"+complaintTab+"_dup','"+complaintTab+"'); \n\
         CALL copyTable('"+paymentTab+"_dup','"+paymentTab+"'); \n\
-        CALL copyTable('"+marketerTab+"_dup','"+marketerTab+"'); \n\
         CALL copyTable('"+rebateCodeTab+"_dup','"+rebateCodeTab+"'); \n\
         CALL copyTable('"+adminTab+"_dup','"+adminTab+"'); \n\
         CALL copyTable('"+pubKeyTab+"_dup','"+pubKeyTab+"'); \n\
       END");
 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupRename");
- /* SqlFunction.push("CREATE PROCEDURE "+siteName+"dupRename() \n\
-      BEGIN \n\
-RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
-             "+vendorTab+" TO "+vendorTab+"_dup,\n\
-             "+vendorImageTab+" TO "+vendorImageTab+"_dup,\n\
-             "+teamTab+" TO "+teamTab+"_dup,\n\
-             "+teamImageTab+" TO "+teamImageTab+"_dup,\n\
-             "+complaintTab+" TO "+complaintTab+"_dup,\n\
-             "+paymentTab+" TO "+paymentTab+"_dup,\n\
-             "+marketerTab+" TO "+marketerTab+"_dup,\n\
-             "+rebateCodeTab+" TO "+rebateCodeTab+"_dup,\n\
-             "+adminTab+" TO "+adminTab+"_dup,\n\
-             "+pubKeyTab+" TO "+pubKeyTab+"_dup;\n\
-      END");*/
+
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupTrunkOrgNCopyBack");
   SqlFunction.push("CREATE PROCEDURE "+siteName+"dupTrunkOrgNCopyBack() \n\
@@ -1381,7 +1365,6 @@ RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
         DELETE FROM "+teamImageTab+" WHERE 1; \n\
         DELETE FROM "+complaintTab+" WHERE 1; \n\
         DELETE FROM "+paymentTab+" WHERE 1; \n\
-        DELETE FROM "+marketerTab+" WHERE 1; \n\
         DELETE FROM "+rebateCodeTab+" WHERE 1; \n\
         DELETE FROM "+adminTab+" WHERE 1; \n\
         DELETE FROM "+userTab+" WHERE 1; \n\
@@ -1393,7 +1376,6 @@ RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
         INSERT INTO "+teamImageTab+" SELECT * FROM "+teamImageTab+"_dup; \n\
         INSERT INTO "+complaintTab+" SELECT * FROM "+complaintTab+"_dup; \n\
         INSERT INTO "+paymentTab+" SELECT * FROM "+paymentTab+"_dup; \n\
-        INSERT INTO "+marketerTab+" SELECT * FROM "+marketerTab+"_dup; \n\
         INSERT INTO "+rebateCodeTab+" SELECT * FROM "+rebateCodeTab+"_dup; \n\
         INSERT INTO "+adminTab+" SELECT * FROM "+adminTab+"_dup; \n\
         INSERT INTO "+pubKeyTab+" SELECT * FROM "+pubKeyTab+"_dup; \n\
@@ -1409,7 +1391,6 @@ RENAME TABLE "+userTab+" TO "+userTab+"_dup,\n\
         DROP TABLE IF EXISTS "+teamImageTab+"_dup; \n\
         DROP TABLE IF EXISTS "+complaintTab+"_dup; \n\
         DROP TABLE IF EXISTS "+paymentTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+marketerTab+"_dup; \n\
         DROP TABLE IF EXISTS "+rebateCodeTab+"_dup; \n\
         DROP TABLE IF EXISTS "+adminTab+"_dup; \n\
         DROP TABLE IF EXISTS "+userTab+"_dup; \n\
@@ -1547,7 +1528,7 @@ app.SetupSql.prototype.createDummies=function(SiteName){
   var TableName=site.TableName, ViewName=site.ViewName, Prop=site.Prop;
   var Enum={};   for(var name in Prop) {if('Enum' in Prop[name]) Enum[name]=Prop[name].Enum.concat([]); }   //extend(Enum,site.Enum);
   //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
   //var VendorUpdF=site.VendorUpdF;
@@ -1741,7 +1722,7 @@ app.SetupSql.prototype.createDummy=function(SiteName){
   var site=Site[siteName]; 
   var TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
   //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
+  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
 
@@ -1756,7 +1737,7 @@ app.SetupSql.prototype.createDummy=function(SiteName){
   SqlDummy.push("REPLACE INTO "+adminTab+" (idUser,boApproved,created) VALUES (@idUser,1,now())"); 
 
 
-  SqlDummy.push("REPLACE INTO "+marketerTab+" (idUser,boApproved,created) VALUES (@idUser,1,now())");
+  //SqlDummy.push("REPLACE INTO "+marketerTab+" (idUser,boApproved,created) VALUES (@idUser,1,now())");
 
   SqlDummy.push("REPLACE INTO "+rebateCodeTab+" (id, idUser, amount, months, code, created, validTill, nLeft) VALUES (1,@idUser,0,4,'abc',now(),DATE_ADD(now(),INTERVAL 1 YEAR),10)");
 
@@ -1874,7 +1855,7 @@ ReqSql.prototype.toBrowser=function(objSetupSql){
 
 
 app.createDumpCommand=function(){ 
-  var strCommand='', StrTabType=['user','vendor','vendorImage','team','teamImage','setting','complaint','rebateCode','pubKey','payment','marketer','admin'];
+  var strCommand='', StrTabType=['user','vendor','vendorImage','team','teamImage','setting','complaint','rebateCode','pubKey','payment','admin'];
   for(var i=0;i<StrTabType.length;i++){
     var strTabType=StrTabType[i], StrTab=[];
     for(var j=0;j<SiteName.length;j++){

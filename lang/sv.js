@@ -180,7 +180,6 @@ pricePref:{pop:"Ändra avstånd och tid"},
 loginInfo:{'complainer':'klagare',
 'vendor':'entreprenör',
 'team':'team',
-'marketer':'försäljare',
 'admin':'admin',
 'logoutButt':'Logga ut'},
 
