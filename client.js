@@ -1433,20 +1433,6 @@ var adminFootExtend=function($el){
 }
 
 
-var marketerDivExtend=function($el){
-  $el.removeClass().css({width:'100%'});
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var marketerFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Marketer settings').addClass('footDivLabel');
-  $el.append($buttonBack, $span).addClass('footDiv');
-  return $el;
-}
-
-
 
 
 /*******************************************************************************************************************

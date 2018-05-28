@@ -649,7 +649,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   
   var [err,con]=yield*mysqlGetConnection(flow, this.pool);  if(err) return [err];   this.con=con;
   var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
-  if(['vendorFun', 'complainerFun', 'teamFun', 'marketerFun', 'adminFun', 'refreshFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
+  if(['vendorFun', 'complainerFun', 'teamFun', 'adminFun', 'refreshFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
     var [err, result]=yield *this[strFun](inObj);  if(err) return [err];
   }
   if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
@@ -677,21 +677,6 @@ ReqBE.prototype.teamFun=function*(){
   ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
   
   Sql.push("INSERT INTO "+teamTab+" (idUser,created) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
-  var sql=Sql.join('\n');
-  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
-  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  return [null, Ou];
-}
-ReqBE.prototype.marketerFun=function*(){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, marketerTab}=site.TableName;
-  var Ou={};
-  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
-  
-  var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
-  var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
-  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
-  Sql.push("INSERT INTO "+marketerTab+" VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
   var sql=Sql.join('\n');
   var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
   //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -735,7 +720,7 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   
   var StrRole=null; if(inObj && typeof inObj=='object' && 'Role' in inObj) StrRole=inObj.Role;
   
-  var StrRoleAll=['vendor','team','marketer','admin','complainer'];
+  var StrRoleAll=['vendor','team','admin','complainer'];
   if(typeof StrRole=='undefined' || !StrRole) StrRole=StrRoleAll; 
   if(typeof StrRole=='string') StrRole=[StrRole];
 
@@ -746,8 +731,8 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   if(!idUser) { idUser=yield* getRedis(flow, req.sessionID+'_LoginIdUser'); }
   var BoTest={};
   for(var i=0;i<StrRoleAll.length;i++) { var strRole=StrRoleAll[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
-  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.vendor, BoTest.team, BoTest.marketer, BoTest.admin, BoTest.complainer];
-  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, @OboOK, @Omess);");
+  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.vendor, BoTest.team, BoTest.admin, BoTest.complainer];
+  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, @OboOK, @Omess);");
   var sql=Sql.join('\n');
   
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -757,9 +742,8 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
     var res=results[1], c=res.length; if(BoTest.vendor) userInfoFrDBUpd.vendor=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.vendor=='object') extend(userInfoFrDBUpd.vendor,userInfoFrDBU);
     var res=results[2]; if(BoTest.vendor && res.length && 'n' in res[0]  &&  userInfoFrDBUpd.vendor) userInfoFrDBUpd.vendor.nPayment=res[0].n;  
     var res=results[3], c=res.length; if(BoTest.team) userInfoFrDBUpd.team=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.team=='object') extend(userInfoFrDBUpd.team,userInfoFrDBU);
-    var res=results[4], c=res.length; if(BoTest.marketer) userInfoFrDBUpd.marketer=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.marketer=='object') extend(userInfoFrDBUpd.marketer,userInfoFrDBU); 
-    var res=results[5], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.admin=='object') extend(userInfoFrDBUpd.admin,userInfoFrDBU);
-    var res=results[6]; if(BoTest.complainer ) {   var  c=res[0].n;  userInfoFrDBUpd.complainer=c?{idUser:userInfoFrDBUpd.user.idUser, c:c}:0;    }
+    var res=results[4], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.admin=='object') extend(userInfoFrDBUpd.admin,userInfoFrDBU);
+    var res=results[5]; if(BoTest.complainer ) {   var  c=res[0].n;  userInfoFrDBUpd.complainer=c?{idUser:userInfoFrDBUpd.user.idUser, c:c}:0;    }
   } else extend(userInfoFrDBUpd, specialistDefault);
   
   extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
@@ -1162,26 +1146,6 @@ ReqBE.prototype.adminMonitorClear=function*(inObj){
   var sql="SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;", Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   Ou.n=results[0].n;
-  return [null, [Ou]];
-}
-
-
-ReqBE.prototype.rebateCodeCreate=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, site=req.site;
-  var rebateCodeTab=site.TableName.rebateCodeTab;
-  var Ou={};
-  var {user, marketer}=this.sessionUserInfoFrDB; if(!user || !marketer) { this.mes('No session'); return [null, [Ou]];}
-  var {idUser,boApproved}=marketer;
-  if(!boApproved) { this.mes('Marketer not approved'); return [null, [Ou]]; }
-    
-  var months=Number(inObj.months); 
-  var code=genRandomString(rebateCodeLen);
-
-
-  var sql="INSERT INTO "+rebateCodeTab+" ( idUser, months, code, created, validTill) VALUES (?,?,?, now(), DATE_ADD(now(), INTERVAL 1 MONTH))";
-  var Val=[idUser, months, code];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  this.mes(months+" months, Code: "+code);
   return [null, [Ou]];
 }
 

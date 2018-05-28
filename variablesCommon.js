@@ -52,7 +52,7 @@ sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
 
 
-specialistDefault={user:0,complainer:0,vendor:0,team:0,marketer:0,admin:0};
+specialistDefault={user:0,complainer:0,vendor:0,team:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
 wc2m=1e5;   // wc2m: Point (world coordinate) to meter (at equator) (Should be earthCircumference/256 = 4e7/256 = 156250 which I round to 1e5 [m])
 wc2m=40074784/256;

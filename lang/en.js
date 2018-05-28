@@ -181,7 +181,6 @@ pricePref:{pop:"Change distance and time"},
 loginInfo:{'complainer':'complainer',
 'vendor':'vendor',
 'team':'team',
-'marketer':'marketer',
 'admin':'admin',
 'logoutButt':'Sign-out'
 },
