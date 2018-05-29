@@ -29,7 +29,7 @@ hideTimerDefault=365*24*3600;
 if(boDbg) hideTimerDefault=30*60;
 
    // DB- TableNameProt
-StrTableKey=["pubKey","vendor","vendorImage","payment","team","teamImage","marketer","rebateCode","complaint","admin","setting","user"]; 
+StrTableKey=["pubKey","vendor","vendorImage","customer","customerImage","payment","team","teamImage","marketer","rebateCode","complaint","admin","setting","user"]; 
 StrViewsKey=["hist"]; 
 TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
 ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
@@ -139,7 +139,9 @@ this.rewriteSite=function(site){
   linkTeam:            {b:'101000000'},
   nComplaint:             {b:'001110000'},
   coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:10000},
-  dist:                {b:'000010000'}
+  dist:                {b:'000010000'},
+  pubKey:              {b:'000000111',type:'VARCHAR(256)', default:''},
+  iSeq:                {b:'000000110',type:'INT(4)', default:0}
   };
   extend(Prop,tmp);
   site.StrOrderDB=Object.keys(tmp);

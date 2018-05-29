@@ -890,17 +890,57 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   ) ENGINE="+engine+" COLLATE "+collate+""); 
 
 
-
     // Create VendorTab indexes
   for(var name in Prop){
-  //for(var i=0;i<StrDBCol.length;i++){
-    //var name=StrDBCol[i];
     var arr=Prop[name];
     var b=arr.b;
     if(Number(b[bFlip.vendorTabIndex])){
       if(0) SqlFunction.push("CREATE INDEX "+name+"Index ON "+vendorTab+"("+name+")");
     }
   }
+
+
+    // Create customerTab
+  //var arrCols=[];
+  //for(var i=0;i<site.StrOrderDB.length;i++){
+    //var name=site.StrOrderDB[i];
+    //var arr=Prop[name];
+    //var b=arr.b;
+    //if(Number(b[bFlip.customerTab])){
+      //var strType=arr.type || '';
+      //if(strType=='ENUM'){
+        ////$tmpName='enum'.ucfirst($name);
+        ////$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
+        //var arra=Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
+        //strType="ENUM("+str+")";
+      //}
+      //var strNull=Number(b[bFlip.notNull])?'NOT NULL':'';
+      //var strDefault=''; 
+      //if('default' in arr){
+        //var tmp; if(typeof arr.default=='string') tmp="'"+arr.default+"'"; else tmp=arr.default;
+        //strDefault="DEFAULT "+tmp;
+      //}
+      //arrCols.push("`"+name+"` "+strType+" "+strNull+" "+strDefault);
+    //}//``
+  //}
+  //var strSql=arrCols.join(",\n");
+
+  //SqlTab.push("CREATE TABLE "+customerTab+" (\
+  //"+strSql+",\
+  //PRIMARY KEY (idUser),\
+  //FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE\
+  //) ENGINE="+engine+" COLLATE "+collate+""); 
+
+
+    // Create VendorTab indexes
+  for(var name in Prop){
+    var arr=Prop[name];
+    var b=arr.b;
+    if(Number(b[bFlip.customerTabIndex])){
+      if(0) SqlFunction.push("CREATE INDEX "+name+"Index ON "+customerTab+"("+name+")");
+    }
+  }
+
 
   SqlTab.push("CREATE TABLE "+vendorImageTab+" ( \
   idUser int(4) NOT NULL, \
@@ -1010,13 +1050,13 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   ) ENGINE="+engine+" COLLATE "+collate+"");
 
     // Create pubKeyTab
-  SqlTab.push("CREATE TABLE "+pubKeyTab+" ( \n\
-  idUser  int(4) NOT NULL, \n\
-  pubKey  varchar(256) NOT NULL default '', \n\
-  iSeq  int(4) NOT NULL default 0, \n\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  UNIQUE KEY (idUser) \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
+  //SqlTab.push("CREATE TABLE "+pubKeyTab+" ( \n\
+  //idUser  int(4) NOT NULL, \n\
+  //pubKey  varchar(256) NOT NULL default '', \n\
+  //iSeq  int(4) NOT NULL default 0, \n\
+  //FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
+  //UNIQUE KEY (idUser) \n\
+  //) ENGINE="+engine+" COLLATE "+collate+"");
 
 
   addBinTableSql(SqlTabDrop,SqlTab,siteName,Prop,engine,collate);
@@ -1218,13 +1258,13 @@ CLIENT_FOUND_ROWS
   SqlFunction.push("CREATE PROCEDURE "+siteName+"GetIdUserNSetISeq(Ikey varchar(256), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, ViSeq INT; \n\
-      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM "+pubKeyTab+" WHERE pubKey=Ikey; \n\
+      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM "+vendorTab+" WHERE pubKey=Ikey; \n\
       SET Vc=FOUND_ROWS(); \n\
       IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('pubKey exist multiple times Vc=',Vc); LEAVE proc_label; END IF; \n\
       IF Vc=0 THEN SET OboOK=0, Omess='No such pubKey stored!'; LEAVE proc_label; END IF; \n\
   \n\
       IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the keys'; LEAVE proc_label; END IF; \n\
-      UPDATE "+pubKeyTab+" SET iSeq=iSeqN WHERE idUser=OidUser; \n\
+      UPDATE "+vendorTab+" SET iSeq=iSeqN WHERE idUser=OidUser; \n\
       SET OboOK=1, Omess=''; \n\
     END");
 
