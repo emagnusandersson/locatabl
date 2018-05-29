@@ -625,9 +625,9 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
   
-  if(payLev==0) {
-    Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
-  }
+  //if(payLev==0) {
+    //Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
+  //}
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
   var c=results[0].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
@@ -799,50 +799,6 @@ app.reqStat=function*(){
   Str.push("</body></html>");
   var str=Str.join('\n');  res.end(str);
 }
-
-
-
-/******************************************************************************
- * ReqOffer
- ******************************************************************************/
-app.ReqOffer=function(){}
-app.ReqOffer.prototype.filesToRam=function*(flow){
-  this.text={};
-  for(var i=0;i<arrLangShort.length;i++){
-    var strLang=arrLangShort[i];
-    this.text[strLang]=[];
-    for(var j=0;j<3;j++){
-      var payLev=j;
-      var strFile="lang/offer/"+strLang+payLev+".html"; 
-      var err, buf;
-      fs.readFile(strFile, 'utf8', function(errT, bufT) { err=errT; buf=bufT;  flow.next();  }); yield;
-      if(err){ res.out500(err); return; }
-      this.text[strLang][payLev]=buf; 
-    }
-  }
-}
-app.ReqOffer.prototype.outputData=function(req,res){
-  var objQS=req.objQS;
-  var strLang='en'; if('lang' in objQS) strLang=objQS.lang.toLowerCase();
-  res.setHeader("Content-Type", 'text/html');
-  res.writeHead(200);
-  var str='<!DOCTYPE html> \n\
-<html><head> \n\
-<meta name="robots" content="noindex"> \n\
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> \n\
-<style> \n\
-body {font-family:verdana, arial, helvetica;font-size:100%;margin:0em} \n\
-div.yellow{border:3px solid;background-color:#ff0;padding:1em;margin:1em 0em} \n\
-</style> \n\
-</head><body>';
-  res.write(str, 'utf8');
-  res.write(this.text[strLang][payLev], 'utf8');
-  res.write('</body>\n</html>', 'utf8');
-  res.end();
-}
-
-
-
 
 
  
@@ -1069,8 +1025,6 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
 
   //SqlTab.push("TRUNCATE "+settingTab+"");
   SqlTab.push("INSERT INTO "+settingTab+" VALUES \
-  ('payLev','0'), \
-  ('boTerminationCheck','1'), \
   ('boShowTeam','0'), \
   ('tLastWriteOfHA',floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )), \
   ('boGotNewVendors','0'), \
@@ -1254,27 +1208,7 @@ CLIENT_FOUND_ROWS
       SELECT 'Password changed' AS mess; \n\
     END");
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UseRebateCode");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"UseRebateCode(Icode varchar(128), IidUser INT, OUT OmonthsToAdd INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
-    proc_label:BEGIN \n\
-      DECLARE Vc, Vn, intMax INT; \n\
-      START TRANSACTION; \n\
-      SELECT SQL_CALC_FOUND_ROWS months INTO OmonthsToAdd FROM "+rebateCodeTab+" WHERE code=Icode AND validTill>now() AND nLeft!=0; \n\
-      SELECT FOUND_ROWS() INTO Vc; \n\
-      IF Vc!=1 THEN SET OboOK=0, Omess=CONCAT('rebateCode is not valid, count=',Vc); ROLLBACK; LEAVE proc_label; END IF; \n\
-  \n\
-      SELECT SQL_CALC_FOUND_ROWS nMonthsStartOffer INTO Vn FROM "+vendorTab+" WHERE idUser=IidUser; \n\
-      SELECT FOUND_ROWS() INTO Vc; \n\
-      IF Vc!=1 THEN SET OboOK=0, Omess=CONCAT('Vc=',Vc); ROLLBACK; LEAVE proc_label; END IF; \n\
-      IF Vn!=0 THEN SET OboOK=0, Omess='Only one startoffer'; ROLLBACK; LEAVE proc_label; END IF; \n\
-  \n\
-      SET intMax="+intMax+"; \n\
-      UPDATE "+vendorTab+" SET nMonthsStartOffer=OmonthsToAdd, \n\
-          terminationDate=IF(OmonthsToAdd=intMax, FROM_UNIXTIME(intMax), DATE_ADD(greatest(terminationDate,now()), INTERVAL OmonthsToAdd MONTH) ) WHERE idUser=IidUser; \n\
-      UPDATE "+rebateCodeTab+" SET nLeft=nLeft-1 WHERE code=Icode; \n\
-      SET OboOK=1, Omess='OK'; \n\
-      COMMIT; \n\
-    END");
+
   //SqlFunction.push("CALL "+siteName+"UseRebateCode('abc', 1, @boOK, @mess)"); //echo sqlToVar(SqlFunction.push("SELECT @boInserted"));
   //CALL taxiUseRebateCode('abc', 1, @boOK, @mess); SELECT @boOK, @mess;
   //SET Omess=Vc;   LEAVE proc_label; \
@@ -1590,7 +1524,7 @@ app.SetupSql.prototype.createDummies=function(SiteName){
   var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'distUnit', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang'];
 
   var StrPlugIn=site.StrPlugIn;
-  if(in_array("general", StrPlugIn)){ arrUpd=['donatedAmount', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'nMonthsStartOffer', 'imTag', 'idTeam', 'idTeamWanted', 'boImgOwn', 'coordinatePrecisionM']; }
+  if(in_array("general", StrPlugIn)){ arrUpd=['donatedAmount', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'imTag', 'idTeam', 'idTeamWanted', 'boImgOwn', 'coordinatePrecisionM']; }
 
   if(in_array("transportProt", StrPlugIn)){ arrUpd=arrUpd.concat(['vehicleType']);  }
   if(in_array("transportPrice", StrPlugIn)){ arrUpd=arrUpd.concat(['priceStart', 'distUnit', 'pricePerDist', 'pricePerHour']);  }

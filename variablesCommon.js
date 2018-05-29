@@ -122,7 +122,7 @@ this.rewriteSite=function(site){
   lastPriceChange:     {b:'011011101',type:'TIMESTAMP', default:0},
   x:                   {b:'111000111',type:'DOUBLE', default:0},
   y:                   {b:'111000111',type:'DOUBLE', default:0},
-  nMonthsStartOffer:   {b:'000000110',type:'INT(4)', default:0},
+  //nMonthsStartOffer:   {b:'000000110',type:'INT(4)', default:0},
 
   nPayment:            {b:'000000000'},
   imTag:               {b:'011000110',type:'INT(4)', default:0},

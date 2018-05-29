@@ -787,13 +787,12 @@ ReqBE.prototype.setUpCond=function*(inObj){
 }
 
 
-ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCond, VPSize, pC, zoom, boShowDummy).
+ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize, pC, zoom, boShowDummy).
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, vendorTab}=site.TableName;
   
   var Ou={},  Sql=[];
   Sql.push("SELECT UNIX_TIMESTAMP(now()) AS now;");
 
-  this.termCond=''; if(boTerminationCheck) this.termCond="now()<terminationDate";
   
   var zoom=Number(inObj.zoom), boCalcZoom=zoom==-1?1:0; 
   this.VPSize=inObj.VPSize;  
@@ -814,7 +813,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (termCo
 
     
     //strCond=array_filter(Where).join(' AND '); if(strCond.length>0) strCond='AND '+strCond;
-    var WhereTmp=this.Where.concat(["boShow=1",this.termCond]),  strCond=array_filter(WhereTmp).join(' AND ');
+    var WhereTmp=this.Where.concat("boShow=1"),  strCond=array_filter(WhereTmp).join(' AND ');
     
     var xOpp, xAddTerm; if(xC>128) {xOpp=xC-128; xAddTerm="IF(x<"+xOpp+",256,0)";}  else {xOpp=xC+128;  xAddTerm="IF(x>"+xOpp+",-256,0)"; } // xOpp : x of opposite side of planet
     var tmp="min(greatest(abs(x+"+xAddTerm+"-"+xC+"),abs(y-"+yC+")))";
@@ -858,13 +857,13 @@ ReqBE.prototype.getList=function*(inObj){
   //this.WhereM=this.Where.concat(whereMap);
   
   var Sql=[];
-  var WhereTmp=this.Where.concat([this.whereMap,"boShow=1",this.termCond]),  strCond=array_filter(WhereTmp).join(' AND ');
+  var WhereTmp=this.Where.concat(this.whereMap,"boShow=1"),  strCond=array_filter(WhereTmp).join(' AND ');
   Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM (("+vendorTab+" v NATURAL JOIN "+userTab+" u) LEFT JOIN "+teamTab+" tea on tea.idUser=v.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idVendor=v.idUser \
 WHERE "+strCond+" GROUP BY v.idUser ORDER BY posTime DESC LIMIT 0, "+maxVendor+";");
 
   Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
 
-  var WhereTmp=[this.whereMap,"boShow=1",this.termCond],  strCond=array_filter(WhereTmp).join(' AND ');
+  var WhereTmp=[this.whereMap,"boShow=1"],  strCond=array_filter(WhereTmp).join(' AND ');
   Sql.push("SELECT count(*) AS n FROM "+vendorTab+" v WHERE "+strCond+";"); // nUnFiltered
  
   var sql=Sql.join('\n'), Val=[];
@@ -893,7 +892,7 @@ ReqBE.prototype.getGroupList=function*(inObj){
   var Sql=[];
   //var zoomFac=Math.pow(2,this.zoom-4.3);
   var zoomFac=Math.pow(2,this.zoom-5);
-  var WhereTmp=this.Where.concat([this.whereMap, "boShow=1", this.termCond]),  strCond=array_filter(WhereTmp).join(' AND ');
+  var WhereTmp=this.Where.concat([this.whereMap, "boShow=1"]),  strCond=array_filter(WhereTmp).join(' AND ');
   Sql.push("SELECT round(x*"+zoomFac+")/"+zoomFac+" AS roundX, round(y*"+zoomFac+")/"+zoomFac+" AS roundY, count(*) AS n FROM "+vendorTab+" v \
                  WHERE "+strCond+" GROUP BY roundX, roundY;");
   var sql=Sql.join('\n'), Val=[];
@@ -905,7 +904,7 @@ ReqBE.prototype.getGroupList=function*(inObj){
 ReqBE.prototype.getHist=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, vendorTab=site.TableName.vendorTab;
   var Ou={}
-  var arg={strTableRef:vendorTab+' v', Ou:Ou, WhereExtra:[this.whereMap, "boShow=1", this.termCond]};  // , strTableRefCount:vendorTab+' v'
+  var arg={strTableRef:vendorTab+' v', Ou:Ou, WhereExtra:[this.whereMap, "boShow=1"]};  // , strTableRefCount:vendorTab+' v'
   copySome(arg, site, ['Prop','StrOrderFilt']);
   copySome(arg, this, ['Where']); arg.strDBPrefix=site.siteName;
 
@@ -962,9 +961,6 @@ ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
   
-  if(payLev==0) {
-    Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
-  }
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var c=results[0].affectedRows; if(c!=1) return [new Error(c+" userTab rows affected")];
@@ -1362,7 +1358,7 @@ ReqBE.prototype.getSetting=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;
   var Ou={};
-  var Str=['payLev','boTerminationCheck','boShowTeam','boAllowEmailAccountCreation'];
+  var Str=['boShowTeam','boAllowEmailAccountCreation'];
   if(!isAWithinB(inObj,Str)) {this.mes('Illegal invariable'); return [null, [Ou]]; }
   for(var i=0;i<inObj.length;i++){ var name=inObj[i]; Ou[name]=app[name]; }
   return [null, [Ou]];
@@ -1372,7 +1368,7 @@ ReqBE.prototype.setSetting=function*(inObj){
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var StrApp=[],  StrServ=[];
-  if(this.sessionUserInfoFrDB.admin) StrApp=['payLev','boTerminationCheck','boShowTeam','boAllowEmailAccountCreation'];  
+  if(this.sessionUserInfoFrDB.admin) StrApp=['boShowTeam','boAllowEmailAccountCreation'];  
   var Str=StrApp.concat(StrServ);
   var Key=Object.keys(inObj);
   if(!isAWithinB(Key, Str)) { this.mes('Illegal invariable'); return [null, [Ou]];}
@@ -1385,7 +1381,7 @@ ReqBE.prototype.getDBSetting=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
   var settingTab=site.TableName.settingTab;
   var Ou={};
-  if(!isAWithinB(inObj,['payLev','boTerminationCheck','boShowTeam'])) {this.mes('Illegal invariable'); return [null, [Ou]];}
+  if(!isAWithinB(inObj,['boShowTeam'])) {this.mes('Illegal invariable'); return [null, [Ou]];}
   var strV=inObj.join("', '");
   var sql="SELECT * FROM "+settingTab+" WHERE name IN('"+strV+"')";
   var Val=[];
@@ -1400,7 +1396,7 @@ ReqBE.prototype.setDBSetting=function*(inObj){
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var Str=[];
-  if(this.sessionUserInfoFrDB.admin) Str=['payLev','boTerminationCheck','boShowTeam','boGotNewVendors','nUser'];  
+  if(this.sessionUserInfoFrDB.admin) Str=['boShowTeam','boGotNewVendors','nUser'];  
   var Key=Object.keys(inObj);
   if(!isAWithinB(Key, Str)) { this.mes('Illegal invariable'); return [null, [Ou]];}
 

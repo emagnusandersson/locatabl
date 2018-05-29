@@ -1391,7 +1391,6 @@ var adminDivExtend=function($el){
 "use strict"
   $el.toString=function(){return 'adminDiv';}
   $el.setUp=function(data){
-    $inpPayLev.val(data.payLev);   $inpBoTerm.prop({checked:Boolean(Number(data.boTerminationCheck))});
     boShowTeam=Boolean(Number(data.boShowTeam)); $inpBoShowTeam.prop({checked:boShowTeam});
     //$filterDiv.setBoShowTeam(boShowTeam);
     $filterDiv.children('[name=idTeam]').toggle(boShowTeam);
@@ -1404,22 +1403,16 @@ var adminDivExtend=function($el){
 
   var $buttMonitorClear=$('<button>').html('Clear Monitor').css({display:'block','margin-top':'1em'}).click(function(){    var vec=[['adminMonitorClear',1]];   majax(oAJAX,vec);  });
 
-    //set payLev
+    //set 
   $el.saveFunc=function(){
-    var data={payLev:Number($inpPayLev.val()),boTerminationCheck:Number($inpBoTerm[0].checked),boShowTeam:Number($inpBoShowTeam[0].checked)}; $el.setUp(data);
-    //var vec=[['setSetting',data],['adminMakeOfferFiles',{payLev:data.payLev}]];   majax(oAJAX,vec);
+    var data={boShowTeam:Number($inpBoShowTeam[0].checked)}; $el.setUp(data);
     var vec=[['setSetting',data]];   majax(oAJAX,vec);
   }
-  var $inpPayLev=$('<input>').prop({type:'number',min:0,value:0,step:1,max:2});
-  var $inpBoTerm=$('<input>').prop({type:'checkbox'});
+
   var $inpBoShowTeam=$('<input>').prop({type:'checkbox'});
-  var $pPayLev=$('<p>').css({'margin-top':'1em'}).append('PayLev:',$inpPayLev);
-  var $pBoTerm=$('<p>').css({'margin-top':'1em'}).append('boTerminationCheck:',$inpBoTerm);
   var $pBoShowTeam=$('<p>').css({'margin-top':'1em'}).append('boShowTeam:',$inpBoShowTeam);
   
-
-
-  $el.append($pPayLev,$pBoTerm,$pBoShowTeam);
+  $el.append($pBoShowTeam);
   $el.css({'text-align':'left'});
   return $el;
 }
@@ -5050,7 +5043,7 @@ var firstAJAXCall=function(latLngFirst){
   //if(boVideo) zoomT=14;
 
   var o1={zoom:zoomT, pC:pC, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();
-  var vec=[['getSetting',['payLev','boTerminationCheck','boShowTeam'],$adminDiv.setUp], ['setupById'], ['VSetPosCond',pC],
+  var vec=[['getSetting',['boShowTeam'],$adminDiv.setUp], ['setupById'], ['VSetPosCond',pC],
     ['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,getHistRet]];   majax(oAJAX,vec);
   setMess('... fetching vendors ... ',15,true);
 }
