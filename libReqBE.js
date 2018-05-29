@@ -1339,13 +1339,13 @@ ReqBE.prototype.deleteImage=function*(inObj){
 
 ReqBE.prototype.pubKeyStore=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
-  var pubKeyTab=site.TableName.pubKeyTab;
+  //var pubKeyTab=site.TableName.pubKeyTab;
+  var {vendorTab}=site.TableName;
   var Ou={};
   var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
-  var idUser=user.idUser;
-  var pubKey=inObj.pubKey;
-  var sql="INSERT INTO "+pubKeyTab+" (idUser,pubKey) VALUES (?, ?) ON DUPLICATE KEY UPDATE pubKey=VALUES(pubKey), iSeq=0";
-  var Val=[idUser,pubKey];
+  //var idUser=user.idUser, pubKey=inObj.pubKey;
+  //var sql="INSERT INTO "+pubKeyTab+" (idUser,pubKey) VALUES (?, ?) ON DUPLICATE KEY UPDATE pubKey=VALUES(pubKey), iSeq=0",  Val=[inObj.idUser,  inObj.pubKey];
+  var sql="UPDATE "+vendorTab+" SET pubKey=?, iSeq=0 WHERE idUser=?",   Val=[inObj.pubKey,  inObj.idUser];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
   if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="(same key)";}

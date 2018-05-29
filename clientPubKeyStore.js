@@ -192,6 +192,7 @@ GRet=function(data){
 
 setUp=function(){
 
+  elHtml=document.documentElement;  elBody=document.body
   $body=$('body');  $html=$('html');
   $body.css({margin:0, padding:0});
 
