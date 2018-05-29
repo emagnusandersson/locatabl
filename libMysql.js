@@ -94,7 +94,7 @@ accountMergeTwo=function*(objArg){
     
 
       // Now check which vendorTab row to keep
-    var sql="SELECT idUser, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, created, histActive, timeAccumulated, terminationDate FROM "+vendorTab+" WHERE idUser=? OR idUser=?;";
+    var sql="SELECT idUser, donatedAmount, coordinatePrecisionM, created, histActive, timeAccumulated, terminationDate FROM "+vendorTab+" WHERE idUser=? OR idUser=?;";
     var Val=[idUserUBest,idUserUD];
     var [err, resultsV]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
     var nV=resultsV.length;
@@ -109,7 +109,6 @@ accountMergeTwo=function*(objArg){
     else if(nV==2) {
       var row0=resultsV[0], row1=resultsV[1];
       var donatedAmount=row0.donatedAmount+row1.donatedAmount;
-      var nMonthsStartOffer=Math.max(row0.nMonthsStartOffer,row1.nMonthsStartOffer);
       var coordinatePrecisionM=Math.max(row0.coordinatePrecisionM,row1.coordinatePrecisionM);
       var terminationDate=maxKeepType(row0.terminationDate,row1.terminationDate);
       var created=minKeepType(row0.created,row1.created);
@@ -120,8 +119,8 @@ accountMergeTwo=function*(objArg){
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
       var c=results.affectedRows; StrMes.push(c+" rows from vendorTab deleted.");
       
-      var sql="UPDATE "+vendorTab+" SET idUser=?, created=?, donatedAmount=?, nMonthsStartOffer=?, coordinatePrecisionM=?, terminationDate=? WHERE idUser=?;";
-      var Val=[idUserUBest, created, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, terminationDate, idUserVBest];
+      var sql="UPDATE "+vendorTab+" SET idUser=?, created=?, donatedAmount=?, coordinatePrecisionM=?, terminationDate=? WHERE idUser=?;";
+      var Val=[idUserUBest, created, donatedAmount, coordinatePrecisionM, terminationDate, idUserVBest];
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
       var c=results.affectedRows; StrMes.push(c+" rows from vendorTab updated.");
     }
@@ -183,7 +182,7 @@ accountMergeThree=function*(objArg){
  
       // Now check which vendorTab row to keep
     var strQMark=array_fill(nU,'?').join(', ');
-    var sql="SELECT idUser, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, created, histActive, timeAccumulated, terminationDate FROM "+vendorTab+" WHERE idUser IN("+strQMark+");";
+    var sql="SELECT idUser, donatedAmount, coordinatePrecisionM, created, histActive, timeAccumulated, terminationDate FROM "+vendorTab+" WHERE idUser IN("+strQMark+");";
     var [err, resultsV]=yield* mysqlQuery(flow, con, sql, ValU); if(err) return [err];
     var nV=resultsV.length;
     if(nV==1) {
@@ -195,11 +194,10 @@ accountMergeThree=function*(objArg){
       }
     } else if(nV>=2) {
         // Select one vendorTab-row, delete the others, update the selected row, change the rows idUser to idUserUBest
-      var donatedAmount=0, nMonthsStartOffer=0, coordinatePrecisionM=0, terminationDate=0, created=Infinity, timeAccumulated=0, iBest=0, Val=[];
+      var donatedAmount=0, coordinatePrecisionM=0, terminationDate=0, created=Infinity, timeAccumulated=0, iBest=0, Val=[];
       for(var i=0;i<nV;i++){
         var rowT=resultsV[i];
         donatedAmount+=rowT.donatedAmount;
-        if(rowT.nMonthsStartOffer>nMonthsStartOffer) nMonthsStartOffer=rowT.nMonthsStartOffer;
         if(rowT.coordinatePrecisionM>coordinatePrecisionM) coordinatePrecisionM=rowT.coordinatePrecisionM;
         if(rowT.terminationDate>terminationDate) terminationDate=rowT.terminationDate;;
         if(rowT.created<created) {created=rowT.created;}
@@ -215,8 +213,8 @@ accountMergeThree=function*(objArg){
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
       var c=results.affectedRows; StrMes.push(c+" rows from vendorTab deleted.");
       
-      var sql="UPDATE "+vendorTab+" SET idUser=?, created=?, donatedAmount=?, nMonthsStartOffer=?, coordinatePrecisionM=?, terminationDate=? WHERE idUser=?;";
-      var Val=[idUserUBest, created, donatedAmount, nMonthsStartOffer, coordinatePrecisionM, terminationDate, idUserVBest];
+      var sql="UPDATE "+vendorTab+" SET idUser=?, created=?, donatedAmount=?, coordinatePrecisionM=?, terminationDate=? WHERE idUser=?;";
+      var Val=[idUserUBest, created, donatedAmount, coordinatePrecisionM, terminationDate, idUserVBest];
       var [err, results]=yield* mysqlQuery(flow, con, sql, Val); if(err) return [err];
       var c=results.affectedRows; StrMes.push(c+" rows from vendorTab updated.");
     }

@@ -80,7 +80,7 @@ var flow=( function*(){
   wwwCommon='';
   domainPayPal='www.paypal.com';
   urlPayPal='https://www.paypal.com/cgi-bin/webscr';
-  payLev=0; boShowTeam=false; boTerminationCheck=1;
+  boShowTeam=false;
   intDDOSMax=100; tDDOSBan=5; 
   maxUnactivity=3600*24;
   maxLoginUnactivity=10*60;
@@ -119,7 +119,6 @@ var flow=( function*(){
   require('./libReqBE.js');
   require('./libReq.js'); 
 
-  reqOffer=new ReqOffer(); yield *reqOffer.filesToRam(flow);
 
   DBExtend(DB={});
 

@@ -101,7 +101,7 @@ else {
   wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
   wwwLoginScope=Site.taxi.wwwSite;
 
-  boDbg=1; payLev=0; boTerminationCheck=1; boShowTeam=0; 
+  boDbg=1; boShowTeam=0; 
   userInfoFrIPDbg={IP:'fb',idIP:'100002646477985',nameIP:'Magnus Andersson'};
 
 }  
