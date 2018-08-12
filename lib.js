@@ -2,8 +2,10 @@
 boBrowser=(typeof window != 'undefined' && window.document);
 
 
-calcKeySel=function(Prop, KeyCol){
-  var KeySel=[];  for(var i=0;i<KeyCol.length;i++) { var key=KeyCol[i], b=Prop[key].b;   if(Number(b[bFlip.DBSel])) KeySel.push(key);  }
+
+filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for each strKey. Create an array with all strKey where Prop[strKey].b[iBit] is true.
+  var KeyAll=Object.keys(Prop)
+  var KeySel=[];  for(var i=0;i<KeyAll.length;i++) { var key=KeyAll[i], b=Prop[key].b;   if(Number(b[iBit])) KeySel.push(key);  }
   return KeySel;
 }
 
@@ -35,8 +37,17 @@ rtrim=function(str,charlist){
 
 //pad2=function(n){ return ('0'+n).slice(-2);}
 pad2=function(n){return (n<10?'0':'')+n;}
-calcLabel=function(Label,strName){ return Label[strName]||ucfirst(strName); }
 
+
+myParser=function(strText,obj){
+  var StrKey=Object.keys(obj);
+  for(var i=0;i<StrKey.length;i++){
+    var strKey=StrKey[i];
+    var regKey=new RegExp('\\$'+strKey, 'g');
+    strText.replace(regKey, obj[strKey]);
+  }
+  return strText;
+}
 
 //
 // Array
@@ -67,11 +78,13 @@ arrArrange=function(arrV,arrI){
 //AmB=function(A,B){return A.filter(function(ai){return B.indexOf(ai)==-1;});}  // Loop through A; remove ai that is in B
 intersectionAB=function(A,B){var Rem=[]; for(var i=A.length-1;i>=0;i--){var a=A[i]; if(B.indexOf(a)==-1) A.splice(i,1); else Rem.push(a);} return Rem.reverse();}  // Changes A, returns the remainder
 AMinusB=function(A,B){var ANew=[]; for(var i=0;i<A.length;i++){var a=A[i]; if(B.indexOf(a)==-1) ANew.push(a);} return ANew;}  // Does not change A, returns ANew
-AMinusBM=function(A,B){var Rem=[]; for(var i=A.length-1;i>=0;i--){var a=A[i]; if(B.indexOf(a)==-1) Rem.push(a); else A.splice(i,1);} return Rem.reverse();}  // Changes A, returns the remainder
+AMMinusB=function(A,B){var Rem=[]; for(var i=A.length-1;i>=0;i--){var a=A[i]; if(B.indexOf(a)==-1) Rem.push(a); else A.splice(i,1);} return Rem.reverse();}  // Changes A, returns the remainder
 myIntersect=function(A,B){var arrY=[],arrN=[]; for(var i=0; i<A.length; i++){var a=A[i]; if(B.indexOf(a)==-1) arrN.push(a); else arrY.push(a);} return [arrY,arrN];}  
 intersectBool=function(A,B){for(var i=0; i<A.length; i++){if(B.indexOf(A[i])!=-1) return true;} return false;}  //  If any 'a' within B
 isAWithinB=function(A,B){ for(var i=0; i<A.length; i++){if(B.indexOf(A[i])==-1) return false;} return true;}  
-
+AMUnionB=function(A,B){ // Modifies A
+  for(var i=0;i<B.length;i++) { var b=B[i]; if(A.indexOf(b)==-1) A.push(b); return A; } 
+}
 
 mySplice1=function(arr,iItem){ var item=arr[iItem]; for(var i=iItem, len=arr.length-1; i<len; i++)  arr[i]=arr[i+1];  arr.length = len; return item; }  // GC-friendly splice
 myCopy=function(arr,brr){  if(typeof arr=="undefined") arr=[]; for(var i=0, len=brr.length; i<len; i++)  arr[i]=brr[i];  arr.length = len; return arr; }  // GC-friendly copy
@@ -85,6 +98,25 @@ arrCopy=function(A){return [].concat(A);}
 arrarrCopy=function(B){var A=[]; for(var i=0;i<B.length;i++){ A[i]=[].concat(B[i]);} return A; }
 
 array_removeInd=function(a,i){a.splice(i,1);}
+array_removeVal1=function(a,v){var i=a.indexOf(v); if(i!=-1) a.splice(i,1);}
+//array_removeVal=function(a,v){ while(1) {var i=a.indexOf(v); if(i!=-1) a.splice(i,1);else break;}}
+//array_removeVal=function(a){
+  //var t=[], b=t.slice.call(arguments, 1), Val=t.concat.apply([],b);
+  //for(var j=0;j<Val.length;j++){var v=Val[j]; while(1) {var i=a.indexOf(v); if(i!=-1) a.splice(i,1);else break;}  }
+//} 
+array_removeVal=function(a, ...Val){
+  //for(var j=0;j<Val.length;j++){var v=Val[j]; while(1) {var i=a.indexOf(v); if(i!=-1) a.splice(i,1);else break;}  }
+  var j=0;
+  while(j<Val.length){
+    var v=Val[j]; j++;
+    if(v instanceof Array) Val=Val.push(v);
+    else {
+      while(1) {
+        var i=a.indexOf(v);   if(i!=-1) a.splice(i,1);else break;
+      }
+    }
+  }
+}
 
 array_splice=function(arr,st,len,arrIns){
   [].splice.apply(arr, [st,len].concat(arrIns));
@@ -121,8 +153,15 @@ var stepN=function(start,n,step){ if(typeof step=='undefined') step=1;  var arr=
 //
 
 StrComp=function(A,B){var lA=A.length; if(lA!==B.length) return false; for(var i=0;i<lA;i++){ if(A[i]!==B[i]) return false;} return true;}
-Str_insertM=function(arr,strRefVal,arrIns,boBefore){
-  var i=arr.indexOf(strRefVal); if(i==-1) throw 'bla';  if(typeof boBefore=='undefined' || boBefore==0) i++; 
+Str_insertM=function(arr,strRefVal,arrIns,boBefore=0){
+  var i=arr.indexOf(strRefVal); if(i==-1) throw 'bla';  if(boBefore==0) i++; 
+  if(!(arrIns instanceof Array)) arrIns=[arrIns];
+  array_splice(arr, i, 0, arrIns);
+}
+Str_insertMObj=function(arr,inp){
+  if(inp.after) {var i=arr.indexOf(inp.after); if(i==-1) throw 'bla';  i++; }
+  else if(inp.before) {var i=arr.indexOf(inp.before); if(i==-1) throw 'bla';}
+  var arrIns=inp.ins;
   if(!(arrIns instanceof Array)) arrIns=[arrIns];
   array_splice(arr, i, 0, arrIns);
 }
@@ -132,7 +171,8 @@ Str_moveM=function(arr,strRefVal,arrMove,boBefore){
   Str_insertM(arr,strRefVal,arrMove,boBefore);
   //return arrRem;
 }
-
+Str_addUnique=function(arr,str){ if(arr.indexOf(str)==-1) arr.push(str); return arr; } // Add if str does not exist in arr else do nothing
+Str_changeOne=function(arr,strO,strN){ var ind=arr.indexOf(strO); if(ind==-1) arr.push(strN); else arr[ind]=strN; return arr; } // Change strO to strN.
 
 //
 // Object
@@ -152,6 +192,12 @@ copy=function(o, isdeep){
             n[k]= isdeep? copy(o[k], isdeep) : o[k];
     return n;
 }
+removeProp=function(obj, arrProp){
+  if(typeof arrProp=='string') arrProp=[arrProp];
+  for(var i=0;i<arrProp.length;i++)  delete obj[arrProp[i]];
+}
+
+var copyDeep=function(objI) { return JSON.parse(JSON.stringify(objI));};
 
 /*JSON.myParse=function(str){
     try{
@@ -208,6 +254,7 @@ parseQS=function(str){
 //
 
 arrObj2TabNStrCol=function(arrObj){ //  Ex: [{abc:0,def:1},{abc:2,def:3}] => {tab:[[0,1],[2,3]],StrCol:['abc','def']}
+    // Note! empty arrObj returns {tab:[]}
   var Ou={tab:[]}, lenI=arrObj.length, StrCol=[]; if(!lenI) return Ou;
   StrCol=Object.keys(arrObj[0]);  var lenJ=StrCol.length;
   for(var i=0;i<lenI;i++) {
@@ -219,6 +266,7 @@ arrObj2TabNStrCol=function(arrObj){ //  Ex: [{abc:0,def:1},{abc:2,def:3}] => {ta
   return Ou;
 }
 tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['abc','def']}    =>    [{abc:0,def:1},{abc:2,def:3}] 
+    // Note! An "empty" input should look like this:  {tab:[]}
   var tab=tabNStrCol.tab, StrCol=tabNStrCol.StrCol, arrObj=Array(tab.length);
   for(var i=0;i<tab.length;i++){
     var row={};
@@ -226,15 +274,6 @@ tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['abc',
     arrObj[i]=row;
   }
   return arrObj;
-}
-
-
-
-function_mod=function(func,addF,boAppend){
-  var tmpf=func;
-  if(typeof boAppend=='undefined' || boAppend==1) func=function(){ tmpf.apply(this, arguments); addF.apply(this, arguments);  };
-  else func=function(){ addF.apply(this, arguments); tmpf.apply(this, arguments); };
-  return func;
 }
 
 print_r=function(o,boHTML){
@@ -341,7 +380,7 @@ closest2Val=function(v, val){
     curFit=Math.abs(v[i]-val);
     if(curFit<bestFit){bestFit=curFit; best_i=i;}
   }
-  return [v[best_i],best_i];
+  return [v[best_i], best_i];
 }
 normalizeAng=function(angIn, angCenter=0, lapSize=twoPi){
   var angOut,nLapsCorrection;
@@ -382,6 +421,14 @@ approxDist=function(mWhole,boArr){
   if(boArr==1) return Array(n,u); else return n+' '+u;
 }
 
+makeOrdinalEndingEn=function(n){
+  var oneth=n%10, tmp=Math.floor(n/10), tenth=tmp%10;
+  var ending='th';
+  if(tenth!=1){ // if not in the teens
+    if(oneth==1){ ending='st';} else if(oneth==2){ ending='nd';} else if(oneth==3){ ending='rd';}
+  }
+  return ending;
+}
 
 //
 // MercatorProjection

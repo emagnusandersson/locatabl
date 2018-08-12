@@ -82,7 +82,13 @@ $.fn.push = function(){
 }
 $.fn.visible = function() {    return this.css('visibility', 'visible');  };
 $.fn.invisible = function() {    return this.css('visibility', 'hidden');  };
-jQuery.fn.sortElements = (function(){
+$.fn.visibilityToggle = function() {
+    if(arguments.length) return this.css('visibility', arguments[0]?'visible':'hidden');
+    return this.css('visibility', function(i, visibility) {
+        return (visibility == 'visible') ? 'hidden' : 'visible';
+    });
+};
+$.fn.sortElements = (function(){
  
     var funcSort = [].sort;
     //var funcSort=merge_sort;
@@ -147,7 +153,7 @@ jQuery.fn.sortElements = (function(){
 // Add stable merge sort to Array and jQuery prototypes
 
   // expose to Array and jQuery
-//Array.prototype.msort = jQuery.fn.msort = msort;
+//Array.prototype.msort = $.fn.msort = msort;
 
 msort=function(compare){
 "use strict"
@@ -191,27 +197,23 @@ var extend=function(out) {
 
 var findPos=function(el) {
   var rect = el.getBoundingClientRect();
-  return {top:rect.top+document.body.scrollTop, left:rect.left + document.body.scrollLeft};
+  //return {top:rect.top+document.body.scrollTop, left:rect.left + document.body.scrollLeft};
+  return {top:rect.top+window.scrollY, left:rect.left + window.scrollX};
 }
-var findPos=function(el) {
-  var curleft = 0, curtop = 0;
-  while(1){
-    curleft += el.offsetLeft; curtop += el.offsetTop;
-    if(el.offsetParent) el = el.offsetParent; else break;
-  }
-  return { x: curleft, y: curtop };
-}
+//var findPosMy=function(el) {
+  //var curleft = 0, curtop = 0;
+  //while(1){
+    //curleft += el.offsetLeft; curtop += el.offsetTop;
+    //if(el.offsetParent) el = el.offsetParent; else break;
+  //}
+  //return { left: curleft, top: curtop };
+//}
+
 
 var removeChildren=function(myNode){
   while (myNode.firstChild) {
       myNode.removeChild(myNode.firstChild);
   }
-}
-var jQueryObjToFragment=function($items){
-"use strict"
-  var fragment = createFragment();
-  for(var i=0; i<$items.length; i++){ fragment.append($items[i]); }
-  return fragment;
 }
 
 var scrollTop=function(){ return window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop; }
@@ -238,8 +240,8 @@ createTextNode=function(str){ return document.createTextNode(str); }
 createElement=function(str){ return document.createElement(str); }
 createFragment=function(str){ return document.createDocumentFragment(); }
 
-function isVisible(el) {
-    return !!( el.offsetWidth || el.offsetHeight || el.getClientRects().length );
+isVisible=function(el) {
+  return !!( el.offsetWidth || el.offsetHeight || el.getClientRects().length );
 }
 
 
@@ -327,6 +329,35 @@ function popupHoverJQ($area,$bubble){
 
 
 
+var vippButtonExtend=function($el){
+"use strict"
+  $el.setStat=function(bo1){
+    if(!bo1) {$el.css(o0);} else {$el.css(o1);}
+    $el.attr({boOn:bo1});
+  }
+  var o0={background:'url('+uVipp0+') no-repeat'}, o1={background:'url('+uVipp1+') no-repeat'};
+
+  $el.attr({boOn:0});
+  $el.css({'background':'url('+uVipp0+') no-repeat',height:'33px',width:'90px',zoom:'60%','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
+  $el.on('click',function(){var t=1-$el.attr('boOn');   $el.setStat(t);});
+  return $el;
+}
+
+var toggleButtonExtend=function($el){
+  $el.setStat=function(bo1){
+    if(bo1) {$el.css(colOn);} else {$el.css(colOff);}
+    //$el.toggleClass('on',Boolean(bo1));
+    $el.attr({boOn:bo1});
+  }
+  var colOn={background:'#4f4'}, colOff={background:''};
+
+  $el.attr({boOn:0});
+  $el.css({height:'1em',width:'1em'});
+  $el.on('click',function(){var t=1-$el.attr('boOn');   $el.setStat(t);});
+  return $el;
+}
+
+
 
 
 //
@@ -371,8 +402,9 @@ makeMarker=function(strText){
 }
 
 
-makeMarkerBubble=function(strText){
+makeMarkerBubble=function(obj){
 "use strict"
+  var strText=obj.text||'text';
   if(typeof strText !='string') strText=strText.toString();
   var strFont="8pt Arial", leading=10;
   var arrText=strText.split('\n');
@@ -396,7 +428,7 @@ makeMarkerBubble=function(strText){
   ctx.lineTo(center-3, heightBox);
   ctx.lineTo(0, heightBox);
   ctx.closePath();
-  ctx.fillStyle="#FFFF00";    ctx.fill();    ctx.strokeStyle = "orange";   ctx.stroke();
+  ctx.fillStyle=obj.color||'';    ctx.fill();    ctx.strokeStyle = "orange";   ctx.stroke();
     
   ctx.font = "Symbol";
     // Write text
@@ -404,6 +436,7 @@ makeMarkerBubble=function(strText){
   //return canvas.toDataURL("image/png");
   return {url:canvas.toDataURL("image/png"), anchor:{x:widthBox/2, y:heightImg}};
 }
+
 
 
 makeTextCanvas=function(strText,rot){

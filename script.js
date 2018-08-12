@@ -27,6 +27,7 @@ UglifyJS = require("uglify-js");
 sgMail = require('@sendgrid/mail');
 ip = require('ip');
 var argv = require('minimist')(process.argv.slice(2));
+require('./libMath.js');
 require('./lib.js');
 require('./libServerGeneral.js');
 require('./libMysql.js');
@@ -46,7 +47,7 @@ boLocal=strInfrastructure=='local';
 boDO=strInfrastructure=='do'; 
 
 
-StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummy', 'createDummies'];
+StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummies']; // , 'createDummy'
   
 helpTextExit=function(){
   var arr=[];
@@ -78,15 +79,12 @@ var flow=( function*(){
   UriDB={};
   boDbg=0; boAllowSql=1; port=5000; levelMaintenance=0; googleSiteVerification='googleXXX.html';
   wwwCommon='';
-  domainPayPal='www.paypal.com';
-  urlPayPal='https://www.paypal.com/cgi-bin/webscr';
   boShowTeam=false;
   intDDOSMax=100; tDDOSBan=5; 
   maxUnactivity=3600*24;
   maxLoginUnactivity=10*60;
   leafLoginBack="loginBack.html"; 
   boVideo=0;
-  boMapGoogle=0;
   
   port=argv.p||argv.port||5000;
   if(argv.h || argv.help) {helpTextExit(); return;}
@@ -123,7 +121,7 @@ var flow=( function*(){
   DBExtend(DB={});
 
 
-  createPlugins();
+  //createPlugins();
   SiteExtend();
 
 
@@ -136,51 +134,27 @@ var flow=( function*(){
     process.exit(0);
   }
 
-
-  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'client.js', 'lang/en.js', 'clientPubKeyStore.js', 'stylesheets/style.css']; //, 'clientMergeID.js'
-  //'Site/'+siteName+'/'+siteName+'200.png', wwwIcon16, wwwIcon114
-  if(1){  // boDbg
-    fs.watch('.',function (ev,filename) {
-      var StrFile=['filter.js','client.js', 'clientPubKeyStore.js', 'libClient.js'];  //, 'clientMergeID.js'
-        //console.log(filename+' changed: '+ev);
-      if(StrFile.indexOf(filename)!=-1){
-        console.log(filename+' changed: '+ev);
-        var flow=( function*(){ 
-          var err=yield* readFileToCache(flow, filename); if(err) console.error(err);
-        })(); flow.next();
-      }
-    });
-    fs.watch('stylesheets',function (ev,filename) {
-      var StrFile=['style.css'];
-        //console.log(filename+' changed: '+ev);
-      if(StrFile.indexOf(filename)!=-1){
-        console.log(filename+' changed: '+ev);
-        var flow=( function*(){ 
-          var err=yield* readFileToCache(flow, 'stylesheets/'+filename); if(err) console.error(err);
-        })(); flow.next();
-      }
-    });
-    fs.watch('lang',function (ev,filename) {
-      var StrFile=['en.js', 'sv.js'];
-        //console.log(filename+' changed: '+ev);
-      if(StrFile.indexOf(filename)!=-1){
-        console.log(filename+' changed: '+ev);
-        var flow=( function*(){ 
-          var err=yield* readFileToCache(flow, 'lang/'+filename); if(err) console.error(err);
-        })(); flow.next();
-      }
-    });
-  }
-
-
-  splitterPlugIn=new SplitterPlugIn();
   CacheUri=new CacheUriT();
+  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientPubKeyStore.js', 'stylesheets/style.css']; //, 'clientMergeID.js'
+  splitterPlugIn=new SplitterPlugIn();
   for(var i=0;i<StrFilePreCache.length;i++) {
-    var filename=StrFilePreCache[i];
-    var err=yield *readFileToCache(flow, filename); if(err) {  console.error(err);  return;}
+    var [err]=yield *readFileToCache(flow, StrFilePreCache[i]); if(err) {  console.error(err);  return;}
   }
+  var [err]=yield* splitterPlugIn.readFileToCacheClientJs(flow); if(err) console.error(err);
   yield *createSiteSpecificClientJSAll(flow);
-  
+
+  if(boDbg){
+    fs.watchFile('client.js',function () {
+      console.log('client.js changed: ');
+      var flow=( function*(){
+        var [err]=yield* splitterPlugIn.readFileToCacheClientJs(flow); if(err) console.error(err);
+      })(); flow.next();
+    });
+    fs.watch('.', makeWatchCB('.', ['filter.js', 'clientPubKeyStore.js', 'libClient.js']) );
+    fs.watch('stylesheets', makeWatchCB('stylesheets', ['style.css']) );
+    fs.watch('lang', makeWatchCB('lang', ['en.js', 'sv.js']) );
+  }
+
 
   tIndexMod=new Date(); tIndexMod.setMilliseconds(0);
 
@@ -273,7 +247,7 @@ var flow=( function*(){
         else if(pathName=='/'+leafLoginBack){   yield* reqLoginBack.call(objReqRes);   }
         else if(pathName=='/monitor.html'){     yield* reqMonitor.call(objReqRes);     }
         else if(pathName=='/stat.html'){        yield* reqStat.call(objReqRes);        }
-        else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
+        //else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
         else if(pathName=='/'+leafLoginWLink){  yield* reqLoginWLink.call(objReqRes);  }
         else if(pathName=='/'+leafVerifyPWResetReturn){  yield* reqVerifyPWResetReturn.call(objReqRes);  }
         else if(pathName=='/'+leafVerifyEmailNCreateUserReturn){  yield* reqVerifyEmailNCreateUserReturn.call(objReqRes);  }

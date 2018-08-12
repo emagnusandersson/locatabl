@@ -31,47 +31,37 @@ SplitterPlugIn=function(){
     }); 
     return [err, {StrFile:StrFile, Buf:Buf}];
   }
-
-    //
-    // modifiy readFileToCache
-    //
-  readFileToCache=(function(){
-    var tmpgen=readFileToCache;
-    return function*(flow, strFileName){
-      if(strFileName=='client.js'){ 
-        var [err, tmpObj]= yield *goSplit(flow, strFileName);
-        if(!err) {
-          var StrFile=tmpObj.StrFile, Buf=tmpObj.Buf;
-          for(var i=0;i<StrFile.length;i++){ 
-            var uriT='/'+lcfirst(StrFile[i]); 
-            var buf=new Buffer(Buf[i],'utf8');
-            yield *CacheUri.set(flow, uriT, buf, 'js', true, true);
-          }
-        } 
-        return err;
-      } else {    var tmp=yield *tmpgen(flow, strFileName); return tmp;     }
-    };
-  })();
-
+  
+  this.readFileToCacheClientJs=function*(flow){ // Separate readFileToCache for client.js
+    var [err, tmpObj]= yield *goSplit(flow, 'client.js'); if(err) return [err];
+    var StrFile=tmpObj.StrFile, Buf=tmpObj.Buf;
+    for(var i=0;i<StrFile.length;i++){ 
+      var uriT='/'+lcfirst(StrFile[i]); 
+      var buf=new Buffer(Buf[i],'utf8');
+      var [err]=yield *CacheUri.set(flow, uriT, buf, 'js', true, true); if(err) return [err];
+    }
+    return [null];
+  }
 }
 
-
+     
 
 createSiteSpecificClientJSAll=function*(flow) {
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i];
     var buf=createSiteSpecificClientJS(siteName);
     var keyCache=siteName+'/'+leafSiteSpecific;
-    yield *CacheUri.set(flow, keyCache, buf, 'js', true, true);
+    var [err]=yield *CacheUri.set(flow, keyCache, buf, 'js', true, true);
   }
 
 }
 
 createSiteSpecificClientJS=function(siteName) {
-  var site=Site[siteName], wwwSite=site.wwwSite;  
+  var site=Site[siteName], wwwSite=site.wwwSite; 
 
-  var StrSkip=['KeyCol', 'nCol', 'colsFlip', 'StrOrderDB', 'TableName', 'ViewName', 'arrAllowed',  'boGotNewVendors', 'timerNUserLast', 'nVis', 'nUser', 'db', 'googleAnalyticsTrackingID','serv'];
-  var siteSkip={}; for(var i=0;i<StrSkip.length;i++){ var name=StrSkip[i]; siteSkip[name]=site[name]; delete site[name];}
+  var StrSimplified=["wwwSite", "strRootDomain", "ORole", "siteName", "StrPropE", "StrTransportBool", "KeySel", "StrPlugInNArg", "testWWW", "client_id", "wwwLoginRet", "wwwLoginScope"]; 
+  var siteSimplified={}; for(var i=0;i<StrSimplified.length;i++){ var name=StrSimplified[i]; siteSimplified[name]=site[name]; }
+
 
   var Str=[];
   Str.push("assignSiteSpecific=function(){\n\
@@ -82,17 +72,16 @@ storedButt="+JSON.stringify(storedButt)+";\n\
 \n\
 version="+JSON.stringify(version)+";\n\
 intMax="+JSON.stringify(intMax)+";\n\
+uintMax="+JSON.stringify(uintMax)+";\n\
 arrLang="+JSON.stringify(arrLang)+";\n\
 snoreLim="+JSON.stringify(snoreLim)+";\n\
 leafBE="+JSON.stringify(leafBE)+";\n\
 leafUploadFront="+JSON.stringify(leafUploadFront)+";\n\
 flImageFolder="+JSON.stringify(flImageFolder)+";\n\
 boShowTeam="+JSON.stringify(boShowTeam)+";\n\
-maxVendor="+JSON.stringify(maxVendor)+";\n\
+maxList="+JSON.stringify(maxList)+";\n\
 lenHistActive="+JSON.stringify(lenHistActive)+";\n\
-rebateCodeLen="+JSON.stringify(rebateCodeLen)+";\n\
 maxGroupsInFeat="+JSON.stringify(maxGroupsInFeat)+";\n\
-bFlip="+JSON.stringify(bFlip)+";\n\
 specialistDefault="+JSON.stringify(specialistDefault)+";\n\
 arrCoordinatePrecisionM="+JSON.stringify(arrCoordinatePrecisionM)+";\n\
 \n\
@@ -100,14 +89,11 @@ wwwSite="+JSON.stringify(wwwSite)+";\n\
 wwwCommon="+JSON.stringify(wwwCommon)+";\n\
 \n\
 siteName="+JSON.stringify(siteName)+";\n\
-site="+JSON.stringify(site)+";\n\
+site="+JSON.stringify(siteSimplified)+";\n\
 strIPPrim="+JSON.stringify(strIPPrim)+";\n\
 strIPAlt="+JSON.stringify(strIPAlt)+";\n\
 \n\
 }");
-
-
-  for(var i=0;i<StrSkip.length;i++){ var name=StrSkip[i]; site[name]=siteSkip[name]; }
 
   var str=Str.join('\n');
   return str;

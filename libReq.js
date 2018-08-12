@@ -55,8 +55,8 @@ app.reqCurlEnd=function*(){
 
   //var pemPub=pubKey, sixPub=pubKey.split('\n').slice(1,-2).join('\n');
   var pemPub="-----BEGIN PUBLIC KEY-----\n"+pubKey+"-----END PUBLIC KEY-----", sixPub=pubKey;
-  var keyV = new NodeRSA(pemPub);
-  var boOK=keyV.verify(data, sixSignature, 'utf8', 'base64');
+  var keyTmp = new NodeRSA(pemPub);
+  var boOK=keyTmp.verify(data, sixSignature, 'utf8', 'base64');
   var boOK; if(!boOK){ this.mesO('Message does NOT authenticate'); return;}
   //console.log('boVerifies: '+boOK);
 
@@ -65,10 +65,16 @@ app.reqCurlEnd=function*(){
   var iSeqN; if("iSeq" in inObj) { iSeqN=inObj.iSeq; }  else{  this.mesO('"iSeq" is not set'); return;}
 
   var Sql=[],Val=[];
-  //Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne("+idUser+");"); 
   if(inObj.boCheck){
-    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, @boShow, @tDiff, @boOk, @mess);"); Val.push(sixPub, iSeqN);
-    Sql.push("SELECT @boShow AS boShow, @tDiff AS tDiff, @boOk AS boOK, @mess AS mess;");
+    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, ?, @boShow, @hideTimer, @tDiff, @boOk, @mess);"); Val.push(inObj.iRole, sixPub, iSeqN);
+    Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tDiff AS tDiff, @boOk AS boOK, @mess AS mess;");
+    var sql=Sql.join('\n');
+    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err){this.mesEO(err); return; } 
+    var {boShow, hideTimer, tDiff, boOK, mess}=results[1][0];
+    if(!boOK) {this.mesO(mess); return;}
+    var str='Hidden';
+    if(boShow){ var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   var str='Visible'; if(hideTimer!=uintMax) str+=", Hiding in "+tDiffF+" "+u; };
+    this.mes(str);
   }
   else{
     if(!("boShow" in inObj)) { this.mesO('"boShow" is not set'); return;}  var boShow=inObj.boShow;
@@ -78,19 +84,11 @@ app.reqCurlEnd=function*(){
       var {lat,lng}=inObj;
       var projs=new MercatorProjection(),   tmp=projs.fromLatLngToPointV([lat, lng]),  x=tmp[0],  y=tmp[1], hideTimer=inObj.hideTimer; 
     }else{var x=128, y=128, lat=0, hideTimer=0;}
-    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(sixPub, iSeqN, x, y, lat, boShow, hideTimer);
+    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(inObj.iRole, sixPub, iSeqN, x, y, lat, boShow, hideTimer);
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
-  }
-  var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err){this.mesEO(err); return; } 
-  var {boShow, tDiff, boOK, mess}=results[1][0];
-  if(inObj.boCheck){
-    if(!boOK) {this.mesO(mess); return;}
-    var str=boShow?'Visible':'Hidden';
-    if(boShow){     var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);    str+=" Hiding in "+tDiffF+" "+u;   }
-    this.mes(str);
-  }
-  else{
+    var sql=Sql.join('\n');
+    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err){this.mesEO(err); return; } 
+    var {boShow, tDiff, boOK, mess}=results[1][0];
     if(!boOK) {this.mesO(mess); return;}
     var str=inObj.boShow?'Visible':'Hidden'; this.mes(str);
   }
@@ -125,6 +123,7 @@ app.reqPubKeyStore=function*(){
   var uCommon=req.strSchemeLong+wwwCommon;
   var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
   Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
+  //uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.min.js"; Str.push('<script src="'+uJQuery+'"></script>');
  
 
           // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
@@ -150,7 +149,7 @@ caller="+JSON.stringify(caller)+";\n\
 \n\
 specialistDefault="+JSON.stringify(specialistDefault)+";\n\
 pubKey="+JSON.stringify(pubKey)+";\n\
-maxVendor="+JSON.stringify(maxVendor)+";\n\
+maxList="+JSON.stringify(maxList)+";\n\
 \n\
 \n\
 wwwSite="+JSON.stringify(req.wwwSite)+";\n\
@@ -366,6 +365,7 @@ try {\n\
   var uCommon=req.strSchemeLong+wwwCommon;
   var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
   Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
+  //var uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.min.js";  Str.push('<script src="'+uJQuery+'"></script>');
 
   Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
   
@@ -388,9 +388,10 @@ try {\n\
 
     // Include plugins
   Str.push("\n<script type=\"text/javascript\" language=\"JavaScript\" charset=\"UTF-8\"> var CreatorPlugin={};</script>");
-  var StrPlugIn=site.StrPlugIn;
-  for(var i=0;i<StrPlugIn.length;i++){
-    var Name=ucfirst(StrPlugIn[i]); 
+  var StrPlugInNArg=site.StrPlugInNArg;
+  for(var i=0;i<StrPlugInNArg.length;i++){
+	  var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+    var Name=ucfirst(nameT); 
     var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
   }
 
@@ -427,7 +428,6 @@ UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
 strReCaptchaSiteKey="+JSON.stringify(strReCaptchaSiteKey)+";\n\
 strSalt="+JSON.stringify(strSalt)+";\n\
 m2wc="+JSON.stringify(m2wc)+";\n\
-boMapGoogle="+JSON.stringify(boMapGoogle)+";\n\
 </script>\n\
 <form  id=formLogin>\n\
 <label name=email>Email</label><input type=email name=email>\n\
@@ -491,13 +491,15 @@ app.reqImage=function*() {
   var keyCache=siteName+'/'+pathName;
   if(keyCache in ETagImage && ETagImage[keyCache]===this.eTagIn) { res.out304(); return; }
 
-  //if("id" in objQS) {id=Number(objQS.id);} else {id=0;}    if("kind" in objQS) {kind=objQS.kind;} else {kind='v';}
-
-  var Match=RegExp('^/image/(v|t)([0-9]+)$').exec(pathName);
+  var Match=RegExp('^/image/(u|c|s)([0-9]+)$').exec(pathName);
   if(Match && Match.length>2){kind=Match[1]; id=Number(Match[2]);} else { res.out404('404 Not found'); return; }
 
-
-  var tab;  if(kind=='v'){tab=site.TableName.vendorImageTab; }else tab=site.TableName.teamImageTab;
+  var {userImageTab, customerTeamImageTab, sellerTeamImageTab}=site.TableName;
+  
+  var tab;
+  if(kind=='u')tab=userImageTab; 
+  else if(kind=='c') tab=customerTeamImageTab;
+  else if(kind=='s')tab=sellerTeamImageTab; 
   var sql = "SELECT data FROM "+tab+" WHERE idUser=?", Val=[id];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err) { res.out500(err); return;}
   if(results.length>0){
@@ -510,7 +512,7 @@ app.reqImage=function*() {
   }else{
     //res.setHeader("Content-type", "image/png");
     id=id%32;
-    var tmp; if(kind=='v'){tmp='anonPng'; }else tmp='anonTeamPng';
+    var tmp; if(kind=='u'){tmp='anonPng'; }else tmp='anonTeamPng';
     var uNew=uSite+"/lib/image/"+tmp+"/a"+id+".png";
     res.writeHead(302, {'Location': uNew});
     res.end();
@@ -585,7 +587,7 @@ app.reqVerifyPWResetReturn=function*() {
   var passwordHash=SHA1(password+strSalt);
 
   var Sql=[], Val=[];
-  Sql.push("UPDATE "+userTab+" SET password=? WHERE email=?;");
+  Sql.push("UPDATE "+userTab+" SET hashPW=? WHERE email=?;");
   Val.push(passwordHash, email);
 
   var sql=Sql.join('\n');
@@ -606,7 +608,7 @@ app.reqVerifyPWResetReturn=function*() {
 
 app.reqVerifyEmailNCreateUserReturn=function*() {
   var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
-  var {userTab, vendorTab}=site.TableName;
+  var {userTab, sellerTab, customerTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
@@ -616,24 +618,21 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
 
   
   var Sql=[], Val=[];
-  Sql.push("INSERT INTO "+userTab+" (email, nameIP, password, tCreated) VALUES (?, ?, ?, now()) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
+  Sql.push("INSERT INTO "+userTab+" (email, nameIP, hashPW, tCreated) VALUES (?, ?, ?, now()) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Val.push(email, name, password, name);
-  Sql.push("INSERT INTO "+vendorTab+" (idUser, created, lastPriceChange, posTime, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, now(), now(), now(), now(), 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  Sql.push("INSERT INTO "+sellerTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, now(), now(), now(), now(), 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
+  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   
-  //if(payLev==0) {
-    //Sql.push("UPDATE "+vendorTab+" SET nMonthsStartOffer='"+intMax+"', terminationDate=FROM_UNIXTIME("+intMax+") WHERE idUser =LAST_INSERT_ID() AND @boInserted;");  
-  //}
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
   var c=results[0].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
-  var boIns=site.boGotNewVendors=Number(results[3][0].boInserted);
+  var boIns=site.boGotNewSellers=Number(results[3][0].boInserted);
   site.nUser=Number(results[4][0].n);
   var tmp=boIns?'created':'updated';
   var Str=["<!DOCTYPE html><html><head>\n\
@@ -663,7 +662,7 @@ app.reqStatic=function*() {
   var keyCache=pathName; if(pathName==='/'+leafSiteSpecific) keyCache=siteName+keyCache; 
   if(!(keyCache in CacheUri)){
     var filename=pathName.substr(1);
-    var err=yield *readFileToCache(flow, filename);
+    var [err]=yield *readFileToCache(flow, filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
       if('host' in req.headers) console.error('Faulty request from'+req.headers.host);
@@ -671,9 +670,8 @@ app.reqStatic=function*() {
       res.out500(err); return;
     }
   }
-  var cacheUri=CacheUri[keyCache];
-  if(cacheUri.eTag===eTagIn){ res.out304(); return; } 
-  var buf=cacheUri.buf, type=cacheUri.type,  eTag=cacheUri.eTag, boZip=cacheUri.boZip, boUglify=cacheUri.boUglify;
+  var {buf, type, eTag, boZip, boUglify}=CacheUri[keyCache];
+  if(eTag===eTagIn){ res.out304(); return; }
   var mimeType=MimeType[type]; 
   if(typeof mimeType!='string') console.log('type: '+type+', mimeType: ', mimeType);
   if(typeof buf!='object' || !('length' in buf)) console.log('typeof buf: '+typeof buf);
@@ -692,15 +690,13 @@ app.reqStatic=function*() {
 app.reqMonitor=function*(){
   var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
   var timeCur=unixNow(); boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
-  var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, vendorTab}=site.TableName;
+  var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
   var flow=req.flow;
 
   if(boRefresh){ 
     var Sql=[];
-    //var where="!(idOpenId REGEXP '^Dummy')";      if(siteName=='demo') where="(idOpenId REGEXP '^Dummy')";
-    var where="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";      if(req.wwwSite.substr(0,4)=='demo') where="(idOpenId REGEXP '^Dummy')";
-    Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND ("+where+");");
-    Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser WHERE "+where+";");
+    Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBeforeHiding+";");
+    Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
 
     var sql=Sql.join('\n'), Val=[];
     var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return; }
@@ -715,7 +711,7 @@ app.reqMonitor=function*(){
   var strColor='';
   if('admin' in objQS && objQS.admin){
     if(boRefresh) strColor='lightgreen';
-    if(site.boGotNewVendors) strColor='red';
+    if(site.boGotNewSellers) strColor='red';
   }
   var strUser=nUser;  if(strColor) strUser="<span style=\"background-color:"+strColor+"\">"+nUser+"</span>";
   Str.push("<body style=\"margin: 0px\">"+nVis+" / "+strUser+"</body>");
@@ -755,22 +751,20 @@ app.reqStat=function*(){
   var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
   var flow=req.flow;
 
-  var siteName=site.siteName, objQS=req.objQS, {userTab, vendorTab}=site.TableName;
+  var siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
 
   var Sql=[];
-  var where="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE "+where+";");
+  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   
-  var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, posTime, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, timeAccumulated, hideTimer";
+  var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer";
 
-  Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+vendorTab+" s ON u.idUser=s.idUser WHERE "+where+" \
-    UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+vendorTab+" s ON u.idUser=s.idUser  WHERE "+where+";");
+  Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
 
-  Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+vendorTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
+  Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return;  }
   var nUser=results[0][0].n;
-  if('code' in objQS && objQS.code=='amfoen') {site.boGotNewVendors=0; site.nUser=nUser;}
+  if('code' in objQS && objQS.code=='amfoen') {site.boGotNewSellers=0; site.nUser=nUser;}
   var matA=results[1];
   var matB=results[2];
   
@@ -783,14 +777,14 @@ app.reqStat=function*(){
 </head> \n\
 <body>');
   var nA=matA.length;
-  Str.push("user OUTER JOIN vendor ("+nA+")");
+  Str.push("user OUTER JOIN seller ("+nA+")");
   if(nA>0){
     var Keys=Object.keys(matA[0]);
-    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].timeAccumulated); matA[i].timeAccumulated=Math.round(ttmp)+u; }
+    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].tAccumulated); matA[i].tAccumulated=Math.round(ttmp)+u; }
     Str.push(makeTable(Keys,matA));
   }
   var nB=matB.length;
-  Str.push("<hr>vendor.idUser with no user.idUser ("+nB+")");
+  Str.push("<hr>seller.idUser with no user.idUser ("+nB+")");
   if(nB>0){
     var Keys=Object.keys(matB[0]);
     Str.push(makeTable(Keys,matB));
@@ -815,14 +809,16 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   for(var iSite=0;iSite<SiteName.length;iSite++){
   var siteName=SiteName[iSite]
   var site=Site[siteName]; 
-  var Prop=site.Prop, TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
+  var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
   //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
 
   var StrTabName=object_values(TableName);
   var tmp=StrTabName.join(', ');
+  SqlTabDrop.push("DROP TABLE IF EXISTS "+siteName+"_teamImage, "+siteName+"_sellerImage, "+siteName+"_team,"+siteName+"_marketer,"+siteName+"_payment,"+siteName+"_rebateCode");  // temporary thing
+  SqlTabDrop.push("DROP TABLE IF EXISTS "+siteName+"_binsCreated, "+siteName+"_binsPosTime, "+siteName+"_binsTimeAccumulated");  // temporary thing
   SqlTabDrop.push("DROP TABLE IF EXISTS "+tmp);     
   SqlTabDrop.push('DROP TABLE IF EXISTS '+userTab);     
   var tmp=object_values(ViewName).join(', ');   if(tmp.length) SqlTabDrop.push("DROP VIEW IF EXISTS "+tmp+"");
@@ -847,133 +843,149 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', \n\
   nameIP varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
   image varchar(256) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  password char(40) NOT NULL DEFAULT '', \n\
+  hashPW char(40) NOT NULL DEFAULT '', \n\
+  imTag int(4) NOT NULL DEFAULT 0, \n\
+  boImgOwn tinyint(1) NOT NULL DEFAULT 0, \n\
+  displayName VARCHAR(32) NOT NULL DEFAULT '', \n\
+  donatedAmount DOUBLE NOT NULL DEFAULT 0, \n\
+  pubKey VARCHAR(256) NOT NULL DEFAULT '', \n\
+  iSeq int(4) NOT NULL DEFAULT 0, \n\
+  nComplaint int(4) NOT NULL DEFAULT 0, \n\
+  nComplaintCum int(4) NOT NULL DEFAULT 0, \n\
+  nComplaintGiven int(4) NOT NULL DEFAULT 0, \n\
+  nComplaintGivenCum int(4) NOT NULL DEFAULT 0, \n\
   PRIMARY KEY (idUser), \n\
   UNIQUE KEY (idFB), \n\
   UNIQUE KEY (idIdPlace), \n\
   UNIQUE KEY (idOpenId), \n\
   UNIQUE KEY (email) \n\
   ) AUTO_INCREMENT = "+auto_increment+", ENGINE="+engine+" COLLATE "+collate+""); 
-  
+ 
+
 
   //IP "+strIPEnum+" CHARSET utf8 NOT NULL DEFAULT '"+strIPDefault+"', \n\
 
-    // Create vendorTab
+    // Create sellerTab
+  //var StrProp=Object.keys(oS.Prop);
   var arrCols=[];
-  for(var i=0;i<site.StrOrderDB.length;i++){
-    var name=site.StrOrderDB[i];
-    var arr=Prop[name];
+  for(var i=0;i<oS.StrOrder.length;i++){
+    var name=oS.StrOrder[i];
+    var arr=oS.Prop[name];
     var b=arr.b;
-    if(Number(b[bFlip.vendorTab])){
+    if(Number(b[oS.bFlip.sellerTab])){
       var strType=arr.type || '';
       if(strType=='ENUM'){
         //$tmpName='enum'.ucfirst($name);
         //$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
-        var arra=Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
+        var arra=oS.Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
         strType="ENUM("+str+")";
       }
-      var strNull=Number(b[bFlip.notNull])?'NOT NULL':'';
+      var strNull=Number(b[oS.bFlip.notNull])?'NOT NULL':'';
       var strDefault=''; 
       if('default' in arr){
-        var tmp; if(typeof arr.default=='string') tmp="'"+arr.default+"'"; else tmp=arr.default;
-        strDefault="DEFAULT "+tmp;
+        if(arr.type.toUpperCase()=='TIMESTAMP'){strDefault=arr.default;}
+        else {
+          if(typeof arr.default=='string') strDefault="'"+arr.default+"'"; else strDefault=arr.default;
+        }
+        strDefault="DEFAULT "+strDefault;
       }
       arrCols.push("`"+name+"` "+strType+" "+strNull+" "+strDefault);
     }//``
   }
   var strSql=arrCols.join(",\n");
 
-  SqlTab.push("CREATE TABLE "+vendorTab+" (\
+  SqlTab.push("CREATE TABLE "+sellerTab+" (\
   "+strSql+",\
   PRIMARY KEY (idUser),\
   FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE\
   ) ENGINE="+engine+" COLLATE "+collate+""); 
 
 
-    // Create VendorTab indexes
-  for(var name in Prop){
-    var arr=Prop[name];
+    // Create SellerTab indexes
+  for(var name in oS.Prop){
+    var arr=oS.Prop[name];
     var b=arr.b;
-    if(Number(b[bFlip.vendorTabIndex])){
-      if(0) SqlFunction.push("CREATE INDEX "+name+"Index ON "+vendorTab+"("+name+")");
+    if(Number(b[oS.bFlip.sellerTabIndex])){
+      if(0) SqlFunction.push("CREATE INDEX "+name+"Index ON "+sellerTab+"("+name+")");
     }
   }
 
 
     // Create customerTab
-  //var arrCols=[];
-  //for(var i=0;i<site.StrOrderDB.length;i++){
-    //var name=site.StrOrderDB[i];
-    //var arr=Prop[name];
-    //var b=arr.b;
-    //if(Number(b[bFlip.customerTab])){
-      //var strType=arr.type || '';
-      //if(strType=='ENUM'){
-        ////$tmpName='enum'.ucfirst($name);
-        ////$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
-        //var arra=Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
-        //strType="ENUM("+str+")";
-      //}
-      //var strNull=Number(b[bFlip.notNull])?'NOT NULL':'';
-      //var strDefault=''; 
-      //if('default' in arr){
-        //var tmp; if(typeof arr.default=='string') tmp="'"+arr.default+"'"; else tmp=arr.default;
-        //strDefault="DEFAULT "+tmp;
-      //}
-      //arrCols.push("`"+name+"` "+strType+" "+strNull+" "+strDefault);
-    //}//``
-  //}
-  //var strSql=arrCols.join(",\n");
-
-  //SqlTab.push("CREATE TABLE "+customerTab+" (\
-  //"+strSql+",\
-  //PRIMARY KEY (idUser),\
-  //FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE\
-  //) ENGINE="+engine+" COLLATE "+collate+""); 
-
-
-    // Create VendorTab indexes
-  for(var name in Prop){
-    var arr=Prop[name];
+  //var StrProp=Object.keys(oC.Prop);
+  var arrCols=[];
+  for(var i=0;i<oC.StrOrder.length;i++){
+    var name=oC.StrOrder[i];
+    var arr=oC.Prop[name];
     var b=arr.b;
-    if(Number(b[bFlip.customerTabIndex])){
+    if(Number(b[oC.bFlip.customerTab])){
+      var strType=arr.type || '';
+      if(strType=='ENUM'){
+        //$tmpName='enum'.ucfirst($name);
+        //$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
+        var arra=oC.Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
+        strType="ENUM("+str+")";
+      }
+      var strNull=Number(b[oC.bFlip.notNull])?'NOT NULL':'';
+      var strDefault=''; 
+      if('default' in arr){
+        if(arr.type.toUpperCase()=='TIMESTAMP'){strDefault=arr.default;}
+        else {
+          if(typeof arr.default=='string') strDefault="'"+arr.default+"'"; else strDefault=arr.default;
+        }
+        strDefault="DEFAULT "+strDefault;
+      }
+      arrCols.push("`"+name+"` "+strType+" "+strNull+" "+strDefault);
+    }//``
+  }
+  var strSql=arrCols.join(",\n");
+
+  SqlTab.push("CREATE TABLE "+customerTab+" (\
+  "+strSql+",\
+  PRIMARY KEY (idUser),\
+  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE\
+  ) ENGINE="+engine+" COLLATE "+collate+""); 
+
+
+    // Create CustomerTab indexes
+  for(var name in oC.Prop){
+    var arr=oC.Prop[name];
+    var b=arr.b;
+    if(Number(b[oC.bFlip.customerTabIndex])){
       if(0) SqlFunction.push("CREATE INDEX "+name+"Index ON "+customerTab+"("+name+")");
     }
   }
-
-
-  SqlTab.push("CREATE TABLE "+vendorImageTab+" ( \
+  
+    //
+    // Image tables
+    //
+    
+  SqlTab.push("CREATE TABLE "+userImageTab+" ( \
   idUser int(4) NOT NULL, \
   data BLOB NOT NULL, \
   UNIQUE KEY (idUser), \
   FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \
   ) ENGINE="+engine+" COLLATE "+collate+""); 
 
-  SqlTab.push("CREATE TABLE "+teamImageTab+" ( \
+
+  SqlTab.push("CREATE TABLE "+customerTeamImageTab+" ( \
   idUser int(4) NOT NULL, \
   data BLOB NOT NULL, \
   UNIQUE KEY (idUser), \
   FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \
   ) ENGINE="+engine+" COLLATE "+collate+""); 
-
-  SqlTab.push("CREATE VIEW "+histView+" (idUser, histActive, posTime) AS SELECT idUser, BIN(histActive), posTime FROM "+vendorTab+"");
-
-
-  SqlTab.push("CREATE TABLE "+paymentTab+" ( \n\
-  paymentNumber int(4) NOT NULL auto_increment, \n\
-  txn_id varchar(65) CHARSET utf8 NOT NULL, \n\
-  payer_email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  idUser int(4) NOT NULL, \n\
-  amount decimal(5,2) NOT NULL DEFAULT 0, \n\
-  currency varchar(3) CHARSET utf8 NOT NULL, \n\
-  tax decimal(5,2) NOT NULL DEFAULT 0, \n\
-  VATNumber varchar(65) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  monthsToAdd int(4) NOT NULL DEFAULT 0, \n\
-  payment_date TIMESTAMP DEFAULT 0, \n\
-  created TIMESTAMP default CURRENT_TIMESTAMP, \n\
-  PRIMARY KEY (paymentNumber), \n\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \n\
+  
+  SqlTab.push("CREATE TABLE "+sellerTeamImageTab+" ( \
+  idUser int(4) NOT NULL, \
+  data BLOB NOT NULL, \
+  UNIQUE KEY (idUser), \
+  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \
   ) ENGINE="+engine+" COLLATE "+collate+"");
+  
+  
+
+  SqlTab.push("CREATE VIEW "+histView+" (idUser, histActive, tPos) AS SELECT idUser, BIN(histActive), tPos FROM "+sellerTab+"");
+
 
 
   SqlTab.push("CREATE TABLE "+settingTab+" ( \n\
@@ -987,7 +999,7 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   SqlTab.push("CREATE TABLE "+adminTab+" ( \n\
   idUser int(4) NOT NULL, \n\
   boApproved tinyint(1) NOT NULL DEFAULT 0, \n\
-  created TIMESTAMP default CURRENT_TIMESTAMP, \n\
+  tCreated TIMESTAMP default CURRENT_TIMESTAMP, \n\
   FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
   UNIQUE KEY (idUser) \n\
   ) ENGINE="+engine+" COLLATE "+collate+"");
@@ -996,26 +1008,38 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
 
     // Create complaintTab
   SqlTab.push("CREATE TABLE "+complaintTab+" ( \n\
-  idVendor  int(4) NOT NULL, \n\
+  idComplainee  int(4) NOT NULL, \n\
   idComplainer int(4) NOT NULL, \n\
-  comment text CHARSET utf8, \n\
-  answer text CHARSET utf8, \n\
-  created TIMESTAMP NOT NULL default 0, \n\
-  modified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
-  UNIQUE KEY (idVendor,idComplainer), \n\
-  FOREIGN KEY (idVendor) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
+  comment TEXT CHARSET utf8, \n\
+  answer TEXT CHARSET utf8, \n\
+  tCreated TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
+  tCommentModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
+  tAnswerModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
+  UNIQUE KEY (idComplainee,idComplainer), \n\
+  FOREIGN KEY (idComplainee) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
   FOREIGN KEY (idComplainer) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \n\
   ) ENGINE="+engine+" COLLATE "+collate+"");
 
 
 
-    // Create teamTab
-  SqlTab.push("CREATE TABLE "+teamTab+" ( \n\
+    // Create customerTeamTab
+  SqlTab.push("CREATE TABLE "+customerTeamTab+" ( \n\
   idUser int(4) NOT NULL, \n\
   link varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
   imTag int(4) NOT NULL default 0, \n\
   boApproved tinyint(1) NOT NULL default 0, \n\
-  created TIMESTAMP default CURRENT_TIMESTAMP, \n\
+  tCreated TIMESTAMP default CURRENT_TIMESTAMP, \n\
+  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
+  UNIQUE KEY (idUser) \n\
+  ) ENGINE="+engine+" COLLATE "+collate+"");
+  
+    // Create sellerTeamTab
+  SqlTab.push("CREATE TABLE "+sellerTeamTab+" ( \n\
+  idUser int(4) NOT NULL, \n\
+  link varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
+  imTag int(4) NOT NULL default 0, \n\
+  boApproved tinyint(1) NOT NULL default 0, \n\
+  tCreated TIMESTAMP default CURRENT_TIMESTAMP, \n\
   FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
   UNIQUE KEY (idUser) \n\
   ) ENGINE="+engine+" COLLATE "+collate+"");
@@ -1023,53 +1047,19 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   //name varchar(64) CHARSET utf8 NOT NULL,
   //boFB tinyint(1) NOT NULL,
 
-    // Create marketers
-  SqlTab.push("CREATE TABLE "+marketerTab+" ( \n\
-  idUser int(4) NOT NULL, \n\
-  boApproved tinyint(1) NOT NULL default 0, \n\
-  created TIMESTAMP default CURRENT_TIMESTAMP, \n\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  UNIQUE KEY (idUser) \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
-
-
-
-    // Create rebateCodeTab
-  SqlTab.push("CREATE TABLE "+rebateCodeTab+" ( \n\
-  id int(4) NOT NULL auto_increment, \n\
-  idUser  int(4) NOT NULL, \n\
-  amount  decimal(5,2) NOT NULL default 0, \n\
-  months  int(4) NOT NULL default 0, \n\
-  code  varchar(20) NOT NULL default '', \n\
-  created TIMESTAMP default CURRENT_TIMESTAMP, \n\
-  validTill TIMESTAMP DEFAULT 0, \n\
-  nLeft int(4) NOT NULL DEFAULT 1, \n\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  PRIMARY KEY (id), \n\
-  UNIQUE KEY (code) \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
-
-    // Create pubKeyTab
-  //SqlTab.push("CREATE TABLE "+pubKeyTab+" ( \n\
-  //idUser  int(4) NOT NULL, \n\
-  //pubKey  varchar(256) NOT NULL default '', \n\
-  //iSeq  int(4) NOT NULL default 0, \n\
-  //FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  //UNIQUE KEY (idUser) \n\
-  //) ENGINE="+engine+" COLLATE "+collate+"");
-
-
-  addBinTableSql(SqlTabDrop,SqlTab,siteName,Prop,engine,collate);
+  addBinTableSql(SqlTabDrop, SqlTab, siteName, oS.Prop, engine, collate);
+  addBinTableSql(SqlTabDrop, SqlTab, siteName, oC.Prop, engine, collate);
 
 
 
   //SqlTab.push("TRUNCATE "+settingTab+"");
   SqlTab.push("INSERT INTO "+settingTab+" VALUES \
-  ('boShowTeam','0'), \
-  ('tLastWriteOfHA',floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )), \
-  ('boGotNewVendors','0'), \
-  ('nUser','0'), \
-  ('boAllowEmailAccountCreation','0')"); 
+  ('boShowTeam', '0'), \
+  ('tLastWriteOfHA', floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )), \
+  ('tLastWriteOfBoShow', 0), \
+  ('boGotNewSellers', '0'), \
+  ('nUser', '0'), \
+  ('boAllowEmailAccountCreation', '0')"); 
 
   }
   if(boDropOnly) return SqlTabDrop;
@@ -1085,9 +1075,8 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
   var siteName=SiteName[iSite];
   
   var site=Site[siteName]; 
-  var Prop=site.Prop, TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
-  //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, marketerTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
+  var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   var {histView}=site.ViewName;
 
@@ -1096,39 +1085,42 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
   //var strIPDefault=Prop.IP.Enum[0];
 
 
-  //VShow "+siteName+"TimeAccumulatedUpdOne -> UPDATE "+vendorTab+" SET boShow=1, posTime=now(), hideTime=date_add(now(), INTERVALL hideTimer SECOND) WHERE idUser=id
-  //VHide "+siteName+"TimeAccumulatedUpdOne -> UPDATE "+vendorTab+" SET boShow=0, posTime=0, hideTime=0 WHERE idUser=id
-  //IFun "+siteName+"TimeAccumulatedUpdMult -> "+siteName+"AutoHideMult
+  //RShow "+siteName+"TimeAccumulatedUpdOne -> UPDATE "+sellerTab+" SET boShow=1, tPos=now(), hideTime=date_add(now(), INTERVALL hideTimer SECOND) WHERE idUser=id
+  //RHide "+siteName+"TimeAccumulatedUpdOne -> UPDATE "+sellerTab+" SET boShow=0, tPos=0, hideTime=0 WHERE idUser=id
+  //IFun "+siteName+"TimeAccumulatedUpdMult
 
-  // If setting boShow then one must call "+siteName+"TimeAccumulatedUpdOne before. Hence tLastWriteOfTA will never be < than posTime
-  var sqlTimeSinceWriteOfTA="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, posTime, hideTimer are a columns in vendorTab
-  var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(posTime)";
-  var sqlHideTime="DATE_ADD(posTime, INTERVAL hideTimer SECOND)";  
+  // If setting boShow then one must call "+siteName+"TimeAccumulatedUpdOne before. Hence tLastWriteOfTA will never be < than tPos
+  var sqlTimeSinceWriteOfTA="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in sellerTab
+  var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)";
   var sqlTRemaining="GREATEST(hideTimer-("+sqlTWritten+"),0)";
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdOne");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"TimeAccumulatedUpdOne(IN id INT) \
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"TimeAccumulatedUpdOne(IN IidUser INT) \
       BEGIN \
-        UPDATE "+vendorTab+" SET timeAccumulated=timeAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now() WHERE idUser=id; \
+        UPDATE "+customerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser; \
+        UPDATE "+sellerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser; \
       END");
   //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"AutoHideOne");
-  //SqlFunction.push("CREATE PROCEDURE "+siteName+"AutoHideOne (IN id INT) BEGIN      UPDATE "+vendorTab+" SET boShow=IF(now()>hideTime,0,boShow) WHERE idUser=id;    END");
+  //SqlFunction.push("CREATE PROCEDURE "+siteName+"AutoHideOne (IN id INT) BEGIN      UPDATE "+sellerTab+" SET boShow=IF(now()>hideTime,0,boShow) WHERE idUser=id;    END");
 
     // IFunPoll
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdMult");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"TimeAccumulatedUpdMult() \
-      BEGIN       \
-        UPDATE "+vendorTab+" SET timeAccumulated=timeAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now() WHERE boShow=1; \
-      END");
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"AutoHideMult");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"AutoHideMult() BEGIN      UPDATE "+vendorTab+" SET boShow=IF(now()>"+sqlHideTime+",0,boShow) WHERE boShow=1;    END");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"IFunPoll");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"IFunPoll() BEGIN      CALL "+siteName+"TimeAccumulatedUpdMult; CALL "+siteName+"AutoHideMult; CALL "+siteName+"HistActiveUpdMult;   END");
-
-
-
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"IFunPoll() BEGIN      CALL "+siteName+"TimeAccumulatedUpdMult;   CALL "+siteName+"HistActiveUpdMult;   END");
   
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdMult");  // Update tAccumulated, tLastWriteOfTA and boShow
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"TimeAccumulatedUpdMult() \n\
+      BEGIN    \n\
+        DECLARE tLastWriteOfBoShow INT; \n\
+        SELECT value INTO tLastWriteOfBoShow FROM "+settingTab+" WHERE name='tLastWriteOfBoShow'; \n\
+        IF UNIX_TIMESTAMP(now())>tLastWriteOfBoShow+10 THEN \n\
+          UPDATE "+sellerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now(), boShow=IF("+sqlBeforeHiding+",boShow,0) WHERE boShow=1; \n\
+          UPDATE "+customerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now(), boShow=IF("+sqlBeforeHiding+",boShow,0) WHERE boShow=1; \n\
+          UPDATE "+settingTab+" SET value=UNIX_TIMESTAMP(now()) WHERE name='tLastWriteOfBoShow';      \n\
+        END IF; \n\
+      END");
+      
+
   //sPerDay=10;
-  //var dayDiff="floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )  -  floor( UNIX_TIMESTAMP(posTime)/"+sPerDay+" )";
+  //var dayDiff="floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )  -  floor( UNIX_TIMESTAMP(tPos)/"+sPerDay+" )";
   // tLastWriteOfHA lastHistActiveWrite
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"HistActiveUpdMult");
@@ -1139,72 +1131,112 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
       SELECT value INTO tLastWriteOfHA FROM "+settingTab+" WHERE name='tLastWriteOfHA'; \n\
       SET recentDay=floor( UNIX_TIMESTAMP(now())/"+sPerDay+" );   SET dayDiff=recentDay-tLastWriteOfHA; \n\
       IF dayDiff>0 THEN \n\
-        UPDATE "+vendorTab+" SET histActive= (histActive<<dayDiff | boShow) "+sqlMaskHistActive+";    \n\
+        UPDATE "+sellerTab+" SET histActive= (histActive<<dayDiff | boShow) "+sqlMaskHistActive+";    \n\
+        UPDATE "+customerTab+" SET histActive= (histActive<<dayDiff | boShow) "+sqlMaskHistActive+";    \n\
         UPDATE "+settingTab+" SET value=recentDay WHERE name='tLastWriteOfHA';      \n\
       END IF; \n\
       COMMIT; \n\
     END");
 
-/*
-    // HistActiveUpd
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"HistActiveUpdMult");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"HistActiveUpdMult()    BEGIN \
-              UPDATE "+vendorTab+" SET histActive= (histActive<<1 | boShow) "+sqlMaskHistActive+";     END");
-
-  //AT CURRENT_TIMESTAMP + INTERVAL 1 MINUTE 
-  SqlFunctionDrop.push("DROP EVENT IF EXISTS "+siteName+"HistActUpdEv");
-  SqlFunction.push("CREATE EVENT "+siteName+"HistActUpdEv \n\
-      ON SCHEDULE EVERY 2 SECOND \n\
-      DO \n\
-        CALL "+siteName+"HistActiveUpdMult;");
-  */
-
-
 
       // Create an array from KeyCol/colsDBMask
-  var  arrCol=[];
-  for(var i=0;i<site.nCol;i++) {
-    var name=site.KeyCol[i], b=Prop[name].b;
-    if(Number(b[bFlip.DBSelOne]))  {   
-      var tmp;   if('selOneF' in Prop[name]){tmp=Prop[name].selOneF(name)+" AS `"+name+"`";}    else tmp="`"+name+"`";
-      arrCol.push(tmp);
+  var SqlColOTmp=[];
+  for(var i=0;i<ORole.length;i++) {
+    var oR=ORole[i], arrCol=[];
+    for(var j=0;j<oR.nCol;j++) {
+      var name=oR.KeyCol[j], b=oR.Prop[name].b;
+      if(Number(b[oR.bFlip.DBSelOne]))  {   
+        var tmp;   if('selOneF' in oR.Prop[name]){tmp=oR.Prop[name].selOneF(name)+" AS `"+name+"`";}    else tmp="`"+name+"`";
+        arrCol.push(tmp);
+      }
     }
+    SqlColOTmp[i]=arrCol.join(', ');
   }
-  var strColTmp=arrCol.join(', ');  
-
-
+  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag";
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboVendor INT, IboTeam INT, IboAdmin INT, IboComplainer INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboCustomer INT, IboSeller INT, IboCustomerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT) \n\
     proc_label:BEGIN \n\
       START TRANSACTION; \n\
       IF IidUser IS NOT NULL THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idUser=IidUser;\n\
+        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idUser=IidUser;\n\
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT 'idUserNotFound' AS mess; LEAVE proc_label; END IF; \n\
       ELSEIF IidFB IS NOT NULL THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idFB=IidFB;\n\
+        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idFB=IidFB;\n\
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idFB not found: ', IidFB) AS mess; LEAVE proc_label; END IF; \n\
         SET IidUser=@idUserTmp; \n\
       ELSEIF IidIdPlace IS NOT NULL THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idIdPlace=IidIdPlace;\n\
+        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idIdPlace=IidIdPlace;\n\
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idIdPlace not found: ', IidIdPlace) AS mess; LEAVE proc_label; END IF; \n\
         SET IidUser=@idUserTmp; \n\
       ELSE \n\
-        SELECT SQL_CALC_FOUND_ROWS @idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image FROM "+userTab+" WHERE idOpenId=IidOpenId;\n\
+        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idOpenId=IidOpenId;\n\
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idOpenId not found: ', IidOpenId) AS mess; LEAVE proc_label; END IF; \n\
         SET IidUser=@idUserTmp; \n\
       END IF;\n\
-      IF IboVendor THEN \n\
-        SELECT "+strColTmp+" FROM ("+vendorTab+" v LEFT JOIN "+teamTab+" tea on tea.idUser=v.idTeam) WHERE v.idUser=IidUser; \n\
-        SELECT count(paymentNumber) AS n FROM "+paymentTab+" p WHERE idUser=IidUser; \n\
-      ELSE SELECT 1 FROM dual WHERE 0; SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboTeam THEN  SELECT * FROM "+teamTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboAdmin THEN SELECT * FROM "+adminTab+" WHERE idUser=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
-      IF IboComplainer THEN SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=IidUser; ELSE SELECT 1 FROM dual WHERE 0; END IF; \n\
+      IF IboCustomer THEN     SELECT "+SqlColOTmp[0]+" FROM ("+customerTab+" ro LEFT JOIN "+customerTeamTab+" tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
+      IF IboSeller THEN       SELECT "+SqlColOTmp[1]+" FROM ("+sellerTab+" ro LEFT JOIN "+sellerTeamTab+" tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
+      IF IboCustomerTeam THEN SELECT * FROM "+customerTeamTab+" WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
+      IF IboSellerTeam THEN   SELECT * FROM "+sellerTeamTab+" WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
+      IF IboAdmin THEN        SELECT * FROM "+adminTab+" WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
+      IF IboComplainer THEN   SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
+      IF IboComplainee THEN   SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainee=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
       COMMIT; \n\
     END");
 
-
+  
+  
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateComplaint");
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"UpdateComplaint(IidComplainee INT, IidComplainer INT, Icomment TEXT) \n\
+    proc_label:BEGIN \n\
+      START TRANSACTION; \n\
+      IF Icomment IS NULL OR LENGTH(Icomment)=0 THEN \n\
+        UPDATE "+complaintTab+" SET comment=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer; \n\
+        DELETE FROM "+complaintTab+" WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND answer IS NULL; \n\
+        IF ROW_COUNT() THEN \n\
+          UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee; \n\
+          UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer; \n\
+        END IF; \n\
+        SELECT 'entry deleted' AS mess; \n\
+      ELSE \n\
+        INSERT INTO "+complaintTab+" (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,now(),now()) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=now(); \n\
+        IF ROW_COUNT()=1 THEN   # If inserted\n\
+          UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee; \n\
+          UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer; \n\
+          SELECT 'entry inserted' AS mess; \n\
+        ELSE \n\
+          SELECT 'entry updated' AS mess; \n\
+        END IF; \n\
+      END IF; \n\
+      #SELECT count(*) AS nComplaintFromComplainer FROM "+complaintTab+" WHERE idComplainer=IidComplainer; \n\
+      #SELECT count(*) AS nComplaintsOnComplainee FROM "+complaintTab+" WHERE idComplainee=IidComplainee; \n\
+      COMMIT; \n\
+    END");
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateAnswer");
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"UpdateAnswer(IidComplainee INT, IidComplainer INT, Ianswer TEXT) \n\
+    proc_label:BEGIN \n\
+      START TRANSACTION; \n\
+      IF Ianswer IS NULL OR LENGTH(Ianswer)=0 THEN \n\
+        UPDATE "+complaintTab+" SET answer=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer; \n\
+        DELETE FROM "+complaintTab+" WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND comment IS NULL; \n\
+        IF ROW_COUNT() THEN \n\
+          UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee; \n\
+          UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer; \n\
+        END IF; \n\
+        SELECT 'entry deleted' AS mess; \n\
+      ELSE \n\
+        #INSERT INTO "+complaintTab+" (idComplainee,idComplainer,answer,tCreated,tAnswerModified) VALUES (IidComplainee,IidComplainer,Ianswer,now(),now()) ON DUPLICATE KEY UPDATE answer=Ianswer, tAnswerModified=now(); \n\
+        #IF ROW_COUNT()=1 THEN   # If inserted\n\
+        #  UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint+1) WHERE idUser=IidComplainee; \n\
+        #  UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven+1) WHERE idUser=IidComplainer; \n\
+        #END IF; \n\
+        UPDATE "+complaintTab+" SET answer=Ianswer WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer; \n\
+        SELECT 'entry updated' AS mess; \n\
+      END IF; \n\
+      #SELECT count(*) AS nComplaintFromComplainer FROM "+complaintTab+" WHERE idComplainer=IidComplainer; \n\
+      #SELECT count(*) AS nComplaintsOnComplainee FROM "+complaintTab+" WHERE idComplainee=IidComplainee; \n\
+      COMMIT; \n\
+    END");
 
 /*
       SELECT idUser, count(*) INTO OidUser,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB; \n\
@@ -1220,7 +1252,7 @@ CLIENT_FOUND_ROWS
     //IF VcreatedA<VcreatedB THEN SET VidUserNew=VidUserA, VidUserOld=VidUserB; ELSE SET VidUserNew=VidUserB, VidUserOld=VidUserA; END IF; \n\
 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"vendorSetup");
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"sellerSetup");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"userSetup");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"reporterSetup");
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"complainerSetup");
@@ -1241,42 +1273,43 @@ CLIENT_FOUND_ROWS
   SqlFunction.push("CREATE PROCEDURE "+siteName+"setPassword(IidUser int(4), IpwOld VARCHAR(40), IpwNew VARCHAR(40)) \n\
     proc_label:BEGIN \n\
       DECLARE VpwOld VARCHAR(40); \n\
-      SELECT password INTO VpwOld FROM "+userTab+" WHERE idUser=IidUser; \n\
+      SELECT hashPW INTO VpwOld FROM "+userTab+" WHERE idUser=IidUser; \n\
       IF FOUND_ROWS()!=1 THEN SELECT CONCAT('Found ', FOUND_ROWS(), ' users') AS mess; LEAVE proc_label; END IF; \n\
       IF VpwOld!=IpwOld THEN SELECT 'Old password does not match' AS mess; LEAVE proc_label; END IF; \n\
-      UPDATE "+userTab+" SET password=IpwNew WHERE idUser=IidUser; \n\
+      UPDATE "+userTab+" SET hashPW=IpwNew WHERE idUser=IidUser; \n\
       SELECT 'Password changed' AS mess; \n\
     END");
 
 
-  //SqlFunction.push("CALL "+siteName+"UseRebateCode('abc', 1, @boOK, @mess)"); //echo sqlToVar(SqlFunction.push("SELECT @boInserted"));
-  //CALL taxiUseRebateCode('abc', 1, @boOK, @mess); SELECT @boOK, @mess;
-  //SET Omess=Vc;   LEAVE proc_label; \
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetIdUserNSetISeq");
   SqlFunction.push("CREATE PROCEDURE "+siteName+"GetIdUserNSetISeq(Ikey varchar(256), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, ViSeq INT; \n\
-      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM "+vendorTab+" WHERE pubKey=Ikey; \n\
+      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM "+userTab+" WHERE pubKey=Ikey; \n\
       SET Vc=FOUND_ROWS(); \n\
       IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('pubKey exist multiple times Vc=',Vc); LEAVE proc_label; END IF; \n\
       IF Vc=0 THEN SET OboOK=0, Omess='No such pubKey stored!'; LEAVE proc_label; END IF; \n\
   \n\
       IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the keys'; LEAVE proc_label; END IF; \n\
-      UPDATE "+vendorTab+" SET iSeq=iSeqN WHERE idUser=OidUser; \n\
+      UPDATE "+userTab+" SET iSeq=iSeqN WHERE idUser=OidUser; \n\
       SET OboOK=1, Omess=''; \n\
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetValuesToController(Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetValuesToController(IiRole INT, Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT UNSIGNED, OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
-      DECLARE Vc, Vn, VIdUser, ViSeq, intMax INT; \n\
+      DECLARE Vc, Vn, VidUser, ViSeq, intMax INT; \n\
       CALL "+siteName+"GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess); \n\
       IF OboOK=0 THEN LEAVE proc_label; END IF; \n\
       CALL "+siteName+"TimeAccumulatedUpdOne(VidUser); \n\
   \n\
-      SELECT SQL_CALC_FOUND_ROWS boShow, UNIX_TIMESTAMP(posTime)+hideTimer -UNIX_TIMESTAMP(now()) INTO OboShow, OtDiff FROM "+vendorTab+" WHERE idUser=VidUser;\n\
+      IF IiRole=0 THEN \n\
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos)+hideTimer -UNIX_TIMESTAMP(now()) INTO OboShow, OhideTimer, OtDiff FROM "+customerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
+      ELSE \n\
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos)+hideTimer -UNIX_TIMESTAMP(now()) INTO OboShow, OhideTimer, OtDiff FROM "+sellerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
+      END IF; \n\
       SET Vc=FOUND_ROWS(); \n\
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF; \n\
       IF OtDiff<0 THEN SET OboShow=0; END IF; \n\
@@ -1285,26 +1318,39 @@ CLIENT_FOUND_ROWS
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(IiRole INT, Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT UNSIGNED, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
-      DECLARE Vc, Vn, VIdUser, ViSeq, VresM INT; \n\
+      DECLARE Vc, Vn, VidUser, ViSeq, VresM INT; \n\
       START TRANSACTION; \n\
       CALL "+siteName+"GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess); \n\
       IF OboOK=0 THEN ROLLBACK; LEAVE proc_label; END IF; \n\
       CALL "+siteName+"TimeAccumulatedUpdOne(VidUser); \n\
-  \n\
+      \n\
       IF IboShow=0 THEN  \n\
-        UPDATE "+vendorTab+" SET boShow=IboShow, posTime=now(), histActive=histActive|1 WHERE idUser=VIdUser; \n\
+        IF IiRole=0 THEN \n\
+          UPDATE "+customerTab+" SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser; \n\
+        ELSE \n\
+          UPDATE "+sellerTab+" SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser; \n\
+        END IF; \n\
         SET OboOK=1, Omess='';\n\
-        # COMMIT; LEAVE proc_label; \n\
       ELSE \n\
-        SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM "+vendorTab+" WHERE idUser=VIdUser; \n\
+        IF IiRole=0 THEN \n\
+          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM "+customerTab+" WHERE idUser=VidUser; \n\
+        ELSE \n\
+          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM "+sellerTab+" WHERE idUser=VidUser; \n\
+        END IF; \n\
         SET Vc=FOUND_ROWS(); \n\
         IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF; \n\
         IF VresM<1 THEN SET VresM=1; END IF; \n\
         CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy); \n\
-    \n\
-        UPDATE "+vendorTab+" SET x=Ix, y=Iy, boShow=IboShow, hideTimer=IhideTimer, posTime=now(), histActive=histActive|1 WHERE idUser=VIdUser; \n\
+        \n\
+        IF IiRole=0 THEN \n\
+          UPDATE "+customerTab+" SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser; \n\
+          UPDATE "+sellerTab+" SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser; \n\
+        ELSE \n\
+          UPDATE "+customerTab+" SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser; \n\
+          UPDATE "+sellerTab+" SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser; \n\
+        END IF; \n\
         SET OboOK=1, Omess='';\n\
       END IF; \n\
       COMMIT; \n\
@@ -1315,15 +1361,15 @@ CLIENT_FOUND_ROWS
   SqlFunction.push("CREATE PROCEDURE "+siteName+"dupMake() \n\
       BEGIN \n\
         CALL copyTable('"+userTab+"_dup','"+userTab+"'); \n\
-        CALL copyTable('"+vendorTab+"_dup','"+vendorTab+"'); \n\
-        CALL copyTable('"+vendorImageTab+"_dup','"+vendorImageTab+"'); \n\
-        CALL copyTable('"+teamTab+"_dup','"+teamTab+"'); \n\
-        CALL copyTable('"+teamImageTab+"_dup','"+teamImageTab+"'); \n\
+        CALL copyTable('"+sellerTab+"_dup','"+sellerTab+"'); \n\
+        CALL copyTable('"+sellerTeamTab+"_dup','"+sellerTeamTab+"'); \n\
+        CALL copyTable('"+sellerTeamImageTab+"_dup','"+sellerTeamImageTab+"'); \n\
+        CALL copyTable('"+customerTab+"_dup','"+customerTab+"'); \n\
+        CALL copyTable('"+customerTeamTab+"_dup','"+customerTeamTab+"'); \n\
+        CALL copyTable('"+customerTeamImageTab+"_dup','"+customerTeamImageTab+"'); \n\
+        CALL copyTable('"+userImageTab+"_dup','"+userImageTab+"'); \n\
         CALL copyTable('"+complaintTab+"_dup','"+complaintTab+"'); \n\
-        CALL copyTable('"+paymentTab+"_dup','"+paymentTab+"'); \n\
-        CALL copyTable('"+rebateCodeTab+"_dup','"+rebateCodeTab+"'); \n\
         CALL copyTable('"+adminTab+"_dup','"+adminTab+"'); \n\
-        CALL copyTable('"+pubKeyTab+"_dup','"+pubKeyTab+"'); \n\
       END");
 
 
@@ -1332,40 +1378,40 @@ CLIENT_FOUND_ROWS
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupTrunkOrgNCopyBack");
   SqlFunction.push("CREATE PROCEDURE "+siteName+"dupTrunkOrgNCopyBack() \n\
       BEGIN \n\
-        DELETE FROM "+pubKeyTab+" WHERE 1; \n\
-        DELETE FROM "+vendorTab+" WHERE 1; \n\
-        DELETE FROM "+vendorImageTab+" WHERE 1; \n\
-        DELETE FROM "+teamTab+" WHERE 1; \n\
-        DELETE FROM "+teamImageTab+" WHERE 1; \n\
+        DELETE FROM "+sellerTab+" WHERE 1; \n\
+        DELETE FROM "+sellerTeamTab+" WHERE 1; \n\
+        DELETE FROM "+sellerTeamImageTab+" WHERE 1; \n\
+        DELETE FROM "+customerTab+" WHERE 1; \n\
+        DELETE FROM "+customerTeamTab+" WHERE 1; \n\
+        DELETE FROM "+customerTeamImageTab+" WHERE 1; \n\
+        DELETE FROM "+userImageTab+" WHERE 1; \n\
         DELETE FROM "+complaintTab+" WHERE 1; \n\
-        DELETE FROM "+paymentTab+" WHERE 1; \n\
-        DELETE FROM "+rebateCodeTab+" WHERE 1; \n\
         DELETE FROM "+adminTab+" WHERE 1; \n\
         DELETE FROM "+userTab+" WHERE 1; \n\
          \n\
         INSERT INTO "+userTab+" SELECT * FROM "+userTab+"_dup; \n\
-        INSERT INTO "+vendorTab+" SELECT * FROM "+vendorTab+"_dup; \n\
-        INSERT INTO "+vendorImageTab+" SELECT * FROM "+vendorImageTab+"_dup; \n\
-        INSERT INTO "+teamTab+" SELECT * FROM "+teamTab+"_dup; \n\
-        INSERT INTO "+teamImageTab+" SELECT * FROM "+teamImageTab+"_dup; \n\
+        INSERT INTO "+sellerTab+" SELECT * FROM "+sellerTab+"_dup; \n\
+        INSERT INTO "+sellerTeamTab+" SELECT * FROM "+sellerTeamTab+"_dup; \n\
+        INSERT INTO "+sellerTeamImageTab+" SELECT * FROM "+sellerTeamImageTab+"_dup; \n\
+        INSERT INTO "+customerTab+" SELECT * FROM "+customerTab+"_dup; \n\
+        INSERT INTO "+customerTeamTab+" SELECT * FROM "+customerTeamTab+"_dup; \n\
+        INSERT INTO "+customerTeamImageTab+" SELECT * FROM "+customerTeamImageTab+"_dup; \n\
+        INSERT INTO "+userImageTab+" SELECT * FROM "+userImageTab+"_dup; \n\
         INSERT INTO "+complaintTab+" SELECT * FROM "+complaintTab+"_dup; \n\
-        INSERT INTO "+paymentTab+" SELECT * FROM "+paymentTab+"_dup; \n\
-        INSERT INTO "+rebateCodeTab+" SELECT * FROM "+rebateCodeTab+"_dup; \n\
         INSERT INTO "+adminTab+" SELECT * FROM "+adminTab+"_dup; \n\
-        INSERT INTO "+pubKeyTab+" SELECT * FROM "+pubKeyTab+"_dup; \n\
       END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupDrop");
   SqlFunction.push("CREATE PROCEDURE "+siteName+"dupDrop() \n\
       BEGIN \n\
-        DROP TABLE IF EXISTS "+pubKeyTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+vendorTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+vendorImageTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+teamTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+teamImageTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+sellerTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+sellerTeamTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+sellerTeamImageTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+customerTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+customerTeamTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+customerTeamImageTab+"_dup; \n\
+        DROP TABLE IF EXISTS "+userImageTab+"_dup; \n\
         DROP TABLE IF EXISTS "+complaintTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+paymentTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+rebateCodeTab+"_dup; \n\
         DROP TABLE IF EXISTS "+adminTab+"_dup; \n\
         DROP TABLE IF EXISTS "+userTab+"_dup; \n\
       END");
@@ -1422,303 +1468,343 @@ app.SetupSql.prototype.funcGen=function(boDropOnly){
   else return array_merge(SqlFunctionDrop, SqlFunction);
 }
 
+
+
+
+
 app.SetupSql.prototype.createDummies=function(SiteName){
   if(typeof SiteName=='string') SiteName=[SiteName];
-  
+  var nData=5;
   var SqlDummies=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite];
+  
 
-  var site=Site[siteName]; 
-
+  var SEK2CUR={SEK:1,USD:0.14,GBP:0.1,EUR:0.12,CNY:0.72,JPY:14.37,INR:7.35,DKK:1,NOK:1}
+        
   var arrAddress=[];
   //arrAddress.push({country:'Sweden', homeTown:'Uppsala', currency:'SEK', x:140.51976455111, y:74.570362445619, n:5, std:0.1});
   //arrAddress.push({country:'Sweden', homeTown:'Stockholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
 
   if(1){
-  /*
-  arrAddress.push({country:'Sweden', homeTown:'Solna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Upplands Väsby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Sollentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Nortälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Södertälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Sigtuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Värmdö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Haninge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Nynäshamn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Nykvarn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Ekerö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  */
-  /*arrAddress.push({country:'Sweden', homeTown:'Salem', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Botkyrka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Huddinge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Tyresö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Nacka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Lindingö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Sundbyberg', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Järfälla', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Danderyd', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Vaxholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Täby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Vallentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  arrAddress.push({country:'Sweden', homeTown:'Österåker', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-  */
-  /*
-  arrAddress.push({country:'Sweden', homeTown:'Göteborg', currency:'SEK', x:136.51532755738089, y:77.49346382340636, n:7, std:0.3});
-  arrAddress.push({country:'Denmark', homeTown:'København', currency:'DKK', x:136.93473555466124, y:80.13125508448312, n:7, std:0.3});
-  arrAddress.push({country:'Norway', homeTown:'Oslo', currency:'NOK', x:135.64994551559874, y:74.46792500635812, n:7, std:0.3});
-  arrAddress.push({country:'Finland', homeTown:'Helsinki', currency:'EUR', x:145.73099340101697, y:74.05775005653538, n:7, std:0.3});
-  */
+    /*
+    arrAddress.push({country:'Sweden', homeTown:'Solna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Upplands Väsby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Sollentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Nortälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Södertälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Sigtuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Värmdö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Haninge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Nynäshamn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Nykvarn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Ekerö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    */
+    /*arrAddress.push({country:'Sweden', homeTown:'Salem', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Botkyrka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Huddinge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Tyresö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Nacka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Lindingö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Sundbyberg', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Järfälla', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Danderyd', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Vaxholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Täby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Vallentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    arrAddress.push({country:'Sweden', homeTown:'Österåker', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    */
+    /*
+    arrAddress.push({country:'Sweden', homeTown:'Göteborg', currency:'SEK', x:136.51532755738089, y:77.49346382340636, n:7, std:0.3});
+    arrAddress.push({country:'Denmark', homeTown:'København', currency:'DKK', x:136.93473555466124, y:80.13125508448312, n:7, std:0.3});
+    arrAddress.push({country:'Norway', homeTown:'Oslo', currency:'NOK', x:135.64994551559874, y:74.46792500635812, n:7, std:0.3});
+    arrAddress.push({country:'Finland', homeTown:'Helsinki', currency:'EUR', x:145.73099340101697, y:74.05775005653538, n:7, std:0.3});
+    */
 
-  arrAddress.push({country:'UK', homeTown:'London', currency:'GBP', x:127.92629919892141, y:85.11312706193192, n:10, std:0.5});
-  //arrAddress.push({country:'France', homeTown:'Paris', currency:'EUR', x:129.6294241989214, y:88.07406456193192, n:10, std:0.5});
-  //arrAddress.push({country:'Italy', homeTown:'Rom', currency:'EUR', x:136.8811346138079, y:95.13470489701334, n:10, std:0.5});
-  //arrAddress.push({country:'Spain', homeTown:'Madrid', currency:'EUR', x:125.37955748049507, y:96.54275866022407, n:10, std:0.5});
-  arrAddress.push({country:'USA', homeTown:'NY', currency:'USD', x:75.39355286293579, y:96.21422827476029, n:10, std:0.5});
-  //arrAddress.push({country:'USA', homeTown:'Chicago', currency:'USD', x:65.67872790747845, y:95.16096079575951, n:10, std:0.5});
-  arrAddress.push({country:'USA', homeTown:'LA', currency:'USD', x:43.95576759128889, y:102.2555423122189, n:10, std:0.5});
-  arrAddress.push({country:'Japan', homeTown:'Tokyo', currency:'JPY', x:227.3887757633159, y:100.80702770236107, n:10, std:0.5});
-  arrAddress.push({country:'China', homeTown:'Beijing', currency:'CNY', x:210.7708451431501, y:96.99141526807438, n:10, std:0.5});
-  arrAddress.push({country:'India', homeTown:'Mumbai', currency:'INR', x:179.7837377942387, y:114.25584433021675, n:10, std:0.5});
+    arrAddress.push({country:'UK', homeTown:'London', currency:'GBP', x:127.92629919892141, y:85.11312706193192, n:10, std:0.5});
+    //arrAddress.push({country:'France', homeTown:'Paris', currency:'EUR', x:129.6294241989214, y:88.07406456193192, n:10, std:0.5});
+    //arrAddress.push({country:'Italy', homeTown:'Rom', currency:'EUR', x:136.8811346138079, y:95.13470489701334, n:10, std:0.5});
+    //arrAddress.push({country:'Spain', homeTown:'Madrid', currency:'EUR', x:125.37955748049507, y:96.54275866022407, n:10, std:0.5});
+    arrAddress.push({country:'USA', homeTown:'NY', currency:'USD', x:75.39355286293579, y:96.21422827476029, n:10, std:0.5});
+    //arrAddress.push({country:'USA', homeTown:'Chicago', currency:'USD', x:65.67872790747845, y:95.16096079575951, n:10, std:0.5});
+    arrAddress.push({country:'USA', homeTown:'LA', currency:'USD', x:43.95576759128889, y:102.2555423122189, n:10, std:0.5});
+    arrAddress.push({country:'Japan', homeTown:'Tokyo', currency:'JPY', x:227.3887757633159, y:100.80702770236107, n:10, std:0.5});
+    arrAddress.push({country:'China', homeTown:'Beijing', currency:'CNY', x:210.7708451431501, y:96.99141526807438, n:10, std:0.5});
+    arrAddress.push({country:'India', homeTown:'Mumbai', currency:'INR', x:179.7837377942387, y:114.25584433021675, n:10, std:0.5});
 
   }
-
-  var SEK2CUR={SEK:1,USD:0.14,GBP:0.1,EUR:0.12,CNY:0.72,JPY:14.37,INR:7.35,DKK:1,NOK:1}
-
-  var arrBucket=[]; // To make vendors from big cities more likely to appear than vendors from small cities
+  
+  var arrBucket=[]; // To make users from big cities more likely to appear than users from small cities
   for(var i=0;i<arrAddress.length;i++){
     var objT=arrAddress[i];
     arrBucket=array_mergeM(arrBucket,array_fill(objT.n,i.toString()));
   }
-
+  
   var getRandomPostAddress=function(){
     var key=arrBucket[randomInt(0, arrBucket.length-1)];
-    var AddressT=arrAddress[key];
+    var AddressT=extend({}, arrAddress[key]);
     AddressT.x+=gauss_ms(0,AddressT.std); AddressT.y+=gauss_ms(0,AddressT.std);  
     return AddressT;
   }
 
-
-  var TableName=site.TableName, ViewName=site.ViewName, Prop=site.Prop;
-  var Enum={};   for(var name in Prop) {if('Enum' in Prop[name]) Enum[name]=Prop[name].Enum.concat([]); }   //extend(Enum,site.Enum);
-  //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
-  //eval(extractLoc(ViewName,'ViewName'));
-  var {histView}=site.ViewName;
-  //var VendorUpdF=site.VendorUpdF;
-
-  var makeEnumRandF=function(name){  var enumT=Enum[name]; return enumT[randomInt(0, enumT.length-1)];  };
-  var getRandomDate=function(diff){ var now=unixNow(), v0, v1; if(diff>0){t0=now; t1=now+diff;} else{t0=now+diff; t1=now;} return randomInt(t0, t1);}; // Random historic time in [now-diff,now]
-  var makeDateRandF=function(name){ var dateSpan=DateSpan[name]; return getRandomDate(dateSpan);};
-  var makeRandSpanF=function(name){ var [tmpl,tmpu]=RandSpanData[name]; return randomInt(tmpl,tmpu);};
-  var makeRandSpanPriceF=function(name){ var tmp=makeRandSpanF(name), cur=this.currency, fac=SEK2CUR[cur];  tmp=tmp*fac; return tmp;};
-  var makeFixedF=function(name){ return FixedData[name]; };
-
-  //if(siteName=='taxi' || siteName=='demo' || siteName=='test') Enum.vehicleType=['sedan', 'wagon', 'largeMPV', 'MPV', 'hatchback'];
-  if(siteName=='taxi') Enum.vehicleType=['sedan', 'wagon', 'largeMPV', 'MPV', 'hatchback'];
-  if(siteName=='transport') Enum.vehicleType=['sedan', 'wagon', 'largeMPV', 'MPV','pickup', 'van', 'lorry'];
-  var MakeRandF={}, DateSpan={}, RandSpanData={}, FixedData={};
-  MakeRandF.vehicleType=makeEnumRandF;
-
-  MakeRandF.standingByMethod=makeEnumRandF;
-
-  Enum.brand=['Volvo','Saab','VW','Toyota','Ford','Hyundai','Mercedes','Fiat','Dodge','Mazda','BMW','Audi','Lloyd','Opel','Skoda','Ferrari','Lamborgini','Seat','Chrysler','Chevrolet','Scania','Aston Martin','Bentley','Jaguar','Land Rover','Honda','Nissan','Rolls Royce'];  MakeRandF.brand=makeEnumRandF;
-  Enum.link=['example.com','www.example.com','closeby.market','gavott.com','example.com',''];    MakeRandF.link=makeEnumRandF;
-  Enum.nPassengers=[2,3,4,5,6,7,8];     MakeRandF.nPassengers=makeEnumRandF;
-  Enum.childSeat=Enum.extraSeat=Enum.wheelChairPlaces=[0,1,2];     MakeRandF.childSeat=MakeRandF.extraSeat=MakeRandF.wheelChairPlaces=makeEnumRandF;
-  Enum.idTeam=Enum.idTeamWanted=[1,2,3];    MakeRandF.idTeam=MakeRandF.idTeamWanted=makeEnumRandF;
-
-   
-  DateSpan.created=-2*8760*3600;   MakeRandF.created=makeDateRandF;
-  DateSpan.posTime=-12*3600;   MakeRandF.posTime=makeDateRandF;
-  DateSpan.tLastWriteOfTA=0;   MakeRandF.tLastWriteOfTA=makeDateRandF;
-  DateSpan.terminationDate=4*30*24*3600;   MakeRandF.terminationDate=makeDateRandF;
-  DateSpan.lastPriceChange=-30*24*3600;   MakeRandF.lastPriceChange=makeDateRandF;
-  DateSpan.shiftEnd=12*3600;   MakeRandF.shiftEnd=makeDateRandF;
-
-  RandSpanData.donatedAmount=[0, 1000];  MakeRandF.donatedAmount=makeRandSpanF;
-  RandSpanData.timeAccumulated=[0, 2*8760*3600];  MakeRandF.timeAccumulated=makeRandSpanF;
-  FixedData.hideTimer=3600*24*365;  MakeRandF.hideTimer=makeFixedF;
-  RandSpanData.priceStart=[20,45];  MakeRandF.priceStart=makeRandSpanPriceF;
-  Enum.distUnit=["km","mile"];  MakeRandF.distUnit=makeEnumRandF;
-  RandSpanData.pricePerDist=[10,20];   MakeRandF.pricePerDist=makeRandSpanPriceF;
-  RandSpanData.pricePerHour=[200,400];   MakeRandF.pricePerHour=makeRandSpanPriceF;
-  RandSpanData.idDriverGovernment=[1000,2000];   MakeRandF.idDriverGovernment=makeRandSpanF;
-  FixedData.boShow=1;  MakeRandF.boShow=makeFixedF;
-  FixedData.histActive=1;  MakeRandF.histActive=makeFixedF;
-  FixedData.coordinatePrecisionM=1;  MakeRandF.coordinatePrecisionM=makeFixedF;
-
-
-
-  var nData=10;
-  //var nData=1000;
-  //var nData=10000;
-
-  //if(siteName=='demo') nData=500;
-  if(boLocal) {
-    nData=5;
-    if(site.wwwSite.substr(0,4)=='taxi') nData=50;
-  }
-  if(site.wwwSite.substr(0,4)=='demo') nData=50;
-
-  var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'distUnit', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang'];
-
-  var StrPlugIn=site.StrPlugIn;
-  if(in_array("general", StrPlugIn)){ arrUpd=['donatedAmount', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'imTag', 'idTeam', 'idTeamWanted', 'boImgOwn', 'coordinatePrecisionM']; }
-
-  if(in_array("transportProt", StrPlugIn)){ arrUpd=arrUpd.concat(['vehicleType']);  }
-  if(in_array("transportPrice", StrPlugIn)){ arrUpd=arrUpd.concat(['priceStart', 'distUnit', 'pricePerDist', 'pricePerHour']);  }
-  if(in_array("transportUrgent", StrPlugIn)){  Str_insertM(arrUpd,'homeTown',['standingByMethod']);   }
-  if(in_array("night", StrPlugIn)){ arrUpd=arrUpd.concat(['shiftEnd']);  }
-
-
-  //if(intersectBool(["taxi", "demo", "test"], StrPlugIn)){
-  if(in_array("taxi", StrPlugIn)){
-    Enum.nPassengers=range(2,20,1);
-
-    arrUpd=arrUpd.concat(['brand','idDriverGovernment'], site.StrPropTaxi);
-  }
-
-  if(in_array("transport", StrPlugIn)){
-    var StrTransportBool=site.StrTransportBool;
-    for(var i=0;i<StrTransportBool.length;i++){ var name=StrTransportBool[i]; Enum[name]=[0,1]; MakeRandF[name]=makeEnumRandF; }
-    var name='payload';Enum[name]=range(0,15,0.5); MakeRandF[name]=makeEnumRandF;
-
-    arrUpd=arrUpd.concat(['payload','brand'],StrTransportBool);
-  }
-  if(intersectBool(["cleaner", "windowcleaner"], StrPlugIn)){ 
-    var StrCleanerBool=site.StrCleanerBool;
-    for(var i=0;i<StrCleanerBool.length;i++){ var name=StrCleanerBool[i]; Enum[name]=[0,1]; MakeRandF[name]=makeEnumRandF; }
-    arrUpd=arrUpd.concat(StrCleanerBool);
-  }
-  if(in_array("lawnmower", StrPlugIn)){ 
-    var StrToolBool=site.StrToolBool;
-    for(var i=0;i<StrToolBool.length;i++){ var name=StrToolBool[i]; Enum[name]=[0,1]; MakeRandF[name]=makeEnumRandF; }
-    var name='cuttingWidth';Enum[name]=range(30,150,2); MakeRandF[name]=makeEnumRandF;
-    arrUpd=arrUpd.concat(StrToolBool,['cuttingWidth']);
-  }
-  if(in_array("snowremoval", StrPlugIn)){ 
-    var StrToolBool=site.StrToolBool;
-    for(var i=0;i<StrToolBool.length;i++){ var name=StrToolBool[i]; Enum[name]=[0,1]; MakeRandF[name]=makeEnumRandF; }
-    arrUpd=arrUpd.concat(StrToolBool);
-  }
-  if(in_array("hourlyPrice", StrPlugIn)){ 
-    arrUpd=arrUpd.concat(['pricePerHour']);
-  }
-  if(in_array("programmer", StrPlugIn)){ 
-    var StrProgrammerLang=site.StrProgrammerLang;
-    for(var i=0;i<StrProgrammerLang.length;i++){ var name=StrProgrammerLang[i]; Enum[name]=[0,1,2,3,4,5]; MakeRandF[name]=makeEnumRandF; }
-    var name='otherLang';Enum[name]=['','Matlab','Babyloninan','Bad language']; MakeRandF[name]=makeEnumRandF;
-    arrUpd=arrUpd.concat(StrProgrammerLang,['otherLang']);
-  }
-
-
-
-  var StrUpd=[]; 
-  var SqlAllU=[], SqlAllV=[];
-
-  var ValAll=[], SqlAll=[];
-  var AddressT={};
-  for(var i=1;i<nData+1;i++){
-
-    var tmp="dummy"+i, Tmp=ucfirst(tmp), person={idFB:tmp, email:tmp+'@example.com', displayName:Tmp, tel:"07000000"+i};
-    var ValCurU=[];
-
-    var idTmp=i+1,  sqlCurU="("+idTmp+", null, null, '"+Tmp+"', '"+person.email+"', '"+Tmp+"', null)"; 
-
-            // Add a query to update vendorTab and add values
-    var AddressT=extend(AddressT,getRandomPostAddress());
-    //var xd=gauss_ms(0,AddressT.std), xOrg=AddressT.x; 
-    //if(AddressT.homeTown=='London') console.log(xOrg.toFixed(2)+' '+AddressT.x.toFixed(2)+' '+xd.toFixed(2));
-
-
-
-    var StrName=[];
-    var StrIns=[];
-    var ValCurV=[];
-    for(var j=0;j<arrUpd.length;j++){
-      var name=arrUpd[j], QMark="?", value=0;
-      if(name in person) value=person[name]; 
-      else if(name in AddressT) value=AddressT[name];
-      else if(name in MakeRandF){ value=MakeRandF[name].call(AddressT,name);  }
-      if('vendorUpdF' in Prop[name]){ [QMark]=Prop[name].vendorUpdF.call(Prop,name,value);  }
-      var valT=QMark.replace(/\?/,value);     
-      if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
-
-      StrName.push("`"+name+"`");
-      StrIns.push(valT);
-      ValCurV.push(value);
-    }
-    var strName=StrName.join(', ');
-    var strIns=StrIns.join(', ');  
-
-    var sqlCurV="("+idTmp+", "+strIns+")";
-
-    SqlAllU.push(sqlCurU); SqlAllV.push(sqlCurV);
-    
-  }
-
-  var tmp=SqlAllU.join(",");
-  SqlDummies.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image) VALUES "+tmp);
   
-  var tmp=SqlAllV.join(",");
-  SqlDummies.push("INSERT INTO "+vendorTab+" (idUser, "+strName+") VALUES "+tmp);
+  var makeEnumRandF=function(name){  var enumT=PropBucket[name].Enum; return enumT[randomInt(0, enumT.length-1)];  };
+  var getRandomDate=function(diff){ var now=unixNow(), v0, v1; if(diff>0){t0=now; t1=now+diff;} else{t0=now+diff; t1=now;} return randomInt(t0, t1);}; // Random historic time in [now-diff,now]
+  var makeDateRandF=function(name){ var dateSpan=PropBucket[name].dateSpan; return getRandomDate(dateSpan);};
+  var makeRandSpanF=function(name){ var [tmpl,tmpu]=PropBucket[name].RandSpanData; return randomInt(tmpl,tmpu);};
+  var makeRandSpanPriceF=function(name){ var [tmpl,tmpu]=PropBucket[name].RandSpanDataPrice,  tmp=randomInt(tmpl,tmpu), cur='SEK', fac=SEK2CUR[cur];  tmp=tmp*fac; return tmp;};
+  var makeFixedF=function(name){ return PropBucket[name].FixedData; };
 
 
-  //var idPre='10000',  idNum=2646477985;
-  //var idPre='10000000000000';  idNum=0;
-  //var IdComplainer=[idPre+(idNum+1), idPre+(idNum+2), idPre+(idNum+5)];
-  var IdComplainer=[2, 3, 4];
-  //var StrName=['Al Alba', 'Bob Bee', 'Cody Colt'];
+  PropBucket={
+    vehicleType:{Enum:['sedan']},
+    
+    brand:{Enum:['Volvo','Saab','VW','Toyota','Ford','Hyundai','Mercedes','Fiat','Dodge','Mazda','BMW','Audi','Lloyd','Opel','Skoda','Ferrari','Lamborgini','Seat','Chrysler','Chevrolet','Scania','Aston Martin','Bentley','Jaguar','Land Rover','Honda','Nissan','Rolls Royce']},
+    link:{Enum:['example.com','www.example.com','closeby.market','gavott.com','example.com','']},
+    nPassengers:{Enum:range(2,20,1)},
+    nChildSeat:{Enum:[0,1,2]}, nExtraSeat:{Enum:[0,1,2]}, nWheelChairPlaces:{Enum:[0,1,2]},
+    idTeam:{Enum:[1,2,3]}, idTeamWanted:{Enum:[1,2,3]},
+    strUnitDist:{Enum:["km","mile"]},
+    payload:{Enum:range(0,15,0.5)},
+    cuttingWidth:{Enum:range(30,150,2)},
+    otherLang:{Enum:['','Matlab','Babyloninan','D']},
 
-  var StrComplaint=['He never answered the phone', 'No good', 'Bad bad bad'];
-  var StrAns=['I was on the toilet', "Sorry, I'm a bit new.", ''];
+    tCreated:{dateSpan:-2*8760*3600},
+    tPos:{dateSpan:-12*3600},
+    tLastWriteOfTA:{dateSpan:0},
+    //terminationDate:{dateSpan:4*30*24*3600},
+    tLastPriceChange:{dateSpan:-30*24*3600},
+    shiftEnd:{dateSpan:12*3600},
 
-  var nComplainer=IdComplainer.length;
-
-  for(var j=0;j<10;j++){ //loop through drivers
-    for(var i=0;i<nComplainer;i++){
-      var idRep=IdComplainer[i], iRep=(i+j)%nComplainer, strRep=StrComplaint[iRep], iAns=(i+2*j)%nComplainer, strAns=StrAns[iAns];
-      SqlDummies.push("INSERT INTO "+complaintTab+" (idVendor, idComplainer, comment, answer, created, modified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now() FROM "+userTab+" WHERE idOpenId REGEXP '^Dummy' AND idUser%10="+j);
+    donatedAmount:{RandSpanData:[0, 1000]},
+    tAccumulated:{RandSpanData:[0, 2*8760*3600]},
+    priceStart:{RandSpanDataPrice:[20,45]},
+    pricePerDist:{RandSpanDataPrice:[10,20]},
+    //pricePerTravelHour:{RandSpanDataPrice:[200,400]},
+    pricePerHour:{RandSpanDataPrice:[200,400]},
+    idDriverGovernment:{RandSpanData:[1000,2000]},
+    
+    hideTimer:{FixedData:3600*24*365},
+    boShow:{FixedData:1},
+    histActive:{FixedData:1},
+    coordinatePrecisionM:{FixedData:1},
+    
+    otherContainer:{Enum:[0,1]},
+    boCustomerHasEquipment:{Enum:[0,1]},
+    nWindows:{Enum:range(1,30,1)},
+    area:{Enum:range(1,1000,1)},
+    boRoad:{Enum:[0,1]},
+    boDriveWay:{Enum:[0,1]},
+    boRoof:{Enum:[0,1]},
+    fruit:{Enum:['apple', 'strawberry', 'cabbage']},
+    database:{Enum:['mysql', 'neo4j', 'redis']},
+    language:{Enum:['c', 'javascript', 'java']},
+    distStartToGoal:{RandSpanData:[1000,20000]},
+    price:{RandSpanDataPrice:[100,200]},
+    //compassPoint,
+    destination:{Enum:['Göteborg', 'Umeå', 'Oslo']},
+    fixedPricePerUnit:{RandSpanDataPrice:[100,200]},
+    fixedPricePerUnitUnit:{Enum:["apple","kg"]},
+    //compassPoint:{Enum:['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']},
+    //standingByMethod:{Enum:['inCar','atHome','5min','10min']}
+  };
+  for(var iSite=0;iSite<SiteName.length;iSite++){
+    var siteName=SiteName[iSite], {ORole}=Site[siteName];
+    for(var iRole=0;iRole<ORole.length;iRole++){
+      var Prop=ORole[iRole].Prop;
+      for(var name in Prop){
+        if(!(name in PropBucket)){
+          PropBucket[name]={};
+          if('Enum' in Prop[name]) PropBucket[name].Enum=Prop[name].Enum.concat([]);
+        }
+      }
     }
   }
-  }
+  
+
+  var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'strUnitDist', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang', 'compassPoint', 'destination', 'fixedPricePerUnitUnit', 'fruit', 'database', 'language'];
+        
+    
+    
+  for(var iSite=0;iSite<SiteName.length;iSite++){
+    var siteName=SiteName[iSite];
+    var site=Site[siteName];
+    var {TableName, ViewName, ORole}=site;
+    var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
+    var {histView}=site.ViewName;
+    
+      // Insert into userTab
+    var arrUser=Array(nData), SqlAllU=Array(nData);
+    for(var i=0;i<nData;i++){
+      let strName="dummy"+i, strNameUC=ucfirst(strName), email=strName+'@example.com', donatedAmount=makeRandSpanF('donatedAmount'); 
+      arrUser[i]={idFB:strName, email:email, displayName:strNameUC, tel:"07000000"+i};
+
+      var idTmp=i+1;  
+      //var SqlT=[idTmp, 'null', 'null', "'"+strNameUC+"'", "'"+email+"'", "'"+strNameUC+"'", "''", "'"+strNameUC+"'", donatedAmount];
+      //SqlAllU[i]="("+SqlT.join(', ')+")";
+      var SqlT=[idTmp, null, null, strNameUC, email, strNameUC, "", strNameUC, donatedAmount];
+      var SqlT=DB.default.pool.escape(SqlT);
+      SqlAllU[i]="("+SqlT+")";
+
+      arrUser[i]=extend(arrUser[i],getRandomPostAddress());
+    }
+    var tmp=SqlAllU.join(",\n");
+    SqlDummies.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, donatedAmount) VALUES \n"+tmp);
+    
+    
+      // Insert into complaintTab
+    var IdComplainer=[2, 3, 4];
+    var StrComplaint=['He never answered the phone', 'No good', 'Bad bad bad'];
+    var StrAns=['I was on the toilet', "Sorry, it was my first time.", ''];
+    var nComplainer=IdComplainer.length;
+    for(var j=0;j<10;j++){ //loop through drivers
+      for(var i=0;i<nComplainer;i++){
+        var idRep=IdComplainer[i], iRep=(i+j)%nComplainer, strRep=StrComplaint[iRep], iAns=(i+2*j)%nComplainer, strAns=StrAns[iAns];
+        SqlDummies.push("INSERT INTO "+complaintTab+" (idComplainee, idComplainer, comment, answer, tCreated, tCommentModified, tAnswerModified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now(), now() FROM "+userTab+" WHERE idUser%10="+j);
+      }
+    }
+    
+      // Update nComplaint and nComplaintGiven
+    SqlDummies.push(`
+    UPDATE `+userTab+` u
+    JOIN
+      (SELECT idComplainee, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainee) tmp ON u.idUser=tmp.idComplainee
+    SET u.nComplaint = n, u.nComplaintCum = n`);
+
+    SqlDummies.push(`
+    UPDATE `+userTab+` u
+    JOIN
+      (SELECT idComplainer, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainer) tmp ON u.idUser=tmp.idComplainer
+    SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
+    
+      // Insert into roleTabs
+    var StrPlugInNArg=site.StrPlugInNArg;
+    var StrPlugIn=[];
+    for(var i=0;i<StrPlugInNArg.length;i++){var strTmp=StrPlugInNArg[i], n=strTmp.length, charLast=strTmp[n-1]; if(charLast=='C' || charLast=='S') { strTmp=strTmp.substr(0,n-1); } StrPlugIn.push(strTmp); }
+    
+    for(var iRole=0;iRole<ORole.length;iRole++){
+      var oRole=ORole[iRole];
+      var Prop=oRole.Prop;
+      var {charRole, charRoleUC}=oRole;
+      var roleTab=charRole=='c'?customerTab:sellerTab;
+
+
+
+      var arrAssign=[]; // arrAssign: as in draw a random number from a bucket
+      if(in_array("general", StrPlugInNArg)){ 
+        arrAssign=['boShow', 'tCreated', 'tPos', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'hideTimer', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM'];
+        if(charRole=='s') arrAssign.push('experience');
+      }
+
+      if(in_array("vehicleType", StrPlugInNArg) && charRole=='s'){ arrAssign.push('vehicleType');  }
+      if(in_array("distNTimePrice", StrPlugInNArg) && charRole=='s'){ arrAssign.push('priceStart', 'strUnitDist', 'pricePerDist', 'pricePerHour');  }
+      if(in_array("transportCustomer", StrPlugInNArg) && charRole=='c'){ arrAssign.push('distStartToGoal', 'compassPoint', 'destination'); }
+      if(in_array("standingByMethod", StrPlugInNArg) && charRole=='s'){  arrAssign.push('standingByMethod');   }
+      if(in_array("shiftEnd", StrPlugInNArg) && charRole=='s'){ arrAssign.push('shiftEnd');  }
+      if(in_array("hourlyPrice"+charRoleUC, StrPlugInNArg)){   arrAssign.push('pricePerHour');    }
+      if(in_array("price"+charRoleUC, StrPlugInNArg)){   arrAssign.push('price');    }
+
+      if(in_array("fixedPricePerUnit", StrPlugInNArg) && charRole=='c'){  arrAssign.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');}
+
+      if(in_array("taxi", StrPlugInNArg)){
+        array_mergeM(arrAssign, site.StrPropE);
+        if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
+      }
+      if(in_array("transport", StrPlugInNArg)){
+        var StrTmp=site.StrTransportBool;
+        for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+        array_mergeM(arrAssign, ['payload'], StrTmp);
+        if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
+      }
+      if(intersectBool(["cleaner"], StrPlugInNArg)){ 
+        if(charRole=='c') { 
+          var StrTmp=oRole.StrPropE;
+          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+          array_mergeM(arrAssign, StrTmp);
+        }
+      }
+      if(intersectBool(["windowcleaner"], StrPlugInNArg)){ 
+        if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE); // 'nWindows', 'boCustomerHasEquipment'
+        if(charRole=='s') { 
+          var StrTmp=oRole.StrPropE;
+          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+          array_mergeM(arrAssign, StrTmp);
+        }
+      }
+      if(in_array("lawnmower", StrPlugInNArg)){ 
+        if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE);   // 'area', 'boCustomerHasEquipment'
+        if(charRole=='s') { 
+          var StrTmp=oRole.StrBool;
+          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+          array_mergeM(arrAssign, StrTmp, ['cuttingWidth']);
+        }
+      }
+      if(in_array("snowremoval", StrPlugInNArg)){
+        if(charRole=='c') {
+          var StrTmp=oRole.StrBool;  //
+          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+          array_mergeM(arrAssign, StrTmp, ['area']);
+        }
+        if(charRole=='s') { 
+          var StrTmp=oRole.StrBool;
+          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+          array_mergeM(arrAssign, StrTmp);
+        }
+      }
+      if(in_array("fruitpicker", StrPlugInNArg)){ 
+        if(charRole=='c') arrAssign.push('fruit');
+      }
+      if(in_array("programmer", StrPlugInNArg)){ 
+        if(charRole=='c') arrAssign.push('database', 'language');
+        if(charRole=='s') { 
+          var StrTmp=oRole.StrProgrammerLang;
+          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1,2,3,4,5]; }
+          array_mergeM(arrAssign, StrTmp, ['otherLang']);
+          arrValRemove(arrAssign, 'experience');
+        }
+      }
+
+
+      var SqlAllRole=Array(nData);
+
+      for(var i=0;i<nData;i++){
+
+        var StrName=[];
+        var StrIns=[];
+        for(var j=0;j<arrAssign.length;j++){
+          var name=arrAssign[j], QMark="?", value=0;
+          if(name in arrUser[i]) value=arrUser[i][name]; 
+          //if(name in person) value=person[name]; 
+          //else if(name in AddressT) value=AddressT[name];
+          else if('Enum' in PropBucket[name]){ value=makeEnumRandF(name);  }
+          else if('dateSpan' in PropBucket[name]){ value=makeDateRandF(name);  }
+          else if('RandSpanData' in PropBucket[name]){ value=makeRandSpanF(name);  }
+          else if('RandSpanDataPrice' in PropBucket[name]){ value=makeRandSpanPriceF(name);  }
+          else if('FixedData' in PropBucket[name]){ value=makeFixedF(name);  }
+          if(name in Prop && 'roleUpdF' in Prop[name]){ [QMark]=Prop[name].roleUpdF.call(Prop,name,value);  }
+          var valT=QMark.replace(/\?/,value);     
+          if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
+          
+          StrName.push("`"+name+"`");
+          StrIns.push(valT);
+        }
+        var strName=StrName.join(', ');
+        var strIns=StrIns.join(', ');  
+
+        var idTmp=i+1, sqlCurRole="("+idTmp+", "+strIns+")";
+
+        SqlAllRole[i]=sqlCurRole;
+        
+      }
+
+      var tmp=SqlAllRole.join(",\n");
+      SqlDummies.push("INSERT INTO "+roleTab+" (idUser, "+strName+") VALUES \n"+tmp);
+
+
+    } // end of loop through ORole
+  } // end of loop through SiteName
   return SqlDummies;
 }
 
-app.SetupSql.prototype.createDummy=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
-  
-  var SqlDummy=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite]
 
-  var site=Site[siteName]; 
-  var TableName=site.TableName, ViewName=site.ViewName; //, Enum=site.Enum;
-  //eval(extractLoc(TableName,'TableName'));
-  var {pubKeyTab, vendorTab, vendorImageTab, paymentTab, teamTab, teamImageTab, rebateCodeTab, complaintTab, adminTab, settingTab, userTab}=site.TableName;
-  //eval(extractLoc(ViewName,'ViewName'));
-  var {histView}=site.ViewName;
-
-  var id=100002646477985;
-
-  
-  SqlDummy.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES ("+id+", "+id+", "+id+", '"+id+"@example.com', 'Minnie the Moocher', 'http://example.com/abc.jpg', MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=Iemail, '"+id+"@example.com', 'Minnie the Moocher', 'http://example.com/abc.jpg';")
-  SqlDummy.push("INSERT INTO "+vendorTab+" (idUser, created, lastPriceChange, posTime, tLastWriteOfTA, histActive) VALUES (LAST_INSERT_ID(), now(), now(), now(), now(), 1 ) \n\
-        ON DUPLICATE KEY UPDATE idUser=idUser;");
-
-  SqlDummy.push("UPDATE "+vendorTab+" SET terminationDate=DATE_ADD(now(),INTERVAL 10 YEAR)"); 
-  SqlDummy.push("REPLACE INTO "+adminTab+" (idUser,boApproved,created) VALUES (@idUser,1,now())"); 
-
-
-  //SqlDummy.push("REPLACE INTO "+marketerTab+" (idUser,boApproved,created) VALUES (@idUser,1,now())");
-
-  SqlDummy.push("REPLACE INTO "+rebateCodeTab+" (id, idUser, amount, months, code, created, validTill, nLeft) VALUES (1,@idUser,0,4,'abc',now(),DATE_ADD(now(),INTERVAL 1 YEAR),10)");
-
-  SqlDummy.push("REPLACE INTO "+teamTab+" (idUser,link,boApproved,created) VALUES (@idUser,'http://closeby.market',1,now())"); 
-  }
-  return SqlDummy;
-}
 
 app.SetupSql.prototype.truncate=function(SiteName){
   if(typeof SiteName=='string') SiteName=[SiteName];
@@ -1748,7 +1834,7 @@ app.SetupSql.prototype.truncate=function(SiteName){
 
   // Called when --sql command line option is used
 app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
-  //var StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummy', 'createDummies'];
+  //var StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummies'];  // , 'createDummy'
   if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); console.log(tmp); return; }
   var Match=RegExp("^(drop|create)?(.*?)$").exec(strCreateSql);
   if(!Match) { debugger;  return; }
@@ -1827,9 +1913,8 @@ ReqSql.prototype.toBrowser=function(objSetupSql){
 
 
 
-
 app.createDumpCommand=function(){ 
-  var strCommand='', StrTabType=['user','vendor','vendorImage','team','teamImage','setting','complaint','rebateCode','pubKey','payment','admin'];
+  var strCommand='', StrTabType=['seller','sellerTeam','sellerTeamImage','customer','customerTeam','customerTeamImage','userImage','complaint','admin','setting','user'];
   for(var i=0;i<StrTabType.length;i++){
     var strTabType=StrTabType[i], StrTab=[];
     for(var j=0;j<SiteName.length;j++){

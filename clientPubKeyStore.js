@@ -34,7 +34,7 @@ var loginInfoExtend=function($el){
   }
   var $spanName=$('<span>'), $spanKind=$('<span>'); 
   var $logoutButt=$('<a>').prop({href:''}).text(langHtml.loginInfo.logoutButt).css({'float':'right'});
-  $logoutButt.click(function(){ 
+  $logoutButt.on('click', function(){ 
     sessionLoginIdP={}; userInfoFrDB=$.extend({}, specialistDefault);
     var vec=[['logout',1, function(data){$yesDiv.setStat();}]];   majax(oAJAX,vec);
     return false;
@@ -100,7 +100,7 @@ loginDivExtend=function($el){
     $el.myReset();
   }
   window.OAuth=new OAuthT();
-  var strType="vendor";
+  var strType="seller";
   var timerClosePoll=null;
   $el.myReset=function(){     $mess.empty(); clearInterval(timerClosePoll);   }
 
@@ -108,8 +108,8 @@ loginDivExtend=function($el){
 
   var $mess=$('<span>').css({"margin-left":"0.3em"});
   var strButtonSize='2em';
-  var $fbIm=$('<img>').click(function(){popupWin(strIPPrim);}).prop({src:uLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
-  var $fbHelp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html(langHtml.helpLoginVendor);     popupHoverJQ($fbHelp,$bub);  
+  var $fbIm=$('<img>').on('click', function(){popupWin(strIPPrim);}).prop({src:uLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
+  var $fbHelp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html(langHtml.helpLoginSeller);     popupHoverJQ($fbHelp,$bub);  
 
   var $label=$('<span>').append('Login first, then click yes: ').css({'font-size':'1.3em','font-weight':'bold'});
   $el.append($label,$fbIm,$mess); //,$fbHelp
@@ -119,7 +119,7 @@ loginDivExtend=function($el){
 
 yesDivExtend=function($el){
   $el.setStat=function(){ 
-    var boDb=Boolean(userInfoFrDB.vendor);//Boolean(userInfoFrDB);
+    var boDb=Boolean(userInfoFrDB.user);//Boolean(userInfoFrDB);
     var boIp=isSet(sessionLoginIdP), boWannaBe=boIp && !boDb; $loginDiv.toggle(!boDb);  $buttStore.prop({disabled:!boDb}); $spanErr.toggle(boWannaBe); 
   }
   var storeF=function(){
@@ -132,7 +132,7 @@ yesDivExtend=function($el){
     
   }
   //var $yesSpan=$('<div>').append('Yes').css({'text-align':'center'});
-  var $buttStore=$('<button>').html('Yes').click(storeF).prop({disabled:true}).css({'margin-bottom':'1em'});
+  var $buttStore=$('<button>').html('Yes').on('click', storeF).prop({disabled:true}).css({'margin-bottom':'1em'});
   var $aTmp=$('<a>').attr({href:uSite,target:"_blank"}).text(wwwSite);
   var $spanErr=$('<div>').css({'margin-bottom':'.5em'}).append('Not registered! Go to the main page: ',$aTmp, ' and register first.').hide();
 
@@ -279,7 +279,7 @@ setUp=function(){
   $tmpB=$('<b>').append(wwwSite);
   $aTmp=$('<a>').attr({href:'https://wikipedia.org/wiki/Key_pair',target:"_blank"}).text('key pair');
   strShow='Show key'; strHide='Hide key';
-  $buttonShowKey=$('<button>').append(strShow).data({'boOn':false}).css({'margin-left':'1em'}).click(function(){
+  $buttonShowKey=$('<button>').append(strShow).data({'boOn':false}).css({'margin-left':'1em'}).on('click', function(){
     var $b=$(this), boOn=!$b.data('boOn'); $b.data({'boOn':boOn}); $b.html(boOn?strHide:strShow); $divKey.toggle(boOn);
   });
   $divKey=$('<div>').append(pubKey).hide().css({'font-weight':'bold'});
@@ -292,7 +292,7 @@ setUp=function(){
   $messageText=messExtend($("<span>"));  window.setMess=$messageText.setMess;  window.resetMess=$messageText.resetMess;  $messageText.css({font:'courier'});  
 
 
-  $buttCancel=$('<button>').append('Cancel').click(function(){window.close();});
+  $buttCancel=$('<button>').append('Cancel').on('click', function(){window.close();});
 
   strLeaveMess="(Click browser-back-button to leave.)";
   cssAns={width:'50%',display:'inline-block','box-sizing': 'border-box','text-align':'center',padding:'1em',flex:1};
