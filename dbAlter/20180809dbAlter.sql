@@ -7,7 +7,7 @@ ALTER TABLE mmm.taxi_user ADD COLUMN tCreated TIMESTAMP DEFAULT CURRENT_TIMESTAM
 ALTER TABLE mmm.taxi_user ADD COLUMN idFb VARCHAR(128) AFTER tCreated;
 ALTER TABLE mmm.taxi_user ADD COLUMN idIdPlace VARCHAR(128) AFTER idFb;
 ALTER TABLE mmm.taxi_user ADD COLUMN idOpenId VARCHAR(128) AFTER idIdPlace;
-ALTER TABLE mmm.taxi_user ADD COLUMN password VARCHAR(40) NOT NULL DEFAULT '' AFTER image;
+ALTER TABLE mmm.taxi_user ADD COLUMN hashPW VARCHAR(40) NOT NULL DEFAULT '' AFTER image;
 ALTER TABLE mmm.taxi_user MODIFY COLUMN email VARCHAR(65) AFTER idOpenId;
 
 UPDATE mmm.taxi_user SET idOpenId=idIP, email=CONCAT(LOWER(idIP),'@example.com') WHERE IP='openid';
@@ -38,7 +38,7 @@ ALTER TABLE mmm.taxi_user DROP COLUMN idFB;
 ALTER TABLE mmm.taxi_user DROP COLUMN idIdPlace;
 ALTER TABLE mmm.taxi_user DROP COLUMN idOpenId;
 ALTER TABLE mmm.taxi_user DROP COLUMN tCreated;
-ALTER TABLE mmm.taxi_user DROP COLUMN password;
+ALTER TABLE mmm.taxi_user DROP COLUMN hashPW;
 
 ALTER TABLE mmm.taxi_user ADD CONSTRAINT UNIQUE (IP, idIP);
 --SHOW INDEX FROM mmm.taxi_user;

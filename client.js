@@ -7,261 +7,271 @@
 /*jshint -W041: false */
 
 
+// Page for testing if nComplaints and nComplaintsWritten corresponds with complaitsTab
+// nComplaints not reduced when deleteAccount is called
+// nComplaint, nComplaintGiven, donatedAmount, boImgOwn, image, imTag, displayName, tea.link (linkTeam), tea.imTag (imTagTeam) in roleTab
+
+// cookie aren't allowed, are they?
+// columnSorterDivExtend: Can it be used without creating two instances?
+// Obscurifying
+// oBuyer instead of oC
+// charCamera='📷'
+
+// does miles work
+// Analytics event from clicking moreinfo link
+
 var CreatorPlugin={};
 
-// Main, vendorInfoDiv, filterDiv, vendorSettingDiv, priceSettingDiv
-var distUnit;
 
 CreatorPlugin.general=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'idTeam'];
-  ColsShowDefaultS= ['image', 'displayName'];
-  ColsShowDefaultRS= ['image', 'displayName'];
-  colOneMarkDefault='image';
-
-  StrPropContact=site.StrPropContact; StrPropPos=site.StrPropPos; StrPropRep=site.StrPropRep;
-
-    // StrPropMain: rows in vendorInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, tableDiv
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', StrPropContact, 'currency', 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','tel','currency','dist','created'];
-  StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
-
-  //enumIP=Enum.IP; enumDistUnit=Enum.distUnit;
-  //enumIP=Prop.IP.Enum; enumDistUnit=Prop.distUnit.Enum;
-  //enumIP=Prop.IP.Enum;
-
-  distUnitDefault='km'; if(strLang=='en') {distUnitDefault='mile'; }
-  if(boNewVersion) { setItem('distUnit',distUnitDefault);}
-  distUnit=getItem('distUnit');  if(distUnit===null) distUnit=distUnitDefault;
+  
+  strUnitDist='km';
+  strUnitTime='h';
+    // Some conveniently grouped properties
+  StrPropPerson=['image', 'idTeam', 'displayName'];
+  StrPropContact=['tel', 'displayEmail', 'homeTown', 'link'];
+  StrPropPos=['dist', 'tPos', 'coordinatePrecisionM'];
+  StrPropRep=['tCreated', 'tAccumulated', 'donatedAmount', 'nComplaint']; //, 'histActive'
 
 
-  setDistUnit=function(unit){
-    distUnit=unit;   setItem('distUnit',distUnit);
-    $tableDiv.setCell();  $mapDiv.setMarkers();
+  var oTmp={StrProp:[], StrGroupFirst:[], StrGroup:[]};
+  var oRoleProt={ MTab:[], nMTab:0, MGroupTab:[], Main:oTmp, roleSetting:copyDeep(oTmp), filter:copyDeep(oTmp)};  // , colOneMark:"", ColsShow:[] 
+  extend(oC,oRoleProt); extend(oS,copyDeep(oRoleProt));
+  extend(oC,{ strColor:'pink', strGroupColor:'#fd98a9'});  
+  extend(oS,{ strColor:'lightblue', strGroupColor:'#9ca6e8' });
+  oS.yOffsetGroupMarker=1;
+  
+  strUnitDistDefault='km'; //if(strLang=='en') {strUnitDistDefault='mile'; }
+  if(boNewVersion) { setItem('strUnitDist',strUnitDistDefault);}
+  strUnitDist=getItem('strUnitDist');  if(strUnitDist===null) strUnitDist=strUnitDistDefault;
+
+
+    // UnitDistChoise
+  setUnitDist=function(unit){
+    strUnitDist=unit;   setItem('strUnitDist',strUnitDist);
+    $tableDivS.setCell();
+    $tableDivC.setCell();  $mapDiv.setMarkers();
   };
-  setDistUnitButtons=function(){  $distUnitChoise.setUp(); $distUnitChoiseB.setUp();  };
-  distUnitChoiseExtend=function($el){
-    $el.setUp=function(){
-      $butKM.css({background:distUnit=='km'?colOn:colOff});$butMile.css({background:distUnit=='km'?colOff:colOn}); };
-    var $butKM=$('<button>').html('km').click(function(e){e.stopPropagation(); if(distUnit=='mile'){setDistUnit('km'); setDistUnitButtons();} });
-    var $butMile=$('<button>').html('mile').click(function(e){e.stopPropagation(); if(distUnit=='km'){setDistUnit('mile'); setDistUnitButtons();} });
+  UnitDistChoise=function(){
+    var el=createElement('span'); $.extend(el, UnitDistChoise.tmpPrototype);
+    el.butKM=createElement('button'); el.butKM.innerHTML='km'; el.butKM.on('click',function(e){e.stopPropagation(); if(strUnitDist=='mile'){setUnitDist('km'); UnitDistChoise.tmpPrototype.setUpAll(); } });
+    el.butMile=createElement('button'); el.butMile.innerHTML='mile'; el.butMile.on('click',function(e){e.stopPropagation(); if(strUnitDist=='km'){setUnitDist('mile'); UnitDistChoise.tmpPrototype.setUpAll(); } });
     //var colOn={background:'#4f4'}, colOff={background:'#eee'};
+    el.appendChildren(el.butKM, createElement('br'), el.butMile);
+    UnitDistChoise.tmpPrototype.arrEl.push(el);
+    if(typeof strUnitDist!='undefined') UnitDistChoise.tmpPrototype.setUp.call(el);
+    return el;
+  }
+  UnitDistChoise.tmpPrototype={};
+  UnitDistChoise.tmpPrototype.arrEl=[];
+  UnitDistChoise.tmpPrototype.setUp=function(){ 
     var colOn='#4f4', colOff='#eee';
-    $el.append($butKM,'<br>',$butMile);
-    return $el;
-  };
-
-
-  $distUnitChoise=distUnitChoiseExtend($('<span>'));  $distUnitChoise.setUp(); $distUnitChoise.children('br').remove(); $distUnitChoise.prepend(langHtml.DistanceUnit,': ');
-  $distUnitChoiseB=distUnitChoiseExtend($('<span>'));  $distUnitChoiseB.setUp(); $distUnitChoiseB.addClass('smallButt').css({padding:'0.5em 0.1em'});
-
+    this.butKM.css({background:strUnitDist=='km'?colOn:colOff}); this.butMile.css({background:strUnitDist=='km'?colOff:colOn});
+  }
+  UnitDistChoise.tmpPrototype.setUpAll=function(){  var arrEl=UnitDistChoise.tmpPrototype.arrEl;  for(var i=0;i<arrEl.length;i++){ arrEl[i].setUp(); }  }
+  
   //this.rewriteLang=function(){};
 
-
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName',StrPropContact,'coordinatePrecisionM');
-    $vendorSettingDiv.StrGroupFirst=[];
-    $vendorSettingDiv.StrGroup=[];
-    $priceSettingDiv.StrProp=['currency'];
-    $filterDiv.StrGroupFirst=['homeTown','created'];
-    $filterDiv.StrGroup=['Vendor','Reputation'];
 
+      // tHeadLabel: Add timeStampButt and distUnitChoise 
+    for(var i=0; i<ORole.length; i++){
+      ORole[i].Prop.tLastPriceChange.boUseTimeDiff=1;
+      ORole[i].Prop.tPos.boUseTimeDiff=1;
+      ORole[i].Prop.tCreated.boUseTimeDiff=1;  // Is this used??!!??
+      var $tmp = timeStampButtExtend($("<button>"), i, 'tLastPriceChange').css({padding:'0.3em 0.5em'});    $TableDiv[i].$tHeadLabel.find('[name=tLastPriceChange]').append($tmp);
+      var $tmp = timeStampButtExtend($("<button>"), i, 'tPos').css({padding:'0.3em 0.5em'});    $TableDiv[i].$tHeadLabel.find('[name=tPos]').append($tmp);
+      
+      let $distUnitChoiseT=$(new UnitDistChoise());   $distUnitChoiseT.addClass('smallButt').css({padding:'0.5em 0.1em'});
+      $TableDiv[i].$tHeadLabel.find('[name=dist]').append($distUnitChoiseT);
+      
+        // filterDiv
+      let h=langHtml.timeUnit.h[1], mon=langHtml.timeUnit.mo[3];
+      $FilterDiv[i].$filterDivI.Unit={tPos:h,tCreated:mon,tAccumulated:mon};
+    }
+    
+      // settingDivW: Add distUnitChoise
+    let $distUnitChoiseT=$(new UnitDistChoise());  $distUnitChoiseT.children('br').remove(); $distUnitChoiseT.prepend(langHtml.DistanceUnit,': ');
+    let $opt=$([]).push($distUnitChoiseT);    $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
+    $settingDivW.children('#buttShowMarkSelectS').after($opt);
 
-    $markSelectorDiv.strImageSel=":radio:not([value='vehicleType'],[value='image'],[value='idTeam'])";  // Fields that are disabled if boImgCreationOK==0
-
-
-      // tHeadLabel
-    boUseTimeDiff={created:1,lastPriceChange:1,posTime:1};
-    var $tmp = timeStampButtExtend($("<button>"),'lastPriceChange').css({padding:'0.3em 0.5em'});    $tHeadLabel.find('[name=lastPriceChange]').append($tmp);
-    var $tmp = timeStampButtExtend($("<button>"),'posTime').css({padding:'0.3em 0.5em'});    $tHeadLabel.find('[name=posTime]').append($tmp);
-
-
-    $tHeadLabel.find('[name=dist]').append($distUnitChoiseB);
-
-    var $opt=$([]).push($distUnitChoise);    $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
-    //$vendorDiv.before($opt);
-    $settingDiv.children('#buttShowMarkSelect').after($opt);
-
-
-      // filterDiv
-    $filterDiv.arrLabel=$.extend({},langHtml.label);
-    var h=langHtml.timeUnit.h[1], mon=langHtml.timeUnit.mo[3];   // arrUnit
-    $filterDiv.Unit={posTime:h,created:mon,timeAccumulated:mon};
-
+      //
+      // Prop
+      //
 
       // currency
-    $.extend(Prop.currency, {strType:'select',
-      crInp:function(){
-        var $c=$('<select>').prop('id','currency');
-        for(var i=0;i<currencies[0].length;i++){    var $opt=$("<option>").text(currencies[1][i]+' ('+currencies[0][i]+')').val(currencies[1][i]);   $c.append($opt);    }
-        var $optT=$c.find("option[value='USD']");    $optT.prop('selected', 'selected');
-        return $c;
-      }
-    });
+    var tmpf=function(){
+      var $c=$('<select>').prop('id','currency');
+      for(var i=0;i<currencies[0].length;i++){    var $opt=$("<option>").text(currencies[1][i]+' ('+currencies[0][i]+')').val(currencies[1][i]);   $c.append($opt);    }
+      var $optT=$c.find("option[value='USD']");    $optT.prop('selected', 'selected');
+      return $c;
+    }
+    for(let i=0;i<ORole.length;i++){
+      $.extend(ORole[i].Prop.currency, {strType:'select', crInp:tmpf });
+    }
 
-      // created, lastPriceChange, posTime
-    makeTimeF=function(strN,dir){return function(iMTab){ var data=MTab[iMTab][strN];  if(boUseTimeDiff[strN]) data=UTC2ReadableDiff(dir*(data-curTime)); else data=UTC2Readable(data); return data; }; };
-    var tmpF=makeTimeF('created',-1);    $.extend(Prop.created, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-    var tmpF=makeTimeF('lastPriceChange',-1);   $.extend(Prop.lastPriceChange, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-    var tmpF=makeTimeF('posTime',-1);   $.extend(Prop.posTime, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
+      // tCreated, tLastPriceChange, tPos
+    makeTimeF=function(iRole,strN,dir){return function(iMTab){
+      var data=ORole[iRole].MTab[iMTab][strN];
+      if(ORole[iRole].Prop[strN].boUseTimeDiff) data=UTC2ReadableDiff(dir*(data-curTime)); else data=UTC2Readable(data); return data;
+    }; };
+    for(let i=0;i<ORole.length;i++){
+      var tmpF=makeTimeF(i,'tCreated',-1);    $.extend(ORole[i].Prop.tCreated, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
+      var tmpF=makeTimeF(i,'tLastPriceChange',-1);   $.extend(ORole[i].Prop.tLastPriceChange, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
+      var tmpF=makeTimeF(i,'tPos',-1);   $.extend(ORole[i].Prop.tPos, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
+    }
 
-      // timeAccumulated, IP
-    var tmpF=function(iMTab,$c){ return UTC2ReadableDiff(MTab[iMTab].timeAccumulated); };
-    $.extend(Prop.timeAccumulated, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-    //var tmpIP=function(iMTab,$c){  return enumIP[Number( MTab[iMTab].IP )]; };
-    //$.extend(Prop.IP, { setInfo:tmpIP, sortTabF:tmpIP, setTabF:tmpIP, setMapF:tmpIP, setMapMF:tmpIP });
+      // tAccumulated, IP
+    for(let i=0;i<ORole.length;i++){
+      var tmpF=function(iMTab,$c){ return UTC2ReadableDiff(ORole[i].MTab[iMTab].tAccumulated); };
+      $.extend(ORole[i].Prop.tAccumulated, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
+    }
 
       // nComplaint
     var tmpSetNComplaint=function(iMTab,$c){   $c.children('button')[0].mySet(iMTab);   };
-    var tmpCrNComplaint=function($c){  $c.append(  $(complaintButtonExtend($('<button>')[0]))  ); };
-    $.extend(Prop.nComplaint, {
-      setInfo:tmpSetNComplaint, crInfo:tmpCrNComplaint,
-      setTabF:tmpSetNComplaint, crTabF:tmpCrNComplaint
-    });
+    for(let i=0;i<ORole.length;i++){
+      var tmpCrNComplaint=function($c){  $c.append(  $(complaintButtonExtend($('<button>')[0], ORole[i]))  ); };
+      $.extend(ORole[i].Prop.nComplaint, { setInfo:tmpSetNComplaint, crInfo:tmpCrNComplaint, setTabF:tmpSetNComplaint, crTabF:tmpCrNComplaint});
+    }
 
       // idTeam
     var tmpSetIdTeam=function(iMTab,$c){   $c.children('a')[0].mySet(iMTab);   };
-    var tmpCrIdTeam=function($c){  $c.append(  $(thumbDisExtend($('<a>')[0]))  );   };
-    $.extend(Prop.idTeam, {
-      setInfo:tmpSetIdTeam,crInfo:tmpCrIdTeam,
-      setTabF:tmpSetIdTeam,crTabF:tmpCrIdTeam,
-      setMapF:function(iMTab){
-        var rT=MTab[iMTab], data=rT.idTeam, tag=rT.imTagTeam, tmp;
-        if(data && data.length>0 && data!==0) {
-          var strTmp=uTeamImage+data+'?v='+tag;
-          tmp = {url:strTmp};
-        } else tmp=langHtml.IndependentVendor.replace("<br>","\n");
-        return tmp;
-      },
-      setRowButtF:function($span,val,boOn){ $span.mySet(val,boOn); },
-      crRowButtF:function(i){ return teamImgButtonExtend($('<span>')).css({'margin-right':'0.25em'}); }
-    });
+    var tmpSetRowButtF=function($span,val,boOn){ $span.mySet(val,boOn); }
+    for(let i=0;i<ORole.length;i++){
+      var tmpCrIdTeam=function($c){  $c.append(  $(thumbTeamExtend($('<a>')[0], ORole[i]))  );   };
+      $.extend(ORole[i].Prop.idTeam, { setInfo:tmpSetIdTeam, crInfo:tmpCrIdTeam, setTabF:tmpSetIdTeam, crTabF:tmpCrIdTeam,
+        setMapF:function(iMTab){
+          var rT=ORole[i].MTab[iMTab], data=rT.idTeam, tag=rT.imTagTeam, tmp;
+          if(data && data.length>0 && data!==0) {
+            var strTmp=uSellerTeamImage+data+'?v='+tag;
+            tmp = {url:strTmp, boUseFrame:true};
+          } else tmp=langHtml.IndependentSeller.replace("<br>","\n");
+          return tmp;
+        },
+        setRowButtF:tmpSetRowButtF,
+        crRowButtF:function(i){ return teamImgButtonExtend($('<span>'), ORole[i]).css({'margin-right':'0.25em'}); }
+      });
+    }
+
 
       // dist
-    var tmpSetDist=function(iMTab){
-      var rT=MTab[iMTab],  tmpPoint = [rT.x, rT.y],   latLngT=merProj.fromPointToLatLng(tmpPoint);
-      
-      var pC=$mapDiv.getPWCC(), latLngMe=merProj.fromPointToLatLng(pC);
-      var dist=distCalc(latLngT.lng,latLngT.lat,latLngMe.lng,latLngMe.lat);  if(distUnit=='mile') dist=dist/1.609;
-      return Number(dist.toFixed(1));
-    };
-    var tmpSetDistOther=function(iMTab,$c){return tmpSetDist(iMTab,$c)+' '+distUnit;};
-    $.extend(Prop.dist, {
-      setInfo:tmpSetDistOther,
-      setTabF:tmpSetDist,sortTabF:tmpSetDist,
-      setMapF:tmpSetDistOther,setMapMF:tmpSetDistOther
-    });
+    for(let i=0;i<ORole.length;i++){
+      let tmpSetDist=function(iMTab){
+        var rT=ORole[i].MTab[iMTab],  tmpPoint = [rT.x, rT.y],   latLngT=merProj.fromPointToLatLng(tmpPoint);
+        
+        var pC=$mapDiv.getPWCC(), latLngMe=merProj.fromPointToLatLng(pC);
+        var dist=distCalc(latLngT.lng,latLngT.lat,latLngMe.lng,latLngMe.lat);  if(strUnitDist=='mile') dist=dist/1.609;
+        return Number(dist.toFixed(1));
+      };
+      var tmpSetDistOther=function(iMTab,$c){return tmpSetDist(iMTab,$c)+' '+strUnitDist;};
+      $.extend(ORole[i].Prop.dist, {
+        setInfo:tmpSetDistOther,
+        setTabF:tmpSetDist,sortTabF:tmpSetDist,
+        setMapF:tmpSetDistOther,setMapMF:tmpSetDistOther
+      });
+    }
+
 
       // displayName
-    $.extend(Prop.displayName, {strType:'text',inpW:9});
+    for(let i=0;i<ORole.length;i++){
+      $.extend(ORole[i].Prop.displayName, {strType:'text',inpW:9});
+    }
 
       // tel
-    var tmpSetTel=function(iMTab,$c){  var tmp=MTab[iMTab].tel.trim();    $c.children('a').prop({href:'tel:'+tmp}).text(tmp).toggle(tmp.length>0);  };
     var tmpCrTel=function($c){   $c.append($('<a>'));  };
-    $.extend(Prop.tel, {
-      strType:'tel',inpW:6,
-      setInfo:tmpSetTel, crInfo:tmpCrTel,
-      setTabF:tmpSetTel, crTabF:tmpCrTel
-    }); //,saveInp:mustBeSetF
-
+    for(let i=0;i<ORole.length;i++){
+      var tmpSetTel=function(iMTab,$c){  var tmp=ORole[i].MTab[iMTab].tel.trim();    $c.children('a').prop({href:'tel:'+tmp}).text(tmp).toggle(tmp.length>0);  }
+      $.extend(ORole[i].Prop.tel, {  strType:'tel',inpW:6,  setInfo:tmpSetTel, crInfo:tmpCrTel, setTabF:tmpSetTel, crTabF:tmpCrTel });
+    }
+    
       // displayEmail
-    var tmpSet=function(iMTab,$c){  var tmp=MTab[iMTab].displayEmail.trim();    $c.children('a').prop({href:'mailto:'+tmp}).text(tmp).toggle(tmp.length>0);  };
-    var tmpCr=function($c){   $c.append($('<a>'));  };
-    $.extend(Prop.displayEmail, {
-      strType:'email',inpW:6,
-      setInfo:tmpSet, crInfo:tmpCr,
-      setTabF:tmpSet, crTabF:tmpCr
-    }); //,saveInp:mustBeSetF
+    for(let i=0;i<ORole.length;i++){
+      var tmpSet=function(iMTab,$c){  var tmp=ORole[i].MTab[iMTab].displayEmail.trim();    $c.children('a').prop({href:'mailto:'+tmp}).text(tmp).toggle(tmp.length>0);  }
+      $.extend(ORole[i].Prop.displayEmail, {  strType:'email',inpW:6, setInfo:tmpSet, crInfo:tmpCr, setTabF:tmpSet, crTabF:tmpCr });
+    }
 
       // link
-    var makeTrunkF=function(strName,n){return {
-          setMapF:function(iMTab){var str=MTab[iMTab][strName],n=40; return str.length>n?str.substr(0,n)+'…':str;},
-          setMapMF:function(iMTab){var str=MTab[iMTab][strName]; return str.length>n?str.substr(0,n)+'…':str;}}; };
-    var tmp=makeTrunkF('link',40-langHtml.label.link.length);
-    $.extend(Prop.link, {
-      strType:'url',inpW:9,
-      setInfo:function(iMTab,$c){
-        var url=MTab[iMTab].link; if(url && !RegExp("^https?:\\/\\/").test(url)) { url='http://'+url; }
+    var makeMapF=function(iRole,strName,n){return function(iMTab){var str=ORole[iRole].MTab[iMTab][strName],n=40; return str.length>n?str.substr(0,n)+'…':str;}  };
+    var makeMapMF=function(iRole,strName,n){return function(iMTab){var str=ORole[iRole].MTab[iMTab][strName]; return str.length>n?str.substr(0,n)+'…':str;}  };
+    var makeInfoF=function(iRole){return function(iMTab,$c){
+        var url=ORole[iRole].MTab[iMTab].link; if(url && !RegExp("^https?:\\/\\/").test(url)) { url='http://'+url; }
         $c.children('a').prop({href:url}).text(url).toggle(url.length>0);
-      },
-      crInfo:function($c){  $c.append(  $('<a>').prop({target:"_blank"})  );   },
-      setMapF:tmp.setMapF, setMapMF:tmp.setMapMF
-    });
+      }};
+    var tmpCrInfo=function($c){  $c.append(  $('<a>').prop({target:"_blank"})  );   }
+    for(let i=0;i<ORole.length;i++){
+      $.extend(ORole[i].Prop.link, { strType:'url',inpW:9, setInfo:makeInfoF(i), crInfo:tmpCrInfo, setMapF:makeMapF(i, 'link'), setMapMF:makeMapMF(i, 'link', 40-langHtml.label.link.length)  });
+    }
 
-
-      // idFB, idIdPlace, idOpenId, homeTown
-    var tmp=makeTrunkF('idFB',40-langHtml.label.idFB.length);
-    var tmp=makeTrunkF('idIdPlace',40-langHtml.label.idIdPlace.length);
-    var tmp=makeTrunkF('idOpenId',40-langHtml.label.idOpenId.length);
-    $.extend(Prop.idFB, {setMapF:tmp.setMapF, setMapMF:tmp.setMapMF});
-    $.extend(Prop.idIdPlace, {setMapF:tmp.setMapF, setMapMF:tmp.setMapMF});
-    $.extend(Prop.idOpenId, {setMapF:tmp.setMapF, setMapMF:tmp.setMapMF});
-    $.extend(Prop.homeTown, {strType:'text',inpW:6});
+      // idFB, idIdPlace, idOpenId
+    for(let i=0;i<ORole.length;i++){
+      $.extend(ORole[i].Prop.idFB, {setMapF:makeMapF(i, 'idFB'), setMapMF:makeMapMF(i, 'idFB', 40-langHtml.label.idFB.length)});
+      $.extend(ORole[i].Prop.idIdPlace, {setMapF:makeMapF(i, 'idIdPlace'), setMapMF:makeMapMF(i, 'idIdPlace', 40-langHtml.label.idIdPlace.length)});
+      $.extend(ORole[i].Prop.idOpenId, {setMapF:makeMapF(i, 'idOpenId'), setMapMF:makeMapMF(i, 'idOpenId', 40-langHtml.label.idOpenId.length)});
+    }
+    
+      // homeTown
+    for(let i=0;i<ORole.length;i++){
+      $.extend(ORole[i].Prop.homeTown, {strType:'text',inpW:6});
+    }
 
       // idTeamWanted
-    $.extend(Prop.idTeamWanted, {strType:'span',inpW:3,
-      crInp:function(){ var $c=$(spanIdTeamWantedExtend($('<span>')[0])); return $c;  },
-      setInp:function($c){ $c[0].setStat(); },
-      saveInp:function($c){return [null, $c[0].$inp.val().trim()];}
-    });
+    var tmpSet=function($c){ $c[0].setStat(); }
+    var tmpSave=function($c){return [null, $c[0].$inp.val().trim()];}
+    for(let i=0;i<ORole.length;i++){
+      var tmpCr=function(){ var $c=$(spanIdTeamWantedExtend($('<span>')[0], ORole[i])); return $c;  }
+      $.extend(ORole[i].Prop.idTeamWanted, {strType:'span',inpW:3, crInp:tmpCr, setInp:tmpSet, saveInp:tmpSave });
+    }
 
       // coordinatePrecisionM
-    $.extend(Prop.coordinatePrecisionM, {strType:'select',
-      crInp:function(){  var $c=$('<select>'); for(var i=0;i<arrCoordinatePrecisionM.length;i++){ var v=arrCoordinatePrecisionM[i], $op=$("<option>").val(v).append(approxDist(v)); $c.append($op); }   return $c; },
-      setInp:function($c){
-        var tmp=closest2Val(arrCoordinatePrecisionM, userInfoFrDB.vendor.coordinatePrecisionM), bestVal=tmp[0];
-        $c.val(bestVal);
-      }
-    });
+    var tmpCr=function(){
+      var $c=$('<select>'); for(var i=0;i<arrCoordinatePrecisionM.length;i++){ var v=arrCoordinatePrecisionM[i], $op=$("<option>").val(v).append(approxDist(v)); $c.append($op); }   return $c;
+    }
+    for(let i=0;i<ORole.length;i++){
+      var tmpSet=function($c){  var [bestVal, iBest]=closest2Val(arrCoordinatePrecisionM, userInfoFrDB[ORole[i].strRole].coordinatePrecisionM); $c.val(bestVal);  }
+      $.extend(ORole[i].Prop.coordinatePrecisionM, {strType:'select', crInp:tmpCr, setInp:tmpSet});
+    }
 
       // image
+    calcImageUrl=function(rT){ // Keys of rT: ["idUser", "boImgOwn", "imTag", "image"]
+      var tmp='',  boImgOwn=Number(rT.boImgOwn);
+      if(boImgOwn  || rT.image.length==0) tmp=uUserImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image;
+      return tmp;
+    };
+    calcImageUrlUser=function(){    return {str:calcImageUrl(userInfoFrDB.user),    boImgOwn:Boolean(Number(userInfoFrDB.user.boImgOwn))};     }
     var tmpCrInp=function(){
       var $c=$('<span>');
       var $thumb=$c[0].$thumb=$('<img>').css({'vertical-align':'middle'});
-      $c[0].$butDeleteImg=$('<button>').append(langHtml.Delete).click(function(){
+      $c[0].$butDeleteImg=$('<button>').append(langHtml.Delete).on('click', function(){
         var vec=[['deleteImage',1,function(data){
-          if(data.boOK) userInfoFrDB.boImgOwn=0;
-          $vendorSettingDiv.setUp();
-        }]];   majax(oAJAX,vec);  //, ['setupById',{Role:'vendor'}]
+          if(data.boOK) userInfoFrDB.user.boImgOwn=0;
+          $settingDivC.setUp();
+          $settingDivS.setUp();
+        }]];   majax(oAJAX,vec);
       });
       var uploadCallback=function(){
-        userInfoFrDB.vendor.boImgOwn=1; userInfoFrDB.vendor.imTag=randomHash(); var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str}); $c[0].$butDeleteImg.toggle(tmp.boImgOwn);
-        //var tmpF=function(){var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str});};  $c[0].$butDeleteImg.toggle(tmp.boImgOwn);  var vec=[ ['setupById',{Role:'vendor'},tmpF]];   majax(oAJAX,vec);
+        userInfoFrDB.user.boImgOwn=1; userInfoFrDB.user.imTag=randomHash(); var tmp=calcImageUrlUser(); $thumb.attr({src:tmp.str}); $c[0].$butDeleteImg.toggle(tmp.boImgOwn);
       }
-      var $buttUploadImage=$('<button>').html(langHtml.uploadNewImg).click(function(){$uploadImageDiv.openFunc('v',uploadCallback);});
-      $c.append($c[0].$thumb,$c[0].$butDeleteImg,$buttUploadImage);  //langHtml.YourImage+': ',
+      var $buttUploadImage=$('<button>').html(langHtml.uploadNewImg).on('click', function(){$uploadImageDiv.openFunc('u',uploadCallback);});
+      $c.append($c[0].$thumb, $c[0].$butDeleteImg, $buttUploadImage);  //langHtml.YourImage+': ',
       return $c;
     };
-    calcImageUrl=function(rT){ // Keys of rT: ["IP", "boImageOwn", "idUser", "imTag", "image"]
-      var tmp='',  boImgOwn=Number(rT.boImgOwn);  // IPTmp=enumIP[Number(rT.IP)]
-      if(boImgOwn  || rT.image.length==0) tmp=uVendorImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image;
-      return tmp;
-    };
-    calcImageUrlW=function(iMTab){      return calcImageUrl(MTab[iMTab]);     };
-    calcImageUrlUser=function(){   var tmp=$.extend({image:userInfoFrDB.user.image}, userInfoFrDB.vendor);  return {str:calcImageUrl(tmp),    boImgOwn:Boolean(Number(tmp.boImgOwn))};     }
-/*
-    calcImageUrlUser=function(){
-      var idUser=userInfoFrDB.vendor.idUser, tag=userInfoFrDB.vendor.imTag, boImgOwn=Boolean(Number(userInfoFrDB.vendor.boImgOwn));
-      var strTmp;        if(boImgOwn){ strTmp=uVendorImage+idUser+'?v='+tag; }     else {strTmp=userInfoFrDB.vendor.image; }
-      return {str:strTmp,boImgOwn:boImgOwn};
-    }*/
     var tmpSetInp=function($c){
       var tmp=calcImageUrlUser();
       $c[0].$butDeleteImg.toggle(tmp.boImgOwn);
       $c[0].$thumb.prop({src:tmp.str});
     };
-
-    var tmpSetImage=function(iMTab,$c){ $c.children('img').prop({src:calcImageUrlW(iMTab)});  };
+    var tmpSaveInp=function(){return [null,null];}
     var tmpCrImage=function($c){ $c.append($('<img>'));  };
-    $.extend(Prop.image, {
-      strType:'span',
-      crInp:tmpCrInp, setInp:tmpSetInp, saveInp:function(){return [null,null];},
-      setInfo:tmpSetImage, crInfo:tmpCrImage,
-      sortTabF:function(iMTab){return MTab[iMTab].idUser;},  // MTab[iMTab].IP+
-      setTabF:tmpSetImage,
-      crTabF:tmpCrImage,
-      setMapF:function(iMTab){     return {url:calcImageUrlW(iMTab)};  },
-      setMapMF:function(iMTab){return false;}
-    });
+    for(let i=0;i<ORole.length;i++){
+      var tmpSetImage=function(iMTab,$c){ $c.children('img').prop({src:calcImageUrl(ORole[i].MTab[iMTab])});  };
+      $.extend(ORole[i].Prop.image, {  strType:'span',  crInp:tmpCrInp, setInp:tmpSetInp, saveInp:tmpSaveInp, setInfo:tmpSetImage, crInfo:tmpCrImage,
+        sortTabF:function(iMTab){return ORole[i].MTab[iMTab].idUser;},
+        setTabF:tmpSetImage,
+        crTabF:tmpCrImage,
+        setMapF:function(iMTab){     return {url:calcImageUrl(ORole[i].MTab[iMTab]), boUseFrame:true};  },
+        setMapMF:function(iMTab){return false;}
+      });
+    }
 
   };
 };
@@ -270,22 +280,13 @@ CreatorPlugin.general=function(){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CreatorPlugin.transportProt=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam'];
-  ColsShowDefaultS= ['image', 'displayName'];
-  ColsShowDefaultRS= ['image', 'displayName'];
-  colOneMarkDefault='vehicleType';
-
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'currency', 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','vehicleType','tel','currency','dist','created'];
-  StrGroupMain=['Vendor','Vehicle','Contact','Price','Position','Reputation'];
-
+CreatorPlugin.vehicleType=function(){
 
   //enumVehicleType=Enum.vehicleType;
-  enumVehicleType=Prop.vehicleType.Enum;
+  var enumVehicleType=oS.Prop.vehicleType.Enum;
 
     // images
-  var strPlugin='transportProt';
+  var strPlugin='vehicleType';
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
   uVehicleType=uSpecImageFolder+'vehicleType.png';
   uVehicleTypeW=uSpecImageFolder+'vehicleTypeW.png';
@@ -341,48 +342,41 @@ CreatorPlugin.transportProt=function(){
   vehSpriteZ=$.extend({},vehSpriteW); vehSpriteZ.url=uVehicleTypeInactive;
   vehSpriteDummy=$.extend({},vehSpriteW); vehSpriteDummy.url=uVehicleTypeDummy;
 
-  rewriteLangDriver=function(){
-    langHtml.vendorRewritten=langHtml.driver;
-    boRewriteVendor=true;
-    langHtml.loginInfo.vendor=langHtml.driver;
-    langHtml.Vendor=ucfirst(langHtml.driver);
-    langHtml.Vendors=ucfirst(langHtml.drivers);
-    langHtml.IndependentVendor=langHtml.IndependentDriver;
 
-    langHtml.vendor=langHtml.driver;   langHtml.vendors=langHtml.drivers;
-    langHtml.theVendor=langHtml.theDriver;  langHtml.theVendors=langHtml.theDrivers;
-    langHtml.theVendors0=langHtml.theDrivers0;
+  rewriteLangDriver=function(){
+    langHtml.sellerRewritten=langHtml.driver;
+    boRewriteSeller=true;
+    langHtml.loginInfo.seller=langHtml.driver;
+    langHtml.Seller=ucfirst(langHtml.driver);
+    langHtml.Sellers=ucfirst(langHtml.drivers);
+    langHtml.IndependentSeller=langHtml.IndependentDriver;
+
+    langHtml.seller=langHtml.driver;   langHtml.sellers=langHtml.drivers;
+    langHtml.theSeller=langHtml.theDriver;  langHtml.theSellers=langHtml.theDrivers;
+    langHtml.theSellers0=langHtml.theDrivers0;
   };
 
+
   //this.rewriteLang=function(){};
-
-
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName',StrPropContact, 'coordinatePrecisionM', 'vehicleType');
-    $vendorSettingDiv.StrGroupFirst=['image','vehicleType'];
-    $vendorSettingDiv.StrGroup=['Vendor','Vehicle'];
-    $filterDiv.StrGroupFirst=['vehicleType','homeTown','created'];
-    $filterDiv.StrGroup=['Vehicle','Vendor','Reputation'];
-
-
-    var tmpSetVehicleType=function(iMTab,$c){     $c.children('span')[0].mySet(Number(  MTab[iMTab].vehicleType  ));    };
+      // vehicleType
+    var tmpSetVehicleType=function(iMTab,$c){     $c.children('span')[0].mySet(Number(  oS.MTab[iMTab].vehicleType  ));    };
     var tmpSetVehicleTypeM=function(iMTab){
+      var MTab=oS.MTab;
       var data=MTab[iMTab].vehicleType, strName=enumVehicleType[MTab[iMTab].vehicleType];
-      var tmp; if(MTab[iMTab].posTime<curTime-snoreLim) tmp=vehSpriteZ; else tmp=vehSpriteW;
+      var tmp; if(MTab[iMTab].tPos<curTime-snoreLim) tmp=vehSpriteZ; else tmp=vehSpriteW;
       //if(MTab[iMTab].idUser<=3) tmp=vehSpriteDummy;
       //if(MTab[iMTab].displayName=='Dummy') tmp=vehSpriteDummy;
       if(MTab[iMTab].displayName.match(/^Dummy/)) tmp=vehSpriteDummy;
       var item=tmp.item[strName];
       var zT=tmp.zoom, wSc=Math.ceil(zT*item.w), hSc=Math.ceil(zT*item.h), wSSc=zT*tmp.sheetW, hSSc=zT*tmp.sheetH;
-      //return {url:tmp.url, size:new google.maps.Size(wSc,hSc), origin:new google.maps.Point(zT*item.x, zT*item.y), anchor:new google.maps.Point(wSc/2,hSc), scaledSize:new google.maps.Size(wSSc,hSSc)};
-      if(boMapGoogle) return {url:tmp.url, size:{width:wSc, height:hSc}, origin:{x:zT*item.x, y:zT*item.y}, anchor:{x:wSc/2, y:hSc}, scaledSize:{width:wSSc, height:hSSc}};
-      else return {url:tmp.url, size:{width:item.w, height:item.h}, origin:{x:item.x, y:item.y}, anchor:{x:item.w/2, y:item.h}, scaledSize:{width:wSSc, height:hSSc}, zoom:zT};
+      return {url:tmp.url, size:{width:item.w, height:item.h}, origin:{x:item.x, y:item.y}, anchor:{x:item.w/2, y:item.h}, scaledSize:{width:wSSc, height:hSSc}, zoom:zT};
     };
-    var tmpSetVehicleTypeMM=function(iMTab){return langHtml.vehicleType[enumVehicleType[MTab[iMTab].vehicleType]];};
-    var tmpCrVehicleType=function($c){   $c.append(  $(spriteExtend($('<span>')[0],vehSprite))  );   };
-    $.extend(Prop.vehicleType, {
+    var tmpSetVehicleTypeMM=function(iMTab){return langHtml.vehicleType[enumVehicleType[oS.MTab[iMTab].vehicleType]];};
+    var tmpCrVehicleType=function($c){   $c.append(  $(spriteExtend($('<span>')[0], vehSprite))  );   };
+    $.extend(oS.Prop.vehicleType, {
       crInp:function(){ var $c=$(selSpriteExtend($('<span>')[0],vehSprite)); return $c; },
-      setInp:function($c){ $c[0].mySet(userInfoFrDB.vendor.vehicleType); },
+      setInp:function($c){ $c[0].mySet(userInfoFrDB.seller.vehicleType); },
       saveInp:function($c){return [null, $c[0].myGet()];},
       setInfo:tmpSetVehicleType,crInfo:tmpCrVehicleType,
       setTabF:tmpSetVehicleType,crTabF:tmpCrVehicleType,
@@ -390,61 +384,58 @@ CreatorPlugin.transportProt=function(){
       crRowButtF:function(i){ $span=$(spriteExtend($('<span>')[0],vehSprite));    $span[0].mySet(i);  return $span;},
       setRowButtF:function($span,val,boOn){   $span[0].mySet(val);  if(boOn) opacity=1; else opacity=0.4; $span.children('img').css({opacity: opacity});  }
     });
-  };
-};
+  }
+}
 //0123456789abcdef
 
-CreatorPlugin.transportPrice=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
-  ColsShowDefaultS= ['image', 'displayName', 'comparePrice'];
-  ColsShowDefaultRS= ['image', 'displayName', 'comparePrice'];
-  colOneMarkDefault='vehicleType';
+//    Notes regarding comparePrice
+// comparePriceDataPopExtend
+// ComparePriceButSpan
+      // Rewrite $infoDivS.createContainers to add ComparePriceButSpan
+      // Add ComparePriceButSpan to $tableDivS.$tHeadLabel
+      // Add ComparePriceButSpan to $settingDivW
 
-  StrPropTransportProtPrice=site.StrPropTransportProtPrice;
-
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','vehicleType','tel','currency','dist','created'];
-  StrGroupMain=['Vendor','Vehicle','Contact','Price','Position','Reputation'];
+    // Rewrite setUnitDist
+    
+          // comparePrice  calcComparePrice
 
 
+CreatorPlugin.distNTimePrice=function(){
+  
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
   StrMainDiv.push('comparePriceDataPop');
+  
+  
   comparePriceDataPopExtend=function($el){
     $el.toString=function(){return 'comparePriceDataPop';}
-    //$el=popUpExtend($el);
-    //$el.css({ width:'16em', padding: '2em'});
-    var defaultFunc=function() {
-      $dist.val(comparePrice.dataDefault.dist);
-      $unit.val(distUnitDefault);
-      $time.val(comparePrice.dataDefault.time);
-    };
-    $el.openFunc=function(extraSaveFuncT) {
-      //e.stopPropagation();
+    $el.openFunc=function(extraSaveFuncT){
       $dist.val(comparePrice.dist);
-      $unit.val(distUnit);
+      $unit.val(strUnitDist);
       $time.val(comparePrice.time);
+      $divTimeLab.html(langHtml.Time+' ('+langHtml.timeUnit[strUnitTime][3]+'): ');
       $mess.html('');
       if(typeof extraSaveFuncT!='undefined') extraSaveFunc=extraSaveFuncT; else extraSaveFunc=null;
       doHistPush({$view:$comparePriceDataPop});
       $el.setVis();
     };
-    $el.setVis=function(){
-      $el.show();
-      return true;
-    }
-
+    $el.setVis=function(){ $el.show(); return true;  }
     var saveFunc=function() {
       var dist=Number($dist.val()), unit=$unit.val(), time=Number($time.val());
       if(isNaN(dist)) {$mess.html('input not valid'); return;}
       if(isNaN(time)) {$mess.html('input not valid'); return;}
-      distUnit=unit; comparePrice.dist=dist; comparePrice.time=time;
+      strUnitDist=unit; comparePrice.dist=dist; comparePrice.time=time;
       setItem('comparePriceData',{dist:dist, time:time});
-      setItem('distUnit',distUnit);
+      setItem('strUnitDist',strUnitDist);
 
-      comparePriceInfosSet();
-      $tHeadLabel.setPricePerDistCanvas();
-      setDistUnitButtons();
-      $tableDiv.setCell();    $mapDiv.setMarkers();
+      ComparePriceButSpan.tmpPrototype.setUpAll();
+      $tableDivS.$tHeadLabel.setPricePerDistCanvas();
+      UnitDistChoise.tmpPrototype.setUpAll(); //setUnitDistButtons();
+      $tableDivS.setCell();
+      
+      for(var i=0;i<ORole.length;i++) {
+        if(ORole[i].MTab.length){    $mapDiv[0].ArrMarker[i].setMarkers();  $mapDiv[0].ArrMarker[i].drawMarkers();   }
+      }
+
       if(extraSaveFunc) extraSaveFunc();
       doHistBack();
     };
@@ -456,20 +447,21 @@ CreatorPlugin.transportPrice=function(){
     };
 
     var extraSaveFunc;
-    var $dist=$('<input type=number>').prop({min:0}).css({'width':'3em'}).keypress( function(e){if(e.which==13) {saveFunc();return false;}} );
+    var $dist=$('<input type=number>').prop({min:0}).css({'width':'3em','margin':'0em 0.5em'}).on('keypress', function(e){if(e.which==13) {saveFunc();return false;}} );
     var $unit=$('<select>');  $unit.append($('<option>').val('km').text('km')).append($('<option>').val('mile').text('mile'));
-    var $time=$('<input type=number>').prop({min:0}).css({'width':'3em'}).keypress( function(e){if(e.which==13) {saveFunc();return false;}} );
+    var $time=$('<input type=number>').prop({min:0}).css({'width':'3em'}).on('keypress', function(e){if(e.which==13) {saveFunc();return false;}} );
 
     var $head=$('<h3>').append(langHtml.comparePrice.head);
-    var $divDist=$('<div>').append(langHtml.Distance,': ',$dist,' ',$unit);
-    var $divTime=$('<div>').append(langHtml.Time,' (',langHtml.timeUnit.min[3],'): ',$time);
+    //var $divDist=$('<div>').append(createTextNode(langHtml.Distance+': '), $dist, $unit);
+    var $divDist=$('<div>').append(langHtml.Distance, $dist, $unit);
+    var $divTimeLab=$('<span>'), $divTime=$('<div>').append($divTimeLab, $time);
 
-    var $buttDefault=$('<button>').click(defaultFunc).append(langHtml.Default).css({display:'block','margin':'0.8em 0em'});
-    var $buttCancel=$('<button>').click(doHistBack).append(langHtml.Cancel);
-    var $buttonSave=$('<button>').click(saveFunc).append(langHtml.Done);
+    var $buttDefault=$('<button>').append(langHtml.Default).css({display:'block','margin':'0.8em 0em'}).on('click', function() { 
+      $dist.val(comparePrice.dataDefault.dist); $unit.val(strUnitDistDefault); $time.val(comparePrice.dataDefault.time);
+    });
+    var $buttCancel=$('<button>').on('click', doHistBack).append(langHtml.Cancel);
+    var $buttonSave=$('<button>').on('click', saveFunc).append(langHtml.Done);
 
-
-    //$el.find('h3:eq(0)').css({'font-weight':'bold'});
     $el.find('p').css({'margin':'0.8em'});
     $divDist.add($divTime).css({'margin-top':'0.8em'});
     var $vSpace=$('<div>').css({height:'0.6em'}),  $mess=$('<div>');
@@ -479,195 +471,204 @@ CreatorPlugin.transportPrice=function(){
 
     var $blanket=$('<div>').addClass("blanket");
     var $centerDiv=$('<div>').append($head,$divDist,$divTime,$buttDefault,$buttCancel,$buttonSave,$mess);
-    $centerDiv.addClass("Center").css({'width':'20em', height:'18em', padding: '1em'})
-    if(boIE) $centerDiv.css({'width':'20em'});
+    $centerDiv.addClass("Center").css({'min-width':'220px', padding: '1em'});  // 'width':'20em', height:'18em', 
     $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
     return $el;
-  };
-
+  }
+  
   $comparePriceDataPop=comparePriceDataPopExtend($('<div>'));
 
 
-  comparePriceInfosSet=function(){$comparePriceButSpan.setUp(); $comparePriceButSpanB.setUp(); $comparePriceButSpanSmall.setUp();};
-  comparePriceButSpanExtend=function($el,func){
-    $el.setUp=function(){
-      $span.html('('+Number(comparePrice.dist).toFixed(2)+' '+distUnit+', '+comparePrice.time+' '+langHtml.timeUnit.min[1]+')');};
-    var $span=$('<span>');
-    var $butPricePref=$("<button>").append($span).click(function(){$comparePriceDataPop.openFunc(func); return false;});
-    if(!boTouch) popupHoverJQ($butPricePref,$('<div>').html(langHtml.pricePref.pop));
-    $el.append($butPricePref);
-    //$el.setUp();
+    // comparePriceButSpan: in settingDivW, infoDivS, tableHead,
+  var ComparePriceButSpan=function(strFormat, func){
+    var el=createElement('span'); $.extend(el, ComparePriceButSpan.tmpPrototype);
+    el.strFormat=strFormat;  el.elSpan=createElement('span');
+    var elButPricePref=createElement('button'); elButPricePref.append(el.elSpan); elButPricePref.on('click',function(){$comparePriceDataPop.openFunc(function(){ ComparePriceButSpan.tmpPrototype.setUpAll(); if(func) func();} ); return false;});
+    if(!boTouch) popupHoverJQ($(elButPricePref), $('<div>').html(langHtml.pricePref.pop));
+    el.append(elButPricePref);
+    ComparePriceButSpan.tmpPrototype.arrEl.push(el);
+    return el;
+  }
+  ComparePriceButSpan.tmpPrototype={};
+  ComparePriceButSpan.tmpPrototype.arrEl=[];
+  ComparePriceButSpan.tmpPrototype.setUp=function(){
+    this.elSpan.innerHTML=String.format(this.strFormat, Number(comparePrice.dist).toFixed(2), strUnitDist, comparePrice.time, langHtml.timeUnit[strUnitTime][1]);
+  };
+  ComparePriceButSpan.tmpPrototype.setUpAll=function(){  var arrEl=ComparePriceButSpan.tmpPrototype.arrEl;  for(var i=0;i<arrEl.length;i++){ arrEl[i].setUp(); }  }
 
-    return $el;
+    
+    // Rewrite setUnitDist
+  let setUnitDistTmp=setUnitDist;
+  setUnitDist=function(unit){
+    if(strUnitDist!=unit) if(unit=='km') comparePrice.dist*=1.609; else comparePrice.dist/=1.609;
+    comparePrice.dist=Number(comparePrice.dist).toString();
+    setItem('comparePriceData',{dist:comparePrice.dist, time:comparePrice.time});
+    //tmpf(unit);
+    setUnitDistTmp.apply(this, arguments);
+    ComparePriceButSpan.tmpPrototype.setUpAll();
+    $tableDivS.$tHeadLabel.setPricePerDistCanvas();
   };
 
-  comparePriceButSpanSmallExtend=function($el,func){
-    $el.setUp=function(){    $span.html(Number(comparePrice.dist).toFixed(2)+' '+distUnit+'<br>'+comparePrice.time+' min<br>');  };
-
-    var $span=$('<span>').css({'font-size':'0.7em'});
-    var $butPricePref=$("<button>").append($span).addClass('smallButt').css({padding:'0.3em 0.1em'}).click(function(){$comparePriceDataPop.openFunc(func); return false;}); //, langHtml.Change
-    if(!boTouch) popupHoverJQ($butPricePref,$('<div>').html(langHtml.pricePref.pop));
-    //$el.append($span, $butPricePref);
-    $el.append($butPricePref);
-
-    return $el;
-  };
-
-  $comparePriceButSpan=comparePriceButSpanExtend($('<span>'),comparePriceInfosSet); $comparePriceButSpan.children('button').prepend(langHtml.comparePrice.head,' ');
-  $comparePriceButSpanB=comparePriceButSpanExtend($('<span>'),function(){comparePriceInfosSet(); $vendorInfoDiv.setUpUnits(); });    $comparePriceButSpanB.css({'font-size':'0.78em'});
-  $comparePriceButSpanSmall=comparePriceButSpanSmallExtend($('<span>'),comparePriceInfosSet);
 
 
-  setDistUnit=(function(){
-    var tmpf=setDistUnit;
-    return function(unit){
-      if(distUnit!=unit) if(unit=='km') comparePrice.dist*=1.609; else comparePrice.dist/=1.609;
-      comparePrice.dist=Number(comparePrice.dist).toString();
-      setItem('comparePriceData',{dist:comparePrice.dist, time:comparePrice.time});
-      //tmpf(unit);
-      tmpf.apply(this, arguments);
-      comparePriceInfosSet(); $tHeadLabel.setPricePerDistCanvas();
-    };
-  })();
-
-
-  //this.rewriteLang=function(){  };
-
+  //this.rewriteLang=function(){};
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName',StrPropContact, 'coordinatePrecisionM', 'vehicleType');
-    $vendorSettingDiv.StrGroupFirst=['image','vehicleType'];
-    $vendorSettingDiv.StrGroup=['Vendor','Vehicle'];
-    $priceSettingDiv.StrProp=['currency','priceStart','pricePerDist','pricePerHour','distUnit'];
-    $filterDiv.StrGroupFirst=['vehicleType','homeTown','created'];
-    $filterDiv.StrGroup=['Vehicle','Vendor','Reputation'];
-
-    comparePriceInfosSet();
-
-      // vendorInfoDiv
-    $vendorInfoDiv.createContainers=function_mod($vendorInfoDiv.createContainers,function(){
-      $vendorInfoDiv.find('div[name=comparePrice]').after($comparePriceButSpanB);
-    });
-    $vendorInfoDiv.setUpUnits=function(){
-      var arrStr=['dist','comparePrice','pricePerDist','distUnit'], iMTab=$vendorListCtrlDiv.$tr.data('iMTab');
-      for(var i=0;i<arrStr.length;i++){
-        var $ele=$vendorInfoDiv.$divCont.find('div>span[name='+arrStr[i]+']'), strName=$ele.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-        var tmp=''; if('setInfo' in tmpObj) tmp=tmpObj.setInfo(iMTab,$ele);  else tmp=MTab[iMTab][strName];
-        $ele.html(tmp);
-      }
+      // Rewrite $infoDivS.createContainers to add ComparePriceButSpan
+    let createContainersTmp=$infoDivS.createContainers;
+    $infoDivS.createContainers=function(){
+      var setUpUnits=function(){
+        var arrStr=['dist','comparePrice','pricePerDist','strUnitDist'], iMTab=$ListCtrlDiv[oS.ind].$tr.data('iMTab');
+        for(var i=0;i<arrStr.length;i++){
+          var $ele=$infoDivS.$divCont.find('div>span[name='+arrStr[i]+']'), strName=$ele.attr('name'), tmpObj=(strName in oS.Prop)?oS.Prop[strName]:{};
+          var tmp=''; if('setInfo' in tmpObj) tmp=tmpObj.setInfo(iMTab,$ele);  else tmp=oS.MTab[iMTab][strName];
+          $ele.html(tmp);
+        }
+      };
+      var elComparePriceButSpan=new ComparePriceButSpan("({0} {1}, {2} {3})", setUpUnits);    elComparePriceButSpan.css({'font-size':'0.78em'});
+      createContainersTmp.apply(this, arguments);
+      this.$divCont.find('div[name=comparePrice]').after($(elComparePriceButSpan));
+      ComparePriceButSpan.tmpPrototype.setUpAll();
     };
 
-      // priceSettingDiv
-    $priceSettingDiv.createDivs=function_mod($priceSettingDiv.createDivs,function(){
-      var $tmpU=$priceSettingDiv.find('[name=distUnit]').css({'float':'none'});   $tmpU.parent().detach();
-      var $tmpPPD=$priceSettingDiv.find('[name=pricePerDist]');$tmpPPD.parent().empty().append(langHtml.PricePer+' ',$tmpU,$tmpPPD);
-    });
+      // Rewrite $settingDivS.createDivs
+    let settingDivCreateDivsTmp=$settingDivS.createDivs;
+    $settingDivS.createDivs=function(){
+      var $tmpU=$settingDivS.find('[name=strUnitDist]').css({'float':'none'});   $tmpU.parent().detach();
+      var $tmpPPD=$settingDivS.find('[name=pricePerDist]'); $tmpPPD.parent().empty().append(langHtml.PricePer+' ',$tmpU,$tmpPPD);
+      settingDivCreateDivsTmp.apply(this, arguments);
+    };
 
-    var tmpSetPricePerDist=function(iMTab){ var tmp=(distUnit=='mile'?1.609:1) * MTab[iMTab].pricePerDist;  return Number(tmp.toFixed(2));};
-    var tmpSetPricePerDistOther=function(iMTab){return tmpSetPricePerDist(iMTab)+'/'+distUnit;};
-    var calcComparePrice=function(iMTab){      var rT=MTab[iMTab]; return Number(rT.priceStart)  +tmpSetPricePerDist(iMTab)*comparePrice.dist  +rT.pricePerHour/60*comparePrice.time;    };
+      // priceStart
+    $.extend(oS.Prop.priceStart, {strType:'number',inpW:4});
+      // pricePerDist
+    var tmpSetPricePerDist=function(iMTab){ var tmp=(strUnitDist=='mile'?1.609:1) * oS.MTab[iMTab].pricePerDist;  return Number(tmp.toFixed(2));};
+    var tmpSetPricePerDistStr=function(iMTab){return tmpSetPricePerDist(iMTab)+'/'+strUnitDist;};
+    $.extend(oS.Prop.pricePerDist, {
+      strType:'number',inpW:4,
+      setInfo:tmpSetPricePerDistStr,
+      setTabF:tmpSetPricePerDist,sortTabF:tmpSetPricePerDist,
+      setMapF:tmpSetPricePerDistStr,setMapMF:tmpSetPricePerDistStr
+    });
+      // pricePerHour
+    $.extend(oS.Prop.pricePerHour, { strType:'number',inpW:4 });
+      // strUnitDist
+    var tmpSetUnitDist=function(iMTab,$c){$c.children('button').html('('+Number(comparePrice.dist).toFixed(2)+' '+strUnitDist+', '+comparePrice.time+' '+langHtml.timeUnit.min[3]+')');};
+    $.extend(oS.Prop.strUnitDist, {
+      strType:'select',
+      crInp:function(){  return $('<select>').append($("<option>").text('km').val(0),  $("<option>").text('mile').val(1));  },
+      setInfo:tmpSetUnitDist
+    });
+      // comparePrice
+    var calcComparePrice=function(iMTab){
+      var divisor=strUnitTime=='min'?60:1, rT=oS.MTab[iMTab]; return Number(rT.priceStart)  +tmpSetPricePerDist(iMTab)*comparePrice.dist  +rT.pricePerHour/divisor*comparePrice.time;
+    };
     var tmpSetComparePriceOneLineWOCur=function(iMTab){ var tmp=calcComparePrice(iMTab); return Number(tmp.toFixed(2)); };
-    var tmpSetComparePriceOneLineWCur=function(iMTab){ var tmp=calcComparePrice(iMTab); return MTab[iMTab].currency+' '+Number(tmp.toFixed(2)); };
+    var tmpSetComparePriceOneLineWCur=function(iMTab){ var tmp=calcComparePrice(iMTab); return oS.MTab[iMTab].currency+' '+Number(tmp.toFixed(2)); };
     var tmpSetComparePrice=function(boTryTwoLine){ return function(iMTab){
-      //var rT=MTab[iMTab], tmp=Number(rT.priceStart)  +tmpSetPricePerDist(iMTab)*comparePrice.dist  +rT.pricePerHour/60*comparePrice.time;
-      var rT=MTab[iMTab], tmp=calcComparePrice(iMTab);
-      var boTwoLine=(ColsShow.indexOf('image')!=-1) && boTryTwoLine,  strSep=boTwoLine?'<br>':' ';
+      var rT=oS.MTab[iMTab], tmp=calcComparePrice(iMTab);
+      var boTwoLine=(oS.ColsShow.indexOf('image')!=-1) && boTryTwoLine,  strSep=boTwoLine?'<br>':' ';
       return (boMultCurrency?rT.currency+strSep:'')+Number(tmp.toFixed(2));
     }};
     var tmpSetComparePriceOneLine=tmpSetComparePrice(0);
     var tmpSetComparePriceTwoLine=tmpSetComparePrice(1);
-
-
-    $.extend(Prop.priceStart, {strType:'number',inpW:4});
-    $.extend(Prop.pricePerDist, {
-      strType:'number',inpW:4,
-      setInfo:tmpSetPricePerDistOther,
-      setTabF:tmpSetPricePerDist,sortTabF:tmpSetPricePerDist,
-      setMapF:tmpSetPricePerDistOther,setMapMF:tmpSetPricePerDistOther
-    });
-    $.extend(Prop.pricePerHour, {
-      strType:'number',inpW:4
-    });
-    var tmpSetDistUnit=function(iMTab,$c){$c.children('button').html('('+Number(comparePrice.dist).toFixed(2)+' '+distUnit+', '+comparePrice.time+' '+langHtml.timeUnit.min[3]+')');};
-    $.extend(Prop.distUnit, {
-      strType:'select',
-      crInp:function(){  return $('<select>').append($("<option>").text('km').val(0),  $("<option>").text('mile').val(1));  },
-      setInfo:tmpSetDistUnit
-    });
-    $.extend(Prop.comparePrice, {
+    $.extend(oS.Prop.comparePrice, {
       setInfo:tmpSetComparePriceOneLineWOCur,
       setTabF:tmpSetComparePriceTwoLine,sortTabF:tmpSetComparePriceOneLine,
       setMapF:tmpSetComparePriceOneLineWCur,setMapMF:tmpSetComparePriceOneLineWCur
     });
 
 
-      // tHeadLabel
-    $tHeadLabel.find('[name=comparePrice]').append($comparePriceButSpanSmall);
+      // $tableDivS.$tHeadLabel
+      // Add ComparePriceButSpan to $tableDivS.$tHeadLabel
+    var $comparePriceButSpanSmall=$(new ComparePriceButSpan("{0} {1}<br>{2} {3}")); 
+    var $butT=$comparePriceButSpanSmall.children().addClass('smallButt').css({padding:'0.3em 0.1em'});
+    $butT.children().css({'font-size':'0.7em'});
+    $tableDivS.$tHeadLabel.find('[name=comparePrice]').append($comparePriceButSpanSmall);
 
+      // Add currencyInfoDivs to $tableDivS.$tHeadLabel
     var $da=$('<div>'),$db=$('<div>'),$dc=$('<div>'),$dd=$('<div>');
-    $tHeadLabel.find('[name=comparePrice]').prepend($da);
-    $tHeadLabel.find('[name=priceStart]').prepend($db);
-    $tHeadLabel.find('[name=pricePerDist]').prepend($dc);
-    $tHeadLabel.find('[name=pricePerHour]').prepend($dd);
+    $tableDivS.$tHeadLabel.find('[name=comparePrice]').prepend($da);
+    $tableDivS.$tHeadLabel.find('[name=priceStart]').prepend($db);
+    $tableDivS.$tHeadLabel.find('[name=pricePerDist]').prepend($dc);
+    $tableDivS.$tHeadLabel.find('[name=pricePerHour]').prepend($dd);
     $currencyInfoDivs=$currencyInfoDivs.add($da).add($db).add($dc).add($dd);
 
+      // Create $tableDivS.$tHeadLabel.setPricePerDistCanvas
     pricePerKMCanvas=makeTextCanvas(langHtml.PricePerKM,-1);    pricePerMileCanvas=makeTextCanvas(langHtml.PricePerMile,-1);
-    $tHeadLabel.setPricePerDistCanvas=function(){
-      var tmpCanvas=(distUnit=='km')?pricePerKMCanvas:pricePerMileCanvas;
-      $tHeadLabel.find('[name=pricePerDist]').children('div:eq(1)').html(tmpCanvas);
+    $tableDivS.$tHeadLabel.setPricePerDistCanvas=function(){
+      var tmpCanvas=(strUnitDist=='km')?pricePerKMCanvas:pricePerMileCanvas;
+      this.find('[name=pricePerDist]').children('div:eq(1)').html(tmpCanvas);
     };
-    $tHeadLabel.setPricePerDistCanvas();
+    $tableDivS.$tHeadLabel.setPricePerDistCanvas();
 
 
-      // vendorDiv
+      // Add ComparePriceButSpan to $settingDivW
+    var $comparePriceButSpan=$(new ComparePriceButSpan("({0} {1}, {2} {3})")); $comparePriceButSpan.children('button').prepend(langHtml.comparePrice.head,' ');
     var $opt=$([]).push($comparePriceButSpan);    $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
-    $settingDiv.children('#buttShowMarkSelect').after($opt);
-    //$vendorDiv.before($opt);    //$settingDiv.append($opt);
+    $settingDivW.$divCont.children('#buttShowMarkSelectS').after($opt);
 
   };
 };
 //0123456789abcdef
 
-CreatorPlugin.transportUrgent=function(){
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrPropContact, 'standingByMethod','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
 
-  //enumStandingByMethod=Enum.standingByMethod;
-  enumStandingByMethod=Prop.standingByMethod.Enum;
+
+
+
+CreatorPlugin.price=function(){
+  this.rewriteObj=function(){}
+};
+//0123456789abcdef
+
+CreatorPlugin.transportCustomer=function(){
+  this.rewriteObj=function(){
+    var tmpSet=function(iMTab,$c){  return oC.MTab[iMTab].distStartToGoal+' km ('+oC.MTab[iMTab].compassPoint+')'; }
+    $.extend(oC.Prop.distStartToGoal, {
+      setInfo:tmpSet,
+      setTabF:tmpSet,
+      setMapF:tmpSet
+    });
+    
+    
+  }
+};
+//0123456789abcdef
+
+
+CreatorPlugin.standingByMethod=function(){
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName',StrPropContact, 'standingByMethod', 'coordinatePrecisionM', 'vehicleType');
-
-    var tmpSetStandingByMethod=function(iMTab,$c){  return langHtml.standingByMethodsLong[Number(  MTab[iMTab].standingByMethod  )]; }
+      // standingByMethod
+    var tmpSet=function(iMTab,$c){  return langHtml.standingByMethodsLong[Number(  oS.MTab[iMTab].standingByMethod  )]; }
     var crInpFunc=function(){
       var $c=$('<select>'), arrTmp=langHtml.standingByMethodsLong;
       for(var i=0;i<arrTmp.length;i++){  var $opt=$("<option>").text(arrTmp[i]).val(i);   $c.append($opt);    }
       return $c;
     };
-    $.extend(Prop.standingByMethod, {
+    $.extend(oS.Prop.standingByMethod, {
       strType:'select',
       crInp:crInpFunc,
-      setInfo:tmpSetStandingByMethod,
-      setTabF:tmpSetStandingByMethod,
-      setMapF:function(iMTab,$c){  return langHtml.standingByMethodsLong[Number(  MTab[iMTab].standingByMethod  )]; },
+      setInfo:tmpSet,
+      setTabF:tmpSet,
+      setMapF:function(iMTab,$c){  return langHtml.standingByMethodsLong[Number(  oS.MTab[iMTab].standingByMethod  )]; },
       setRowButtF:function($span,val,boOn){ var tmp=langHtml.standingByMethodsLong[val]; $span.html(tmp);  }
     });
   };
 };
 //0123456789abcdef
 
-CreatorPlugin.night=function(){
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrPropContact, 'shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
+CreatorPlugin.shiftEnd=function(){
 
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'shiftEnd', 'coordinatePrecisionM', 'vehicleType');
+      // shiftEnd
+    var tmpSetShiftEnd=makeTimeF(oS.ind,'shiftEnd',1);
+    oS.Prop.shiftEnd.boUseTimeDiff=1;
+    var $tmp = timeStampButtExtend($("<button>"), oS.ind, 'shiftEnd').css({padding:'0.3em 0.5em'});    $tableDivS.$tHeadLabel.find('[name=shiftEnd]').append($tmp);
+    $filterDivS.$filterDivI.Unit.shiftEnd=langHtml.timeUnit.h[1];
 
-    var tmpSetShiftEnd=makeTimeF('shiftEnd',1);
-    boUseTimeDiff.shiftEnd=1;
-    var $tmp = timeStampButtExtend($("<button>"),'shiftEnd').css({padding:'0.3em 0.5em'});    $tHeadLabel.find('[name=shiftEnd]').append($tmp);
-    $filterDiv.Unit.shiftEnd=langHtml.timeUnit.h[1];
-
-    $.extend(Prop.shiftEnd, {strType:'select',
+    $.extend(oS.Prop.shiftEnd, {strType:'select',
       crInp:function(){  var $c=$('<select>'); for(var i=0;i<225;i++){ $c.append($("<option>")); }   return $c; },
       setInp:function($c){
         var d=new Date(); d.setMilliseconds(0); d.setSeconds(0); var tmp= Math.round(d.getMinutes()/15);  d.setMinutes(tmp*15);
@@ -677,9 +678,9 @@ CreatorPlugin.night=function(){
           var str=dt.toLocaleTimeString(); str=str.replace(/(\d\d):00/,'$1');
           $(this).text(str).val(dv/1000);
         });
-        //if(typeof userInfoFrDB.vendor=='array' && 'shiftEnd' in userInfoFrDB.vendor) {   // If there is a saved value for 'shiftEnd' then try set it as selected
-        if(userInfoFrDB.vendor instanceof Array && 'shiftEnd' in userInfoFrDB.vendor) {   // If there is a saved value for 'shiftEnd' then try set it as selected
-          var tmp="option[value='"+userInfoFrDB.vendor.shiftEnd+"']";
+        //if(typeof userInfoFrDB.seller=='array' && 'shiftEnd' in userInfoFrDB.seller) {   // If there is a saved value for 'shiftEnd' then try set it as selected
+        if(userInfoFrDB.seller instanceof Array && 'shiftEnd' in userInfoFrDB.seller) {   // If there is a saved value for 'shiftEnd' then try set it as selected
+          var tmp="option[value='"+userInfoFrDB.seller.shiftEnd+"']";
           var $tmp=$c.children(tmp);   if($tmp.length==1) $tmp.prop('selected', 'selected');
         }
       },
@@ -688,22 +689,93 @@ CreatorPlugin.night=function(){
       setMapF:tmpSetShiftEnd,setMapMF:tmpSetShiftEnd
     });
 
-    Prop.shiftEnd.feat.minName[0]='0';   Prop.shiftEnd.feat.bucketLabel[0]='-';        // Rewrite filterDiv range label
+    // oS.Prop.shiftEnd.feat.minName[0]='0';
+    oS.Prop.shiftEnd.feat.bucketLabel[0]='-';        // Rewrite filterDiv range label
   }
 };
 //0123456789abcdef
+
+
+CreatorPlugin.hourlyPrice=function(charRoleUC){
+  var oRole=charRoleUC=='C'?oC:oS;
+  
+  this.rewriteObj=function(){
+      // pricePerHour
+    var tmpSet=function(iMTab){ var rT=oRole.MTab[iMTab], tmp=Number(rT.pricePerHour); return rT.currency+' '+Number(tmp.toFixed(2)); };
+    var tmpSetComparePriceTryTwoLine=function(iMTab){
+      var rT=oRole.MTab[iMTab], tmp=Number(rT.pricePerHour);
+      var boTwoLine=(oRole.ColsShow.indexOf('image')!=-1),  strSep=boTwoLine?'<br>':' ';      return rT.currency+strSep+Number(tmp.toFixed(2));
+    }
+    $.extend(oRole.Prop.pricePerHour, { strType:'number',inpW:4, setInfo:tmpSet, setTabF:tmpSetComparePriceTryTwoLine, sortTabF:tmpSet, setMapF:tmpSet, setMapMF:tmpSet});
+  }
+};
+//0123456789abcdef
+
+
+CreatorPlugin.fixedPricePerUnit=function(){
+}
+//0123456789abcdef
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
 CreatorPlugin.taxi=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'brand', 'nPassengers', 'idTeam', 'comparePrice'];
-  ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'brand', 'comparePrice'];
-  ColsShowDefaultRS= ['image', 'displayName', 'brand', 'comparePrice'];
+  strUnitTime='min';
+  var StrS=oS.StrPropE;  // ['brand', 'idDriverGovernment', 'nExtraSeat']
+  var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
+  
+  var {StrPropE}=site;  // ['nPassenger','nChildSeat','nWheelChairPlace']
+  var {StrTransportCustomer}=oC;  // ['distStartToGoal','compassPoint','destination']
+  
+  
+    // oRole.Main: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson),
+  [].concat('Contact', 'tel', 'displayEmail', 'link'),
+  [].concat('Destination', 'distStartToGoal','destination', 'price', 'currency'),
+  [].concat('RequestedVehicle', StrPropE),
+  [].concat('Price', 'price', 'currency', 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd', 'idDriverGovernment'),
+  [].concat('Vehicle', 'vehicleType', 'brand', StrPropE, 'nExtraSeat'),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+    
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'),
+  [].concat('Destination', StrTransportCustomer),
+  [].concat('Vehicle', StrPropE),
+  [].concat('Price', 'currency', 'price')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'),
+  [].concat('Vehicle', 'vehicleType', StrPropE, 'brand', 'nExtraSeat'),
+  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
 
-  //StrPropTaxi=['nPassengers', 'extraSeat', 'childSeat', 'wheelChairPlaces'];
-  var StrPropTaxi=site.StrPropTaxi;
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'idDriverGovernment', 'vehicleType', 'brand', StrPropTaxi, StrPropContact, 'standingByMethod','shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', StrPropE, 'tPos'),
+  [].concat('Destination', 'distStartToGoal', 'compassPoint', 'destination'),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'),
+  [].concat('Vehicle', 'vehicleType', StrPropE, 'brand', 'nExtraSeat'),
+  [].concat('Reputation', StrPropRep)]);
+
+  
+    // Default columns
+  oC.ColsShowDefault= ['image', 'distStartToGoal', 'compassPoint', 'destination', 'idTeam', 'price'];
+  oC.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
+  oC.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
+  oC.colOneMarkDefault='image';
+  
+  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'brand', 'nPassengers', 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'brand', 'comparePrice'];
+  oS.ColsShowDefaultRS= ['image', 'displayName', 'brand', 'comparePrice'];
+  oS.colOneMarkDefault='vehicleType';
 
   $comparePriceDataPop.setDefault(10,15); // Arg: dist, time
 
@@ -719,35 +791,89 @@ CreatorPlugin.taxi=function(){
 
   this.rewriteLang=function(){
     rewriteLangDriver();
-    var $tmp=$('<span>').append(langHtml.helpBub.extraSeat);  $tmp.children('img:eq(0)').prop({src:uExtraSeat,width:200}); langHtml.helpBub.extraSeat=$tmp.html();
-    var $tmp=$('<span>').append(langHtml.helpBub.childSeat);
-      $tmp.children('img:eq(0)').prop({src:uChildSeat});$tmp.children('img:eq(1)').prop({src:uChildSeat2}); langHtml.helpBub.childSeat=$tmp.html();
+    var $tmp=$('<span>').append(langHtml.helpBub.nExtraSeat);  $tmp.children('img:eq(0)').prop({src:uExtraSeat,width:200}); langHtml.helpBub.nExtraSeat=$tmp.html();
+    var $tmp=$('<span>').append(langHtml.helpBub.nChildSeat);
+      $tmp.children('img:eq(0)').prop({src:uChildSeat});$tmp.children('img:eq(1)').prop({src:uChildSeat2}); langHtml.helpBub.nChildSeat=$tmp.html();
   };
 
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', 'idDriverGovernment', StrPropContact, 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType', 'brand', StrPropTaxi);
-
-    $.extend(Prop.brand, {strType:'text',inpW:6});
-    $.extend(Prop.idDriverGovernment, {strType:'text',inpW:6});
-    $.extend(Prop.nPassengers, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
-    $.extend(Prop.childSeat, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
-    $.extend(Prop.extraSeat, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
-    $.extend(Prop.wheelChairPlaces, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+      // nPassengers, nChildSeat, nWheelChairPlaces, nExtraSeat
+    var tmp={strType:'number', inpW:3, saveInp:posNumOrEmptyF};
+    for(let i=0;i<ORole.length;i++){
+      $.extend(ORole[i].Prop.nPassengers, tmp);
+      $.extend(ORole[i].Prop.nChildSeat, tmp);
+      $.extend(ORole[i].Prop.nWheelChairPlaces, tmp);
+    }
+    $.extend(oS.Prop.nExtraSeat, tmp);
+      // brand, idDriverGovernment
+    $.extend(oS.Prop.brand, {strType:'text',inpW:6});
+    $.extend(oS.Prop.idDriverGovernment, {strType:'text',inpW:6});
   };
 };
 //0123456789abcdef
 
 
-
 CreatorPlugin.transport=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'brand', 'idTeam', 'comparePrice'];
-  ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'brand', 'comparePrice'];
-  ColsShowDefaultRS= ['image', 'displayName', 'brand', 'comparePrice'];
+  strUnitTime='min';
+  var StrS=oS.StrPropE;  // ['brand']
+  var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
+  var {StrPropE}=site;
+  var {StrTransportCustomer}=oC;  // ['distStartToGoal','compassPoint','destination']
+ 
 
-  //var StrCompact=['generalCargo', 'tailLift', 'loaderCrane', 'tipper', 'loadableFromTheSide', 'iso20', 'iso40', 'tiltBed', 'sideLift', 'rollerContainer', 'otherContainer'];
-  var StrCompact=site.StrTransportBool;
+  //var StrTransportBool=['generalCargo', 'tailLift', 'loaderCrane', 'tipper', 'loadableFromTheSide', 'iso20', 'iso40', 'tiltBed', 'sideLift', 'rollerContainer', 'otherContainer'];
+  var StrTransportBool=site.StrTransportBool;
+  
+    // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson),
+  [].concat('Contact', 'tel', 'displayEmail', 'link'),
+  [].concat('Destination', 'distStartToGoal','destination', 'price', 'currency'),
+  [].concat('RequestedVehicle', StrPropE),
+  [].concat('Price', 'price', 'currency', 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd'),
+  [].concat('Vehicle', 'vehicleType', StrPropE, 'otherContainer'),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'),
+  [].concat('Destination', StrTransportCustomer),
+  [].concat('Cargo', StrPropE),
+  [].concat('Price', 'currency', 'price')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'),
+  [].concat('Vehicle', 'vehicleType', StrPropE, 'otherContainer'),
+  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', 'brand','payload', StrCompact, StrPropContact, 'standingByMethod','shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', 'tPos'),
+  [].concat('Cargo', StrPropE),
+  [].concat('Destination', 'distStartToGoal', 'compassPoint', 'destination'),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'),
+  [].concat('Vehicle', 'vehicleType', StrPropE, 'otherContainer'),
+  [].concat('Reputation', StrPropRep)]);
+
+    // Default columns
+  oC.ColsShowDefault= ['image', 'distStartToGoal', 'compassPoint', 'destination', 'idTeam', 'price'];
+  oC.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
+  oC.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
+  oC.colOneMarkDefault='image';
+  
+  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
+  oS.ColsShowDefaultRS= ['image', 'displayName', 'comparePrice'];
+  oS.colOneMarkDefault='vehicleType';
+  
 
   $comparePriceDataPop.setDefault(10,15); // Arg: dist, time
 
@@ -759,100 +885,118 @@ CreatorPlugin.transport=function(){
 
   this.rewriteLang=function(){
     rewriteLangDriver();
-    var Tmp=StrCompact.slice(0,-1);
+    var Tmp=StrTransportBool.slice(0,-1);
     for(var i=0;i<Tmp.length;i++) {
       var strName=Tmp[i], $tmp=$('<span>').append(langHtml.helpBub[strName]);  $tmp.children('img:eq(0)').prop({src:uSpecImageFolder+strName+'.jpg',width:200}); langHtml.helpBub[strName]=$tmp.html();
     }
   };
 
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType', 'brand', 'payload', StrCompact);
-
-    var makeBoF=function(strN){return function(iMTab){ return Number(MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
+      // StrTransportBool
     var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
-    var tmpSetBool=function(iMTab,$ele){
-      var data=MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
-      //var colT=''; if(data>0) colT='red';
-      $ele.css({'background':colT});
-      return Number(data)?langHtml.Yes:'-';
-    };
-
-    for(var i=0;i<StrCompact.length;i++) {
-      var strName=StrCompact[i];
-      var tmpSetF=makeBoF(strName);
-      $.extend(Prop[strName], {
-        strType:'checkbox', saveInp:inpAsNum,
-        setInfo:tmpSetBool,
-        setTabF:tmpSetBool,
-        setMapF:tmpSetF,setMapMF:tmpSetF,
-        setRowButtF:tmpRowButtf
-      });
+    for(let i=0;i<ORole.length;i++){
+      var tmpSetBool=function(iMTab,$ele){
+        var data=ORole[i].MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
+        //var colT=''; if(data>0) colT='red';
+        $ele.css({'background':colT});
+        return Number(data)?langHtml.Yes:'-';
+      }
+      for(var j=0;j<StrTransportBool.length;j++) {
+        var strName=StrTransportBool[j];
+        var tmpSetMap=function(iMTab){ return Number(ORole[i].MTab[iMTab][strName])?langHtml.Yes:langHtml.No; };
+        $.extend(ORole[i].Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBool, setTabF:tmpSetBool, setMapF:tmpSetMap,setMapMF:tmpSetMap, setRowButtF:tmpRowButtf });
+      }
     }
-    $.extend(Prop.brand, {strType:'text', inpW:6});
-    $.extend(Prop.payload, {strType:'number', inpW:3, saveF:posNumF});
+      // brand
+    $.extend(oS.Prop.brand, {strType:'text', inpW:6});
+      // payload
+    var tmp={strType:'number', inpW:3, saveF:posNumF}; $.extend(oC.Prop.payload, tmp); $.extend(oS.Prop.payload, tmp);
   }
 };
 //0123456789abcdef
 
 
 CreatorPlugin.cleaner=function(){
-  ColsShowDefault= ['image', 'displayName', 'boHome','boOffice','boIndustrial','boGotEquipment','tel', 'vehicleType', 'idTeam', 'comparePrice'];
-  ColsShowDefaultS= ['image', 'displayName', 'boHome','boOffice','boIndustrial','boGotEquipment', 'vehicleType', 'comparePrice'];
-  ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
-  colOneMarkDefault='vehicleType';
+  var StrC=oC.StrPropE;  // ['household','janitor','sanitation', 'exterior','customerHasEquipment']
+  var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
+  
+    // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson),
+  [].concat('Contact', StrPropContact),
+  [].concat('Type', StrC),
+  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType', 'shiftEnd'),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
+  [].concat('Type', StrC),
+  [].concat('Price', 'currency', 'pricePerHour')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType'),
+  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
 
-  //var StrCleanerBool=['boHome','boOffice','boIndustrial', 'boGotEquipment'];
-  var StrBool=site.StrCleanerBool;
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', 'homeTown', 'currency', 'tPos'),
+  [].concat('Type', StrC),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos'),
+  [].concat('Reputation', StrPropRep)]);
+  
+  
+    // Default columns
+  oC.ColsShowDefault=[].concat('image', 'displayName', StrC, 'tel', 'idTeam', 'pricePerHour');
+  oC.ColsShowDefaultS=[].concat('image', 'displayName', StrC, 'pricePerHour');
+  oC.ColsShowDefaultRS=[].concat('image', StrC, 'pricePerHour');
+  oC.colOneMarkDefault='image';
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrBool, StrPropContact, 'shiftEnd','currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','tel','currency','dist','created'];
-  StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
+  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
+  oS.ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
+  oS.colOneMarkDefault='vehicleType';
 
-  $comparePriceDataPop.setDefault(10,120); // Arg: dist, time
+  $comparePriceDataPop.setDefault(10,2); // Arg: dist, time
 
     // images
   var strPlugin='cleaner';
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    langHtml.vendorRewritten=langHtml.cleaner;
-    //langHtml.loginInfo.vendor=langHtml.cleaner;
-    //langHtml.Vendor=ucfirst(langHtml.cleaner);
-    //langHtml.Vendors=ucfirst(langHtml.cleaners);
-    //langHtml.IndependentVendor=langHtml.IndependentCleaner;
+    langHtml.sellerRewritten=langHtml.cleaner;
+    //langHtml.loginInfo.seller=langHtml.cleaner;
+    //langHtml.Seller=ucfirst(langHtml.cleaner);
+    //langHtml.Sellers=ucfirst(langHtml.cleaners);
+    //langHtml.IndependentSeller=langHtml.IndependentCleaner;
 
-    //langHtml.vendor=langHtml.cleaner;   langHtml.vendors=langHtml.cleaners;
-    //langHtml.theVendor=langHtml.theCleaner;   langHtml.theVendors=langHtml.theCleaners;
-    //langHtml.theVendors0=langHtml.theCleaners0;
+    //langHtml.seller=langHtml.cleaner;   langHtml.sellers=langHtml.cleaners;
+    //langHtml.theSeller=langHtml.theCleaner;   langHtml.theSellers=langHtml.theCleaners;
+    //langHtml.theSellers0=langHtml.theCleaners0;
   };
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'shiftEnd', 'coordinatePrecisionM', 'vehicleType', StrBool);
-    $vendorSettingDiv.StrGroupFirst=['displayName','boHome'];
-    $vendorSettingDiv.StrGroup=['Vendor','Other'];
-    $filterDiv.StrGroupFirst=['homeTown','created'];
-    $filterDiv.StrGroup=['Vendor','Reputation'];
-
-      // vendorInfoDiv
-    var makeBoF=function(strN){return function(iMTab){ return Number(MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
-
+      // StrC
     var tmpSetBool=function(iMTab,$ele){
-      var data=MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
+      var data=oC.MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
       //var colT=''; if(data>0) colT='red';
       $ele.css({'background':colT});
       return Number(data)?langHtml.Yes:'-';
     };
+    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
+    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
 
-    for(var i=0;i<StrBool.length;i++) {
-      var strName=StrBool[i];
-      var tmpSetF=makeBoF(strName);
-      $.extend(Prop[strName], {
-        strType:'checkbox', saveInp:inpAsNum,
-        setInfo:tmpSetBool,
-        setTabF:tmpSetBool,
-        setMapF:tmpSetF,setMapMF:tmpSetF,
-        setRowButtF:tmpRowButtf
-      });
+    for(var i=0;i<StrC.length;i++) {
+      var strName=StrC[i];
+      var tmpSetMap=makeSetMapF(oC, strName);
+      $.extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBool, setTabF:tmpSetBool, setMapF:tmpSetMap,setMapMF:tmpSetMap, setRowButtF:tmpRowButtf });
     }
   };
 };
@@ -860,72 +1004,139 @@ CreatorPlugin.cleaner=function(){
 
 
 CreatorPlugin.windowcleaner=function(){
-  ColsShowDefault= ['image', 'displayName', 'boLadder', 'boSkyLift', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
-  ColsShowDefaultS= ['image', 'displayName', 'boLadder', 'boSkyLift', 'vehicleType', 'comparePrice'];
-  ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
-  colOneMarkDefault='vehicleType';
+  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
+  
+    // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson, StrC),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType'),
+  [].concat('Tools', StrS),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
+  [].concat('Other', StrC),
+  [].concat('Price', 'currency', 'pricePerHour')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'),
+  [].concat('Tools', StrS),
+  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
 
-  var StrBool=site.StrCleanerBool;
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'currency', 'vehicleType', 'tPos'),
+  [].concat('Tools', StrS),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Default columns
+  oC.ColsShowDefault=[].concat('image', 'displayName', StrC, 'tel', 'idTeam', 'pricePerHour');
+  oC.ColsShowDefaultS=[].concat('image', 'displayName', StrC, 'pricePerHour');
+  oC.ColsShowDefaultRS=[].concat('image', StrC, 'pricePerHour');
+  oC.colOneMarkDefault='image';
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName','vehicleType', StrBool, StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','tel','currency','dist','created'];
-  StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
+  oS.ColsShowDefault=[].concat('image', 'displayName', StrS, 'tel', 'vehicleType', 'idTeam', 'comparePrice');
+  oS.ColsShowDefaultS=[].concat('image', 'displayName', StrS, 'vehicleType', 'comparePrice');
+  oS.ColsShowDefaultRS=[].concat('image', StrS, 'vehicleType', 'comparePrice');
+  oS.colOneMarkDefault='vehicleType';
 
-  $comparePriceDataPop.setDefault(10,120); // Arg: dist, time
+
+  $comparePriceDataPop.setDefault(10,2); // Arg: dist, time
 
     // images
   var strPlugin='windowcleaner';
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    langHtml.vendorRewritten=langHtml.windowcleaner;
+    langHtml.sellerRewritten=langHtml.windowcleaner;
   };
 
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', 'vehicleType', StrBool);
-    $vendorSettingDiv.StrGroupFirst=['displayName','boLadder'];
-    $vendorSettingDiv.StrGroup=['Vendor','Other'];
-    $filterDiv.StrGroupFirst=['homeTown','created'];
-    $filterDiv.StrGroup=['Vendor','Reputation'];
 
-      // vendorInfoDiv
-    var makeBoF=function(strN){return function(iMTab){ return Number(MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
-
-    var tmpSetBool=function(iMTab,$ele){
-      var data=MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
+      // For boolean properties
+    var makeSetBoolF=function(oRole){ return function(iMTab,$ele){
+      var data=oRole.MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
       //var colT=''; if(data>0) colT='red';
       $ele.css({'background':colT});
       return Number(data)?langHtml.Yes:'-';
-    };
+    }};
+    var tmpSetBoolC=makeSetBoolF(oC), tmpSetBoolS=makeSetBoolF(oS);
+    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
+    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
 
-    for(var i=0;i<StrBool.length;i++) {
-      var strName=StrBool[i];
-      var tmpSetF=makeBoF(strName);
-      $.extend(Prop[strName], {
-        strType:'checkbox', saveInp:inpAsNum,
-        setInfo:tmpSetBool,
-        setTabF:tmpSetBool,
-        setMapF:tmpSetF,setMapMF:tmpSetF,
-        setRowButtF:tmpRowButtf
-      });
+      // customerHasEquipment
+    var strName='customerHasEquipment', tmpSetMap=makeSetMapF(oC, strName);
+    $.extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolC, setTabF:tmpSetBoolC, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
+      // nWindow
+    $.extend(oC.Prop.nWindow, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+    
+      // StrS
+    for(var i=0;i<StrS.length;i++) {
+      var strName=StrS[i], tmpSetMap=makeSetMapF(oS, strName);
+      $.extend(oS.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolS, setTabF:tmpSetBoolS, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
     }
   };
 };
 //0123456789abcdef
 
 CreatorPlugin.lawnmower=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'ridingMower', 'pushMower', 'edger', 'idTeam', 'cuttingWidth', 'comparePrice'];
-  ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'ridingMower', 'pushMower', 'edger', 'cuttingWidth', 'comparePrice'];
-  ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'ridingMower', 'pushMower', 'edger', 'comparePrice'];
-  colOneMarkDefault='vehicleType';
+  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice'],   ['pushMower','ridingMower', 'edger']
+  
+      // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson, StrC),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType', StrS),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM', StrC),
+  [].concat('Price', 'currency', 'pricePerHour')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', StrS),
+  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
 
-  var StrBool=site.StrToolBool;
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrBool, 'cuttingWidth', StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','vehicleType','pushMower','tel','currency','dist','created'];
-  StrGroupMain=['Vendor','Vehicle','Tools','Contact','Price','Position','Reputation'];
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', StrS),
+  [].concat('Reputation', StrPropRep)]);
 
-  $comparePriceDataPop.setDefault(10,120); // Arg: dist, time
+    // Default columns
+  oC.ColsShowDefault=[].concat('image', 'displayName', StrC, 'tel', 'idTeam', 'pricePerHour');
+  oC.ColsShowDefaultS=[].concat('image', 'displayName', StrC, 'pricePerHour');
+  oC.ColsShowDefaultRS=[].concat('image', StrC, 'pricePerHour');
+  oC.colOneMarkDefault='image';
+
+  oS.ColsShowDefault=[].concat('image', 'displayName', 'tel', 'vehicleType', StrS, 'idTeam', 'comparePrice');
+  oS.ColsShowDefaultS=[].concat('image', 'displayName', 'vehicleType', StrS, 'comparePrice');
+  oS.ColsShowDefaultRS=[].concat('image', 'displayName', 'vehicleType', oS.StrBool, 'comparePrice');
+  oS.colOneMarkDefault='vehicleType';
+
+  $comparePriceDataPop.setDefault(10,1); // Arg: dist, time
 
     // images
   var strPlugin='lawnmower';
@@ -933,56 +1144,88 @@ CreatorPlugin.lawnmower=function(){
   uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    langHtml.vendorRewritten=langHtml.lawnmower;
+    langHtml.sellerRewritten=langHtml.lawnmower;
   };
 
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', StrBool, 'cuttingWidth', 'vehicleType');
-    $vendorSettingDiv.StrGroupFirst=['image','vehicleType','pushMower'];
-    $vendorSettingDiv.StrGroup=['Vendor','Vehicle','Tools'];
-    $filterDiv.StrGroupFirst=['vehicleType','homeTown','pushMower', 'created'];
-    $filterDiv.StrGroup=['Vehicle','Vendor','Tools', 'Reputation'];
 
-
-    var makeBoF=function(strN){return function(iMTab){ return Number(MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
-    var tmpSetBool=function(iMTab,$ele){
-      var data=MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
+      // For boolean properties
+    var makeSetBoolF=function(oRole){ return function(iMTab,$ele){
+      var data=oRole.MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
+      //var colT=''; if(data>0) colT='red';
       $ele.css({'background':colT});
       return Number(data)?langHtml.Yes:'-';
-    };
+    }};
+    var tmpSetBoolC=makeSetBoolF(oC), tmpSetBoolS=makeSetBoolF(oS);
+    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
+    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
 
-    for(var i=0;i<StrBool.length;i++) {
-      var strName=StrBool[i];
-      var tmpSetF=makeBoF(strName);
-      $.extend(Prop[strName], {
-        strType:'checkbox',
-        saveInp:inpAsNum,
-        setInfo:tmpSetBool,
-        setTabF:tmpSetBool,
-        setMapF:tmpSetF,setMapMF:tmpSetF,
-        setRowButtF:tmpRowButtf
-      });
+      // customerHasEquipment
+    var strName='customerHasEquipment', tmpSetMap=makeSetMapF(oC, strName);
+    $.extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolC, setTabF:tmpSetBoolC, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
+      // area
+    $.extend(oC.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+    
+      // oS.StrBool
+    for(var i=0;i<oS.StrBool.length;i++) {
+      var strName=oS.StrBool[i], tmpSetMap=makeSetMapF(oS, strName);
+      $.extend(oS.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolS, setTabF:tmpSetBoolS, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
     }
-    $.extend(Prop.cuttingWidth, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
-
+      // cuttingWidth
+    $.extend(oS.Prop.cuttingWidth, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+    
   };
 };
 //0123456789abcdef
 
 
 CreatorPlugin.snowremoval=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'shovel', 'snowblower', 'plow', 'idTeam', 'comparePrice'];
-  ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'shovel', 'snowblower', 'plow', 'comparePrice'];
-  ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'shovel', 'snowblower', 'plow', 'comparePrice'];
-  colOneMarkDefault='vehicleType';
+  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
+  
+    // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson, oC.StrBool, 'area'),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType', oS.StrBool),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM', oC.StrBool, 'area'),
+  [].concat('Price', 'currency', 'pricePerHour')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', oS.StrBool, 'vehicleType'),
+  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
 
-  var StrBool=site.StrToolBool;
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrBool, StrPropContact,'currency', StrPropTransportProtPrice, 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','vehicleType','shovel','tel','currency','dist','created'];
-  StrGroupMain=['Vendor','Vehicle','Tools','Contact','Price','Position','Reputation'];
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'currency', 'tPos'),
+  [].concat('Tools', 'vehicleType', StrS),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Default columns
+  oC.ColsShowDefault=[].concat('image', 'displayName', oC.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour');
+  oC.ColsShowDefaultS=[].concat('image', 'displayName', oC.StrBool, 'area', 'pricePerHour');
+  oC.ColsShowDefaultRS=[].concat('image', oC.StrBool, 'area', 'pricePerHour');
+  oC.colOneMarkDefault='image';
 
-  $comparePriceDataPop.setDefault(10,120); // Arg: dist, time
+  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', oS.StrBool, 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', oS.StrBool, 'comparePrice'];
+  oS.ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', oS.StrBool, 'comparePrice'];
+  oS.colOneMarkDefault='vehicleType';
+
+  $comparePriceDataPop.setDefault(10,1); // Arg: dist, time
 
     // images
   var strPlugin='snowremoval';
@@ -990,125 +1233,169 @@ CreatorPlugin.snowremoval=function(){
   uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    langHtml.vendorRewritten=langHtml.snowRemovalWorker;
-    //langHtml.loginInfo.vendor=langHtml.snowShoveler;
-    //langHtml.Vendor=ucfirst(langHtml.snowShoveler);
-    //langHtml.Vendors=ucfirst(langHtml.snowShovelers);
-    //langHtml.IndependentVendor=langHtml.IndependentSnowShoveler;
+    langHtml.sellerRewritten=langHtml.snowRemovalWorker;
+    //langHtml.loginInfo.seller=langHtml.snowShoveler;
+    //langHtml.Seller=ucfirst(langHtml.snowShoveler);
+    //langHtml.Sellers=ucfirst(langHtml.snowShovelers);
+    //langHtml.IndependentSeller=langHtml.IndependentSnowShoveler;
 
-    //langHtml.vendor=langHtml.snowShoveler;   langHtml.vendors=langHtml.snowShovelers;
-    //langHtml.theVendor=langHtml.theSnowShoveler;  langHtml.theVendors=langHtml.theSnowShovelers;
-    //langHtml.theVendors0=langHtml.theSnowShoveler0;
+    //langHtml.seller=langHtml.snowShoveler;   langHtml.sellers=langHtml.snowShovelers;
+    //langHtml.theSeller=langHtml.theSnowShoveler;  langHtml.theSellers=langHtml.theSnowShovelers;
+    //langHtml.theSellers0=langHtml.theSnowShoveler0;
   };
 
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', StrBool, 'vehicleType');
-    $vendorSettingDiv.StrGroupFirst=['image','vehicleType','shovel'];
-    $vendorSettingDiv.StrGroup=['Vendor','Vehicle','Tools'];
-    $filterDiv.StrGroupFirst=['vehicleType','homeTown','shovel', 'created'];
-    $filterDiv.StrGroup=['Vehicle','Vendor','Tools', 'Reputation'];
-
-
-    var makeBoF=function(strN){return function(iMTab){ return Number(MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
-    var tmpSetBool=function(iMTab,$ele){
-      var data=MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
+    
+      // oC.StrBool, oS.StrBool
+    var makeSetBoolF=function(oRole){ return function(iMTab,$ele){
+      var data=oRole.MTab[iMTab][$ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
+      //var colT=''; if(data>0) colT='red';
       $ele.css({'background':colT});
       return Number(data)?langHtml.Yes:'-';
-    };
-
-    for(var i=0;i<StrBool.length;i++) {
-      var strName=StrBool[i];
-      var tmpSetF=makeBoF(strName);
-      $.extend(Prop[strName], {
-        strType:'checkbox',
-        saveInp:inpAsNum,
-        setInfo:tmpSetBool,
-        setTabF:tmpSetBool,
-        setMapF:tmpSetF,setMapMF:tmpSetF,
-        setRowButtF:tmpRowButtf
-      });
-    }
-
-  };
-};
-//0123456789abcdef
-
-CreatorPlugin.hourlyPrice=function(){
-    // images
-  var strPlugin='hourlyPrice';
-  var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
-
-  //this.rewriteLang=function(){  };
-  this.rewriteObj=function(){
-
-    var tmpSetComparePrice=function(boTryTwoLine){ return function(iMTab){
-      var rT=MTab[iMTab], tmp=Number(rT.pricePerHour);
-      var boTwoLine=(ColsShow.indexOf('image')!=-1) && boTryTwoLine,  strSep=boTwoLine?'<br>':' ';      return (rT.currency+strSep)+Number(tmp.toFixed(2));
     }};
-    var tmpSetComparePriceOneLine=tmpSetComparePrice(0),  tmpSetComparePriceTwoLine=tmpSetComparePrice(1);
-    //var tmpSetComparePriceOneLineWOCur=function(iMTab){ var rT=MTab[iMTab], tmp=Number(rT.pricePerHour); return Number(tmp.toFixed(2)); };
-    var tmpSetComparePriceOneLineWCur=function(iMTab){ var rT=MTab[iMTab], tmp=Number(rT.pricePerHour); return rT.currency+' '+Number(tmp.toFixed(2)); };
+    var tmpSetBoolC=makeSetBoolF(oC), tmpSetBoolS=makeSetBoolF(oS);
+    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
+    var tmpRowButtf=function($span,val,boOn){   $span.html(Number(val)?langHtml.Yes:langHtml.No);   };
 
-
-    $.extend(Prop.pricePerHour, {
-      strType:'number',inpW:4,
-      setInfo:tmpSetComparePriceOneLineWCur,
-      setTabF:tmpSetComparePriceTwoLine,sortTabF:tmpSetComparePriceOneLine,
-      setMapF:tmpSetComparePriceOneLineWCur,setMapMF:tmpSetComparePriceOneLineWCur
-    });
+    for(var i=0;i<oC.StrBool.length;i++) {
+      var strName=oC.StrBool[i], tmpSetMap=makeSetMapF(oC, strName);
+      $.extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolC, setTabF:tmpSetBoolC, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
+    }
+    for(var i=0;i<oS.StrBool.length;i++) {
+      var strName=oS.StrBool[i], tmpSetMap=makeSetMapF(oS, strName);
+      $.extend(oS.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolS, setTabF:tmpSetBoolS, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
+    }
+      // area
+    $.extend(oC.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+    
   };
 };
 //0123456789abcdef
 
 
 CreatorPlugin.fruitpicker=function(){
-  ColsShowDefault= ['image', 'displayName','tel', 'vehicleType', 'idTeam', 'pricePerHour'];
-  ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'pricePerHour'];
-  ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'pricePerHour'];
-  colOneMarkDefault='vehicleType';
+  var StrC=oC.StrPropE;
+  var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
+  
+    // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson, StrC),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType'),
+  [].concat('Contact', StrPropContact),
+  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM', StrC),
+  [].concat('Price', 'currency', 'pricePerHour')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'),
+  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', 'vehicleType', StrPropContact, 'pricePerHour', 'lastPriceChange', StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','tel','pricePerHour','dist','created'];
-  StrGroupMain=['Vendor','Contact','Price','Position','Reputation'];
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'currency', 'tPos', 'vehicleType'),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Default columns
+  oC.ColsShowDefault=[].concat('image', 'displayName', 'fruit', 'tel', 'idTeam', 'pricePerHour');
+  oC.ColsShowDefaultS=[].concat('image', 'displayName', 'fruit', 'pricePerHour');
+  oC.ColsShowDefaultRS=[].concat('image', 'fruit', 'pricePerHour');
+  oC.colOneMarkDefault='fruit';
 
+  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
+  oS.ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
+  oS.colOneMarkDefault='vehicleType';
+
+  $comparePriceDataPop.setDefault(10,8); // Arg: dist, time
+  
     // images
   var strPlugin='fruitpicker';
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    langHtml.vendorRewritten=langHtml.picker;
-    boRewriteVendor=true;
-    langHtml.loginInfo.vendor=langHtml.picker;
-    langHtml.Vendor=ucfirst(langHtml.picker);
-    langHtml.Vendors=ucfirst(langHtml.pickers);
-    langHtml.IndependentVendor=langHtml.IndependentPicker;
+    langHtml.sellerRewritten=langHtml.picker;
+    boRewriteSeller=true;
+    langHtml.loginInfo.seller=langHtml.picker;
+    langHtml.Seller=ucfirst(langHtml.picker);
+    langHtml.Sellers=ucfirst(langHtml.pickers);
+    langHtml.IndependentSeller=langHtml.IndependentPicker;
 
-    langHtml.vendor=langHtml.picker;     langHtml.vendors=langHtml.pickers;
-    langHtml.theVendor=langHtml.thePicker;   langHtml.theVendors=langHtml.thePickers;
-    langHtml.theVendors0=langHtml.thePickers0;
+    langHtml.seller=langHtml.picker;     langHtml.sellers=langHtml.pickers;
+    langHtml.theSeller=langHtml.thePicker;   langHtml.theSellers=langHtml.thePickers;
+    langHtml.theSellers0=langHtml.thePickers0;
   }
   this.rewriteObj=function(){
+      // fruit
+    $.extend(oC.Prop.fruit, {strType:'text', inpW:6});
 
-    $priceSettingDiv.StrProp=['currency','pricePerHour'];
-    $filterDiv.StrGroupFirst=['homeTown','created'];
-    $filterDiv.StrGroup=['Vendor','Reputation'];
   }
 };
 //0123456789abcdef
 
 CreatorPlugin.programmer=function(){
-  ColsShowDefault= ['image', 'displayName', 'tel', 'idTeam', 'pricePerHour','c','java','php','javascript'];
-  ColsShowDefaultS= ['image', 'displayName', 'pricePerHour','c','java','php','javascript'];
-  ColsShowDefaultRS= ['image', 'displayName', 'pricePerHour','c','java','php','javascript'];
-  colOneMarkDefault='image';
+  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  
+  var StrProgrammerLang=oS.StrProgrammerLang;
 
-  var StrProgrammerLang=site.StrProgrammerLang;
-  var StrSpec=StrProgrammerLang.concat('otherLang');
+    // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, columnSelectorDiv, tHeadLabel, TableDiv
+  oC.Main=separateGroupLabels([
+  [].concat('Customer', StrPropPerson),
+  [].concat('Contact', StrPropContact),
+  [].concat('RequestedSkills', StrC),
+  [].concat('Price', 'pricePerHour'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  oS.Main=separateGroupLabels([
+  [].concat('Seller', StrPropPerson),
+  [].concat('Contact', StrPropContact),
+  [].concat('Languages', StrS),
+  [].concat('Price', 'currency', 'pricePerHour'),
+  [].concat('Position', StrPropPos),
+  [].concat('Reputation', StrPropRep)]);
+  
+    // Properties in roleSettingDiv
+  oC.roleSetting=separateGroupLabels([
+  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
+  [].concat('RequestedSkills', StrC),
+  [].concat('Price', 'currency', 'pricePerHour')]);
+  oS.roleSetting=separateGroupLabels([
+  [].concat('Seller', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
+  [].concat('Languages', StrS),
+  [].concat('Price', 'currency', 'pricePerHour')]);
+  
 
-  StrPropMain=[].concat('image', 'idTeam', 'displayName', StrPropContact, 'pricePerHour', 'lastPriceChange', StrSpec, StrPropPos, StrPropRep, 'nComplaint');
-  StrGroupFirstMain=['image','tel','pricePerHour','dist','c','created'];
-  StrGroupMain=['Vendor','Contact','Price','Position','Languages','Reputation'];
+    // Properties in filterDiv
+  oC.filter=separateGroupLabels([
+  [].concat('Customer', 'homeTown', 'currency', 'tPos'),
+  [].concat('RequestedSkills', StrC),
+  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  oS.filter=separateGroupLabels([
+  [].concat('Seller', 'homeTown', 'currency', 'tPos'),
+  [].concat('Languages', StrS),
+  [].concat('Reputation', StrPropRep)]);
+
+    // Default columns
+  oC.ColsShowDefault=[].concat('image', 'displayName', 'language', 'database', 'tel', 'idTeam', 'pricePerHour');
+  oC.ColsShowDefaultS=[].concat('image', 'displayName', 'language', 'database', 'pricePerHour');
+  oC.ColsShowDefaultRS=[].concat('image', 'language', 'database', 'pricePerHour');
+  oC.colOneMarkDefault='image';
+
+  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'idTeam', 'pricePerHour','c','java','php','javascript'];
+  oS.ColsShowDefaultS= ['image', 'displayName', 'pricePerHour','c','java','php','javascript'];
+  oS.ColsShowDefaultRS= ['image', 'displayName', 'pricePerHour','c','java','php','javascript'];
+  oS.colOneMarkDefault='image';
 
     // images
   var strPlugin='programmer';
@@ -1116,50 +1403,41 @@ CreatorPlugin.programmer=function(){
   //uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    langHtml.vendorRewritten=langHtml.programmer;
-    boRewriteVendor=true;
-    langHtml.loginInfo.vendor=langHtml.programmer;
-    langHtml.Vendor=ucfirst(langHtml.programmer);
-    langHtml.Vendors=ucfirst(langHtml.programmers);
-    langHtml.IndependentVendor=langHtml.IndependentProgrammer;
+    langHtml.sellerRewritten=langHtml.programmer;
+    boRewriteSeller=true;
+    langHtml.loginInfo.seller=langHtml.programmer;
+    langHtml.Seller=ucfirst(langHtml.programmer);
+    langHtml.Sellers=ucfirst(langHtml.programmers);
+    langHtml.IndependentSeller=langHtml.IndependentProgrammer;
 
-    langHtml.vendor=langHtml.programmer;    langHtml.vendors=langHtml.programmers;
-    langHtml.theVendor=langHtml.theProgrammer; langHtml.theVendors=langHtml.theProgrammers;
-    langHtml.theVendors0=langHtml.theProgrammers0;
+    langHtml.seller=langHtml.programmer;    langHtml.sellers=langHtml.programmers;
+    langHtml.theSeller=langHtml.theProgrammer; langHtml.theSellers=langHtml.theProgrammers;
+    langHtml.theSellers0=langHtml.theProgrammers0;
   }
   this.rewriteObj=function(){
-    $vendorSettingDiv.StrProp=[].concat('image', 'idTeamWanted', 'displayName', StrPropContact, 'coordinatePrecisionM', StrSpec);
-    $vendorSettingDiv.StrGroupFirst=['displayName','c'];
-    $vendorSettingDiv.StrGroup=['Vendor','Languages'];
-    $priceSettingDiv.StrProp=['currency','pricePerHour'];
-    $filterDiv.StrGroupFirst=['homeTown','c','created'];
-    $filterDiv.StrGroup=['Vendor','Languages','Reputation'];
 
-    var tmpSetGrade=function(iMTab,$ele){
-      var data=MTab[iMTab][$ele.attr('name')]; data=bound(data,0,5); var ColT=['','lightblue','lightgreen','yellow','orange','red'], colT=ColT[data];
-      $ele.css({'background':colT});
-      return data;
-    }
-/*    var makeCrInpFunc=function(i){return function(){
-      var $c=$('<select>'), arrTmp=[0,1,2,3,4,5];
-      for(var j=0;j<arrTmp.length;j++){  var $opt=$("<option>").text(arrTmp[j]).val(j);   $c.append($opt);    }
-      return $c;
-    };};*/
+      // database
+    $.extend(oC.Prop.database, {strType:'text',inpW:6});
+      // language
+    $.extend(oC.Prop.language, {strType:'text',inpW:6});
+
+      // StrProgrammerLang
     var crInpFunc=function(){
       var $c=$('<select>'), arrTmp=[0,1,2,3,4,5];
       for(var j=0;j<arrTmp.length;j++){  var $opt=$("<option>").text(arrTmp[j]).val(j);   $c.append($opt);    }
       return $c;
     };
+    var tmpSetGrade=function(iMTab,$ele){
+      var data=oS.MTab[iMTab][$ele.attr('name')]; data=bound(data,0,5); var ColT=['','lightblue','lightgreen','yellow','orange','red'], colT=ColT[data];
+      $ele.css({'background':colT});
+      return data;
+    }
     for(var i=0;i<StrProgrammerLang.length;i++) {
       var strName=StrProgrammerLang[i];
-      $.extend(Prop[strName], {
-        strType:'select',
-        crInp:crInpFunc,
-        setInfo:tmpSetGrade,
-        setTabF:tmpSetGrade
-      });
+      $.extend(oS.Prop[strName], { strType:'select', crInp:crInpFunc, setInfo:tmpSetGrade, setTabF:tmpSetGrade });
     }
-    $.extend(Prop.otherLang, {strType:'text',inpW:6});
+      // otherLang
+    $.extend(oS.Prop.otherLang, {strType:'text',inpW:6});
   }
 };
 //0123456789abcdef
@@ -1170,8 +1448,8 @@ CreatorPlugin.programmer=function(){
 //0123456789abcdef client.js
 setUp=function(){
 var trackConv=function(google_conversion_id,google_conversion_label) {
-         var image = new Image(1,1);
-         image.src = "https://www.googleadservices.com/pagead/conversion/"+google_conversion_id+"/?label="+google_conversion_label+"&script=0";
+  var image = new Image(1,1);
+  image.src = "https://www.googleadservices.com/pagead/conversion/"+google_conversion_id+"/?label="+google_conversion_label+"&script=0";
 }
 
 
@@ -1225,42 +1503,11 @@ history.fastBack=function($viewGoal, boRefreshHash){
   }
 }
 
-
-//var maskToInd=function(mask){  var ind=[];  for(var i=0;i<mask.length;i++) {if(mask[i]) ind.push(i);} return ind; }
-var maskToInd=function(mask,ind=[]){  ind.length=0;  for(var i=0;i<mask.length;i++) {if(mask[i]) ind.push(i);} return ind; }
-
-//var indToMask=function(ind,len){   var mask=[]; for(var i=0;i<len;i++) {mask[i]=0;}  for(var i=0;i<ind.length;i++) {mask[ind[i]]=1;} return mask; }
-var indToMask=function(ind,len,mask){  if(typeof mask=='undefined') mask=Array(len); else mask.length=len; for(var i=0;i<len;i++) {mask[i]=0;}  for(var j=0;j<ind.length;j++) {mask[ind[j]]=1;} return mask; }
-
-var createColJIndexNamesObj=function(arrName){
-  var o={};
-  for(var i=0;i<arrName.length;i++){
-    var tmp="j"+arrName[i][0].toUpperCase()+arrName[i].substr(1);       o[tmp]=i;
-  }
-  return o;
-}
-
-
-var createChildInd=function(arrI,arrO){
-  var len=arrI.length;
-  if(typeof arrO=='undefined') arrO=Array(len); else arrO.length=len;
-  for(var i=0;i<len;i++){  arrO[arrI[i]]=i;  }  return arrO;
-}
-
-
-var setUpColsShowIndCurrency=function(){
-  myCopy(ColsShowCurrency,ColsShow);
-  if(boMultCurrency){
-    if(ColsShow.indexOf('currency')==-1) ColsShowCurrency.push('currency');
-  }
-};
-
-
-
 popUpExtend=function($el){
 "use strict"
   $el.openPop=function() {
-    $messageText.detach(); $el.append($messageText);
+    //$messageText.detach(); $el.append($messageText);
+    elBody.removeChild(spanMessageText); $el[0].appendChild(spanMessageText);
     //siz=getViewPortSize();  winW=siz.w;winH=siz.h;
     //var siz=getViewPortSize(); var winW=siz.w;
     var winW=$(window).width(),winH=$(window).height();
@@ -1287,7 +1534,8 @@ popUpExtend=function($el){
     $el.detach();
     $(window).off('scroll',$el.setBlanketSize);
     $el.$blanket.detach();
-    $body.append($messageText);
+    //$body.append($messageText);
+    elBody.appendChild(spanMessageText);
   }
 
   $el.setBlanketSize=function(){
@@ -1312,45 +1560,10 @@ var toastExtend=function($el){
     t=setTimeout(hideToast, t);
   }
   var t;
-  $el.click(function(){clearTimeout(t); hideToast();});
+  $el.on('click', function(){clearTimeout(t); hideToast();});
   $el.addClass('toast').hide();
   return $el;
 }
-
-
-
-
-
-
-var vippButtonExtend=function($el){
-"use strict"
-  $el.setStat=function(bo1){
-    if(!bo1) {$el.css(o0);} else {$el.css(o1);}
-    $el.attr({boOn:bo1});
-  }
-  var o0={background:'url('+uVipp0+') no-repeat'}, o1={background:'url('+uVipp1+') no-repeat'};
-
-  $el.attr({boOn:0});
-  $el.css({'background':'url('+uVipp0+') no-repeat',height:'33px',width:'90px',zoom:'60%','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
-  $el.on('click',function(){var t=1-$el.attr('boOn');   $el.setStat(t);});
-  return $el;
-}
-
-var toggleButtonExtend=function($el){
-  $el.setStat=function(bo1){
-    if(bo1) {$el.css(colOn);} else {$el.css(colOff);}
-    //$el.toggleClass('on',Boolean(bo1));
-    $el.attr({boOn:bo1});
-  }
-  var colOn={background:'#4f4'}, colOff={background:''};
-
-  $el.attr({boOn:0});
-  $el.css({height:'1em',width:'1em'});
-  $el.on('click',function(){var t=1-$el.attr('boOn');   $el.setStat(t);});
-  return $el;
-}
-
-
 
 
 
@@ -1358,30 +1571,55 @@ var toggleButtonExtend=function($el){
  * Some loose functions
  *******************************************************************************************************************/
 
+calcLabel=function(Label,strName){ return Label[strName]||ucfirst(strName); }
 
-var messExtend=function($el){
-"use strict"
-  //$el.resetMess=function(){ $el.html(''); clearTimeout(messTimer); }
-  $el.resetMess=function(time){
-    if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
-    else {$el.html(''); clearTimeout(messTimer);}
+//var messExtend=function($el){
+//"use strict"
+  ////$el.resetMess=function(){ $el.html(''); clearTimeout(messTimer); }
+  //$el.resetMess=function(time){
+    //if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
+    //else {$el.html(''); clearTimeout(messTimer);}
+  //}
+  //$el.setMess=function(str,time,boRot){
+    //$el.html(str);  clearTimeout(messTimer);
+    //if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
+    //if(boRot) $el.append($imgBusy);
+  //};
+  //$el.appendMess=function(str,time,boRot){
+    //$el.append(str);  clearTimeout(messTimer);
+    //if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
+    //if(boRot) $el.append($imgBusy);
+  //};
+  //var messTimer;
+  //$el.addClass('message').css({'z-index':8100,position:'fixed'});
+  //return $el;
+//}
+TypeSpanMessageText=function(){
+  var el=document.createElement('span');
+  el.resetMess=function(time){
+    clearTimeout(messTimer);
+    if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
+    el.innerHTML='';
   }
-  $el.setMess=function(str,time,boRot){
-    $el.html(str);  clearTimeout(messTimer);
-    if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
-    if(boRot) $el.append($imgBusy);
-  };
-  $el.appendMess=function(str,time,boRot){
-    $el.append(str);  clearTimeout(messTimer);
-    if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
-    if(boRot) $el.append($imgBusy);
+  el.setMess=function(str,time,boRot){
+    el.innerHTML=str;  clearTimeout(messTimer);
+    if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
+    if(boRot) el.appendChild($imgBusy[0]);
   };
   var messTimer;
-  $el.addClass('message').css({'z-index':8100,position:'fixed'});
-  return $el;
+  el.classList.add('message'); el.css({'z-index':8100,position:'fixed'});
+  return el;
 }
 
-
+separateGroupLabels=function(arr){
+  var objOut={StrProp:[], StrGroupFirst:[], StrGroup:[]};
+  for(var i=0;i<arr.length;i++){
+    objOut.StrProp=objOut.StrProp.concat(arr[i].slice(1));
+    objOut.StrGroupFirst.push(arr[i][1]);
+    objOut.StrGroup.push(arr[i][0]);
+  }
+  return objOut;
+}
 
 /*******************************************************************************************************************
  * Menu-divs
@@ -1393,15 +1631,19 @@ var adminDivExtend=function($el){
   $el.setUp=function(data){
     boShowTeam=Boolean(Number(data.boShowTeam)); $inpBoShowTeam.prop({checked:boShowTeam});
     //$filterDiv.setBoShowTeam(boShowTeam);
-    $filterDiv.children('[name=idTeam]').toggle(boShowTeam);
-    $markSelectorDiv.children('table').children('tbody').children('[name=idTeam]').toggle(boShowTeam);
-    $columnSelectorDiv.children('table').children('tbody').children('[name=idTeam]').toggle(boShowTeam);
-    $vendorSettingDiv.find('[name=idTeamWanted]').parent().toggle(boShowTeam);
-    if(!boShowTeam) {arrValRemove(ColsShowDefault,'idTeam'); arrValRemove(ColsShow,'idTeam');  setItem('ColsShow',ColsShow);}
-    
+    for(var i=0;i<ORole.length;i++){
+      $FilterDiv[i].$filterDivI.children('[name=idTeam]').toggle(boShowTeam);
+      $MarkSelectorDiv[i].children('table').children('tbody').children('[name=idTeam]').toggle(boShowTeam);
+      $ColumnSelectorDiv[i].children('table').children('tbody').children('[name=idTeam]').toggle(boShowTeam);
+      $SettingDiv[i].find('[name=idTeamWanted]').parent().toggle(boShowTeam);
+      if(!boShowTeam) {
+        arrValRemove(ORole[i].ColsShowDefault,'idTeam');
+        arrValRemove(ORole[i].ColsShow,'idTeam');  setItem('ColsShow'+ORole[i].charRoleUC, ORole[i].ColsShow);
+        if(ORole[i].colOneMark=='idTeam') ORole[i].colOneMark=ORole[i].colOneMarkDefault;
+      }
+    }   
   }
 
-  var $buttMonitorClear=$('<button>').html('Clear Monitor').css({display:'block','margin-top':'1em'}).click(function(){    var vec=[['adminMonitorClear',1]];   majax(oAJAX,vec);  });
 
     //set 
   $el.saveFunc=function(){
@@ -1412,20 +1654,20 @@ var adminDivExtend=function($el){
   var $inpBoShowTeam=$('<input>').prop({type:'checkbox'});
   var $pBoShowTeam=$('<p>').css({'margin-top':'1em'}).append('boShowTeam:',$inpBoShowTeam);
   
-  $el.append($pBoShowTeam);
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var adminFootExtend=function($el){
-"use strict"
-  var $buttonSave=$('<button>').click($adminDiv.saveFunc).append(langHtml.Save).addClass('flexWidth').css({'float':'left', 'margin-right':'.2em'});
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+
+  var $divCont=$('<div>').append($pBoShowTeam).addClass('contDiv');
+
+      // divFoot
+  var $buttonSave=$('<button>').on('click', $el.saveFunc).append(langHtml.Save).addClass('flexWidth').css({ 'margin-right':'.2em'});
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $span=$('<span>').append('Admin settings').addClass('footDivLabel');
-  $el.append($buttonBack,$buttonSave, $span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack, $buttonSave, $span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
-
-
 
 
 /*******************************************************************************************************************
@@ -1453,33 +1695,13 @@ var startPopExtendTouch=function($el){
 
 
 
-var seeUnActivePopExtend=function($el){
-"use strict"
-  $el=popUpExtend($el);
-  $el.css({'max-width':'16em', padding: '1.1em'});
-  $el.openFunc=$el.openPop;
-  var $im=$('<img>').prop({src:uSleepy});
-  var $now=$('<button>').html(langHtml.SeeUnActivePopMessButt).click(function(){
-    $filterDiv.Filt.filtClear();
-    loadTabStart(1); $el.closePop();
-  }).css({display:'block','margin-top':'1em'});
-  var $ok=$('<button>').append(langHtml.OK).click($el.closePop).css({display:'block','margin-top':'1em'});
-  var $p1=$('<p>').append($im).css({'text-align':'center'});
-  var $tmp=$(langHtml.SeeUnActivePopMess);
-  var $p2=$tmp.eq(0), $p3=$tmp.eq(1);
-  var tmpFeatDefault=Prop.posTime.feat.myDefault[1]
-  $p2.children('span:last').last().append(Prop.posTime.feat.max[tmpFeatDefault-1]);
-  //var $pButt=$('<p>').append($ok,$now).css({'margin-top':'1em'});
-  $el.append($p1,$p2,$p3,$ok,$now);
-  return $el;
-}
-
-var dummyShowingToastExtend=function($el){
+var noOneIsVisibleToastExtend=function($el){
 "use strict"
   $el=toastExtend($el);  $el.css({bottom:'10em'});
   var $im=$('<img>').prop({src:uDummy}).css({margin:'auto',display:'block'});
-  var $p1=$('<span>').append(langHtml.DummiesShowingMess);
-  //var $ok=$('<button>').append(langHtml.OK).click($el.closePop).css({display:'block','margin-top':'1em'});
+  //var $p1=$('<span>').append(langHtml.DummiesShowingMess);
+  var $p1=$('<span>').append(langHtml.CurrentlyNoOneIsVisible);
+  //var $ok=$('<button>').append(langHtml.OK).on('click', $el.closePop).css({display:'block','margin-top':'1em'});
   $el.append($p1);  //,$im
   return $el;
 }
@@ -1492,11 +1714,11 @@ var agreementStartExtend=function($el){
 "use strict"
   $el=popUpExtend($el);
   $el.openFunc=$el.openPop;
-  $el.compareLocalDates=function(boVendor){
+  $el.compareLocalDates=function(boSeller){
     var boFirst=0;
     dateLocal=getItem('agreInformedDate'); if(dateLocal===null) {dateLocal=[0,0]; }
-    if(dateLocal[boVendor]===0) boFirst=1;  //if the local stored time is 0 then boFirst shall be true
-    var boNew=0;  if(dateTextComp[boVendor]>dateLocal[boVendor]) {boNew=1;}
+    if(dateLocal[boSeller]===0) boFirst=1;  //if the local stored time is 0 then boFirst shall be true
+    var boNew=0;  if(dateTextComp[boSeller]>dateLocal[boSeller]) {boNew=1;}
 
     //$el.find('span').hide();
     //var $d0=$el.find('span:eq(0)'), $d1=$el.find('span:eq(1)');
@@ -1506,24 +1728,24 @@ var agreementStartExtend=function($el){
     return {boFirst:boFirst,boNew:boNew};
     //return boNew;
   }
-  $el.setLocalDates=function(boVendor){
+  $el.setLocalDates=function(boSeller){
     //setItem('agreInformedDate',dateTextComp);
-    if(boVendor) setItem('agreInformedDate',dateTextComp); // Write both
+    if(boSeller) setItem('agreInformedDate',dateTextComp); // Write both
     else {var dateTextTmp=[dateTextComp[0],dateLocal[1]]; setItem('agreInformedDate',dateTextTmp);} // Write only the first
   }
   $el.css({ width:'25em', padding: '2em'});
-  //$el.find('button:eq(0)').click($el.closePop);
-  var $buttonOK=$('<button>').append(langHtml.OK).click($el.closePop);
+  //$el.find('button:eq(0)').on('click', $el.closePop);
+  var $buttonOK=$('<button>').append(langHtml.OK).on('click', $el.closePop);
   var $d0=$('<span>').append(langHtml.agreement[0]), $d1=$('<span>').append(langHtml.agreement[1]);
 
   var dateLocal=[];
-  var vStr=['agreementComplainerHead','agreementVendorHead'];
+  var vStr=['agreementComplainerHead','agreementSellerHead'];
   var dateText=[];
   for(var i=0;i<vStr.length;i++){
     var arrT=langHtml[vStr[i]].match(/(\d\d\d\d)-(\d\d)-(\d\d)/);
     dateText[i]=(new Date(arrT[1],arrT[2],arrT[3]))/1000;
   }
-  var dateTextComp=[0,0]; dateTextComp[0]=dateText[0];  // dateTextComp: date of text to compare with dateLocal (for complainer resp vendor) (vendor shall read both texts)
+  var dateTextComp=[0,0]; dateTextComp[0]=dateText[0];  // dateTextComp: date of text to compare with dateLocal (for complainer resp complainee) (complainee shall read both texts)
   for(var i=0;i<vStr.length;i++){
     if(dateText[i]>dateTextComp[1]) dateTextComp[1]=dateText[i];
   }
@@ -1536,149 +1758,13 @@ var agreementStartExtend=function($el){
 
 
 
-/*******************************************************************************************************************
- * payDiv
- *******************************************************************************************************************/
-
-var payDivExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'payDiv';}
-  var setTax=function(boTax){
-    if(boTax) {
-      $inpButtId.val(storedButt.payTax);
-      $select.empty().append($optT);
-      $VATDiv.show(); $inEu1.prop({checked:1});
-    } else {
-      $inpButtId.val(storedButt.pay);
-      $select.empty().append($opt);
-      $VATDiv.hide();  $inEu0.prop({checked:1});
-    }
-     //$os2.val('');
-  }
-  var sendRebateCode=function(){
-    var tmp=$rebateCode.val(); //if(tmp.length!=rebateCodeLen ) {$messageText.html($lengthErrMess.html()); return false;}
-    var vec=[['SUseRebateCode',{rebateCode:tmp.slice(0,10)}]];   majax(oAJAX,vec);  // , ['setupById',{Role:'vendor'}]
-  }
-  $el.setUp=function(){
-    $rebateCode.val('');
-    $inpIdUser.val(userInfoFrDB.vendor.idUser);
-    setTax(0);
-    if($payButton.tDiff>3600*24*365) {$formDiv.hide();  $rebateCodeDiv.hide(); $deadLineMess.show();}
-    else {$formDiv.show();  $rebateCodeDiv.show(); $deadLineMess.hide();}
-  }
-  var mySubmit=function(){
-    $inpTime.val($select.val());
-    $inpVatNumber.val($vatNumber.val());
-    $form.submit();
-  }
-
-  var $formDiv=$el.children('div:eq(0)').css({'margin-bottom':'0em','margin-top':'0.5em','background-color':'#fdd',border:'solid 1px'});
-  var $select=$formDiv.find('select');
-  var $inEu0=$formDiv.find(':radio:eq(0)');   $inEu0.prop({name:'inEU'}).val(0).change(function(){setTax(0);});
-  var $inEu1=$formDiv.find(':radio:eq(1)');   $inEu1.prop({name:'inEU'}).val(1).change(function(){setTax(1);});
-  var $VATDiv=$formDiv.find('p:eq(3)');
-  var $vatNumber=$VATDiv.children('input');
-  //var urlPaypalButton="https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif";
-  //var urlPaypalButton="https://www.paypalobjects.com/webstatic/en_US/btn/btn_paynow_cc_144x47.png";
-  var urlPaypalButton="https://www.paypalobjects.com/webstatic/en_US/btn/btn_pponly_142x27.png";
-  var $img=$formDiv.find('img').prop({src:urlPaypalButton,border:"0"}).css({display:'block','margin-top':'0.3em',cursor:'pointer'}).click(mySubmit);
-  $inEu0.prop({checked:1});
-
-  $formDiv.children('p').css({margin:'0.8em 0'});
-  //$el.css({'max-width':'400px'});
-
-
-    // opt, optT
-  var arrSelVal=['1 month','6 months','12 months'];
-  var arrNMon=[1,6,12];
-  var $opt=$([]),$optT=$([]);
-  var cur=storedButt.cur;
-  var prices=storedButt.prices;
-  for(var i=1;i<arrNMon.length;i++){
-    var n=arrNMon[i];
-    var tmpM; if(i==0) tmpM=langHtml.timeUnit.mo[2]; else tmpM=langHtml.timeUnit.mo[3];
-    var price=prices[i];
-    var $otmp=$('<option>').append(n+' '+tmpM+' '+price+' '+cur).val(arrSelVal[i]);
-    var $otmpT=$('<option>').append(n+' '+tmpM+' '+price+' '+cur+' ('+(price*1.25)+' '+cur+')').val(arrSelVal[i]);
-    $opt=$opt.add($otmp);    $optT=$optT.add($otmpT);
-  }
-
-
-    // form
-  var $form=$('<form>');  $form.prop({action:urlPayPal,method:'post'});
-  var $inpCmd=$('<input>').prop({name:"cmd", value:"_s-xclick"});
-  var $inpButtId=$('<input>').prop({name:"hosted_button_id"});
-  var $on0=$('<input>').prop({name:"on0", value:"time"});
-  var $inpTime=$('<input>').prop({name:"os0"});
-  var $on1=$('<input>').prop({name:'on1',value:'idUser'});
-  var $inpIdUser=$('<input>').prop({name:'os1'});
-  var $on2=$('<input>').prop({name:'on2',value:'vatNumber'});
-  var $inpVatNumber=$('<input>').prop({name:'os2'});
-  var $currency=$('<input>').prop({name:"currency_code", value:cur});
-  var $submitFix=$('<input type="submit" value="submit"/>'); // IE need a "type=submit" in the form
-  $form.append($inpCmd,$inpButtId,$on0,$inpTime,$on1,$inpIdUser,$on2,$inpVatNumber,$currency,$submitFix);
-  $form.hide(); $el.append($form); // IE needs it mounted to DOM
-
-
-    // rebateCodeDiv
-  var $rebateCodeDiv=$el.children('div:eq(1)').css({'margin-top':'0.7em'});
-  var $rebateCode=$rebateCodeDiv.children('input').prop({size:8}).keypress( function(e){ if(e.which==13) {sendRebateCode();return false;}} );
-  var $rebateCodeButton=$rebateCodeDiv.children('button').click(sendRebateCode);
-
-    // deadLineMess
-  var $deadLineMess=$el.children('div:eq(2)').css({'margin-top':'1em'});
-
-    // paymentListShowButt
-  var $paymentListShowButt=$deadLineMess.nextAll('button:eq(0)').click(function(){
-    $paymentListDiv.load();
-    $paymentListDiv.setVis();
-    doHistPush({$view:$paymentListDiv});
-  });
-
-
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var payFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append(langHtml.Deadline).addClass('footDivLabel');
-  $el.append($buttonBack, $span).addClass('footDiv');
-  return $el;
-}
-
-
-
-var payButtonExtend=function($el){
-  var timeSpanExtend=function($el){
-    $el.setUp=function(boT){if(boT) {t1=setInterval(blinkF,500);} else {clearInterval(t1); $timeSpan.css({background:'transparent'});} }
-    var blinkF=function(){ boOn=1-boOn; tmpStr=boOn?'#f33':'transparent'; $el.css({background:tmpStr}); }
-    var t1,boOn=0,tmpStr;
-    return $el;
-  }
-  $el.setUp=function(){
-    var tTermination=userInfoFrDB.vendor.terminationDate, tCur=(new Date())/1000; //tTermination=0;
-    $el.tDiff=intMax;   var num=' - ', unit='', boBlink=0;
-    if(tTermination!=intMax) {
-      $el.tDiff=Math.max(tTermination-tCur,0); if($el.tDiff<3600*24*3) {boBlink=1;}
-      var arrT=UTC2ReadableDiff($el.tDiff, 0, 1);  num=arrT[0]; unit=arrT[1];
-    }
-    $num.html(num); $unit.html(unit);
-    $timeSpan.setUp(boBlink);
-  }
-  var $timeSpan=timeSpanExtend($el.children('span'));
-  var $num=$timeSpan.children('span.num').removeClass();
-  var $unit=$timeSpan.children('span.unit').removeClass();
-  return $el;
-}
-
 var entryTest=function(arrMustBeSet,arrPosNum,arrPosNumOrEmpty){
   for(var i=0;i<arrPosNum.length;i++){
-    var id=arrPosNum[i], tmp=$('#'+id).val();  if(!(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive'); return false;}     }
+    var id=arrPosNum[i], tmp=$('#'+id).val();  if(!(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive', 5); return false;}     }
   for(var i=0;i<arrMustBeSet.length;i++){
-    var id=arrMustBeSet[i], tmp=$('#'+id).val();  if(tmp.length==0) {setMess(id+' can not be empty'); return false;}     }
+    var id=arrMustBeSet[i], tmp=$('#'+id).val();  if(tmp.length==0) {setMess(id+' can not be empty', 5); return false;}     }
   for(var i=0;i<arrPosNumOrEmpty.length;i++){
-    var id=arrPosNumOrEmpty[i], tmp=$('#'+id).val();  if(tmp.length>0 && !(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive'); return false;}     }
+    var id=arrPosNumOrEmpty[i], tmp=$('#'+id).val();  if(tmp.length>0 && !(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive', 5); return false;}     }
 
   return true;
 }
@@ -1718,14 +1804,14 @@ selSpriteExtend=function(el,iObj){
 
   var $spriteOnButt=$(spriteExtend($('<span>')[0],iObj));
 
-  var $button=$('<button>').append($spriteOnButt).click(function(e){   if(el.isOpen()) { el.closeFunc();}  else { openFunc(e);}  });
+  var $button=$('<button>').append($spriteOnButt).on('click', function(e){   if(el.isOpen()) { el.closeFunc();}  else { openFunc(e);}  });
   var $divMenu=$('<div>').css({position:'absolute',border:'black 1px solid',background:'#fff',left:0+'px',top:28+'px','z-index':1});
   $(el).append($button,$divMenu);
 
   for(var i=0;i<iObj.order.length;i++){
     var $span=$(spriteExtend($('<span>')[0],iObj));
     $span.css({position:'relative', top:'50%',  transform:'translateY(-50%)'})
-    var $div=$('<div>').append($span).click(menuClickF).css({'height':'2em'}); //,display:'block'
+    var $div=$('<div>').append($span).on('click', menuClickF).css({'height':'2em'}); //,display:'block'
     $div.on('mouseover', mouseOver);
     $div.on('mouseout', mouseOut);
     $div[0].i=i
@@ -1733,7 +1819,7 @@ selSpriteExtend=function(el,iObj){
   }
 
   $divMenu.hide();
-  $('html').click(el.closeFunc);
+  $('html').on('click', el.closeFunc);
 
   return el;
 }
@@ -1752,7 +1838,7 @@ spriteExtend=function(el,iObj){
   el.iCur=undefined;
   var zT=iObj.zoom;
 
-  $(el).css({display:'inline-block',position: 'relative',overflow:'hidden',bottom:'-1px'});
+  $(el).css({display:'inline-block',position: 'relative',overflow:'hidden',bottom:'0px'});
   var wSSc=zT*iObj.sheetW, hSSc=zT*iObj.sheetH;
   var img=$('<img>').prop({src:iObj.url}).css({position:'absolute',width:wSSc+'px',height:hSSc+'px'});
   $(el).html(img);
@@ -1769,34 +1855,37 @@ inpAsNum=function($inp){return [null, Number($inp.prop('checked'))]; }
 
 
 /*******************************************************************************************************************
- * vendorSettingDiv
+ * roleSettingDiv
  *******************************************************************************************************************/
 
-var vendorSettingDivExtend=function($el){
+var roleSettingDivExtend=function($el,oRole){
 "use strict"
-  $el.toString=function(){return 'vendorSettingDiv';}
+  var {charRole, strRole, charRoleUC}=oRole;
+  $el.toString=function(){return 'settingDiv'+charRoleUC;}
   $el.save=function(){
     resetMess();
-    var o={},boErr=0;
+    var o={charRole:charRole},boErr=0;
     $inps.each(function(i){
-      var $inp=$(this),  strName=$inp.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
+      var $inp=$(this),  strName=$inp.attr('name'), tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{};
       //if('saveInp' in tmpObj) {var tmp=tmpObj.saveInp($inp); if(tmp===false) boErr=1; else if(tmp===null); else o[strName]=tmp;} else o[strName]=$inp.val().trim();
-      if('saveInp' in tmpObj) {var [err,val]=tmpObj.saveInp($inp); if(err) {setMess(err); boErr=1; } else o[strName]=val;} else o[strName]=$inp.val().trim();
+      if('saveInp' in tmpObj) {var [err,val]=tmpObj.saveInp($inp); if(err) {setMess(err, 10); boErr=1; } else o[strName]=val;}
+      else {var tmp=$inp.val(); if(typeof tmp=='string') tmp=tmp.trim(); o[strName]=tmp; }
     });
     if(boErr) return;
-    var vec=[['VUpdate',o,$el.setUp], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec);
+    var vec=[['RUpdate', o, $el.setUp], ['setupById',{Role:strRole}]];   majax(oAJAX,vec);
     setMess('',null,true);
   }
 
   $el.createDivs=function(){
-    for(var i=0;i<$el.StrProp.length;i++){
-      var strName=$el.StrProp[i];
-      var $imgH=''; if(strName in $el.helpBub ) {    var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,$el.helpBub[strName]);         }
+    var {StrProp, StrGroup, StrGroupFirst}=oRole.roleSetting;
+    for(var i=0;i<StrProp.length;i++){
+      var strName=StrProp[i];
+      var $imgH=''; if(strName in oRole.helpBub ) {    var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,oRole.helpBub[strName]);         }
 
       //var strLabel=ucfirst(strName)+': '; if(strName in langHtml.label) strLabel=langHtml.label[strName]+': ';
       var strLabel=calcLabel(langHtml.label, strName)+': ';
 
-      var $inp='', tmpObj=(strName in Prop)?Prop[strName]:emptyObj,  strType=('strType' in tmpObj)?tmpObj.strType:'';
+      var $inp='', tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in tmpObj)?tmpObj.strType:'';
       if('crInp' in tmpObj) $inp=tmpObj.crInp(); else $inp=$('<input type='+strType+'>');
       if('inpW' in tmpObj)  $inp.css({width:tmpObj.inpW+'em'});
       $inp.attr('name',strName);
@@ -1805,7 +1894,7 @@ var vendorSettingDivExtend=function($el){
       $inps.push($inp);
     }
     $divCont.append($divs);
-    $divCont.find('input[type=text],[type=number],[type=tel],[type=email],[type=url]').keypress( function(e){ if(e.which==13) {save();return false;}} );
+    $divCont.find('input[type=text],[type=number],[type=tel],[type=email],[type=url]').on('keypress', function(e){ if(e.which==13) {save();return false;}} );
     var $tmp=$divCont.find('input[type=number]').prop({min:0});
     $divCont.find('input,select').css({'float':'right',clear:'both'});
 
@@ -1816,51 +1905,52 @@ var vendorSettingDivExtend=function($el){
     //$inps.css({position:'absolute',right:'0px'}); //,overflow:'hidden'
 
       // Add labels
-    for(var i=0;i<$el.StrGroup.length;i++){
-      var $h=$('<span>').append(langHtml[$el.StrGroup[i]],':').css({'font-size':'120%','font-weight':'bold', display:'block'});
-      $el.find('[name='+$el.StrGroupFirst[i]+']').parent().before('<hr style="clear:both">',$h);
+    for(var i=0;i<StrGroup.length;i++){
+      var $h=$('<span>').append(langHtml[StrGroup[i]],':').css({'font-size':'120%','font-weight':'bold', display:'block'});
+      $el.find('[name='+StrGroupFirst[i]+']').parent().before('<hr style="clear:both">',$h);
     }
   }
   $el.setUp=function(){
     $inps.each(function(i){
-      var $inp=$(this), strName=$inp.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj,  strType=('strType' in tmpObj)?tmpObj.strType:'';
+      var $inp=$(this), strName=$inp.attr('name'), tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in tmpObj)?tmpObj.strType:'';
       if('setInp' in tmpObj) tmpObj.setInp($inp);
       else {
-        var data=userInfoFrDB.vendor[strName];
+        var data=userInfoFrDB[strRole][strName];
         if(strType==='checkbox') $inp.prop('checked',Number(data));   else $inp.val(data);
       }
     });
 
     return true;
   }
-
   var $inps=$([]);
 
-  $el.helpBub=$.extend({},helpBub);
+  //$el.helpBub=$.extend({},helpBub);
 
-  var $divCont=$('<div>'), $divs=$([]);
-  $el.append($divCont);
+  var $divs=$([]), $divCont=$('<div>').addClass('contDiv');
+  
+    // divFoot
+  var $buttonSave=$('<button>').on('click', $el.save).append(langHtml.Save).addClass('flexWidth').css({'margin-right':'.2em'});
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  var strLabT=strRole=='customer'?langHtml.CustomerSettings:langHtml.SellerSettings; 
+  var $span=$('<span>').append(strLabT).addClass('footDivLabel').css({background:oRole.strColor});
+  var $divFoot=$('<div>').append($buttonBack, $buttonSave, $span).addClass('footDiv');
 
-  $el.css({'text-align':'left'});
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
-var vendorSettingFootExtend=function($el){
-"use strict"
-  var $buttonSave=$('<button>').click($vendorSettingDiv.save).append(langHtml.Save).addClass('flexWidth').css({'float':'left', 'margin-right':'.2em'});
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append(langHtml.VendorSettings).addClass('footDivLabel');
-  $el.append($buttonBack, $buttonSave, $span).addClass('footDiv');
-  return $el;
-}
 
 
-spanIdTeamWantedExtend=function(el){
+spanIdTeamWantedExtend=function(el,oRole){
+  var strRole=oRole.strRole;
+  var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
   el.setStat=function(){
-    var idTmp=userInfoFrDB.vendor.idTeamWanted, tag=userInfoFrDB.vendor.imTagTeam;
-    if(idTmp!=0){ var strTmp=uTeamImage+idTmp+'?v='+tag; $thumbDis.prop({src:strTmp}); $thumbDis.show(); $spanDisNApproved.show(); $inp.val(idTmp);}
+    var idTmp=userInfoFrDB[strRole].idTeamWanted, tag=userInfoFrDB[strRole].imTagTeam;
+    if(idTmp!=0){ var strTmp=uRoleTeamImage+idTmp+'?v='+tag; $thumbDis.prop({src:strTmp}); $thumbDis.show(); $spanDisNApproved.show(); $inp.val(idTmp);}
     else { $thumbDis.hide(); $spanDisNApproved.hide(); $inp.val('');}
 
-    var idTeam=userInfoFrDB.vendor.idTeam; $spanDisNApproved.toggle(idTmp!=idTeam);
+    var idTeam=userInfoFrDB[strRole].idTeam; $spanDisNApproved.toggle(idTmp!=idTeam);
   }
   var $inp=$('<input type=text>').css({width:'3em'});
   var $thumbDis=$('<img>').css({'vertical-align':'middle','margin-left':'0.5em'}); //'float':'right',clear:'both'
@@ -1872,149 +1962,86 @@ spanIdTeamWantedExtend=function(el){
 
 
 /*
- * priceSettingDiv
- */
-
-
-var priceSettingDivExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'priceSettingDiv';}
-  $el.save=function(){
-    resetMess();
-    var o={},boErr=0;
-    $inps.each(function(i){
-      var $inp=$(this),  strName=$inp.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      //if('saveInp' in tmpObj) {var tmp=tmpObj.saveInp($inp); if(tmp===false) boErr=1; else o[strName]=tmp;}       else o[strName]=$inp.val().trim();
-      if('saveInp' in tmpObj) {var tmp=tmpObj.saveInp($inp); if(tmp[0]) {setMess(tmp[0]); boErr=1; } else o[strName]=tmp[1];} else o[strName]=$inp.val().trim();
-    });
-    if(boErr) return;
-    o.boPrice=1;
-    var vec=[['VUpdate',o,$el.setUp], ['setupById',{Role:'vendor'}]];   majax(oAJAX,vec);
-    setMess('',null,true);
-  }
-
-  $el.createDivs=function(){
-    for(var i=0;i<$el.StrProp.length;i++){
-      var strName=$el.StrProp[i];
-      var $imgH=''; if(strName in helpBub ) {    var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,helpBub[strName]);         }
-
-      //var strLabel=ucfirst(strName)+': '; if(strName in langHtml.label) strLabel=langHtml.label[strName]+': ';
-      var strLabel=calcLabel(langHtml.label, strName)+': ';
-
-      var $inp='', tmpObj=(strName in Prop)?Prop[strName]:emptyObj,  strType=('strType' in tmpObj)?tmpObj.strType:'';
-      if('crInp' in tmpObj) $inp=tmpObj.crInp(); else $inp=$('<input type='+strType+'>');
-      if('inpW' in tmpObj)  $inp.css({width:tmpObj.inpW+'em'});
-      $inp.attr('name',strName);
-      var $divLCH=$('<div>').append(strLabel,$imgH,$inp);
-      $divs.push($divLCH);
-      $inps.push($inp);
-    }
-    $divCont.append($divs);
-    $divCont.find('input[type=text],[type=number]').keypress( function(e){ if(e.which==13) {save();return false;}} );
-    var $tmp=$divCont.find('input[type=number]').prop({min:0});
-    $divCont.find('input,select').css({'float':'right',clear:'both'});
-
-    $divs.css({margin:'.8em 0','min-height':'2em'});
-  }
-  var $inps=$([]);
-
-
-  $el.setUp=function(){
-    $inps.each(function(i){
-      var $inp=$(this);
-      var strName=$inp.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      if('setInp' in tmpObj) tmpObj.setInp($inp); else $inp.val(userInfoFrDB.vendor[strName]);
-    });
-
-    return true;
-  }
-  $el.StrProp=[];
-  var $divCont=$('<div>'), $divs=$([]);
-  $el.append($divCont);
-
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var priceSettingFootExtend=function($el){
-"use strict"
-  var $buttonSave=$('<button>').click($priceSettingDiv.save).append(langHtml.Save).addClass('flexWidth').css({'float':'left', 'margin-right':'.2em'});
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append(langHtml.Prices).addClass('footDivLabel');
-  $el.append($buttonBack, $buttonSave, $span).addClass('footDiv');
-  return $el;
-}
-
-
-
-
-
-/*
  * quickDiv
  */
 
-var quickDivExtend=function($el){
+var quickDivExtend=function($el,oRole){
 "use strict"
-
-
+  var {charRole, strRole}=oRole;
   var myHide=function(){
     setMess('',null,true); //$imgBusyL.css({visibility:''});//show();
-    var vec=[['VHide'], ['setupById',{Role:'vendor'}]];  majax(oAJAX,vec); 
+    var vec=[['RHide',{charRole:charRole}], ['setupById',{Role:strRole}]];  majax(oAJAX,vec); 
   }
 
   $el.setUp=function(){
-    var boShow=Number(userInfoFrDB.vendor.boShow);  //$imgBusyL.css({visibility:'hidden'});//hide();
-    //var tmpS,tmpH,str; if(boShow) { str=langHtml.NewPos; tmpS='#0f0'; tmpH=colGray;}else { str=langHtml.Visible; tmpS=colGray; tmpH='#f00'; }
-    var tHide=Number(userInfoFrDB.vendor.posTime)+Number(userInfoFrDB.vendor.hideTimer), tDiff=tHide-curTime;
-    var tDiff=UTC2ReadableDiff(tDiff);
-    var tmpS,tmpH,str; if(boShow) { str=tDiff; tmpS='#0f0'; tmpH=colGray;}else { str=langHtml.On; tmpS=colGray; tmpH='#f00'; }
-    $butShowWPos.html(str).css('background-color', tmpS); $buthide.css('background-color', tmpH);
+    var boShow=Number(userInfoFrDB[strRole].boShow);  //$imgBusyL.css({visibility:'hidden'});//hide();
+    var hideTimer=Number(userInfoFrDB[strRole].hideTimer);
+    var tHide=Number(userInfoFrDB[strRole].tPos)+hideTimer, tDiff=tHide-curTime;
+    var tDiffForm=UTC2ReadableDiff(tDiff);
+    var tmpShow,tmpHide,str; if(boShow) { str=hideTimer==uintMax?'∞':tDiffForm; tmpShow='#0f0'; tmpHide=colGray;}else { str=langHtml.On; tmpShow=colGray; tmpHide='#f00'; }
+    $butShowWPos.html(str).css('background-color', tmpShow); $buthide.css('background-color', tmpHide);
     $spanDragMess.toggle(Boolean(1-boShow));
 
-    //var tmpMi=userInfoFrDB.vendor.hideTimer, bestFit=intMax, bestVal;
-    //for(var i=0;i<arrHideTime.length;i++) { var tmp=Math.abs(tmpMi-arrHideTime[i]); if(tmp<bestFit) {bestFit=tmp; bestVal=arrHideTime[i];}}
-    var tmp=closest2Val(arrHideTime, userInfoFrDB.vendor.hideTimer), bestVal=tmp[0];
+    var [bestVal, iBest]=closest2Val(arrHideTime, userInfoFrDB[strRole].hideTimer);
     $el.$selHideTimer.val(bestVal);
   }
 
   var colGray='#eee'
-  //var $butShowWPos=$("<button>").append(langHtml.ShowNUpdate)
-  //var $buthide=$("<button>").append(langHtml.Hide);
   var $butShowWPos=$("<button>").append(langHtml.On).css({'margin-left':'1em'});
   var $buthide=$("<button>").append(langHtml.Off).css({'margin-left':'1em'});
-  //var $imgBusyL=$('<img>').prop({src:uBusy});
   var $divButts=$('<span>').append($butShowWPos,$buthide); //,' ',$imgBusyL
 
-  var tmpf=function(pos){
+  var myShow=function(pos){
     var latLng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latLng=latLngDebug;
-    uploadPosNLoadTabStart(latLng);
+    uploadPosNLoadTabStart(latLng, Number($el.$selHideTimer.val()), oRole);
   }
 
-  $butShowWPos.click(function(){
+  $butShowWPos.on('click', function(){
+    if(boDbg) {  setMess('... using origo ... ',null,true); myShow({coords:{latitude:0, longitude:0}});  return;  }
+      
     if(boFirstPosOK==0) {setMess('You must agree to sending your position.'); return;}
-    setMess('... getting pos ...');  //$imgBusyL.css({visibility:''});//show();
+    //setMess('... getting pos ...');  //$imgBusyL.css({visibility:''});//show();
     setMess('... getting position ... ',null,true);
-    if(boEmulator){ tmpf(posDebug); }else{ navigator.geolocation.getCurrentPosition(tmpf, geoError);  }  //, {maximumAge:Infinity, timeout:5000}
+    if(boEmulator){ myShow(posDebug); }else{ navigator.geolocation.getCurrentPosition(myShow, geoError);  }  //, {maximumAge:Infinity, timeout:5000}
   });
 
-  $buthide.click(myHide);
-
+  $buthide.on('click', myHide);
 
   var tu=langHtml.timeUnit, mi=tu.min[1], h=tu.h[1], d=tu.d[1];
   $el.$selHideTimer=$('<select>');
-  var arrHideTime=[0.25,1,2, 5,10,15,20,30,40,60,90,2*60,3*60,4*60,5*60,6*60,8*60,10*60,12*60,18*60,24*60,36*60,2*24*60,3*24*60,4*24*60,5*24*60,6*24*60,7*24*60,14*24*60,30*24*60,365*24*60]; // Minutes
-  for(var i=0;i<arrHideTime.length;i++) arrHideTime[i]*=60;
-  for(var i=0;i<arrHideTime.length;i++){  var str=UTC2ReadableDiff(arrHideTime[i]),  $opt=$("<option>").text(str).val(arrHideTime[i]);   $el.$selHideTimer.append($opt);    }
+  //var arrHideTime=[0.25,1,2, 5,10,15,20,30,40,60,90,2*60,3*60,4*60,5*60,6*60,8*60,10*60,12*60,18*60,24*60,36*60,2*24*60,3*24*60,4*24*60,5*24*60,6*24*60,7*24*60,14*24*60,30*24*60,365*24*60]; // Minutes
+  //for(var i=0;i<arrHideTime.length;i++) arrHideTime[i]*=60;
+  var arrHideTime=[15,60,120, 300,600,15*60,20*60,30*60,40*60,3600,1.5*3600,2*3600,3*3600,4*3600,5*3600,6*3600,8*3600,10*3600,12*3600,18*3600,86400,1.5*86400,2*86400,3*86400,4*86400,5*86400,6*86400,7*86400,14*86400,30*86400,uintMax], len=arrHideTime.length;
+  for(var i=0;i<len;i++){  var str=UTC2ReadableDiff(arrHideTime[i]); if(i==len-1) str='∞'; var $opt=$("<option>").text(str).val(arrHideTime[i]);   $el.$selHideTimer.append($opt);    }
 
-  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$('<div>').append(langHtml.quickHelp));
-
-  //var $spanDragMess=$('<span>').append(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'0em','white-space':'nowrap'}).hide();
   var $spanDragMess=$('<span>').append(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();
+  
+  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$('<div>').append(langHtml.quickHelp));
+  var $spanLabel=$el.$spanLabel=$('<span>').append(langHtml[ucfirst(oRole.strRole)]).addClass('footDivLabel').css({'font-size':'80%', top:'-.1em'});
+  
+    // butTog
+  $el.$ElToggleble=$([]).push($el.$selHideTimer, $divButts, $imgH, $spanLabel);
+  $el.$butTog=$("<button>").append('-').css({'margin-left':'.4em', position:'absolute', right:'0em', 'z-index':'1'}).on('click', function(){
+    var boVis=$QuickDiv[oRole.ind].$spanLabel.is(':visible');
+    var boAltVis=$QuickDiv[1-oRole.ind].$spanLabel.is(':visible');
+    if(boVis && boAltVis){
+      $QuickDiv[oRole.ind].$ElToggleble.hide(); $QuickDiv[oRole.ind].$butTog.html('+');  $QuickDiv[1-oRole.ind].$butTog.hide(); $QuickDiv[oRole.ind].css({'padding-top':'.2em'});
+      $QuickDiv[oRole.ind].$butTog.css(oRole==oC?'top':'bottom','0em');
+    }else {
+      for(var i=0;i<ORole.length;i++) {
+        $QuickDiv[i].$ElToggleble.show();  $QuickDiv[i].$butTog.html('-').show();  $QuickDiv[i].css({'padding-top':'.7em'});
+        $QuickDiv[i].$butTog.css(ORole[i]==oC?'top':'bottom','0.3em');
+      }
+    }
+  });
+  $el.$butTog.css(oRole==oC?'top':'bottom','0.3em');
+  $el.$butTogW=$('<span>').append($el.$butTog);
 
-
-  $el.append($el.$selHideTimer,$divButts,$imgH); //,$spanDragMess
-  //$el.append($divButts,$spanDragMess);
+  $el.append($el.$ElToggleble, $el.$butTogW);
+  
+  
   $el.css({position:'relative'});
-  $el.css({'text-align':'left', position:'relative'});
+  $el.css({'text-align':'left', position:'relative', background:oRole.strColor});
   return $el;
 }
 
@@ -2022,11 +2049,11 @@ var quickDivExtend=function($el){
 var entryTestWMyName=function($el,arrMustBeSet,arrPosNum,arrPosNumOrEmpty){
 "use strict"
   for(var i=0;i<arrPosNum.length;i++){
-    var id=arrPosNum[i], tmp=$el.find('[myName="'+id+'"]').val();  if(!(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive'); return false;}     }
+    var id=arrPosNum[i], tmp=$el.find('[myName="'+id+'"]').val();  if(!(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive', 5); return false;}     }
   for(var i=0;i<arrMustBeSet.length;i++){
-    var id=arrMustBeSet[i], tmp=$el.find('[myName="'+id+'"]').val();  if(tmp.length==0) {setMess(id+' can not be empty'); return false;}     }
+    var id=arrMustBeSet[i], tmp=$el.find('[myName="'+id+'"]').val();  if(tmp.length==0) {setMess(id+' can not be empty', 5); return false;}     }
   for(var i=0;i<arrPosNumOrEmpty.length;i++){
-    var id=arrPosNumOrEmpty[i], tmp=$el.find('[myName="'+id+'"]').val();  if(tmp.length>0 && !(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive'); return false;}     }
+    var id=arrPosNumOrEmpty[i], tmp=$el.find('[myName="'+id+'"]').val();  if(tmp.length>0 && !(isNumber(tmp) && tmp>=0) ) {setMess(id+' must be nummeric and positive', 5); return false;}     }
 
   return true;
 }
@@ -2035,249 +2062,83 @@ var entryTestWMyName=function($el,arrMustBeSet,arrPosNum,arrPosNumOrEmpty){
 var input2object=function($el){
   var o={};
   $el.find('input, select').each(function(){
-      var type=this.getAttribute('type'), tmp=this.value;
-      //alert(this.id+' '+type+' '+tmp);
-      if(type==='checkbox')  tmp=Number(this.checked);
-      if(tmp.length) o[$(this).attr('myName')]=tmp;});
+    var type=this.getAttribute('type'), tmp=this.value;
+    //alert(this.id+' '+type+' '+tmp);
+    if(type==='checkbox')  tmp=Number(this.checked);
+    if(tmp.length) o[$(this).attr('myName')]=tmp;});
   return o;
 }
 
 /*
- * vendorIntroDiv
+ * roleIntroDiv
  */
 
-
-var vendorIntroDivExtend=function($el){
+var roleIntroDivExtend=function($el, oRole){
 "use strict"
+  var {charRole, strRole}=oRole;
   var save=function(){ 
     resetMess();  
     //$el.find(':text').each(function(){var tmp=$(this).val().trim(); $(this).val(tmp); });
     //if(!entryTestWMyName($el,arrMustBeSet,arrPosNum,arrPosNumOrEmpty)) return;
     //var o1=input2object($el);
-    var strTel=$inpTel.val().trim(); $inpTel.val(strTel); //if(strTel.length==0) {setMess('telephone number can not be empty'); return; }
+    var strTel=$inpTel.val().trim(); $inpTel.val(strTel); if(strTel.length==0) {setMess('telephone number can not be empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
-    var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
-    var o1={tel:strTel, displayName:nameT, currency:curT};
-    var vec=[['VIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
+    var nameT=$inpName.val().trim();  $inpName.val(nameT);
+    var boIdIPImage=Number($cbIdIPImage.prop('checked'));
+    var o1={tel:strTel, displayName:nameT, currency:curT, charRole:charRole, boIdIPImage:boIdIPImage};
+    var vec=[['RIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
 
     var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
     $body.append($iframeConversion);
 
     setMess('',null,true);  
   }
-  $el.setUp=function(){  var  $tmp=$inpTel.val(''); $inpTel.focus();  return true;  }
+  $el.setUp=function(){
+    $inpTel.val(''); $inpTel.focus();
+    var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
+    $inpName.val(nameT);
+    $cbIdIPImage.prop('checked', true);
+    return true;
+  }
   $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
  
   $el=popUpExtend($el);  
-  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em'}); 
+  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em', 'text-align':'left'}); 
 
   
-  var $helpPopup=$('<div>').html(langHtml.driverTextPopup.tel);
+  var $helpPopup=$('<div>').html('At least one of email or phone should be entered');
   var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$helpPopup);
          
   var $head=$('<h3>').append(langHtml.introHead);
-  var $pBread=$('<p>').append("Make sure to enter at least some contact info either here or in the settings.");
+  var $pBread=$('<p>').append("Data shown to other users (can be changed later in the settings).");
   //var $pBread=$('<p>').append("A telephone number is needed for customers to contact you. You may want to use a separate phone for this.");
-  var $inpTel=$('<input type=tel>').prop({placeholder:'Tel'}).attr({myName:'tel'}).css({width:'70%', 'box-sizing':'border-box'}).keypress( function(e){ if(e.which==13) {save();return false;}} );
-  var $telDiv=$('<div>').append($inpTel,$imgH); //langHtml.Tel,': ',
+  var $inpName=$('<input type=text>').css({width:'70%', 'box-sizing':'border-box'});
+  var $inpTel=$('<input type=tel>').css({width:'70%', 'box-sizing':'border-box'});
+  var $cbIdIPImage=$('<input>').prop({"type":"checkbox"});
+  var $divName=$('<p>').append('Name', ': ',$inpName);
+  var $divTel=$('<p>').append(langHtml.Tel, ': ',$inpTel);
+  var $divIdIPImage=$('<p>').append('Use image from ID provider', ': ',$cbIdIPImage);
+  $divName.add($divTel).add($divIdIPImage).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
 
-  var $saveButton=$('<button>').append('Continue').click(save).css({display:'block', 'margin':'1em auto'});
-  $el.append($head,$pBread,$telDiv,$saveButton).css({padding:'0.5em'}); 
-
-  return $el;
-}
-
-/*
-var vendorIntroDivExtend=function($el){
-"use strict"
-  var save=function(){
-    resetMess();
-    var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('email field can not be empty'); return; }
-    var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
-    var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
-    var o1={email:strEmail, displayName:nameT, currency:curT};
-    var vec=[['VIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
-
-    var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
-    $body.append($iframeConversion);
-
-    setMess('',null,true);
-  }
-  $el.setUp=function(){  var emailT=sessionLoginIdP?sessionLoginIdP.email:''; $inpEmail.val(emailT); $inpEmail.focus();  return true;  }
-  $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
-
-  $el=popUpExtend($el);
-  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em'});
-
-
-  var $helpPopup=$('<div>').html(langHtml.driverTextPopup.contactEmail);
-  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$helpPopup);
-
-  var $head=$('<h3>').append(langHtml.introHead);
-  var $pBread=$('<p>').append(langHtml.introBread);
-
-  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Contact email'}).css({width:'100%', 'box-sizing':'border-box'}).keypress( function(e){if(e.which==13) {save();return false;}} );
-  //var $divEmail=$('<div>').append($inpEmail,$imgH);
-
-  var $saveButton=$('<button>').append(langHtml.Continue).click(save).css({display:'block', 'margin':'1em auto'});
-  $el.append($head,$pBread,$inpEmail,$saveButton).css({padding:'0.1em'});
-
-  return $el;
-}
-*/
-
-var complainerIntroDivExtend=function($el){
-"use strict"
-  var save=function(){
-    resetMess();
-    var strEmail=$inpEmail.val().trim(); $inpEmail.val(strEmail); if(strEmail.length==0) {setMess('telephone number can not be empty'); return; }
-    var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
-    var nameT=sessionLoginIdP?sessionLoginIdP.nameIP:'';
-    var o1={email:strEmail, displayName:nameT, currency:curT};
-    var vec=[['RIntroCB',o1,function(data){$el.closePop();}], ['setupById']];   majax(oAJAX,vec);
-
-    var $iframeConversion=$('<iframe src="'+uConversion+'" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:62px;display:none" allowTransparency="true"></iframe>');
-    $body.append($iframeConversion);
-
-    setMess('',null,true);
-  }
-  $el.setUp=function(){  var emailT=sessionLoginIdP?sessionLoginIdP.email:''; $inpEmail.val(emailT); $inpEmail.focus();  return true;  }
-  $el.openFunc=function(){   $el.openPop(); $el.setUp(); }
-
-  $el=popUpExtend($el);
-  $el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em'});
-
-
-  var $helpPopup=$('<div>').html(langHtml.driverTextPopup.contactEmail);
-  var $imgH=$imgHelp.clone().css({'margin-left':'1em'});   popupHoverJQ($imgH,$helpPopup);
-
-  var $head=$('<h3>').append(langHtml.introHead);
-  var $pBread=$('<p>').append(langHtml.introBread);
-
-  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Contact email'}).css({width:'100%', 'box-sizing':'border-box'}).keypress( function(e){if(e.which==13) {save();return false;}} );
-  //var $divEmail=$('<div>').append($inpEmail,$imgH);
-
-  var $saveButton=$('<button>').append(langHtml.Continue).click(save).css({display:'block', 'margin':'1em auto'});
-  $el.append($head,$pBread,$inpEmail,$saveButton).css({padding:'0.1em'});
+  var $saveButton=$('<button>').append(langHtml.Continue).on('click', save).css({display:'block', 'margin':'1em auto'});
+  $el.append($head, $pBread, $divName, $divTel, $divIdIPImage, $saveButton).css({padding:'0.5em'}); 
 
   return $el;
 }
 
-
-/*
- * vendorDiv
- */
-
-var vendorDivExtend=function($el){
-"use strict"
-  var $butts=$([]).push($userSettingButton, $vendorSettingButton, $priceSettingButton).css({margin:'1em 0.1em'});  //, $payButton
-  var $h=$('<p>').append("Settings for logged in user").css({'font-weight':'bold'});
-  $el.append($h,$butts);
-  return $el;
-}
-
-
-
-var paymentListDivExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'paymentListDiv';}
-  $el.getLoadObj=function(){
-    var oGet={offset:offset,rowCount:rowCount};  return ['VPaymentList',oGet,$el.ajaxReturn];
-  }
-  $el.load=function(){
-    setMess('... fetching paymentList ... ',15,true);  majax(oAJAX,[$el.getLoadObj()]);
-    $el.boLoaded=1;
-  }
-  $el.ajaxReturn=function(data){
-    var nCur;
-    var tmp=data.nTot;   if(typeof tmp!="undefined")  nTot=tmp;
-    var tmp=data.nCur;   if(typeof tmp!="undefined")  nCur=tmp;
-    tab.length=0; if('tab' in data) tab=tabNStrCol2ArrObj(data);
-
-    tabToTBody();
-
-    if(nTot>offset+tab.length) $butNext.prop({disabled:false}); else $butNext.prop({disabled:1});
-    if(offset>0) $butPrev.prop({disabled:false}); else $butPrev.prop({disabled:1});
-    $infoSpan.html('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
-    resetMess(10);
-  }
-  var tHeadExtend=function($el1){
-    var $row=$('<tr>');
-    for(var j=0;j<StrCol.length;j++){   $row.append($('<th>').text(StrCol[j]));   }
-    $el1.append($row);
-    return $el1;
-  }
-  var tabToTBody=function() {   // Reads tab, writes $tBody
-    $el.$tBody.empty();
-    for(var i=0; i<tab.length; i++) {
-      var $row=$('<tr>');
-      for(var j=0;j<StrCol.length;j++) {
-        var tmp=tab[i][strName];  if(['payment_date','created'].indexOf(strName)!=-1) tmp=swedate(tmp,i);
-        $row.append($('<td>').append(tmp));
-      }
-      $el.$tBody.append($row);
-    }
-  }
-  var tab=[];
-  $el.boLoaded=0;
-  var StrCol=['txn_id','payer_email',  'amount','currency','tax','VATNumber','monthsToAdd',  'payment_date','created'];
-  var nCol=StrCol.length;
-
-  var nTot;
-  //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em'});
-  var $tHead=tHeadExtend($('<thead>'));
-  $el.$tBody=$('<tbody>');
-  var $table=$('<table>').append($tHead,$el.$tBody);  $table.css({display:'block',margin:'1em 0'});
-
-  var $butPrev=$('<button>').append('Prev page').click(function(){ offset-=rowCount; offset=offset>=0?offset:0; $el.load();});
-  var $butNext=$('<button>').append('Next page').click(function(){ offset+=rowCount; $el.load();});
-  var $infoSpan=$('<span>').css({'white-space':'nowrap'});
-  var $infoDiv=$('<div>').append($butPrev,$butNext,$infoSpan).css({'text-align':'left'});  //display:'inline-block'});
-
-  $el.append($table,$infoDiv);
-
-  var offset=0,rowCount=20;
-
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var paymentListFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append(langHtml.PaymentList).addClass('footDivLabel');
-  $el.append($buttonBack, $span).addClass('footDiv');
-  return $el;
-}
-
-
-
-
-
-/*
- * userSettingDiv
- */
-
-
-var userSettingDivExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'userSettingDiv';}
-
+var divIPSettingExtend=function($el){  // Div in userSettingDiv
   $el.setUp=function(){
     var tmp=userInfoFrDB.user;
     $spanIdUser.html(tmp.idUser);   $spanIdFB.html(tmp.idFB);  $spanIdIdPlace.html(tmp.idIdPlace);  $spanIdOpenId.html(tmp.idOpenId);
     $imgImage.prop({src:tmp.image});
-    $spanNameIP.html(tmp.nameIP);  $inpEmail.val(tmp.email);
-
-    if(userInfoFrDB.vendor.nPayment==0) $deleteDiv.show(); else $deleteDiv.hide();
+    $spanNameIP.html(tmp.nameIP);  $spanEmail.html(tmp.email);
     return true;
   }
-  var saveEmail=function(){
-    var vec=[['UUpdate',{email:$inpEmail.val()}], ['setupById']];   majax(oAJAX,vec);
-  }
+  
+  var $divHead=$('<div>').append('Data from Id-provider (user info): ').css({'margin-bottom':'0.5em','font-weight':'bold'});
 
-  //var uImagePrim=window['u'+ucfirst(strIPPrim)];
   var uImagePrim=window['u'+ucfirst(strIPPrim)+'22'];
-  var $buttRefetch=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
+  var $buttRefetch=$("<img>").prop({src:uImagePrim}).css({'vertical-align':'middle'}).on('click', function(e){
     e.stopPropagation();
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
@@ -2287,63 +2148,110 @@ var userSettingDivExtend=function($el){
     })(); flow.next();
     return false;
   });
-
+  var $divRefresh=$('<div>').append('Refetch data: ', $buttRefetch);
 
   var $spanIdUser=$('<span>'), $spanIdFB=$('<span>'), $spanIdIdPlace=$('<span>'), $spanIdOpenId=$('<span>');
-  $spanIdFB.add($spanIdIdPlace).add($spanIdOpenId).css({margin:'0 0.2em 0 0'})
-  var $imgImage=$('<img>').css({'vertical-align':'middle'});
-  var $spanNameIP=$('<span>');
-  var $inpEmail=$('<input>').prop({type:'email', placeholder:'Your email address'}).keypress( function(e){if(e.which==13) {saveEmail();return false;}} );
-  var $butEmail=$('<button>').append('Change email').click(saveEmail);
+  $spanIdFB.add($spanIdIdPlace).add($spanIdOpenId).css({margin:'0 0.2em 0 0', 'font-weight':'bold'});
 
   var $divIdUser=$('<div>').append('idUser (db): ', $spanIdUser);
-  var $divIdIP=$('<div>').append('ID-codes: FB: ', $spanIdFB, ', IdPlace: ', $spanIdIdPlace, ', OpenID: ', $spanIdOpenId);
-  var $divImage=$('<div>').append('Image: ', $imgImage);
-  var $divNameIP=$('<div>').append('Name: ', $spanNameIP);
+  var $divIdIP=$('<div>').append('FB: ', $spanIdFB, ', IdPlace: ', $spanIdIdPlace, ', OpenID: ', $spanIdOpenId);
+  
+  var $imgImage=$('<img>').css({'vertical-align':'middle'}), $spanNameIP=$('<span>');
+  var $divImageName=$('<div>').append($imgImage, $spanNameIP);
 
-  var $bub=$('<div>').html("This email is not shown to the public, however it allows you to login if the Id-provider is changed.");
+  var $spanEmail=$('<span>');
+  var $bub=$('<div>').html("This email is not shown to the public.");
   var $imgH=$imgHelp.clone();  popupHoverJQ($imgH,$bub);
-  var $divEmail=$('<div>').append('Contact email: ', $inpEmail, $butEmail, $imgH);
-  var $divRefresh=$('<div>').append('Refetch data: ', $buttRefetch);
-  var $divHead=$('<div>').append('Data from Id-provider (user info): ').css({'margin-bottom':'0.5em','font-weight':'bold'});
+  var $divEmail=$('<div>').append('Email: ', $spanEmail, $imgH);
 
     // change PW
-  var $buttChangePW=$("<button>").append('Change password').click(function(e){ $changePWPop.openFunc(); });
+  var $buttChangePW=$("<button>").append('Change password').on('click', function(e){ $changePWPop.openFunc(); });
   var $divPW=$('<div>').append('Change password: ', $buttChangePW);
 
       // deleteDiv
   var $imgH=$imgHelp.clone(); popupHoverJQ($imgH,$('<div>').html(langHtml.deleteBox.help));
-  var $butDelete=$('<button>').append(langHtml.DeleteAccount).css({'margin-right':'1em'}).click(function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
+  var $butDelete=$('<button>').append(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
   var $deleteDiv=$('<div>').append($butDelete); //,$imgH
 
 
-  var $divs=$([]).push($divHead, $divRefresh, $divIdIP, $divImage, $divNameIP, $divEmail, $divPW, $deleteDiv).css({'margin-top':'1em'}), $divCont=$('<div>').append($divs);
-  $el.append($divCont);
+  var $divs=$([]).push($divHead, $divRefresh, $divIdIP, $divImageName, $divEmail).css({'margin-top':'1em'});
+  $el.append($divs);
+  return $el;
+}
+/*
+ * userSettingDiv
+ */
 
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var userSettingFootExtend=function($el){
+var userSettingDivExtend=function($el){
 "use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  $el.toString=function(){return 'userSettingDiv';}
+
+  $el.setUp=function(){
+    var tmp=userInfoFrDB.user;
+    $inpDisplayName.val(tmp.displayName);  
+    oC.Prop.image.setInp($spanImg);
+    $divIPSetting.setUp();
+    return true;
+  }
+  var $divIPSetting=divIPSettingExtend($('<div>')).css({background:'lightgrey', margin:'0.2em', border:'1px black solid'});
+  
+  var saveDisplayName=function(){ var vec=[['UUpdate',{displayName:$inpDisplayName.val().trim()}], ['setupById']];   majax(oAJAX,vec); }
+  var $inpDisplayName=$('<input>').prop({type:'text'}).on('keypress', function(e){if(e.which==13) {saveDisplayName();return false;}} );
+  var $butDisplayName=$('<button>').append('Change').on('click', saveDisplayName);
+  var $divDisplayName=$('<div>').append('Display name: ', $inpDisplayName, $butDisplayName);
+  
+
+  $el.createDivs=function(){
+    $spanImg=oC.Prop.image.crInp();
+    $divImage.append('Display image: ', $spanImg);
+  }
+  var $spanImg;
+  var $divImage=$('<div>');
+    // change PW
+  var $buttChangePW=$("<button>").append('Change password').on('click', function(e){ $changePWPop.openFunc(); });
+  var $divPW=$('<div>').append('Change password: ', $buttChangePW);
+
+      // deleteDiv
+  var $imgH=$imgHelp.clone(); popupHoverJQ($imgH,$('<div>').html(langHtml.deleteBox.help));
+  var $butDelete=$('<button>').append(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({$view:$deleteAccountPop}); $deleteAccountPop.setVis();});
+  var $deleteDiv=$('<div>').append($butDelete); //,$imgH
+
+
+  var $divs=$([]).push($divIPSetting, $divDisplayName, $divImage, $divPW, $deleteDiv).css({'margin-top':'1em'});
+  var $divCont=$('<div>').append($divs).addClass('contDiv');
+  
+    // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $span=$('<span>').append('User settings').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
+
+
+
+
+
+
+
 
 var deleteAccountPopExtend=function($el){
 "use strict"
   $el.toString=function(){return 'deleteAccountPop';}
   //var $el=popUpExtend($el);
-  var $yes=$('<button>').html(langHtml.Yes).click(function(){
-    //var vec=[['VDelete',1,function(data){doHistBack();doHistBack();}]];   majax(oAJAX,vec);
+  var $yes=$('<button>').html(langHtml.Yes).on('click', function(){
+    //var vec=[['UDelete',1,function(data){doHistBack();doHistBack();}]];   majax(oAJAX,vec);
     sessionLoginIdP={};  userInfoFrDB=$.extend({}, specialistDefault);
-    var vec=[['VDelete',1], ['logout',1, function(data){
-      history.fastBack($mapDiv,true);
+    var vec=[['UDelete',1], ['logout',1, function(data){
+      history.fastBack($frontDiv,true);
     }]];   majax(oAJAX,vec);
 
   });
-  var $cancel=$('<button>').html(langHtml.Cancel).click(doHistBack);
+  var $cancel=$('<button>').html(langHtml.Cancel).on('click', doHistBack);
   //$el.append(langHtml.deleteBox.regret,'<br>',$yes,$cancel);
   //$el.css({padding:'1.1em',border:'1px solid'});
   $el.setVis=function(){
@@ -2353,8 +2261,8 @@ var deleteAccountPopExtend=function($el){
   var $h1=$('<div>').append(langHtml.deleteBox.regret);
   var $blanket=$('<div>').addClass("blanket");
   var $centerDiv=$('<div>').append($h1,$cancel,$yes);
-  $centerDiv.addClass("Center").css({'width':'20em', height:'7em', padding:'1.1em'})
-  if(boIE) $centerDiv.css({'width':'20em'});
+  $centerDiv.addClass("Center").css({padding:'1.1em'}); // 'width':'20em', height:'7em', 
+  //if(boIE) $centerDiv.css({'width':'20em'});
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
   $el.css({'text-align':'left'});
   return $el;
@@ -2374,18 +2282,29 @@ var toggleSpecialistButts=function(){
 "use strict"
   $loginInfo.setStat();
 
+  var boE=Boolean(userInfoFrDB.user); $frontDiv.$topDiv.toggle(!boE);
+  
   var boE=Boolean(userInfoFrDB.admin); $adminButton.toggle(boE);
-  var boE=Boolean(userInfoFrDB.team);
-  $teamButton.toggle(Boolean(boE && Number(userInfoFrDB.team.boApproved)));
-  $teamApprovedMess.toggle(Boolean(boE && Number(userInfoFrDB.team.boApproved)==0));
+  
+  var boTeamExistC=Boolean(userInfoFrDB.customerTeam);
+  var boTeamApprovedC=false;  if(boTeamExistC){ boTeamApprovedC=Number(userInfoFrDB.customerTeam.boApproved);  }
+  $settingDivW.$customerTeamButton.toggle(Boolean(boTeamExistC && boTeamApprovedC));
+  $entryDivC.$teamApprovedMess.toggle(Boolean(boTeamExistC && !boTeamApprovedC));
+  
+  var boTeamExistS=Boolean(userInfoFrDB.sellerTeam),   boTeamApprovedS=Number(userInfoFrDB.sellerTeam.boApproved);
+  $settingDivW.$sellerTeamButton.toggle(Boolean(boTeamExistS && boTeamApprovedS));
+  $entryDivS.$teamApprovedMess.toggle(Boolean(boTeamExistS && !boTeamApprovedS));
 
-  var boE=Boolean(userInfoFrDB.vendor);
-  $quickDiv.toggle(boE);
-  $vendorDiv.toggle(boE);
-  //$buttLoginVendor.toggle(!boE);
-  if(boE) {$payButton.setUp(); }
+  var boCE=Boolean(userInfoFrDB.customer), boVE=Boolean(userInfoFrDB.seller);
+  $quickDivC.toggle(boCE);   $quickDivS.toggle(boVE);
+  $settingDivW.$userDiv.$customerSettingButton.toggle(boCE);
+  $settingDivW.$userDiv.$sellerSettingButton.toggle(boVE);
+  $settingDivW.$userDiv.toggle(boCE || boVE);
+  
+  var boBoth=boCE && boVE;  $quickDivC.$butTogW.toggle(boBoth); $quickDivS.$butTogW.toggle(boBoth);
+  //$buttLoginSeller.toggle(!boE);
 
-  /* if(userInfoFrDB.vendor){
+  /* if(userInfoFrDB.seller){
     var tmp=$agreementStart.compareLocalDates(1); if(tmp.boNew) {$agreementStart.setLocalDates(1); $agreementStart.openFunc(); }
   }*/
 }
@@ -2434,7 +2353,7 @@ formLoginDivExtend=function($el){
     var flow=(function*(){
       var tmp=SHA1($inpPass.val()+strSalt); //$inpPass.val('');
       var vec=[['loginWEmail',{email:$inpEmail.val(), password:tmp}], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
-      history.fastBack($mapDiv);
+      history.fastBack($frontDiv);
 
     })(); flow.next();
     return false;
@@ -2449,49 +2368,55 @@ formLoginDivExtend=function($el){
   var $inpEmail=$formLogin.children("input[name='email']").css({'max-width':'100%'});
   var $inpPass=$formLogin.children("input[name='password']").css({'max-width':'100%'});
   var $buttLogin=$formLogin.children("button[name='submit']").css({"margin-top": "1em"}).on('click',loginWEmail);
-  $formLogin.find('input[type=text],[type=email],[type=number],[type=password]').css({display:'block'}).keypress( function(e){ if(e.which==13) { loginWEmail(); }} );
+  $formLogin.find('input[type=text],[type=email],[type=number],[type=password]').css({display:'block'}).on('keypress', function(e){ if(e.which==13) { loginWEmail(); }} );
 
   var $messDiv=$('<div>').css({color:'red'});
-  var $buttForgot=$('<a>').prop({href:''}).text('Forgot your password?').click(function(){  $forgottPWPop.openFunc(); return false; });
+  var $buttForgot=$('<a>').prop({href:''}).text('Forgot your password?').on('click', function(){  $forgottPWPop.openFunc(); return false; });
   var $imgH=popupHoverJQ($imgHelp.clone(), $('<div>').html("A new password is generated and sent to the email address."));
   var $divForgot=$('<div>').css({'margin-top':'1em'}).append($buttForgot, $imgH);
-  var $butSendLink=$('<a>').prop({href:''}).text('Login with email link').click(sendEmail);
+  var $butSendLink=$('<a>').prop({href:''}).text('Login with email link').on('click', sendEmail);
   var $imgH=popupHoverJQ($imgHelp.clone(), $('<div>').html("An email is sent with a link which will log you in. Your password is not changed."));
   var $divSendLink=$('<div>').css({'margin-top':'1em'}).append($butSendLink, $imgH);
 
-  var $buttonCreateAccount=$('<button>').addClass('highStyle').append('Create an account').click(function(){
+  var $buttonCreateAccount=$('<button>').addClass('highStyle').append('Create an account').on('click', function(){
     doHistPush({$view:$createUserDiv});
     $createUserDiv.setVis();
   });
-  $el.append($divHead, $messDiv, $formLogin, $divForgot, $divSendLink, '<hr>', $buttonCreateAccount);
-  return $el;
-}
-var formLoginFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+
+  var $divCont=$('<div>').addClass('contDiv').append($divHead, $messDiv, $formLogin, $divForgot, $divSendLink, '<hr>', $buttonCreateAccount);
+
+  
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $span=$('<span>').append('Login with email / password').addClass('footDivLabel');
-  $el.append($buttonBack, $span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
 
 
-var loginSelectorDivExtend=function($el){
+var loginSelectorDivExtend=function($el, oRole){
 "use strict"
+  var {strRole, charRoleUC}=oRole;
   $el.toString=function(){return 'loginSelectorDiv';}
   //$el.setUp=function(){}
 
   var strButtonSize='2em';
-  var $imgFb=$('<img>').prop({src:uFb}).click(function(){
+  var $imgFb=$('<img>').prop({src:uFb}).on('click', function(){
     var flow=(function*(){
       ga('send', 'event', 'button', 'click', 'login');
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'vendorFun', caller:'index', code:code};
+      var oT={IP:strIPPrim, fun:strRole+'Fun', caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById',{}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
 
-      var boE=Boolean(userInfoFrDB.vendor);
-      if(!boE){ $vendorIntroDiv.openFunc(); }
-      if(boE) $quickDiv.setUp();
-      history.fastBack($mapDiv);
+      var boE=Boolean(userInfoFrDB[strRole]);
+      var $tmpIntroDiv=strRole=='customer'?$introDivC:$introDivS;
+      var $tmpQuickDiv=strRole=='customer'?$quickDivC:$quickDivS;
+      if(boE) $tmpQuickDiv.setUp(); else $tmpIntroDiv.openFunc(); 
+      history.fastBack($frontDiv);
     })(); flow.next();
   });
   $imgFb.css({align:'center', display:'block', 'margin': '0.7em auto'}); //     , position:'relative',top:'0.4em',heigth:strButtonSize,width:strButtonSize
@@ -2506,15 +2431,15 @@ var loginSelectorDivExtend=function($el){
     if(nSpecialReq==3) { nSpecialReq=0; $divRight.toggle();   }
   }
   var timeSpecialR=0, nSpecialReq=0;
-  $divHead.click(emailToggleEventF);
+  $divHead.on('click', emailToggleEventF);
 
 
   var cssCol={display:'inline-block','box-sizing': 'border-box',padding:'1em',flex:1}; //width:'50%',
-  var $buttonViaEmail=$('<button>').addClass('highStyle').append('Email and password').click(function(){
+  var $buttonViaEmail=$('<button>').addClass('highStyle').append('Email and password').on('click', function(){
     doHistPush({$view:$formLoginDiv});
     $formLoginDiv.setVis();
   });
-  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb, 'Your Facebook email is used to allow you to login without Facebook (not shown to the public). <br>Your Facebook name and image are used as defaults (can be changed in the settings). <br>Nothing is written to your Facebook flow.' ); // , '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
+  var $divLeft=$('<div>').css(cssCol).css({'text-align':'center'}).append($imgFb, '<p>Email, name and image are used, although not shown publicly unless you want to.<p>Nothing is written to your Facebook flow.' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
   var $divRight=$('<div>').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).append( $buttonViaEmail);        $divRight.hide();
   var $divRow=$('<div>').append($divLeft, $divRight).css({display: 'flex', 'justify-content':'space-around'});  //
 
@@ -2533,14 +2458,14 @@ var createUserDivExtend=function($el){
   var save=function(){
     resetMess();
     var strPassword=$inpPass.val().trim();
-    if(strPassword!==$inpPassB.val().trim()) { var tmp='Password-fields are not equal'; setMess(tmp); return; }
-    if(strPassword.length<lPWMin) { var tmp='The password must be at least '+lPWMin+' characters long'; setMess(tmp); return; }
+    if(strPassword!==$inpPassB.val().trim()) { var tmp='Password-fields are not equal'; setMess(tmp, 5); return; }
+    if(strPassword.length<lPWMin) { var tmp='The password must be at least '+lPWMin+' characters long'; setMess(tmp, 5); return; }
 
 
     var strName=$inpName.val().trim();
-    var strEmail=$inpEmail.val().trim(); if(/\S+@\S+/.test(strEmail)) ; else {setMess('Invalid email'); return;}
+    var strEmail=$inpEmail.val().trim(); if(/\S+@\S+/.test(strEmail)) ; else {setMess('Invalid email', 5); return;}
 
-    var strTmp=grecaptcha.getResponse(); if(!strTmp) {setMess("Captcha response is empty"); return; }
+    var strTmp=grecaptcha.getResponse(); if(!strTmp) {setMess("Captcha response is empty", 5); return; }
     var o={name:strName, email:strEmail, password:SHA1(strPassword+strSalt),  'g-recaptcha-response': grecaptcha.getResponse()};
 
     //var vec=[['createUser',o], ['setupById',{}, $el.cb]];   majax(oAJAX,vec);
@@ -2560,6 +2485,7 @@ var createUserDivExtend=function($el){
 
   $el.setUp=function(){
     if($divReCaptcha.is(':empty')){
+    if(typeof grecaptcha=='undefined') var grecaptcha={render:function(){console.log('no grecaptcha');}};
       grecaptcha.render($divReCaptcha[0], {sitekey:strReCaptchaSiteKey});
     }
     $messDiv.html('');  $messEndDiv.html('');
@@ -2583,21 +2509,21 @@ var createUserDivExtend=function($el){
   var $messDiv=$('<div>').css({color:'red'});
 
 
-  var $buttonVerifyNCreate=$("<button>").text('Verify email and create account').click(save).addClass('flexWidth').css({'margin':'0.5em 0em 0.3em'})
+  var $buttonVerifyNCreate=$("<button>").text('Verify email and create account').on('click', save).addClass('flexWidth').css({'margin':'0.5em 0em 0.3em'})
   var $messEndDiv=$('<div>');  //=$('<span>').css({'margin-left':'.4em'});
 
-  $el.append($h1, $el.$divDisclaimerW, $messDiv,   $formCreateAccount, $divReCaptcha, $buttonVerifyNCreate, $messEndDiv);
-  return $el;
-}
-var createUserFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+  var $divCont=$('<div>').addClass('contDiv').append($h1, $el.$divDisclaimerW, $messDiv,   $formCreateAccount, $divReCaptcha, $buttonVerifyNCreate, $messEndDiv);
+  
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $span=$('<span>').append(langHtml.CreateAccount).addClass('footDivLabel');
-  $el.append($buttonBack, $span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
-
-
 
 
 var changePWPopExtend=function($el){
@@ -2606,8 +2532,8 @@ var changePWPopExtend=function($el){
   var save=function(){
     resetMess();
     $messDiv.html('');
-    if($inpPass.val().trim()!==$inpPassB.val().trim()) { setMess('The new password fields are not equal'); return; }
-    var lTmp=boDbg?2:6; if($inpPass.val().trim().length<lTmp) { setMess('The password must be at least '+lTmp+' characters long'); return; }
+    if($inpPass.val().trim()!==$inpPassB.val().trim()) { setMess('The new password fields are not equal', 5); return; }
+    var lTmp=boDbg?2:6; if($inpPass.val().trim().length<lTmp) { setMess('The password must be at least '+lTmp+' characters long', 5); return; }
 
     var o={passwordOld:SHA1($inpPassOld.val().trim()+strSalt), passwordNew:SHA1($inpPass.val().trim()+strSalt)};
 
@@ -2634,15 +2560,15 @@ var changePWPopExtend=function($el){
   var $labPassOld=$('<label>').append('Old password'), $labPass=$('<label>').append('New password'),  $labPassB=$('<label>').append('New password again');
   var $inpPassOld=$('<input type=password>'), $inpPass=$('<input type=password placeholder="at least 6 characters">'),  $inpPassB=$('<input type=password>');
 
-  $([]).push($inpPassOld, $inpPass, $inpPassB).css({display:'block', 'margin-bottom':'0.5em'}).keypress( function(e){ if(e.which==13) {okF();return false;}} );
+  $([]).push($inpPassOld, $inpPass, $inpPassB).css({display:'block', 'margin-bottom':'0.5em'}).on('keypress', function(e){ if(e.which==13) {okF();return false;}} );
 
-  var $ok=$('<button>').html(langHtml.OK).addClass('highStyle').click(save);
-  var $cancel=$('<button>').html(langHtml.Cancel).addClass('highStyle').click(doHistBack);
+  var $ok=$('<button>').html(langHtml.OK).addClass('highStyle').on('click', save);
+  var $cancel=$('<button>').html(langHtml.Cancel).addClass('highStyle').on('click', doHistBack);
   var $divBottom=$('<div>').append($cancel,$ok);  //$buttonCancel,
 
   var $centerDiv=$('<div>').append($h1, $messDiv,   $labPassOld, $inpPassOld, $labPass, $inpPass, $labPassB, $inpPassB, $divBottom);
-  $centerDiv.addClass("Center").css({'width':'20em', height:'21em', padding:'1.1em'})
-  if(boIE) $centerDiv.css({'width':'20em'});
+  $centerDiv.addClass("Center").css({padding:'1.1em'}); // 'width':'20em', height:'21em', 
+  //if(boIE) $centerDiv.css({'width':'20em'});
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
   return $el;
@@ -2671,16 +2597,16 @@ var forgottPWPopExtend=function($el){
   var $h1=$('<h3>').append('Forgott your password?');
   var $blanket=$('<div>').addClass("blanket");
   var $labEmail=$('<label>').append('Email');
-  var $inpEmail=$('<input type=email>').keypress( function(e){ if(e.which==13) {okF();return false;}} );
+  var $inpEmail=$('<input type=email>').on('keypress', function(e){ if(e.which==13) {okF();return false;}} );
   $inpEmail.css({display:'block', 'margin-bottom':'0.5em'});
 
-  var $ok=$('<button>').html(langHtml.OK).addClass('highStyle').click(okF);
-  var $cancel=$('<button>').html(langHtml.Cancel).addClass('highStyle').click(doHistBack);
+  var $ok=$('<button>').html(langHtml.OK).addClass('highStyle').on('click', okF);
+  var $cancel=$('<button>').html(langHtml.Cancel).addClass('highStyle').on('click', doHistBack);
   var $divBottom=$('<div>').append($cancel,$ok);  //$buttonCancel,
 
   var $centerDiv=$('<div>').append($h1, $labEmail, $inpEmail, $divBottom);
-  $centerDiv.addClass("Center").css({'width':'20em', height:'13em', padding:'1.1em'});
-  if(boIE) $centerDiv.css({'width':'20em'});
+  $centerDiv.addClass("Center").css({padding:'1.1em'});  // 'width':'20em', height:'13em', 
+  //if(boIE) $centerDiv.css({'width':'20em'});
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
   return $el;
@@ -2705,32 +2631,24 @@ var convertIDDivExtend=function($el){
 
   var $headA=$('<h2>').append('This site has changed ID-provider').css({'margin-top':'0.5em'});
   var $headB=$('<div>').append('<p>Before '+strIPAltLong+' was used as ID-provider now '+strIPPrimLong+' is used instead. Sorry if you think its an inconvenience.<p>Login with '+strIPPrimLong+' (You\'ll be asked to create an account if you don\'t have one).').css({'margin-top':'0.5em'});
-  var $headC=$('<div>').append('<p>After that login with your old ('+strIPAltLong+') ID to convert reputation (for vendors) and comments (for complainers/vendors) to the '+strIPPrimLong+' ID.').css({'margin-top':'0.5em'});
+  var $headC=$('<div>').append('<p>After that login with your old ('+strIPAltLong+') ID to convert reputation and comments to the '+strIPPrimLong+' ID.').css({'margin-top':'0.5em'});
 
 
   var timerClosePoll;
 
   var uImagePrim=window['u'+ucfirst(strIPPrim)];
-  var $imPrim=$('<img>').prop({src:uImagePrim}).css({'vertical-align':'middle'}).click(function(e){
+  var $imPrim=$('<img>').prop({src:uImagePrim}).css({'vertical-align':'middle'}).on('click', function(e){
     e.stopPropagation();
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'vendorFun', caller:'index', code:code};
+      var oT={IP:strIPPrim, fun:'userFun', caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
-
-      var boE=Boolean(userInfoFrDB.vendor);
-      if(!boE){
-        //var o1={tel:'000', displayName:'bla',boInsert:1, currency:'USD'};
-        //var o1={boInsert:1};
-        var o1={};
-        var vec=[['VUpdate',o1], ['setupById']];   majax(oAJAX,vec);
-      }
     })(); flow.next();
   });
 
 
   var uImageAlt=window['u'+ucfirst(strIPAlt)];
-  var $imAlt=$('<img>').prop({src:uImageAlt}).css({'vertical-align':'middle'}).click(function(e){
+  var $imAlt=$('<img>').prop({src:uImageAlt}).css({'vertical-align':'middle'}).on('click', function(e){
     e.stopPropagation();
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
@@ -2744,17 +2662,16 @@ var convertIDDivExtend=function($el){
 
   var $rows=$([]).push($pendingMess, $cancelMess, $headA, $headB, $imPrim, $headC, $imAlt);
   $rows.css({'margin':'1em 0em 1em 0.6em'});
-  $el.append($rows);
+  var $divCont=$('<div>').append($rows).addClass('contDiv');
 
-
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var convertIDFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $span=$('<span>').append('Convert ID').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
 
@@ -2765,11 +2682,11 @@ var convertIDFootExtend=function($el){
  *
  *  Summary:
  *  $complaintCommentPop   // Popup where a complainer can write a complaint
- *  $complaintAnswerPop    // Popup where a vendor can answer a complaint
- *  $complaintCommentButt  // Opens $complaintCommentPop, placed in $complaintVDiv
- *  $complaintAnswerButt   // Opens $complaintAnswerPop, placed in $complaintVDiv
- *  $complaintVDiv         // List of complainers complaints on a certain Vendor
- *  $complaintRDiv         // List of complaints from a certain Complainer
+ *  $complaintAnswerPop    // Popup where a complainee can answer a complaint
+ *  $complaintCommentButt  // Opens $complaintCommentPop, placed in $complaineeDiv
+ *  $complaintAnswerButt   // Opens $complaintAnswerPop, placed in $complaineeDiv
+ *  $complaineeDiv         // List of complaints on a certain complainee
+ *  $complainerDiv         // List of complaints from a certain complainer
  *
  *******************************************************************************************************************
  *******************************************************************************************************************/
@@ -2779,11 +2696,11 @@ var convertIDFootExtend=function($el){
 var complaintCommentPopExtend=function($el){
 "use strict"
   $el.toString=function(){return 'complaintCommentPop';}
-  $el.openFunc=function(idV){
-    idVendor=idV;  $idVendor.html(idV);
+  $el.openFunc=function(idComplaineeT){
+    idComplainee=idComplaineeT; $idComplainee.html(idComplaineeT);
 
-    if(isSet(sessionLoginIdP) || typeof userInfoFrDB.user=='object'){} else {setMess('not logged in'); return;}
-    var o1={idVendor:idVendor}, vec=[['complaintOneGet',o1,complaintCommentOneGet]];   majax(oAJAX,vec);
+    if(isSet(sessionLoginIdP) || typeof userInfoFrDB.user=='object'){} else {setMess('not logged in', 5); return;}
+    var vec=[['complaintOneGet', {idComplainee:idComplainee}, complaintCommentOneGet]];   majax(oAJAX,vec);
     $el.setVis();
     $comment.focus();
   };
@@ -2793,8 +2710,8 @@ var complaintCommentPopExtend=function($el){
   }
   $el.closeFunc=function(){    doHistBack();    }
   var sendFunc=function() {
-    var o1={idVendor:idVendor,comment:$comment.val().trim()};
-    var vec=[['complaintUpdateComment',o1], $complaintVDiv.getLoadObj(), ['setupById']];   majax(oAJAX,vec);
+    var o1={idComplainee:idComplainee,comment:$comment.val().trim()};
+    var vec=[['complaintUpdateComment',o1], ['getComplaintsOnComplainee', $complaineeDiv.getLoadArg(), $complaineeDiv.getComplaintsOnComplaineeRet], ['setupById']];   majax(oAJAX,vec);
     doHistBack();
   }
   var complaintCommentOneGet=function(data){
@@ -2807,13 +2724,13 @@ var complaintCommentPopExtend=function($el){
   //$el=popUpExtend($el);
   //$el.css({'max-width':'16em', padding: '1em'});
 
-  var idVendor, $idVendor=$('<span>');
+  var idComplainee, $idComplainee=$('<span>');
 
   var $commentHead=$('<div>').html(langHtml.Complaint+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
-  var $comment=$('<textarea>').css({display:'block',margin:'0em 0em 0.7em'});  $comment.keypress( function(e){ if(e.which==13) {sendFunc();return false;}} );
-  var $save=$('<button>').html(langHtml.Save).click(function(){sendFunc();});
-  var $del=$('<button>').html(langHtml.vote.deleteComplaint).click(function(){$comment.val(''); sendFunc();});
-  var $cancel=$('<button>').html(langHtml.Cancel).click(doHistBack);
+  var $comment=$('<textarea>').css({display:'block',margin:'0em 0em 0.7em'});  $comment.on('keypress', function(e){ if(e.which==13) {sendFunc();return false;}} );
+  var $save=$('<button>').html(langHtml.Save).on('click', function(){sendFunc();});
+  var $del=$('<button>').html(langHtml.vote.deleteComplaint).on('click', function(){$comment.val(''); sendFunc();});
+  var $cancel=$('<button>').html(langHtml.Cancel).on('click', doHistBack);
   //var $butts=$([]).push($save, $del, $cancel).css({margin:'0.5em 0'});
   var $butts=$([]).push($save, $del, $cancel).css({margin:'0.5em 0'});
   var $answerHead=$('<div>').html(langHtml.vote.answer+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'}); $answerHead.hide();
@@ -2825,8 +2742,8 @@ var complaintCommentPopExtend=function($el){
 
   var $blanket=$('<div>').addClass("blanket");
   var $centerDiv=$('<div>').append($commentHead,$comment,$butts,$answerHead,$answer);
-  $centerDiv.addClass("Center").css({'width':'20em', height:'22em', padding: '1em'})
-  if(boIE) $centerDiv.css({'width':'20em'});
+  $centerDiv.addClass("Center").css({padding: '1em'}); // 'width':'20em', height:'22em', 
+  //if(boIE) $centerDiv.css({'width':'20em'});
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
   return $el;
@@ -2835,8 +2752,8 @@ var complaintCommentPopExtend=function($el){
 
 var complaintAnswerPopExtend=function($el){
   $el.toString=function(){return 'complaintAnswerPop';}
-  $el.openFunc=function(idR){
-    idComplainer=idR;  $idComplainer.html(idR);
+  $el.openFunc=function(idT){
+    idComplainer=idT;  $idComplainer.html(idT);
     var o1={idComplainer:idComplainer}, vec=[['complaintOneGet',o1,complaintAnswerOneGet]];   majax(oAJAX,vec);
     $answer.focus();
     doHistPush({$view:$complaintAnswerPop});
@@ -2850,7 +2767,9 @@ var complaintAnswerPopExtend=function($el){
   $el.closeFunc=function(){    doHistBack();    }
   var sendFunc=function() {
     var o1={idComplainer:idComplainer,answer:$answer.val().trim()};
-    var vecG; if($complaintVDiv.css('display')!='none') { vecG=$complaintVDiv.getLoadObj(); }  else { vecG=$complaintRDiv.getLoadObj(); }
+    var vecG; 
+    if($complaineeDiv.css('display')!='none') { vecG=['getComplaintsOnComplainee', $complaineeDiv.getLoadArg(), $complaineeDiv.getComplaintsOnComplaineeRet];  }
+    else { vecG=['getComplaintsFromComplainer', $complainerDiv.getLoadArg(), $complainerDiv.getComplaintsFromComplainerRet];   }
     var vec=[['complaintUpdateAnswer',o1],vecG];   majax(oAJAX,vec);
     doHistBack();
   }
@@ -2869,10 +2788,10 @@ var complaintAnswerPopExtend=function($el){
   var $commentHead=$('<div>').html(langHtml.Complaint+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
   var $comment=$('<div>');
   var $answerHead=$('<div>').html(langHtml.vote.answer+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'});
-  var $answer=$('<textarea>').css({display:'block',margin:'0em 0em 0.7em'}); $answer.keypress( function(e){ if(e.which==13) {sendFunc();return false;}} );
-  var $save=$('<button>').html(langHtml.Save).click(function(){sendFunc();});
-  var $del=$('<button>').html(langHtml.vote.deleteAnswer).click(function(){$answer.val(''); sendFunc();});
-  var $cancel=$('<button>').html(langHtml.Cancel).click(doHistBack);
+  var $answer=$('<textarea>').css({display:'block',margin:'0em 0em 0.7em'}); $answer.on('keypress', function(e){ if(e.which==13) {sendFunc();return false;}} );
+  var $save=$('<button>').html(langHtml.Save).on('click', function(){sendFunc();});
+  var $del=$('<button>').html(langHtml.vote.deleteAnswer).on('click', function(){$answer.val(''); sendFunc();});
+  var $cancel=$('<button>').html(langHtml.Cancel).on('click', doHistBack);
   //var $butts=$([]).push($save, $del, $cancel).css({margin:'0.5em 0'});
   var $butts=$([]).push($save, $del, $cancel).css({margin:'0.5em 0'});
   //$el.append($commentHead,$comment,$answerHead,$answer,$butts);
@@ -2882,69 +2801,54 @@ var complaintAnswerPopExtend=function($el){
 
   var $blanket=$('<div>').addClass("blanket");
   var $centerDiv=$('<div>').append($commentHead,$comment,$answerHead,$answer,$butts);
-  $centerDiv.addClass("Center").css({'width':'20em', height:'22em', padding: '1em'})
-  if(boIE) $centerDiv.css({'width':'20em'});
+  $centerDiv.addClass("Center").css({padding: '1em'}); // 'width':'20em', height:'22em', 
+  //if(boIE) $centerDiv.css({'width':'20em'});
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
   return $el;
 }
 
-    //if(Object.keys(sessionLoginIdP).length || typeof userInfoFrDB.user=='object'){
-var complaintCommentButtExtend=function($el){    // Opens $complaintCommentPop, placed in $complaintVDiv
+var complaineeDivExtend=function($el){    // Complaints on a certain complainee
 "use strict"
-  $el.click(function(e){
-    e.stopPropagation();
-    var flow=(function*(){
-      if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
-        var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
-        var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code:code};
-        var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
-      }
-      doHistPush({$view:$complaintCommentPop});   $complaintCommentPop.openFunc($complaintVDiv.idVendor);
-    })(); flow.next();
-  });
-  return $el;
-}
+  $el.toString=function(){return 'complaineeDiv';}
+  $el.setUp=function(oRoleT, id){
+    oRole=oRoleT; $el.indRole=oRole.ind;
+    var iMTab=$TableDiv[oRole.ind].getMTabInd(id);
+    rowComplainee=oRole.MTab[iMTab];
+    $el.idComplainee=rowComplainee.idUser;
+    $nameSpan.html(rowComplainee.displayName);
 
-
-var complaintAnswerButtExtend=function($el){    // Opens $complaintAnswerPop, placed in $complaintVDiv
-"use strict"
-  $el.click(function(e){
-    e.stopPropagation();
-    var idComplainer=$el.closest('tr').data('idComplainer');
-    $complaintAnswerPop.openFunc(idComplainer);
-  });
-  return $el;
-}
-
-
-var complaintVDivExtend=function($el){    // Complainers complaints on a certain Vendor
-"use strict"
-  $el.toString=function(){return 'complaintVDiv';}
-  $el.setUp=function(idV){
-    var iMTab=$tableDiv.getMTabInd(idV);
-    rowVendor=MTab[iMTab];
-    $el.idVendor=rowVendor.idUser;
-    $nameSpan.html(rowVendor.displayName);
-
-    var strTmp; //var IPTmp=enumIP[Number(rowVendor.IP)];
-    strTmp=calcImageUrl(rowVendor);
-    $imgVendor.prop({src:strTmp});
-    $vendorListCtrlDiv.mySet(iMTab);
+    var strTmp; //var IPTmp=enumIP[Number(rowComplainee.IP)];
+    strTmp=calcImageUrl(rowComplainee);
+    $imgComplainee.prop({src:strTmp});
+    $ListCtrlDiv[oRole.ind].mySet(iMTab);
+    $spanRole.html(langHtml[ucfirst(oRole.strRole)]);
+    $span.html('Complaints on a user ('+langHtml[oRole.strRole]+')').css({background:oRole.strColor}); // divFoot label
   }
-  $el.getLoadObj=function(){
-    var oGet={offset:offset,rowCount:rowCount,idVendor:$el.idVendor};  return ['complaintVGet',oGet,$el.complaintVGetRet];
-  }
+  $el.getLoadArg=function(){ return {offset:offset, rowCount:rowCount, idComplainee:$el.idComplainee};   }
   $el.load=function(){
-    setMess('... fetching complaints on a vendor ... ',15,true);  majax(oAJAX,[$el.getLoadObj()]);
+    setMess('',null,true);  majax(oAJAX,[['getComplaintsOnComplainee', $el.getLoadArg(), $el.getComplaintsOnComplaineeRet]]);
     $el.boLoaded=1;
   }
-  var makeImgClickFun=function(idR,image){return function(){
-    $complaintRDiv.setUp(idR,image); $complaintRDiv.load();
-    $complaintRDiv.setVis();
-    doHistPush({$view:$complaintRDiv});
+  //var makeImgClickFun=function(idR,image){return function(){
+    //$complainerDiv.setUp({idUser:idR,image:image});
+    ////$complainerDiv.setUp(idR,image);
+    //$complainerDiv.load();
+    //$complainerDiv.setVis();
+    //doHistPush({$view:$complainerDiv});
+  //}}
+  var makeImgClickFun=function(objArg){return function(){
+    $complainerDiv.setUp(objArg);
+    //$complainerDiv.setUp(idR,image);
+    $complainerDiv.load();
+    $complainerDiv.setVis();
+    doHistPush({$view:$complainerDiv});
   }}
-  $el.complaintVGetRet=function(data){
+  var ansButClick=function(){
+    var idComplainer=$(this).closest('tr').data('idComplainer');
+    $complaintAnswerPop.openFunc(idComplainer);
+  }
+  $el.getComplaintsOnComplaineeRet=function(data){
     var nTot,nCur,tmp;
     tmp=data.nTot;   if(typeof tmp!="undefined")  nTot=tmp;
     tmp=data.nCur;   if(typeof tmp!="undefined")  nCur=tmp;
@@ -2955,11 +2859,15 @@ var complaintVDivExtend=function($el){    // Complainers complaints on a certain
     for(var i=0; i<tab.length; i++) {
       var idComplainerTmp=tab[i].idComplainer;
       var image=tab[i].image;
-      var strTmp=image || uVendorImage+idComplainerTmp;
+      var strTmp=image || uUserImage+idComplainerTmp;
       var $img=$('<img>').prop({src:strTmp}).css({'float':'left', width:"50px", height:"50px", background:"eee"});
-      $img.click(makeImgClickFun(idComplainerTmp,image));
+      //var objTmp=copySome({},tab[i],['idComplainer','image','nameIP']);
+      //var objTmp={idUser,tab[i],['idComplainer','image','nameIP']);
+      
+      $img.on('click', makeImgClickFun(tab[i]));
+      //$img.on('click', makeImgClickFun(idComplainerTmp,image));
 
-      var d=(new Date(tab[i].created*1000)).toLocaleDateString(),   $created=$('<p>').append(d).css({'font-weight':'bold'});
+      var d=(new Date(tab[i].tCreated*1000)).toLocaleDateString(),   $tCreated=$('<p>').append(d).css({'font-weight':'bold'});
       var $comm=$('<p>').append(tab[i].comment);
 
       var strAns=tab[i].answer, $ans='';
@@ -2969,13 +2877,13 @@ var complaintVDivExtend=function($el){    // Complainers complaints on a certain
       }
 
       var $butAns=''
-      if(userInfoFrDB.vendor && $el.idVendor==userInfoFrDB.vendor.idUser){
+      if(userInfoFrDB.user && $el.idComplainee==userInfoFrDB.user.idUser){
         var idR=tab[i].idComplainer;
         var strtmp='';if(strAns) strtmp=langHtml.Change; else strtmp=langHtml.Answer;
-        $butAns=complaintAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'});
+        $butAns=$('<button>').html(strtmp).css({'float':'right'}).on('click', ansButClick);
       }
 
-      var $td=$('<td>').append($img,$created,$comm,$ans,$butAns);
+      var $td=$('<td>').append($img,$tCreated,$comm,$ans,$butAns);
       if(strAns) $ans.append($butAns);
       var $row=$('<tr>').data({idComplainer:idR}).append($td);  $tBody.append($row);
     }
@@ -2983,54 +2891,71 @@ var complaintVDivExtend=function($el){    // Complainers complaints on a certain
 
     if(nTot>offset+tab.length) $butNext.prop({disabled:false}); else $butNext.prop({disabled:1});
     if(offset>0) $butPrev.prop({disabled:false}); else $butPrev.prop({disabled:1});
-    $infoSpan.html('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
+    $spanOffsetInfo.html('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
     resetMess(10);
   }
-
-  $el.boLoaded=0; //$el.idVendor;
-  var tab=[], rowVendor, $imgVendor=$('<img>').css({'vertical-align':'middle'}), $nameSpan=$('<span>');
-  var $vendorInfo=$('<div>').append(langHtml.Vendor,': ',$imgVendor,' ',$nameSpan).css({'margin':'0.5em',display:'inline-block'}); //,'float':'right'
-  //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
-  var $complaintCommentButt=complaintCommentButtExtend($('<button>')).html(langHtml.vote.writeComment+' ('+langHtml.IdProviderNeeded+')').css({'margin-right':'1em'});
+  var complaintCommentButtClick=function(){
+    var flow=(function*(){
+      if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
+        var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+        var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code:code};
+        var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      }
+      doHistPush({$view:$complaintCommentPop});   $complaintCommentPop.openFunc($complaineeDiv.idComplainee);
+    })(); flow.next();
+  }
+  
+  var oRole;
+  $el.$listCtrlDivW=$('<span>').css({'float':'right'});
+  
+  var $complaintCommentButt=$('<button>').html(langHtml.vote.writeComment+' ('+langHtml.IdProviderNeeded+')').css({'margin-right':'1em'}).on('click', complaintCommentButtClick);
+  var $topDiv=$('<div>').append($complaintCommentButt, $el.$listCtrlDivW).css({'margin-top':'1em',overflow:'hidden'});
+  
+  var offset=0,rowCount=20;
+  $el.boLoaded=0; //$el.idComplainee;
+  var tab=[], rowComplainee, $imgComplainee=$('<img>').css({'vertical-align':'middle'}), $nameSpan=$('<span>'), $spanRole=$('<span>');
+  var $complaineeInfo=$('<div>').append($spanRole,': ',$imgComplainee,' ',$nameSpan).css({'margin':'0.5em',display:'inline-block', 'float':'right'}); //,'float':'right'
   var $bub=$('<div>').html(langHtml.writeComplaintPopup);
   var $imgH=$imgHelp.clone();  popupHoverJQ($imgH,$bub);
 
   var $tBody=$('<tbody>'),   $table=$('<table>').append($tBody).css({'width':'100%'});//.addClass('complaintTab');
 
-  var $butPrev=$('<button>').append('Prev page').click(function(){ offset-=rowCount; offset=offset>=0?offset:0; $el.load();});
-  var $butNext=$('<button>').append('Next page').click(function(){ offset+=rowCount; $el.load();});
-  var $infoSpan=$('<span>').css({'white-space':'nowrap'});
-  $el.$topDiv=$('<div>').append($complaintCommentButt).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,
-  $el.append($el.$topDiv,$vendorInfo,$table,$butPrev,$butNext,$infoSpan);
+  var $butPrev=$('<button>').append('Prev page').on('click', function(){ offset-=rowCount; offset=offset>=0?offset:0; $el.load();});
+  var $butNext=$('<button>').append('Next page').on('click', function(){ offset+=rowCount; $el.load();});
+  var $spanOffsetInfo=$('<span>').css({'white-space':'nowrap'});
+  var $divCont=$('<div>').addClass('contDiv').append($topDiv, $complaineeInfo, $table, $butPrev, $butNext, $spanOffsetInfo);
 
-  var offset=0,rowCount=20;
-  $el.css({'text-align':'left'});
+  
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append('Complaints on a user').addClass('footDivLabel');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
-var complaintVFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Complaints on a vendor').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
-  return $el;
-}
 
-var complaintRDivExtend=function($el){  // Complaints from a certain Complainer
+var complainerDivExtend=function($el){  // Complaints from a certain Complainer
 "use strict"
-  $el.toString=function(){return 'complaintRDiv';}
-  $el.setUp=function(idR,image){
-    idComplainer=idR;
-    var strTmp=image || uVendorImage+idComplainer;
-    $imgComplainer.prop({src:strTmp});
+  $el.toString=function(){return 'complainerDiv';}
+  $el.setUp=function(objArg){
+    var {idComplainer:idTmp, image, displayName}=objArg;
+    idComplainer=idTmp;
+    var strTmp=image || uUserImage+idComplainer;
+    $imgComplainer.prop({src:strTmp}); $spanName.html(displayName);
   }
-  $el.getLoadObj=function(){
-    var oGet={offset:offset,rowCount:rowCount,idComplainer:idComplainer};  return ['complaintRGet',oGet,$el.complaintRGetRet];
-  }
+  $el.getLoadArg=function(){ return {offset:offset,rowCount:rowCount,idComplainer:idComplainer}; }
   $el.load=function(){
-    setMess('... fetching complaints from a complainer  ... ',15,true); majax(oAJAX,[$el.getLoadObj()]);
+    setMess('',null,true); majax(oAJAX,[['getComplaintsFromComplainer', $el.getLoadArg(), $el.getComplaintsFromComplainerRet]]);
     $el.boLoaded=1;
   }
-  $el.complaintRGetRet=function(data){
+  var ansButClick=function(e){
+    var idComplainer=$(this).closest('tr').data('idComplainer');
+    $complaintAnswerPop.openFunc(idComplainer);
+  }
+  $el.getComplaintsFromComplainerRet=function(data){
     var nTot,nCur,tmp;
     tmp=data.nTot;   if(typeof tmp!="undefined")  nTot=tmp;
     tmp=data.nCur;   if(typeof tmp!="undefined")  nCur=tmp;
@@ -3039,11 +2964,12 @@ var complaintRDivExtend=function($el){  // Complaints from a certain Complainer
 
     $tBody.empty();
     for(var i=0; i<tab.length; i++) {
-      var strTmp=calcImageUrl({idUser:tab[i].idUser, boImgOwn:tab[i].boImgOwn, imTag:tab[i].imTag, image:tab[i].image}); //, IP:tab[i].IP
+      var strTmp=calcImageUrl({idUser:tab[i].idUser, boImgOwn:tab[i].boImgOwn, imTag:tab[i].imTag, image:tab[i].image}); //
+      //var strTmp=tab[i].image;
 
       var $img=$('<img>').prop({src:strTmp}).css({'float':'right','border-left':'solid #ff3 15px'});
 
-      var d=(new Date(tab[i].created*1000)).toLocaleDateString(), $created=$('<p>').append(d).css({'font-weight':'bold'});
+      var d=(new Date(tab[i].tCreated*1000)).toLocaleDateString(), $tCreated=$('<p>').append(d).css({'font-weight':'bold'});
       var $comm=$('<p>').append(tab[i].comment);
 
       var strAns=tab[i].answer, $ans='';
@@ -3053,12 +2979,12 @@ var complaintRDivExtend=function($el){  // Complaints from a certain Complainer
       }else $ans='';
 
       var $butAns=''
-      if(userInfoFrDB.vendor && tab[i].idUser==userInfoFrDB.vendor.idUser){
+      if(userInfoFrDB.user && tab[i].idUser==userInfoFrDB.user.idUser){
         var strtmp='';if(strAns) strtmp=langHtml.Change; else strtmp=langHtml.Answer;
-        var $butAns=complaintAnswerButtExtend($('<button>')).html(strtmp).css({'float':'right'});
+        $butAns=$('<button>').html(strtmp).css({'float':'right'}).on('click', ansButClick);
       }
 
-      var $td=$('<td>').append($img,$created,$comm,$ans,$butAns);
+      var $td=$('<td>').append($img,$tCreated,$comm,$ans,$butAns);
       if(strAns) $ans.prepend($img,$butAns);
       var $row=$('<tr>').data({idComplainer:idComplainer}).append($td);    $tBody.append($row);
     }
@@ -3066,32 +2992,30 @@ var complaintRDivExtend=function($el){  // Complaints from a certain Complainer
 
     if(nTot>offset+tab.length) $butNext.prop({disabled:false}); else $butNext.prop({disabled:1});
     if(offset>0) $butPrev.prop({disabled:false}); else $butPrev.prop({disabled:1});
-    $infoSpan.html('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
+    $spanOffsetInfo.html('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
     resetMess(10);
   }
 
+  var offset=0,rowCount=20;
   $el.boLoaded=0;
-  var idComplainer, tab=[], $imgComplainer=$('<img>').css({'vertical-align':'middle'});
-  var $complainerInfo=$('<div>').append(langHtml.Complainer,': ',$imgComplainer);
-  //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em'});
+  var idComplainer, tab=[], $imgComplainer=$('<img>').css({'vertical-align':'middle', 'margin-top':'1em'}), $spanName=$('<span>');
+  var $complainerInfo=$('<div>').append(langHtml.Complainer,': ',$imgComplainer, $spanName);
 
   var $tBody=$('<tbody>'),   $table=$('<table>').append($tBody).css({'width':'100%'});//.addClass('complaintTab');
 
-  var $butPrev=$('<button>').append('Prev page').click(function(){ offset-=rowCount; offset=offset>=0?offset:0; $el.load();});
-  var $butNext=$('<button>').append('Next page').click(function(){ offset+=rowCount; $el.load();});
-  var $infoSpan=$('<span>').css({'white-space':'nowrap'});
-  var $topDiv=$('<div>').css({'margin-top':'1em'}); // .append($buttonBack)
-  $el.append($topDiv,$complainerInfo,$table,$butPrev,$butNext,$infoSpan);
+  var $butPrev=$('<button>').append('Prev page').on('click', function(){ offset-=rowCount; offset=offset>=0?offset:0; $el.load();});
+  var $butNext=$('<button>').append('Next page').on('click', function(){ offset+=rowCount; $el.load();});
+  var $spanOffsetInfo=$('<span>').css({'white-space':'nowrap'});
+  var $divCont=$('<div>').addClass('contDiv').append($complainerInfo, $table, $butPrev, $butNext, $spanOffsetInfo);
 
-  var offset=0,rowCount=20;
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var complaintRFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $span=$('<span>').append('Complaints from complainer').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
 
@@ -3100,20 +3024,20 @@ var complaintRFootExtend=function($el){
 /*******************************************************************************************************************
  *******************************************************************************************************************
  *
- * vendorInfo Divs
+ * roleInfo Divs
  *
  *******************************************************************************************************************
  *******************************************************************************************************************/
 
 
-var updateTableThumb=function($el,iRow){
+var updateTableThumb=function($el, iRow, nRow){
 "use strict"
   var canvas=$el[0],  ctx = canvas.getContext("2d");
-  //var heightRow=2; if(nMTab<4) heightRow=5; if(nMTab<4) heightRow=10;
-  var heightRow=2; if(nMTab*2<15) heightRow=Math.round(15/nMTab); if(nMTab==1) heightRow=10;
+  //var heightRow=2; if(nRow<4) heightRow=5; if(nRow<4) heightRow=10;
+  var heightRow=2; if(nRow*2<15) heightRow=Math.round(15/nRow); if(nRow==1) heightRow=10;
   var widthBox=25;
-  canvas.width=widthBox;   canvas.height=nMTab*heightRow-1;
-  for(var i=0;i<nMTab;i++){
+  canvas.width=widthBox;   canvas.height=nRow*heightRow-1;
+  for(var i=0;i<nRow;i++){
     ctx.beginPath();
     ctx.moveTo(0, i*heightRow);
     ctx.lineTo(widthBox,i*heightRow);
@@ -3135,7 +3059,7 @@ var updateTableThumb=function($el,iRow){
 
 var mapThumbDivExtend=function($el){
 "use strict"
-  $el.updateMapThumb=function(iRow){
+  $el.updateMapThumb=function(oRole,iRow){
     var canvas=$mapThumb[0],  ctx = canvas.getContext("2d");
 
     var zoomDiff=3, zoomDiffFac=Math.pow(2,zoomDiff),  Div=zoomDiffFac;
@@ -3145,16 +3069,16 @@ var mapThumbDivExtend=function($el){
 
     canvas.width=widthBox;   canvas.height=heightBox;
 
-    var iMTab=$tableDiv.$tBody.children('tr:eq('+iRow+')').data('iMTab');
+    var iMTab=$TableDiv[oRole.ind].$tBody.children('tr:eq('+iRow+')').data('iMTab');
 
-    arrInd.length=0; for(var i=0;i<nMTab;i++) arrInd[i]=i;  arrValRemove(arrInd,iMTab);   arrInd.push(iMTab);  // Put iMTab last
+    arrInd.length=0; for(var i=0;i<oRole.nMTab;i++) arrInd[i]=i;  arrValRemove(arrInd,iMTab);   arrInd.push(iMTab);  // Put iMTab last
 
     var dotSizeH=2;
     for(var i=0;i<arrInd.length;i++){
 
       var itmp=arrInd[i];
-      //if(i==nMTab) itmp=iRow; else itmp=i;
-      var cx=MTab[itmp].x-pMerCent.x, cy=MTab[itmp].y-pMerCent.y;
+      //if(i==oRole.nMTab) itmp=iRow; else itmp=i;
+      var cx=oRole.MTab[itmp].x-pMerCent.x, cy=oRole.MTab[itmp].y-pMerCent.y;
       cx=cx*thumbFac+widthBox/2;cy=cy*thumbFac+heightBox/2;
       var tmp=1; if(itmp==iMTab) tmp=dotSizeH;
       ctx.beginPath(); //so start going clockwise from upper left corner
@@ -3201,26 +3125,28 @@ var mapThumbDivExtend=function($el){
 
 
 
-var vendorInfoDivExtend=function($el){
+var roleInfoDivExtend=function($el, oRole){
 "use strict"
-  $el.toString=function(){return 'vendorInfoDiv';}
+  var {strRole, Prop, charRoleUC}=oRole, {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
+  $el.indRole=oRole.ind;
+  $el.toString=function(){return 'infoDiv'+charRoleUC;}
   $el.setContainers=function(iMTab){
     $containers.each(function(j){
-      var $ele=$(this), strName=$ele.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      var tmp=''; if('setInfo' in tmpObj) tmp=tmpObj.setInfo(iMTab,$ele);  else tmp=MTab[iMTab][strName];
+      var $ele=$(this), strName=$ele.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:{};
+      var tmp=''; if('setInfo' in tmpObj) tmp=tmpObj.setInfo(iMTab,$ele);  else tmp=oRole.MTab[iMTab][strName];
       if(typeof tmp!='undefined') $ele.html(tmp);
     });
     $el.boLoaded=1;
-    $vendorListCtrlDiv.mySet(iMTab);
+    $ListCtrlDiv[oRole.ind].mySet(iMTab);
   }
   $el.createContainers=function(){
-    for(var i=0;i<StrPropMain.length;i++){
-      var strName=StrPropMain[i], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      var $imgH=''; if(strName in helpBub && Number(Prop[strName].b[bFlip.help])) { $imgH=$imgHelp.clone();   popupHoverJQ($imgH,helpBub[strName]); }
+    for(var i=0;i<StrProp.length;i++){
+      var strName=StrProp[i], tmpObj=(strName in Prop)?Prop[strName]:{};
+      var $imgH=''; if(strName in oRole.helpBub && Number(Prop[strName].b[oRole.bFlip.help])) { $imgH=$imgHelp.clone();   popupHoverJQ($imgH,oRole.helpBub[strName]); }
 
-      var strDisp,strMargRight,strWW; if(Number(Prop[strName].b[bFlip.block])) {strDisp='block'; strMargRight='0em'; strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
+      var strDisp,strMargRight,strWW; if(Number(Prop[strName].b[oRole.bFlip.block])) {strDisp='block'; strMargRight='0em'; strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
 
-      var strLabel=''; if(Number(Prop[strName].b[bFlip.label])) { strLabel=calcLabel(langHtml.label, strName)+': ';      }
+      var strLabel=''; if(Number(Prop[strName].b[oRole.bFlip.label])) { strLabel=calcLabel(langHtml.label, strName)+': ';      }
 
       var $divC=$('<span>').attr({name:strName}).css({'font-weight':'bold',margin:'0 0.2em 0 0em'});
       if('crInfo' in tmpObj) tmpObj.crInfo($divC);
@@ -3229,53 +3155,56 @@ var vendorInfoDivExtend=function($el){
     }
     $containers=$el.$divCont.find('div>span');
 
-    for(var i=0;i<StrGroupMain.length;i++){
-      var $h=$('<span>').append(langHtml[StrGroupMain[i]],':').css({'font-size':'120%','font-weight':'bold', display:'block'});
-      $el.find('div[name='+StrGroupFirstMain[i]+']').before('<hr>',$h);
+    for(var i=0;i<StrGroup.length;i++){
+      var $h=$('<span>').append(langHtml[StrGroup[i]],':').css({'font-size':'120%','font-weight':'bold', display:'block'});
+      $el.find('div[name='+StrGroupFirst[i]+']').before('<hr>',$h);
     }
   }
-  $el.$divCont=$('<div>');
+  $el.$divCont=$('<div>').addClass('contDiv');
   var $containers;
 
   $el.boLoaded=0;
 
-  //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').click(doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
-  $el.$menuDiv=$('<div>').css({'margin-top':'1em','padding':'0'}); // .append($buttonBack)
-  $el.append($el.$menuDiv,$el.$divCont,'<br>');
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var vendorInfoFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append('Vendor info').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
+  //var $buttonBack=$('<button>').html(langHtml.Back).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  $el.$listCtrlDivW=$('<div>');
+  $el.$menuDiv=$('<div>').css({flex:"0 0 auto", 'margin-top':'1em','padding':'0'}).append($el.$listCtrlDivW);
+  
+  
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(ucfirst(langHtml[strRole])+' info').addClass('footDivLabel').css({background:oRole.strColor});
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($el.$menuDiv,$el.$divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
 
-var vendorListCtrlDivExtend=function($el){ // The little map and up/down arrows
+var listCtrlDivExtend=function($el, oRole){ // The little map and up/down arrows
+  var $tableDiv=$TableDiv[oRole.ind]
   $el.mySet=function(iMTab){
-    $arrowDiv.toggle(nMTab>1);
+    $arrowDiv.toggle(oRole.nMTab>1);
     $el.$tr=$tableDiv.getRow(iMTab);
     var iRow=$el.$tr.index();
 
-    $tableThumb=updateTableThumb($tableThumb,iRow);
-    $mapThumbDiv.updateMapThumb(iRow);
+    $tableThumb=updateTableThumb($tableThumb, iRow, oRole.nMTab);
+    $mapThumbDiv.updateMapThumb(oRole, iRow);
   }
   var $mapThumbDiv=mapThumbDivExtend($('<div>')).css({'display':'inline-block','margin-right':'1em',border:'1px solid grey','vertical-align':'top'});
-  //$mapThumbDiv.click(function(){mapButtonClick();});
+  //$mapThumbDiv.on('click', function(){frontButtonClick();});
 
-  var $tableThumb=$('<canvas>').css({'margin-right':'1.5em',border:'1px solid grey','vertical-align':'top'}); //.click(function(){tableButtonClick();});
+  var $tableThumb=$('<canvas>').css({'margin-right':'1.5em',border:'1px solid grey','vertical-align':'top'}); //.on('click', function(){tableButtonClick();});
 
   var tmpf=function(iDiff){
     var $trt; if(iDiff==1) {$trt=$el.$tr.next(); if($trt.length==0 || $trt.css('display')=='none') $trt=$el.$tr.parent().children(':first');}
-    else {$trt=$el.$tr.prev(); if($trt.length==0) $trt=$tableDiv.$tBody.children(':eq('+(nMTab-1)+')'); }
+    else {$trt=$el.$tr.prev(); if($trt.length==0) $trt=$tableDiv.$tBody.children(':eq('+(oRole.nMTab-1)+')'); }
     var iTmp=$trt.data('iMTab');
-    $vendorInfoDiv.setContainers(iTmp);
-    if($complaintVDiv.is(':visible')){$complaintVDiv.setUp(MTab[iTmp].idUser); $complaintVDiv.load(); }
+    $InfoDiv[oRole.ind].setContainers(iTmp);
+    if($complaineeDiv.is(':visible')){$complaineeDiv.setUp(oRole, oRole.MTab[iTmp].idUser); $complaineeDiv.load(); }
   }
-  var $buttonPrev=$('<button>').html('&#x25b2;').click(function(){tmpf(-1);}).css({display:'block','margin':'0em'});
-  var $buttonNext=$('<button>').html('&#x25bc;').click(function(){tmpf(1);}).css({display:'block','margin':'1.5em 0em 0em'});
+  var $buttonPrev=$('<button>').html('&#x25b2;').on('click', function(){tmpf(-1);}).css({display:'block','margin':'0em'});
+  var $buttonNext=$('<button>').html('&#x25bc;').on('click', function(){tmpf(1);}).css({display:'block','margin':'1.5em 0em 0em'});
   var $arrowSpan=$('<span>').css({display:'inline-block'}).append($buttonPrev,$buttonNext);
   var $arrowDiv=$('<div>').css({display:'inline-block','margin':'0em 1.5em 0em 0em'}).append($tableThumb,$arrowSpan);
   $el.append($mapThumbDiv,$arrowDiv);
@@ -3290,10 +3219,13 @@ var vendorListCtrlDivExtend=function($el){ // The little map and up/down arrows
 var loginInfoExtend=function($el){
 "use strict"
   $el.setStat=function(){
-    var arrKind=[];
-    for(var key in userInfoFrDB){   if(userInfoFrDB[key] && key!='user') {  arrKind.push(langHtml.loginInfo[key]); }   }
-    var boShow=Boolean(arrKind.length);
-    if(boShow){
+    var arrKind=[], boIn=0;
+    if('user' in userInfoFrDB && userInfoFrDB.user){
+      boIn=1;
+      var arrTmp=['customer','seller','complainer', 'admin']
+      for(var i in arrTmp){  var key=arrTmp[i]; if(userInfoFrDB[key]) {  arrKind.push(langHtml.loginInfo[key]); }   }
+    }
+    if(boIn){
       $spanName.html(userInfoFrDB.user.nameIP);
       var strTmp=arrKind.join(', '); if(strTmp) strTmp='('+strTmp+')';
       $spanKind.html(strTmp);
@@ -3304,13 +3236,13 @@ var loginInfoExtend=function($el){
       $el.hide();
     }
   }
-  var $spanName=$('<span>'), $spanKind=$('<span>');
+  var $spanName=$('<span>'), $spanKind=$('<span>').css({'margin-left':'.4em'});
   //var $logoutButt=$('<a>').prop({href:''}).text(langHtml.loginInfo.logoutButt).css({'float':'right'});
-  var $logoutButt=$('<button>').text(langHtml.loginInfo.logoutButt).css({'float':'right','font-size':'90%'});
-  $logoutButt.click(function(){
+  var $logoutButt=$('<button>').text(langHtml.loginInfo.logoutButt).css({'margin-left':'auto', 'font-size':'90%'});
+  $logoutButt.on('click', function(){
     sessionLoginIdP={}; userInfoFrDB=$.extend({}, specialistDefault);
     var vec=[['logout',1, function(data){
-      history.fastBack($mapDiv,true);
+      history.fastBack($frontDiv,true);
     }]];
     majax(oAJAX,vec);
     return false;
@@ -3318,7 +3250,7 @@ var loginInfoExtend=function($el){
 
   //$el.append($spanName,' ',$spanKind,' ',$logoutButt,'<br clear=all>');
   $el.append($spanName,' ',$spanKind,' ',$logoutButt);
-  $el.css({'text-align':'left'});
+  $el.css({'text-align':'left', display:'flex', 'justify-content':'space-between', width:'100%', 'max-width':'800px'});
   $el.hide();
   return $el;
 }
@@ -3335,12 +3267,14 @@ var loginInfoExtend=function($el){
  *******************************************************************************************************************
  *******************************************************************************************************************/
 
-teamImgButtonExtend=function($el){
+teamImgButtonExtend=function($el, oRole){
+  var strRole=oRole.strRole;
+  var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
   $el.mySet=function(idTeam,boOn){
     var boId=Number(idTeam)!=0;
     $spanIndependent.toggle(!boId);   $im.toggle(boId);
     if(boId){
-      var strTmp=uTeamImage+idTeam;
+      var strTmp=uRoleTeamImage+idTeam;
       $im.prop({src:strTmp});
     }
     if(boOn) opacity=1; else opacity=0.4; $im.css({opacity: opacity});
@@ -3355,42 +3289,72 @@ teamImgButtonExtend=function($el){
       // filt (server-side): 'B/BF'-features: [vSpec, boWhite],     'S'-features: [iOn,iOff]
       // hist (client-side): 'B'-features: [vPosName,vPosVal],       'S'/'BF'-features: [vPosInd,vPosVal]
       // histPHP (server-side): histPHP[buttonNumber]=['name',value], (converts to:) hist[0]=names,  hist[1]=values
-var FilterDiv=function(Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst=[], StrGroup=[]){   //  Note!! StrOrderFilt should not be changed by any client side plugins (as it is also used on the server)
-  var $el=$('<div>'); $.extend($el,FilterDivProt);
-  $el.Prop=Prop; $el.Label=Label; $el.StrOrderFilt=StrOrderFilt; $el.changeFunc=changeFunc; $el.StrGroupFirst=StrGroupFirst; $el.StrGroup=StrGroup;
-
+//var FilterDiv=function(Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst=[], StrGroup=[]){
+var FilterDiv=function(oRole){
+  var {strRole, charRoleUC}=oRole;
+  var $el=$('<div>');
+  $el.toString=function(){return 'filterDiv'+charRoleUC;}
+  
+  //arrValRemove(oRole.filter.StrProp,'nComplaint');
+  
+  $el.$filterDivI=(new FilterDivI(oRole, loadTabStart)).addClass('contDiv');
+  
   $el.addClass('unselectable');    $el.prop({unselectable:"on"}); //class: needed by firefox, prop: needed by opera, firefox and ie
 
-  $el.$divCont=$el;
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var filterFootExtend=function($el){
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em'});
 
-  $el.$filterInfoWrap=$('<span>');
+  $el.$filterInfoSpan=filterInfoSpanExtend($('<span>'));
   var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  //var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').css({'vertical-align':'-0.4em', display:'inline-block'});
-  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml.Filter,' (',$el.$filterInfoWrap,')').addClass('footDivLabel');
+  
+  var $roleToggler=roleTogglerExtend($('<span>'), oRole, $FilterDiv).css({'margin':'0 auto', padding:'0px', display:'flex'});
+  
+  var $buttAll=$('<a>').prop({href:''}).append(langHtml.All).on('click', function(){$el.$filterDivI.Filt.filtAll(); loadTabStart(); return false;}).css({ 'margin':'0em 1em', 'font-size':'80%'});
+  var $buttNone=$('<a>').prop({href:''}).append(langHtml.None).on('click', function(){$el.$filterDivI.Filt.filtNone(); loadTabStart(); return false;}).css({ 'margin':'0em 1em', 'font-size':'80%'});
+  
+  var tmp='Filter'; //+oRole.charRoleUC;
+  var $filterInfoWrap2=$('<span>').append($tmpImg, langHtml[tmp],' (',$el.$filterInfoSpan,')').addClass('footDivLabel').css({background:oRole.strColor});
+  var $divFoot=$('<div>').append($buttonBack, $roleToggler, $buttAll, $buttNone, $filterInfoWrap2).addClass('footDiv'); //.css({'padding-top':'0em'});  // , 'text-align':'center' ,overflow:'hidden'
 
-  var $buttClear=$('<a>').prop({href:''}).append(langHtml.All).click(function(){$filterDiv.Filt.filtClear(); loadTabStart(); return false;}).css({'float':'right', 'margin-left':'0.5em', 'font-size':'80%'});
 
-  //var $buttClear=$('<a>').prop({href:''}).text(langHtml.All).css({'font-size':'80%'}).click(function(){allOnButtClick();return false;});
+  $el.append($el.$filterDivI, $divFoot);
 
-  $el.append($buttonBack, $buttClear, $filterInfoWrap2).addClass('footDiv');  // , 'text-align':'center' ,overflow:'hidden'
-
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
 
 
 var filterInfoSpanExtend=function($el){
 "use strict"
-  $el.setNVendor=function(arr){
-    $el.empty(); $el.append(arr[0],'/',arr[1]);
-  }
-  $el.append();
+  $el.setRatio=function(arr){ $el.empty(); $el.append(arr[0],'/',arr[1]);  }
   return $el;
 }
+
+var filterButtonExtend=function($el){
+"use strict"
+  $el.setUp=function(NTotNFilt){
+    $filterInfoSpanC.setRatio(NTotNFilt[0]);
+    $filterInfoSpanS.setRatio(NTotNFilt[1]);
+  }
+  var $filterInfoSpanC=filterInfoSpanExtend($('<span>'));
+  var $filterInfoSpanS=filterInfoSpanExtend($('<span>'));
+
+  //var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
+  var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em', width:'1em', 'margin-right':'0.5em'});// height:'1em', width:'1em',   //,'vertical-align':'middle'  //,'vertical-align':'text-bottom'
+  var $tmpDivC=$('<div>').append($filterInfoSpanC).css({background:oC.strColor});
+  var $tmpDivS=$('<div>').append($filterInfoSpanS).css({background:oS.strColor});
+  var $tmpDivW=$('<div>').append($tmpDivC, $tmpDivS).css({'font-size':'.7em'})
+  $el.append($tmpImg, $tmpDivW).addClass('flexWidth').prop('title',langHtml.FilterTitle);
+  $el.on('click',function(){
+    var charRoleSelcted=getItem('charRoleSelcted');  if(charRoleSelcted===null) charRoleSelcted=charRoleSelctedDefault;
+    var $filterDivTmp=charRoleSelcted=='c'?$filterDivC:$filterDivS;
+    $filterDivTmp.setVis();  doHistPush({$view:$filterDivTmp});
+    ga('send', 'event', 'button', 'click', 'filter');
+  });
+  $el.css({'padding-left':'0.3em', 'padding-right':'0.3em', display:'flex', 'align-items':'center'});
+  return $el;
+}
+
 
 
 /*******************************************************************************************************************
@@ -3401,344 +3365,6 @@ var filterInfoSpanExtend=function($el){
  *******************************************************************************************************************
  *******************************************************************************************************************/
 
-
-if(boMapGoogle){
-var MyOverlay=function( options )  {
-"use strict"
-  //this.latLng_=options.position;
-  //this.setValues( options );
-  //this.set('position', map.getCenter());
-  this.bounds_=null;
-
-  this.$div = $('<div>').css({border:'0px',position:'absolute'});
-  this.$img=$('<img>').css({width:'100%',height:'100%'});
-  var strFont="8pt Arial", leading=10;
-  this.$canvas = $('<canvas>').css({width:'100%',height:'100%'});
-  this.canvas=this.$canvas[0];
-  this.ctx = this.canvas.getContext("2d");    this.ctx.font = strFont;   this.ctx.textBaseline  = "middle";
-  this.ctxMeas = this.canvas.getContext("2d");  this.ctxMeas.font = strFont;     //Create temporary context
-
-
-  this.$div.append(this.$img);
-  //this.setMap(map);
-};
-MyOverlay.prototype = new google.maps.OverlayView();
-
-MyOverlay.prototype.onAdd = function()  {
-  //var $pane = $(this.getPanes().overlayImage); // Pane 4
-  //$pane.append( this.$div );
-  var panes = this.getPanes();   panes.overlayImage.appendChild(this.$div[0]);
-};
-
-MyOverlay.prototype.onRemove = function()  {   this.$div.detach();  };
-
-/*MyOverlay.prototype.myBounds=function(){
-  var projection = this.getProjection();
-  var latLngSW=$mapDiv.map.getBounds().getSouthWest(), latLngNE=$mapDiv.map.getBounds().getNorthEast();
-  var pointSW = projection.fromLatLngToDivPixel(latLngSW), pointNE = projection.fromLatLngToDivPixel(latLngNE);
-  var w=pointNE.x-pointSW.x, h=pointSW.y-pointNE.y;
-  var arrT=$el.calcOverlayBounds(w,h); this.widthCanvas=arrT[0]; this.heightCanvas=arrT[1];
-}*/
-MyOverlay.prototype.draw = function()  {
-  var projection = this.getProjection();
-  var zoom=$mapDiv.map.getZoom(),   zoomFac=Math.pow(2,zoom);
-  //var pointMer=merProj.fromLatLngToPoint(this.latLng_);        x=pointMer.x*zoomFac,   y=pointMer.y*zoomFac;
-  //this.myBounds();
-  //var widthCanvas=this.widthCanvas, heightCanvas=this.heightCanvas;
-  //var latLngSW=$mapDiv.map.getBounds().getSouthWest(), latLngNE=$mapDiv.map.getBounds().getNorthEast();
-  //var sw = projection.fromLatLngToDivPixel(this.bounds_.getSouthWest());
-  //var ne = projection.fromLatLngToDivPixel(this.bounds_.getNorthEast());
-  var sw = projection.fromLatLngToDivPixel(this.bounds_[0]);
-  var ne = projection.fromLatLngToDivPixel(this.bounds_[1]);
-  //var pointSW = projection.fromLatLngToDivPixel(latLngSW), pointNE = projection.fromLatLngToDivPixel(latLngNE);
-  //var w=pointNE.x-pointSW.x, h=pointSW.y-pointNE.y;
-  //var arrT=$mapDiv.calcOverlayBounds(w,h), widthCanvas=arrT[0], heightCanvas=arrT[1];
-  //var w=this.$div.width(), h=this.$div.height();
-  //var xMerL=x-w/2, xMerH=x+w/2, yMerL=y-h/2, yMerH=y+h/2;
-
-  var w=ne.x-sw.x, h=sw.y-ne.y;
-
-  var point = projection.fromLatLngToDivPixel(this.latLng_);
-  if(typeof projection.zoom=='undefined' || projection.zoom<2) {
-  //if(ne.x<point.x || sw.x>point.x){
-    //var ww=projection.getWorldWidth();
-    var dim=this.boundsDim_;
-    w=dim[0]/dim[1]*h; wH=w/2; sw.x=point.x-wH;
-
-    //var n=1; if(w/ww>2) n=2;
-    //if(ne.x<point.x) { ne.x+=ww;}
-    //if(sw.x>point.x) { sw.x-=ww; }
-    //w=ne.x-sw.x;
-
-  }
-
-  //this.$div.css({left:point.x-widthCanvas/2,top:point.y-heightCanvas/2,width:widthCanvas,height:heightCanvas});
-  this.$div.css({left:sw.x,top:ne.y,width:w,height:h});
-  //setMess('r');
-  //this.$div.css({left:0,top:0,width:widthCanvas,height:heightCanvas,background:'green'});
-};
-}
-//groupOverlay = new MyOverlay( { map: map, 'position': map.getCenter() } );
-
-
-var doNothing=function(){};
-
-
-/*
- * mapDiv
- */
-
-//window.zoomLevel=-2;
-var mapDivExtendGoogle=function($el){
-"use strict"
-  $el.toString=function(){return 'mapDiv';}
-  var markers=[], markerOn=[];
-  var groupOverlay, groupMarkers=[]; // "groupOverlay" used when boImgCreationOK==TRUE, "groupMarkers" otherwise.
-  var maxZ=google.maps.Marker.MAX_ZINDEX;
-  var markerZ=[];
-  $el.markers=markers;
-
-  //$el.curMarker;
-  //$el.map;
-  $el.hideMarkers=function(){
-    for (var i=0;i<markers.length; i++) {  markers[i].setVisible(false);  }
-  }
-  $el.hideGroupMarkers=function(){
-    for (var i=0;i<groupMarkers.length; i++) {  groupMarkers[i].setVisible(false);  }
-    //groupMarkers=[];   groupMarkers.length = 0;
-  }
-  $el.calcOverlayBounds=function(w,h,arr=Array(2)){
-    arr[0]=w/2; arr[1]=h/2;
-    arr[0]=2*w; arr[1]=2*h;
-    //arr[0]=200+w; arr[1]=200+h;
-    arr[0]=w; arr[1]=h;
-    return arr;
-  }
-
-  var makeFuncOver=function(i){ return function() {
-    var arrTmp=[];
-    if(i>=nMTab) {markers[i].setIcon(makeMarkerBubble('  '));}
-    //for(var jSel in ColsShow){
-    for(var j=0;j<ColsShow.length;j++){
-      var strName=ColsShow[j], tmp, tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      if('setMapMF' in tmpObj) {  var tmp=tmpObj.setMapMF(i);  }else tmp=MTab[i][strName];
-      if(typeof tmp=='string') arrTmp.push(calcLabel(langHtml.label, strName)+': '+tmp);
-    }
-    var tmp=arrTmp.join('\n'); arrTmp=null;
-    markers[i].setIcon(makeMarkerBubble(tmp)); markers[i].setZIndex(maxZ); };
-  }
-
-  var makeOneRowIcon=function(i){
-    if(i>=nMTab) {return makeMarkerBubble('  ');}
-    var ico;  // url or object
-    var strName=colOneMark;  if(boImgCreationOK==0 && strName!='image' && strName!='idTeam') strName='image';
-    var tmp=MTab[i][strName], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-    if('setMapF' in tmpObj)  tmp=tmpObj.setMapF(i);
-    if(typeof tmp!='object'){
-      if((typeof tmp=='string' && tmp.length==0) || tmp===null){tmp='  ';}
-      ico=makeMarkerBubble(tmp);
-    }else ico=tmp;
-    return ico;
-  }
-
-  var makeFuncOut=function(i){ return function() {
-    var imgUri=makeOneRowIcon(i);  markers[i].setIcon(imgUri); markers[i].setZIndex(markerZ[i]); };   }
-  var makeFuncTog=function(i){
-    var fOut=makeFuncOut(i), fOn=makeFuncOver(i); return function(){  if(markerOn[i]) fOut(); else fOn(); markerOn[i]=1-markerOn[i];};
-  }
-  var makeFuncInfoClick=function(i){
-    //var fOut=makeFuncOut(i);
-    return function(){
-      //var idFB=MTab[i].idFB;
-      //$vendorInfoDiv.setContainers(idFB);
-      $vendorInfoDiv.setContainers(i);
-      $vendorInfoDiv.setVis();
-      doHistPush({$view:$vendorInfoDiv});
-      //if(!boTouch) {fOut();}
-    }
-  }
-
-  $el.setMarkers=function(){
-    if(boImgCreationOK) {    if(typeof groupOverlay!='undefined') groupOverlay.setMap(null);  }
-    else { $el.hideGroupMarkers(); }
-
-    // reads globals: $el.map, markerZ, MTab, ColsShow, colOneMark
-
-    for(var i=0; i<nMTab; i++) {
-      markerZ[i]=nMTab-i; //first mark on top (highest Z)
-      //var tmpPoint = new google.maps.Point(MTab[i].x, MTab[i].y);
-      var tmpPoint = [MTab[i].x, MTab[i].y];
-      var ico='';
-      //if(boImgCreationOK) { ico=makeOneRowIcon(i); } else ico=uImageFolder+'numbers/'+(i+1)+'.png';
-      ico=makeOneRowIcon(i);
-      markers[i].setOptions({ position: merProj.fromPointToLatLng(tmpPoint), icon:ico, zIndex:markerZ[i], visible:true })
-      markerOn[i]=0;
-    }
-    for(var i=nMTab;i<maxVendor; i++) { markers[i].setVisible(false);}
-
-  }
-
-
-    // For browsers where boImgCreationOK==true
-  $el.setGroupOverlay=function(){
-    $el.hideMarkers();
-    var zoom=$el.map.getZoom(), latLng=$el.map.getCenter();
-    var pointMer=merProj.fromLatLngToPoint(latLng);
-
-    var zoomFac=Math.pow(2,zoom);
-
-    var pointMerZ={x:pointMer.x*zoomFac,y:pointMer.y*zoomFac};
-
-    if(typeof groupOverlay=='undefined') groupOverlay = new MyOverlay();
-    groupOverlay.latLng_=latLng;
-
-    var arrT=$el.calcOverlayBounds($el.width(),$el.height()); var widthCanvas=arrT[0], heightCanvas=arrT[1];
-    var canvas=groupOverlay.canvas, ctx=groupOverlay.ctx;
-
-    var w=widthCanvas, h=heightCanvas;
-    var xMerL=pointMer.x-w/2/zoomFac, xMerH=pointMer.x+w/2/zoomFac, yMerL=pointMer.y-h/2/zoomFac, yMerH=pointMer.y+h/2/zoomFac;
-    var pointMerSW = new google.maps.Point(xMerL, yMerH), pointMerNE = new google.maps.Point(xMerH, yMerL);
-    var latLngSW=merProj.fromPointToLatLng(pointMerSW,true), latLngNE=merProj.fromPointToLatLng(pointMerNE,true);
-    //var pointMerSW = [xMerL, yMerH], pointMerNE = [xMerH, yMerL];
-    //var latLngSW=merProj.fromPointToLatLngV(pointMerSW,true), latLngNE=merProj.fromPointToLatLngV(pointMerNE,true);
-    //groupOverlay.bounds_=new google.maps.LatLngBounds(latLngSW, latLngNE);
-    groupOverlay.bounds_=[latLngSW, latLngNE];
-    groupOverlay.boundsDim_=[widthCanvas,heightCanvas];
-    //xMerL=Math.max(xMerL,0); xMerH=Math.min(xMerH,256); widthCanvas=xMerH*zoomFac-xMerL;
-
-    canvas.width=widthCanvas;   canvas.height=heightCanvas;
-    var widthCanvasH=widthCanvas/2, heightCanvasH=heightCanvas/2;
-    //var pointXMin=pointMerZ.x-widthCanvasH, pointXMax=pointMerZ.x+widthCanvasH, pointYMin=pointMerZ.y-heightCanvasH, pointYMax=pointMerZ.y+heightCanvasH;
-    //pointXMin=Math.round(pointXMin/xDiv)*xDiv; pointXMax=Math.round(pointXMax/xDiv)*xDiv; pointYMin=Math.round(pointYMin/yDiv)*yDiv; pointYMax=Math.round(pointYMax/yDiv)*yDiv;
-
-
-    var lenMGroupTab=$el.MGroupTab.length;
-    for(var i = 0; i < lenMGroupTab; i++) {
-      //var tmpPoint = new google.maps.Point($el.MGroupTab[i][0], $el.MGroupTab[i][1]);
-      var xZ=$el.MGroupTab[i][0]*zoomFac, yZ=$el.MGroupTab[i][1]*zoomFac;
-      var nD=$el.MGroupTab[i][2], str=nD+'';
-      var cx=xZ-pointMerZ.x+widthCanvasH, cy=yZ-pointMerZ.y+heightCanvasH;
-      var widthText=groupOverlay.ctxMeas.measureText(str).width;
-      var widthBox=widthText+4, heightBox=10,  widthBoxHalf=widthBox/2, heightBoxHalf=heightBox/2,  wTH=widthBox/2, hTH=heightBox/2;
-
-      ctx.beginPath(); ctx.moveTo(cx-wTH, cy-hTH); ctx.lineTo(cx+wTH,cy-hTH);  ctx.lineTo(cx+wTH, cy+hTH); ctx.lineTo(cx-wTH, cy+hTH);   ctx.closePath();   ctx.fillStyle="#FF7777"; ctx.fill();
-      ctx.fillStyle = "black";     ctx.fillText(str, cx-widthText/2, cy+heightBoxHalf-1 );    // Write text
-    }
-
-    if(boImgCreationOK) {
-      groupOverlay.$img.prop({src:canvas.toDataURL("image/png")});//.css({background:'green'});
-    }
-    else {
-
-    }
-    //groupOverlay.setValues( { map: $el.map, 'position': groupOverlay.latLng_} );
-    groupOverlay.setValues( { map: $el.map} );
-
-  }
-
-  $el.initMarkers=function(){
-    for(var i=0; i<maxVendor; i++) {
-      markers[i] = new google.maps.Marker({
-        map: $el.map,
-        visible:false
-      });
-
-      google.maps.event.addListener(markers[i], 'click', makeFuncInfoClick(i));
-      if(boImgCreationOK){
-        if(boTouch) {
-          //google.maps.event.addListener(markers[i], 'click', makeFuncTog(i));
-        }else {
-          google.maps.event.addListener(markers[i], 'mouseover', makeFuncOver(i));
-          google.maps.event.addListener(markers[i], 'mouseout', makeFuncOut(i));
-        }
-      }
-
-    }
-  }
-  
-
-  $el.setCentNMe=function(latLng) {
-    if(boVideo) latLng=latLngDebug;
-    $el.storedPWCC=$el.pWCMe=merProj.fromLatLngToPoint(latLng);
-  }
-  
-  $el.getMapStatus=function(){
-    if(!$el.storedPWCC || !$el.storedZoom || !$el.storedVPSize) $el.storeVar();
-    return {pC:$el.storedPWCC, zoom:$el.storedZoom, VPSize:$el.storedVPSize};
-  }
-  $el.getPWCC=function(){
-    if(!$el.storedPWCC) {
-      var latLngCent=$el.map.getCenter();
-      $el.storedPWCC=merProj.fromLatLngToPoint(latLngCent);
-    }
-    return $el.storedPWCC;
-  }
-  $el.storeVar=function(){    // Store values for times when the map is not visible.
-    var latLngCent=$el.map.getCenter();
-    $el.storedPWCC=merProj.fromLatLngToPoint(latLngCent);
-    $el.storedZoom=$el.map.getZoom();
-    $el.storedVPSize=[Number(String($el.width())), Number(String($el.height()))];
-  }
-  $el.boGeoStatSucc=0;
-  $el.set1=function(zoomLevel, latLng) {
-    $el.setCentNMe(latLng);
-    var myOptions = {
-      zoom: zoomLevel,
-      center: latLng,
-      //disableDefaultUI:true,
-      panControl: false,
-      mapTypeControl: false,
-      streetViewControl:false,
-      //zoomControl:true,
-      zoomControlOptions:{  position: google.maps.ControlPosition.LEFT_BOTTOM},
-      //navigationControlOptions: {style: google.maps.NavigationControlStyle.SMALL},
-      mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
-    $el.map = new google.maps.Map($el[0], myOptions);
-    $el.initMarkers();
-
-    var boTmp=Boolean(boVideo);
-    //boTmp=true;
-    $el.curMarker = new google.maps.Marker({
-      position: latLng,
-      map: $el.map,
-      draggable:boTmp,
-      //icon:uHelpFile,
-      //zIndex:-1,
-      title:"You are here!"
-    });
-
-    google.maps.event.addListener($el.curMarker, 'dragend', function(arg){
-      $el.pWCMe=merProj.fromLatLngToPoint(arg.latLng);
-    });
-
-
-    //$el.map.addListener('idle', function(){console.log('h: '+Boolean(h));  if($el.is(':visible')) $el.storeVar();} );
-
-      //// On user drag/zoom, temporarly add reloadFunc
-    //var h=null;
-    //var reloadFunc=function(){
-      //loadTabStart();
-      //google.maps.event.removeListener(h); h=null;
-    //}
-    //var addReloadFunc=function() {
-      //if(!h) h=$el.map.addListener('idle', reloadFunc);
-    //}
-    //$el.map.addListener('zoom_changed', addReloadFunc);    $el.map.addListener('drag', addReloadFunc);
-
-    $el.map.addListener('idle', function(){ if($el.is(':visible')) $el.storeVar();    loadTabStart(); });
-  }
-  
-
-
-  $el.css({height:'25em',width:'100%'});
-  $el.pWCMe=merProj.fromLatLngToPoint({lat:0,lng:0});
-
-  return $el;
-}
-
-
-// MTab and nMTab is expected as global variables
 
 //
 // Naming conventions:
@@ -3824,7 +3450,7 @@ var mapDivExtendI=function(el){
       var rat=doub.d/doubL.d;
       var zL=zCur;
       zCur=rat*zL;
-      var posEl=findPos(el), leftContainer=posEl.x, topContainer=posEl.y;
+      var {left:leftContainer, top:topContainer}=findPos(el);
       //var leftContainer=el.offset().left,  topContainer=el.offset().top;
       var widthBox=el.clientWidth, heightBox=el.clientHeight;
 
@@ -3841,7 +3467,7 @@ var mapDivExtendI=function(el){
 
       var zL=zCur;
       var zCurLev=round(log2(zCur)); zCur=Math.pow(2,zCurLev);
-      var posEl=findPos(el), leftContainer=posEl.x, topContainer=posEl.y;
+      var {left:leftContainer, top:topContainer}=findPos(el);
       //var leftContainer=el.offset().left,  topContainer=el.offset().top;
       var widthBox=el.clientWidth, heightBox=el.clientHeight;
 
@@ -3904,7 +3530,7 @@ var mapDivExtendI=function(el){
     leftCurStart=leftCur; topCurStart=topCur;
     var zL=zCur;
     zCur=rat;
-    var posEl=findPos(el), leftContainer=posEl.x, topContainer=posEl.y;
+    var {left:leftContainer, top:topContainer}=findPos(el);
     //var leftContainer=el.offset().left,  topContainer=el.offset().top;
     var widthBox=el.clientWidth, heightBox=el.clientHeight;
 
@@ -3933,7 +3559,7 @@ var mapDivExtendI=function(el){
     boundTransformVariables();
     elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
     
-    setMess('topCur: '+round(topCur-dYScreen)+', dYScreen: '+round(dYScreen)+', topCur: '+round(topCur));
+    if(boDbg) setMess('topCur: '+round(topCur-dYScreen)+', dYScreen: '+round(dYScreen)+', topCur: '+round(topCur));
     xavgL=xavg; yavgL=yavg;
   }
   var myMousedown=function(e){
@@ -4062,8 +3688,8 @@ var mapDivExtendI=function(el){
           var boBlue=0, [,nCorrectionY]=normalizeAng(jTile, zoomFac/2*dr, zoomFac*dr);
 
           var wTmp;
-          if(nCorrectionY<0) wTmp=uImageFolder+'northPole.png';
-          else if(nCorrectionY>0) wTmp=uImageFolder+'southPole.png';
+          if(nCorrectionY<0) wTmp=''; //uImageFolder+'northPole.png';
+          else if(nCorrectionY>0) wTmp='' //uImageFolder+'southPole.png';
           else {
             if(zoomLevPlusDRLev>=0) wTmp=uMapSourceDir+'/'+zoomLevPlusDRLev+'/'+iTile+'/'+jTile+'.png';
             else wTmp=uImageFolder+'mapm'+(-zoomLevPlusDRLev)+'.png';
@@ -4124,209 +3750,210 @@ var mapDivExtendI=function(el){
   // Markers
   //
 
-  var ArrMarkerT=function(){
+  var ArrMarkerT=function(oRole){
     var arr=[]; extend(arr,ArrMarkerT.tmpPrototype);
+    arr.oRole=oRole;
     return arr;
   }
   ArrMarkerT.tmpPrototype={};
   ArrMarkerT.tmpPrototype.condAddMarker=function(){
-    var arrMarker=this;
-    for(var i=this.length; i<nMTab;i++){
-      var elImg=new MarkerT(); elImg.dataInd=i;
-      elImg.css({transform:'translate(-50%, -100%)', position:'absolute', 'z-index':1, position: 'absolute'});
-      elImg.on('click',MarkerT.tmpPrototype.funcInfoClick);
+    for(var i=this.length; i<this.oRole.nMTab;i++){
+      var elMark=new MarkerT(this.oRole); elMark.dataInd=i;
+      elMark.css({transform:'translate(-50%, -100%)', position:'absolute', 'z-index':1, position: 'absolute'});
+      elMark.on('click',MarkerT.tmpPrototype.funcInfoClick);
       if(!boTouch){
-        elImg.on('mouseover',MarkerT.tmpPrototype.funcOver);
-        elImg.on('mouseout',MarkerT.tmpPrototype.funcOut);
+        elMark.on('mouseover',MarkerT.tmpPrototype.funcOver);
+        elMark.on('mouseout',MarkerT.tmpPrototype.funcOut);
       }
-      this.push(elImg);
-      elGlas.append(elImg);
+      this.push(elMark);
+      elGlas.append(elMark);
       var elDivUnCertain=createElement('div').css({width:'40px',height:'40px', border:'solid 1px red', background:'pink', opacity:flUncertainOpacityOff, position:'absolute', transform:'translate(-50%, -50%)'});
-      arrDivUnCertain.push(elDivUnCertain);
+      elMark.elDivUnCertain=elDivUnCertain;
+      //arrDivUnCertain.push(elDivUnCertain);
       elGlasBack.append(elDivUnCertain);
     }
   }
   ArrMarkerT.tmpPrototype.setMarkers=function(){
-    el.hideGroupOverlay();
     this.condAddMarker();
-    for(var i=0;i<nMTab;i++){
-      var elImg=this[i];
-      elImg.makeOneRowIconObj(i);
-      elImg.dataObjMarkerMultCache=null;
-      MarkerT.tmpPrototype.setImg(elImg);
-      elImg.dataX=MTab[i].x; elImg.dataY=MTab[i].y; elImg.dataCoordinatePrecisionM=MTab[i].coordinatePrecisionM;
-      elImg.style.display=''; 
-      arrDivUnCertain[i].style.display='';
+    for(var i=0;i<this.oRole.nMTab;i++){
+      var elMark=this[i];
+      elMark.makeOneRowIconObj(i);
+      elMark.dataObjMarkerMultCache=null;
+      //MarkerT.tmpPrototype.setImg.call(elMark);
+      elMark.setImg();
+      elMark.dataX=this.oRole.MTab[i].x; elMark.dataY=this.oRole.MTab[i].y; elMark.dataCoordinatePrecisionM=this.oRole.MTab[i].coordinatePrecisionM;
+      elMark.style.display=''; 
+      elMark.elDivUnCertain.style.display='';
+      //arrDivUnCertain[i].style.display='';
     }
-    for(var i=nMTab;i<this.length;i++){
+    for(var i=this.oRole.nMTab;i<this.length;i++){
       this[i].style.display='none';
-      arrDivUnCertain[i].style.display='none';
+      //arrDivUnCertain[i].style.display='none';
+      this[i].elDivUnCertain.style.display='none';
     }
      
   }
-  el.setMarkers=function(){el.arrMarker.setMarkers();}
-  el.drawMarkers=function(){el.arrMarker.drawMarkers();}
-  ArrMarkerT.tmpPrototype.hideMarkers=function(){ for(var i=0;i<this.length;i++) {this[i].style.display='none';   arrDivUnCertain[i].style.display='none';} }
+  //el.setMarkers=function(){ el.arrMarkerC.setMarkers(); el.arrMarkerS.setMarkers();}
+  //el.drawMarkers=function(){el.arrMarkerC.drawMarkers(); el.arrMarkerS.drawMarkers();}
+  el.setMarkers=function(){  for(var i=0;i<ORole.length;i++) el.ArrMarker[i].setMarkers();  }
+  el.drawMarkers=function(){  for(var i=0;i<ORole.length;i++) el.ArrMarker[i].drawMarkers();  }
+  
+  ArrMarkerT.tmpPrototype.hideMarkers=function(){
+    for(var i=0;i<this.length;i++) {
+      this[i].style.display='none';
+      //arrDivUnCertain[i].style.display='none';
+      this[i].elDivUnCertain.style.display='none';
+    }
+  }
   ArrMarkerT.tmpPrototype.drawMarkers=function(){
-    for(var i=0;i<nMTab;i++){
-      var elImg=this[i], x=elImg.dataX, y=elImg.dataY, left=x*zoomFacW-pixBoardX, top=y*zoomFacW-pixBoardY;
-      elImg.css({left:left+'px',top:top+'px'});
-      var resM=elImg.dataCoordinatePrecisionM;
+    for(var i=0;i<this.oRole.nMTab;i++){
+      var elMark=this[i], x=elMark.dataX, y=elMark.dataY, left=x*zoomFacW-pixBoardX, top=y*zoomFacW-pixBoardY;
+      elMark.css({left:left+'px',top:top+'px'});
+      var resM=elMark.dataCoordinatePrecisionM;
       var lat=merProj.fromYToLat(y);
       var resWC=resM2resWC(resM,lat);
       var w=resWC*zoomFacW, h=resWC*zoomFacW;
-      arrDivUnCertain[i].css({left:left+'px', top:top+'px', width:w+'px', height:h+'px'});
+      //arrDivUnCertain[i].css({left:left+'px', top:top+'px', width:w+'px', height:h+'px'});
+      elMark.elDivUnCertain.css({left:left+'px', top:top+'px', width:w+'px', height:h+'px'});
     };
   }
-  el.arrMarker=new ArrMarkerT();
-  var arrDivUnCertain=[];
+  el.ArrMarker=[]; for(var i=0;i<ORole.length;i++) el.ArrMarker[i]=new ArrMarkerT(ORole[i]);
+  //var arrDivUnCertain=[];
   
   
-  var MarkerT=function(){
-    var elImg=createElement('img');
-    extend(elImg, MarkerT.tmpPrototype);
-    return elImg;
+  var MarkerT=function(oRole){
+    var elDiv=createElement('div'); elDiv.elImg=createElement('img');
+    elDiv.append(elDiv.elImg);
+    extend(elDiv, MarkerT.tmpPrototype);
+    elDiv.oRole=oRole;
+    elDiv.elImg.style['vertical-align']='bottom';
+    return elDiv;
   }
   var flUncertainOpacityOff=0.2, flUncertainOpacityOn=0.4;
   MarkerT.tmpPrototype={};
   MarkerT.tmpPrototype.makeOneRowIconObj=function(i){
     var objTmp;
-    if(i>=nMTab) objTmp=makeMarkerBubble('  ');
+    if(i>=this.oRole.nMTab) objTmp=makeMarkerBubble({text:'  ', color:this.oRole.strColor});
     else{
-      var strName=colOneMark;
-      var tmp=MTab[i][strName], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
+      var strName=this.oRole.colOneMark;
+      var tmp=this.oRole.MTab[i][strName], tmpObj=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
       if('setMapF' in tmpObj)  tmp=tmpObj.setMapF(i);
       if(typeof tmp!='object'){
         if((typeof tmp=='string' && tmp.length==0) || tmp===null){tmp='  ';}
-        objTmp=makeMarkerBubble(tmp);
+        objTmp=makeMarkerBubble({text:tmp, color:this.oRole.strColor});
       }else objTmp=tmp;
     }
     this.dataObjMarkerOne=objTmp;
   }
   MarkerT.tmpPrototype.arrFuncOverData=[]; // Just for reducing garbage
   MarkerT.tmpPrototype.makeMultiRowIconObj=function(i){
-    if(i>=nMTab) {console.log('err');}
+    if(i>=this.oRole.nMTab) {console.log('err');}
     var k=0;
-    //for(var jSel in ColsShow){
-    for(var j=0;j<ColsShow.length;j++){
-      var strName=ColsShow[j], tmp, tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-      if('setMapMF' in tmpObj) {  var tmp=tmpObj.setMapMF(i);  } else tmp=MTab[i][strName];
+    //for(var jSel in this.oRole.ColsShow){
+    for(var j=0;j<this.oRole.ColsShow.length;j++){
+      var strName=this.oRole.ColsShow[j], tmp, tmpObj=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
+      if('setMapMF' in tmpObj) {  var tmp=tmpObj.setMapMF(i);  } else tmp=this.oRole.MTab[i][strName];
       if(typeof tmp=='string' || typeof tmp=='number') { this.arrFuncOverData[k]=calcLabel(langHtml.label, strName)+': '+tmp; k++; }
     }
     this.arrFuncOverData.length=k;
     var tmp=this.arrFuncOverData.join('\n');
-    return makeMarkerBubble(tmp);
+    return makeMarkerBubble({text:tmp,color:this.oRole.strColor});
   }
   MarkerT.tmpPrototype.funcOver=function() {
-    var elImg=this, i=elImg.dataInd;
-    var obj=elImg.dataObjMarkerMultCache;
-    if(!obj) { obj=MarkerT.tmpPrototype.makeMultiRowIconObj(i); elImg.dataObjMarkerMultCache=obj; }
+    var elMark=this, i=elMark.dataInd;
+    var obj=elMark.dataObjMarkerMultCache;
+    if(!obj) {
+      //obj=MarkerT.tmpPrototype.makeMultiRowIconObj.call(this,i);
+      obj=elMark.makeMultiRowIconObj(i);
+      elMark.dataObjMarkerMultCache=obj;
+    }
     var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y, strTrans='-'+xTrans+'px, -'+yTrans+'px';
-    elImg.src=obj.url; elImg.css({width:'', height:'', background:'', transform:'translate('+strTrans+')', 'z-index':maxZ}); 
-    arrDivUnCertain[i].css({opacity:flUncertainOpacityOn});
+    elMark.elImg.src=obj.url; elMark.css({width:'', height:'', background:'', transform:'translate('+strTrans+')', 'z-index':maxZ, border:''}); 
+    //arrDivUnCertain[i].css({opacity:flUncertainOpacityOn});
+    elMark.elDivUnCertain.css({opacity:flUncertainOpacityOn});
     return false;
   }
   MarkerT.tmpPrototype.funcOut=function(){
-    var elImg=this, i=elImg.dataInd;
-    MarkerT.tmpPrototype.setImg(elImg);
-    elImg.css({'z-index':maxVendor-i});
-    arrDivUnCertain[i].css({opacity:flUncertainOpacityOff});
+    var elMark=this, i=elMark.dataInd;
+    //MarkerT.tmpPrototype.setImg.call(elMark);
+    elMark.setImg();
+    elMark.css({'z-index':maxList-i});
+    //arrDivUnCertain[i].css({opacity:flUncertainOpacityOff});
+    elMark.elDivUnCertain.css({opacity:flUncertainOpacityOff});
   }
   MarkerT.tmpPrototype.funcInfoClick=function(){
     var i=this.dataInd;
-    $vendorInfoDiv.setContainers(i);
-    $vendorInfoDiv.setVis();
-    doHistPush({$view:$vendorInfoDiv});
+    //var $tmpDiv=this.oRole.$infoDiv;
+    var $tmpDiv=this.oRole==oC?$infoDivC:$infoDivS;
+    $tmpDiv.setContainers(i);
+    $tmpDiv.setVis();
+    doHistPush({$view:$tmpDiv});
     return false;
   }
-  MarkerT.tmpPrototype.setImg=function(elImg){
-    var obj=elImg.dataObjMarkerOne;
-    var strScale=''
-    if(typeof obj=='object' && obj.origin){
-      var zT=obj.zoom; strScale='scale('+zT+')';
-      var wSc=obj.size.width,  hSc=obj.size.height;
-      var lef=-obj.origin.x, to=-obj.origin.y;
-      elImg.src=uOnePixTransparent; elImg.css({width:wSc+'px', height:hSc+'px', background:'url('+obj.url+') '+lef+'px '+to+'px '});
-    } else {
-      var urlT;
-      if(typeof obj=='object') urlT=obj.url; else if(typeof obj=='string') urlT=obj;
-      elImg.src=urlT; elImg.css({width:'', height:''});
+  MarkerT.tmpPrototype.setImg=function(){
+    var elMark=this;
+    var obj=elMark.dataObjMarkerOne;
+    var strScale='', boUseFrame=false;
+    var strTrans='-50%, -100%', strBorder='', strWidth='', strHeight='', strBackground='', strSrc=obj;
+    if(typeof obj=='object'){
+      var {url, origin, zoom, size, anchor, boUseFrame}=obj;
+      strSrc=url;
+      if(origin){
+        var strScale='scale('+zoom+')';
+        strWidth=size.width+'px'; strHeight=size.height+'px';
+        var lef=-origin.x, to=-origin.y;
+        strSrc=uOnePixTransparent; strBackground='url('+url+') '+lef+'px '+to+'px ';
+      }
+      if(boUseFrame) strBorder='solid 1px '+this.oRole.strColor;
+      if(anchor){  var xTrans=Math.round(anchor.x), yTrans=anchor.y; strTrans='-'+xTrans+'px, -'+yTrans+'px';  }
     }
-    var strTrans='-50%, -100%';
-    if(typeof obj=='object' && obj.anchor){  var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y; strTrans='-'+xTrans+'px, -'+yTrans+'px';  }
-    elImg.css({transform:'translate('+strTrans+') '+strScale});
+    elMark.css({transform:'translate('+strTrans+') '+strScale, border:strBorder, width:strWidth, height:strHeight, background:strBackground});
+    elMark.elImg.src=strSrc;
   }
   
   
-  
-  el.hideGroupOverlay=function(){ elImgGroupOverlay.style.display='none';}
-  //el.showMarkers=function(){ arrMarker.style.display='';}
   var strFont="8pt Arial";
   var ctxMeas = document.createElement("canvas").getContext("2d");  ctxMeas.font = strFont;     // Create context for measuring text width
-  el.calcOverlayBounds=function(w,h,arr){
-    if(typeof arr=='undefined') arr=Array(2);
-    arr[0]=w/2; arr[1]=h/2;
-    arr[0]=2*w; arr[1]=2*h;
-    //arr[0]=200+w; arr[1]=200+h;
-    arr[0]=w; arr[1]=h;
-    return arr;
+  var ElImgGroupOverlayT=function(oRole){
+    var elImgGroupOverlay = createElement('img').css({transform:'translate(-50%, -50%)', position:'absolute', display:'none'});
+    extend(elImgGroupOverlay, ElImgGroupOverlayT.tmpPrototype);
+    elImgGroupOverlay.oRole=oRole;
+    return elImgGroupOverlay;
   }
-  el.setGroupOverlay=function(MGroupTab){
-    el.MGroupTab=MGroupTab;
-    el.arrMarker.hideMarkers();
-    var zoomFac=zoomFacW; // zoomFacW zoom factor written.
+  ElImgGroupOverlayT.tmpPrototype={};
+  ElImgGroupOverlayT.tmpPrototype.hideGroupOverlay=function(){ this.style.display='none';}
+  ElImgGroupOverlayT.tmpPrototype.setGroupOverlay=function(){
+    //for(var i=0;i<this.oRole.length;i++) el.ArrMarker[i].hideMarkers();
 
-    //var pointMerZ={x:pWCC.x*zoomFac,y:pWCC.y*zoomFac};
-    //var pWCC={x:pixC.x/zoomFac,y:pixC.y/zoomFac};
-    var pixC=pixMult(pWCC,zoomFac);
-    var [widthBox, heightBox]=el.storedVPSize;
-
-
-    var arrT=el.calcOverlayBounds(widthBox,heightBox); var w=arrT[0], h=arrT[1];
     var canvas = document.createElement("canvas"), ctx = canvas.getContext("2d");
-
-    //var xWCL=pWCC.x-w/2/zoomFac, xWCH=pWCC.x+w/2/zoomFac, yWCL=pWCC.y-h/2/zoomFac, yWCH=pWCC.y+h/2/zoomFac;
-    //var xL=pixC.x-w/2, xH=pixC.x+w/2, yL=pixC.y-h/2, yH=pixC.y+h/2;
-    //var pWCSW = {x:xMerL, y:yMerH}, pWCNE = {x:xMerH, y:yMerL};
-    //var latLngSW=merProj.fromPointToLatLng(pWCSW,true), latLngNE=merProj.fromPointToLatLng(pWCNE,true);
-    //elImgGroupOverlay.bounds_=[latLngSW, latLngNE];
-    //elImgGroupOverlay.boundsDim_=[w,h];
-    //elImgGroupOverlay.css({left:xL,top:yL});
-    //elImgGroupOverlay.css({width:w,height:h});
+    var zoomFac=zoomFacW; // zoomFacW zoom factor written.
+    var pixC=pixMult(pWCC,zoomFac);
+    var [w, h]=el.storedVPSize;
 
     canvas.width=w;   canvas.height=h;
     var wH=w/2, hH=h/2;
-    //var pointXMin=pointMerZ.x-wH, pointXMax=pointMerZ.x+wH, pointYMin=pointMerZ.y-hH, pointYMax=pointMerZ.y+hH;
-    //pointXMin=Math.round(pointXMin/xDiv)*xDiv; pointXMax=Math.round(pointXMax/xDiv)*xDiv; pointYMin=Math.round(pointYMin/yDiv)*yDiv; pointYMax=Math.round(pointYMax/yDiv)*yDiv;
 
-
-    var lenMGroupTab=el.MGroupTab.length;
-    for(var i = 0; i < lenMGroupTab; i++) {
-      //var tmpPoint = new google.maps.Point(MGroupTab[i][0], MGroupTab[i][1]);
-      var xZ=el.MGroupTab[i][0]*zoomFac, yZ=el.MGroupTab[i][1]*zoomFac;
-      var nD=el.MGroupTab[i][2], str=nD+'';
+    var MGroupTab=this.oRole.MGroupTab;
+    for(var i=0; i<MGroupTab.length;i++) {
+      var xZ=MGroupTab[i][0]*zoomFac, yZ=MGroupTab[i][1]*zoomFac;
+      var nD=MGroupTab[i][2], str=nD+'';
       var cx=xZ-pixC.x+wH, cy=yZ-pixC.y+hH;
       var widthText=ctxMeas.measureText(str).width;
       var widthBox=widthText+4, heightBox=10,  widthBoxHalf=widthBox/2, heightBoxHalf=heightBox/2,  wTH=widthBox/2, hTH=heightBox/2;
+      cy+=heightBox*this.oRole.yOffsetGroupMarker||0;
 
-      ctx.beginPath(); ctx.moveTo(cx-wTH, cy-hTH); ctx.lineTo(cx+wTH,cy-hTH);  ctx.lineTo(cx+wTH, cy+hTH); ctx.lineTo(cx-wTH, cy+hTH);   ctx.closePath();   ctx.fillStyle="#FF7777"; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx-wTH, cy-hTH); ctx.lineTo(cx+wTH,cy-hTH);  ctx.lineTo(cx+wTH, cy+hTH); ctx.lineTo(cx-wTH, cy+hTH);   ctx.closePath();   ctx.fillStyle=this.oRole.strGroupColor; ctx.fill();
       ctx.fillStyle = "black";     ctx.fillText(str, cx-widthText/2, cy+heightBoxHalf-1 );    // Write text
     }
-
-    elImgGroupOverlay.src=canvas.toDataURL("image/png");//.css({background:'green'});
-    elImgGroupOverlay.style.display='';
+    
+    this.src=canvas.toDataURL("image/png");//.css({background:'green'});
+    this.style.display='';
   }
-  el.drawGroupOverlay=function(){
-    //var pixC=pixMult(pWCC,zoomFacW);
-    //var arrT=el.calcOverlayBounds(el.width(),el.height()); var w=arrT[0], h=arrT[1];
-    //var xL=pixC.x-w/2, xH=pixC.x+w/2, yL=pixC.y-h/2, yH=pixC.y+h/2;
+  ElImgGroupOverlayT.tmpPrototype.drawGroupOverlay=function(){
     var left=pWCC.x*zoomFacW-pixBoardX, top=pWCC.y*zoomFacW-pixBoardY;
-    elImgGroupOverlay.css({left:left+'px', top:top+'px'});
+    this.css({left:left+'px', top:top+'px'});
   }
-  //el.drawMarkersW=function(){
-    //if(nMTab) el.drawMarkers(); else {el.setGroupOverlay(); el.drawGroupOverlay(); }
-    //el.drawMe();
-  //}
+
 
   el.drawMe=function(){
     var left=el.pWCMe.x*zoomFacW-pixBoardX, top=el.pWCMe.y*zoomFacW-pixBoardY;    elImgCurLoc.css({left:left+'px', top:top+'px'});
@@ -4354,8 +3981,10 @@ var mapDivExtendI=function(el){
   var elGlasBack=elGlas.cloneNode(true);
 
   var elImgCurLoc=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}); elImgCurLoc.src=uMyMarker;
-  var elImgGroupOverlay = createElement('img').css({transform:'translate(-50%, -50%)', position:'absolute', display:'none'});
-  elGlas.appendChildren(elImgCurLoc, elImgGroupOverlay);
+  elGlas.appendChild(elImgCurLoc);
+  
+  el.ElImgGroupOverlay=[]; for(var i=0;i<ORole.length;i++) el.ElImgGroupOverlay[i]=new ElImgGroupOverlayT(ORole[i]);
+  elGlas.appendChildren.apply(elGlas, el.ElImgGroupOverlay);
   
   if(boDbg) elBoard.append(elDivPivotDbg);
   elBoard.appendChildren(elGlasBack, elGlas);
@@ -4383,9 +4012,12 @@ var mapDivExtendI=function(el){
   //el.on("idle", function(){ el.storeVar(); });
   el.on('idle', function(){
     if(isVisible(el)) el.storeVar();
-    el.arrMarker.hideMarkers();
+    for(var i=0;i<ORole.length;i++) {
+      el.ArrMarker[i].hideMarkers();
+      el.ElImgGroupOverlay[i].hideGroupOverlay();
+    }
     el.drawMe();
-    if(window.loadTabStart) loadTabStart();
+    if(window.loadTabStart) loadTabStart(1);
   });
 
   el.append(elBoard);
@@ -4396,20 +4028,151 @@ var mapDivExtendI=function(el){
 
   // JQuery wrapper
 var mapDivExtend=function($el){
-  $el.toString=function(){return 'mapDiv';}
   mapDivExtendI($el[0]);
-  $el.setMarkers=$el[0].setMarkers; 
-  $el.drawMarkers=$el[0].drawMarkers; 
-  $el.setGroupOverlay=$el[0].setGroupOverlay; 
-  $el.drawGroupOverlay=$el[0].drawGroupOverlay; 
-  $el.drawMe=$el[0].drawMe;
-  $el.set1=$el[0].set1; 
-  $el.setTile=$el[0].setTile; 
-  $el.setCentNMe=$el[0].setCentNMe; 
-  $el.getMapStatus=$el[0].getMapStatus; 
-  $el.getPWCC=$el[0].getPWCC; 
+  copySome($el,$el[0],['setMarkers', 'drawMarkers', 'setGroupOverlay', 'drawGroupOverlay', 'drawMe', 'set1', 'setTile', 'setCentNMe', 'getMapStatus', 'getPWCC']);
   return $el
 }
+
+charRoleSelctedDefault='s';
+var frontDivExtend=function($el){
+  $el.toString=function(){return 'frontDiv';}
+  
+    // divFoot
+  $el.$topDiv=$('<div>').css({background:'', "box-sizing":"border-box",color:'black','font-size':'1.2em','line-height':'1.6em','font-weight':'bold','text-align':'center',
+      padding:'0.2em 0em 0.2em', margin:'1px 0em 0em 0em', flex:'0 0 auto', display:"flex", "justify-content":"space-around"}); //, 'border-top':'solid 1px', "justify-content":"space-evenly"
+  $el.$topDiv.append($entryButtonC, $entryButtonS);
+  
+  
+  var settingButtonClick=function(){
+    $settingDivW.setVis(); doHistPush({$view:$settingDivW});
+    ga('send', 'event', 'button', 'click', 'setting');
+  }
+  var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
+  var $settingButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'margin-left':'0.8em', 'margin-right':'1em'}).prop('title',langHtml.Settings).on('click',settingButtonClick);
+
+  //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
+  var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
+  var $infoLink=$('<a>').prop({href:uWikiT}).append(langHtml.OtherMarkets).css({'margin':'0em auto'}).on('click', function(){
+    ga('send', 'event', 'button', 'click', 'wiki');
+  });
+  
+  var tableButtonClick=function(){
+    var charRoleSelcted=getItem('charRoleSelcted');  if(charRoleSelcted===null) charRoleSelcted=charRoleSelctedDefault;
+    var $tableDivTmp=charRoleSelcted=='c'?$tableDivC:$tableDivS;
+    $tableDivTmp.setVis();  doHistPush({$view:$tableDivTmp});
+    ga('send', 'event', 'button', 'click', 'table');
+  }
+  var $tmpImg=$('<img>').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
+  $el.$tableButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'margin-left':'0.8em'}).prop('title',langHtml.ComparisonTable).on('click',tableButtonClick);  // , background:'transparent'
+  
+  
+  $el.$filterButton=filterButtonExtend($('<button>')).css({'margin-left':'0.4em', 'white-space':'nowrap'}); //, background:'transparent'
+
+  
+    // QuickFilterButtons
+  var setBut=function(boOn){
+    boOn=Boolean(boOn); var $b=$(this), iRole=this==$butS[0]?1:0; 
+    if(boOn) $b.css({color:'black', background:ORole[iRole].strColor}); else $b.css({color:'graytext', background:''});
+  }
+  var clickF=function(){
+    var iRole=this==$butS[0]?1:0;
+    var $b=$(this), $bAlt=iRole?$butC:$butS;
+    var boOn=this.style.color=='black',  boOnAlt=$bAlt[0].style.color=='black'; 
+    
+    var iRoleT=iRole;
+    
+    if(boOn && boOnAlt) boOnAlt=false;
+    else if(!boOn && boOnAlt) boOn=true;
+    else if(boOn && !boOnAlt) boOnAlt=true;
+    else if(!boOn && !boOnAlt) boOn=true;
+    
+    setItem('charRoleSelcted', ORole[iRoleT].charRole);
+    
+    if(boOn) $FilterDiv[iRole].$filterDivI.Filt.filtAll(); else $FilterDiv[iRole].$filterDivI.Filt.filtNone(); 
+    if(boOnAlt) $FilterDiv[1-iRole].$filterDivI.Filt.filtAll(); else $FilterDiv[1-iRole].$filterDivI.Filt.filtNone(); 
+    loadTabStart(); 
+    
+    setBut.call($b[0], boOn);
+    setBut.call($bAlt[0], boOnAlt);
+  }
+  var $butC=$('<button>').append(langHtml['Customers']).css({background:oC.strColor, 'margin-left':'0.8em'}).on('click',clickF).addClass('flexWidth').prop('title','Show / hide '+langHtml['Customers']); // &shy;
+  var $butS=$('<button>').append(langHtml['Sellers']).css({background:oS.strColor, 'margin-left':'0.4em'}).on('click',clickF).addClass('flexWidth').prop('title','Show / hide '+langHtml['Sellers']);
+  $butC.add($butS).css({'word-break':'break-word', 'font-size':'70%', padding:'0.1em'});   
+  setBut.call($butC[0], true);
+  setBut.call($butS[0], true);
+  
+  var $divFoot=$('<div>').append($settingButton, $infoLink, $el.$tableButton, $butC, $butS, $el.$filterButton).addClass('footDiv'); //.css({display:'flex', 'align-items':'center', 'justify-content':'space-between'});
+
+  
+  var $quickDivOuter=$('<div>').append($quickDivC, $quickDivS).css({flex:'0 0 auto'});  //'border-top':'solid white 1px'
+  //if(boIOS && boTouch) $quickDivOuter.css({padding:'0em 0em 1.7em'});
+  
+  $el.append($el.$topDiv, $mapDiv, $quickDivOuter, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
+  return $el
+}
+
+
+var roleTogglerExtend=function($el, oRole, $TargetDiv){
+"use strict"
+  
+  $el.prop('title', langHtml.ToggleBetweenCustomerAndSeller).on('click',function(){
+    var iTmp=1-oRole.ind;
+    setItem('charRoleSelcted', ORole[iTmp].charRole);
+    $TargetDiv[iTmp].setVis();  doHistReplace({$view:$TargetDiv[iTmp]});
+  });
+
+  var $divLabelC=$('<div>').append(langHtml['Customers']).css({background:oC.strColor, 'font-size':'80%', height:'50%', 'padding-right':'2em'});
+  var $divLabelS=$('<div>').append(langHtml['Sellers']).css({background:oS.strColor, 'font-size':'80%', height:'50%', 'padding-right':'2em'});
+  var $divLabelW=$('<div>').append($divLabelC, $divLabelS);
+  
+  var scale=0.45;
+  if(oRole.charRole=='c'){  var strYDir=1, strTranslate=''; }
+  else {  var strYDir=-1, strTranslate='translate(0,-100%)'; }
+  var $imgTogBut=$('<img>').prop('src',uTogVertical).css({transform:'scaleX('+scale+') scaleY('+strYDir*scale+') '+strTranslate, position:'absolute',  right:'.2em', top:'0em', 'transform-origin':'100% 0%'});
+  
+  $el.append($divLabelW, $imgTogBut);
+  $el.css({cursor:'default', 'user-select':'none', position:'relative'});
+  return $el;
+}
+
+// intRoleOn
+// intRoleSel
+
+/*******************************************************************************************************************
+ *******************************************************************************************************************
+ *
+ * Plugin classes
+ *
+ *******************************************************************************************************************
+ *******************************************************************************************************************/
+
+
+
+timeStampButtExtend=function($el, iRole, colName){ // Used in plugins (in $tableDivS.$tHeadLabel)
+"use strict"
+  $el.setStat=function(){
+    var boTmp=ORole[iRole].Prop[colName].boUseTimeDiff;
+    if(!boTmp){$el.text('-');}  else $el.text('+');
+  }
+  $el.on('click', function(e) {
+    e.stopPropagation();
+    ORole[iRole].Prop[colName].boUseTimeDiff=1-ORole[iRole].Prop[colName].boUseTimeDiff;
+    $el.setStat();
+    for(var i=0;i<ORole.length;i++) {
+      $TableDiv[i].setCell();
+      if(ORole[i].MTab.length){    $mapDiv[0].ArrMarker[i].setMarkers();  $mapDiv[0].ArrMarker[i].drawMarkers();   }
+    }
+  });
+  //$el.html(langHtml.timePref.ts);
+  $el.addClass('smallButt');
+  $el.setStat();
+  var $bub=$('<div>').html(langHtml.tsPopup);
+  popupHoverJQ($el,$bub);
+  return $el;
+}
+
 
 
 /*******************************************************************************************************************
@@ -4422,48 +4185,29 @@ var mapDivExtend=function($el){
 
 
 /*
- * timePointButt
- */
-
-timeStampButtExtend=function($el,colName){
-"use strict"
-  $el.setStat=function(){
-    if(!boUseTimeDiff[colName]){$el.text('-');}  else $el.text('+');
-  }
-  $el.click(function(e) {
-    e.stopPropagation();
-    boUseTimeDiff[colName]=1-boUseTimeDiff[colName];
-    $el.setStat();
-    $tableDiv.setCell();
-    $mapDiv.setMarkers();
-  });
-  //$el.html(langHtml.timePref.ts);
-  $el.addClass('smallButt');
-  $el.setStat();
-  var $bub=$('<div>').html(langHtml.tsPopup);
-  popupHoverJQ($el,$bub);
-  return $el;
-}
-
-
-/*
  * columnDivs
  */
 
-var markSelectorDivExtend=function($el){
+var markSelectorDivExtend=function($el,oRole){
 "use strict"
-  $el.toString=function(){return 'markSelectorDiv';}
-  $el.setUp=function() {  $table.find(':radio[value='+colOneMark+']').prop({checked:true});  }
+  var {charRoleUC}=oRole;
+  var {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
+  $el.toString=function(){return 'markSelectorDiv'+charRoleUC;}
+  $el.setUp=function() {  $table.find(':radio[value='+oRole.colOneMark+']').prop({checked:true});  }
 
   var saveRB=function(colOneMarkNew) {
-    if(colOneMarkNew!=colOneMark){ colOneMark=colOneMarkNew; setItem('colOneMark',colOneMark); $mapDiv.setMarkers(); }
+    if(colOneMarkNew!=oRole.colOneMark){
+      oRole.colOneMark=colOneMarkNew; setItem('colOneMark'+charRoleUC, oRole.colOneMark);
+      var ind=oRole.ind;
+      if(oRole.MTab.length){    $mapDiv[0].ArrMarker[ind].setMarkers();  $mapDiv[0].ArrMarker[ind].drawMarkers();   }
+      
+    }
   }
-  //var saveNewMarker=function() { setItem('colOneMark',colOneMark); $mapDiv.setMarkers(); }
   $el.createTable=function(){
-    for(var i=0;i<StrPropMain.length;i++){
-      var strName=StrPropMain[i];
+    for(var i=0;i<StrProp.length;i++){
+      var strName=StrProp[i];
       var $rb=$('<input>').prop({"type":"radio",name:'markSel'}).val(strName);
-      var $imgH=''; if(strName in helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverJQ($imgH,helpBub[strName]);  }
+      var $imgH=''; if(strName in oRole.helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverJQ($imgH,oRole.helpBub[strName]);  }
       var $tdL=$('<td>').append(calcLabel(langHtml.label, strName),' ',$imgH), $tdRB=$('<td>').append($rb);//, $tdIM=$('<td>').append($imgH);
       var $r=$('<tr>').append($tdL,$tdRB).attr({name:strName});
       $table.append($r);
@@ -4472,51 +4216,51 @@ var markSelectorDivExtend=function($el){
     var $radioBoxes=$table.find(':radio').change(function(){ saveRB($(this).val()); });
     $radioBoxes.css({'margin':'0.6em 1.2em'});
     if(boAndroid) $radioBoxes.css({'-webkit-transform':'scale(2,2)'}); else $radioBoxes.css({width:'1.4em',height:'1.4em'});
-    if(boImgCreationOK==0) { $table.find($el.strImageSel).prop('disabled', true); }
 
       // Add labels
-    for(var i=0;i<StrGroupMain.length;i++){
-      var $th=$('<th>').append(langHtml[StrGroupMain[i]],':').css({'font-size':'120%','text-align':'center'});
+    for(var i=0;i<StrGroup.length;i++){
+      var $th=$('<th>').append(langHtml[StrGroup[i]],':').css({'font-size':'120%','text-align':'center'});
       var $h=$('<tr>').append($th,$('<td>'));
-      $markSelectorDiv.find('tr[name='+StrGroupFirstMain[i]+']').before($h);
+      $el.find('tr[name='+StrGroupFirst[i]+']').before($h);
     }
 
   }
 
   var $checkBoxes;
 
-  $el.strImageSel=":radio:not([value='image'],[value='idTeam'])";
-
   var $table=$('<table>').css({'margin':'0.3em 0em 0.8em',border:'1px'});
-  $el.append($table);
+  var $divCont=$('<div>').addClass('contDiv').append($table);
 
-  $el.css({'text-align':'left'});
+  
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.ChangeMapMarkers+' ('+langHtml[oRole.strRole]+')').addClass('footDivLabel').css({background:oRole.strColor});
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
-var markSelectorFootExtend=function($el){
+
+
+
+var columnSelectorDivExtend=function($el, oRole){
 "use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append(langHtml.ChangeMapMarker).addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
-  return $el;
-}
-
-
-
-var columnSelectorDivExtend=function($el){
-"use strict"
-  $el.toString=function(){return 'columnSelectorDiv';}
-  $el.setUp=function() {  $checkBoxes.each(function(i,el){ var strName=$(el).val(), boOn=ColsShow.indexOf(strName)!=-1;  $(el).prop({checked:boOn}); });  }
+  var {charRoleUC}=oRole;
+  var {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
+  $el.toString=function(){return 'columnSelectorDiv'+charRoleUC;}
+  $el.setUp=function() {  $checkBoxes.each(function(i,el){ var strName=$(el).val(), boOn=oRole.ColsShow.indexOf(strName)!=-1;  $(el).prop({checked:boOn}); });  }
   $el.defaultFunc=function() {
-    myCopy(ColsShowLoc,ColsShowDefault); saveCB(); $el.setUp();
+    myCopy(ColsShowLoc,oRole.ColsShowDefault); saveCB(); $el.setUp();
   }
   var StrColsByTypeTmp=[];
-  $el.allFunc=function() {  myCopy(StrColsByTypeTmp,StrPropMain); if(!boShowTeam) arrValRemove(StrColsByTypeTmp,'idTeam'); myCopy(ColsShowLoc,StrColsByTypeTmp); saveCB(); $el.setUp(); }
-  //$el.allFunc=function() {  myCopy(ColsShowLoc,StrPropMain); saveCB(); $el.setUp(); }
+  $el.allFunc=function() {  myCopy(StrColsByTypeTmp,StrProp); if(!boShowTeam) arrValRemove(StrColsByTypeTmp,'idTeam'); myCopy(ColsShowLoc,StrColsByTypeTmp); saveCB(); $el.setUp(); }
+  //$el.allFunc=function() {  myCopy(ColsShowLoc,StrProp); saveCB(); $el.setUp(); }
   $el.noneFunc=function() {  ColsShowLoc.length=0; saveCB(); $el.setUp();  }
 
   $el.getCurrentInd=function(ColsShowOut){  // Capture the checked checkboxes to ColsShowOut in a way that keeps the order of ColsShow
-    myCopy(ColsShowOut,ColsShow);
+    myCopy(ColsShowOut,oRole.ColsShow);
     var $checkBoxesOn=$table.find(":checkbox");
     $checkBoxesOn.each(function(i,el){
       var strName=$(el).val(), boOn=Number($(el).prop('checked')), ind=ColsShowOut.indexOf(strName), boExist=ind!=-1;
@@ -4525,17 +4269,17 @@ var columnSelectorDivExtend=function($el){
     return ColsShowOut;
   }
   var saveCB=function() {
-    if(!myCompare(ColsShow,ColsShowLoc) ){
-      myCopy(ColsShow,ColsShowLoc); setItem('ColsShow',ColsShow);
-      $tableDiv.colOrderRefresh();
+    if(!myCompare(oRole.ColsShow, ColsShowLoc) ){
+      myCopy(oRole.ColsShow, ColsShowLoc); setItem('ColsShow'+charRoleUC, oRole.ColsShow);
+      $TableDiv[oRole.ind].colOrderRefresh();
     }
   }
   $el.createTable=function(){
     var $ha=$('<th>').append(langHtml.Column),$hb=$('<th>').append(langHtml.Show), $rh=$('<tr>').append($ha,$hb); $table.append($rh);  //.append(langHtml.Visible)
-    for(var i=0;i<StrPropMain.length;i++){
-      var strName=StrPropMain[i];
+    for(var i=0;i<StrProp.length;i++){
+      var strName=StrProp[i];
       var $cb=$('<input>').prop({"type":"checkbox"}).val(strName);
-      var $imgH=''; if(strName in helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverJQ($imgH,helpBub[strName]);  }
+      var $imgH=''; if(strName in oRole.helpBub) { $imgH=$imgHelp.clone().css({'margin-right':'1em'});  popupHoverJQ($imgH,oRole.helpBub[strName]);  }
       var $tdL=$('<td>').append(calcLabel(langHtml.label, strName),' ',$imgH), $tdCB=$('<td>').append($cb);
       var $r=$('<tr>').append($tdL,$tdCB).attr({name:strName});
       $table.append($r);
@@ -4544,21 +4288,20 @@ var columnSelectorDivExtend=function($el){
     $checkBoxes=$table.find(':checkbox').change(function(){
       var $ele=$(this);
       $el.getCurrentInd(ColsShowLoc);
-      myCopy(ColsShow,ColsShowLoc); setItem('ColsShow',ColsShow);
+      myCopy(oRole.ColsShow, ColsShowLoc); setItem('ColsShow'+charRoleUC, oRole.ColsShow);
       var boOn=Boolean($ele.prop('checked'));
-      $tableDiv.colToggle($ele.val(),boOn);
-      var indNew=boOn?ColsShow.length-1:ColsShow.length;
-      $tableDiv.colMove($ele.val(),indNew);
+      $TableDiv[oRole.ind].colToggle($ele.val(),boOn);
+      var indNew=boOn?oRole.ColsShow.length-1:oRole.ColsShow.length;
+      $TableDiv[oRole.ind].colMove($ele.val(),indNew);
     });
     $checkBoxes.css({'margin':'0.6em 1.2em'});
     if(boAndroid) $checkBoxes.css({'-webkit-transform':'scale(2,2)'}); else $checkBoxes.css({width:'1.4em',height:'1.4em'});
-    if(boImgCreationOK==0) { $table.find($markSelectorDiv.strImageSel).prop('disabled', true); }
 
       // add labels
-    for(var i=0;i<StrGroupMain.length;i++){
-      var $th=$('<th>').append(langHtml[StrGroupMain[i]],':').prop('colspan',2).css({'font-size':'120%','text-align':'center'});
+    for(var i=0;i<StrGroup.length;i++){
+      var $th=$('<th>').append(langHtml[StrGroup[i]],':').prop('colspan',2).css({'font-size':'120%','text-align':'center'});
       var $h=$('<tr>').append($th); //,$('<td>')
-      $columnSelectorDiv.find('tr[name='+StrGroupFirstMain[i]+']').before($h);
+      $el.find('tr[name='+StrGroupFirst[i]+']').before($h);
     }
   }
 
@@ -4566,33 +4309,32 @@ var columnSelectorDivExtend=function($el){
   var $checkBoxes;
 
   var $table=$('<table>').css({'margin':'0.3em auto 0.8em',border:'1px'});
+  var $divCont=$('<div>').addClass('contDiv').append($table);
 
-  $el.append($table);
-
-  $el.css({'text-align':'left'});
-  return $el;
-}
-
-var columnSelectorFootExtend=function($el){
-"use strict"
-  var $buttDefault=$('<button>').click($columnSelectorDiv.defaultFunc).append(langHtml.Default);
-  var $buttAll=$('<button>').click($columnSelectorDiv.allFunc).append(langHtml.All);
-  var $buttNone=$('<button>').click($columnSelectorDiv.noneFunc).append(langHtml.None);
-  var $buttSort=$('<button>').append('Column<br>order').click(function(){
-    $columnSorterDiv.setUp();
-    $columnSorterDiv.setVis();
-    doHistPush({$view:$columnSorterDiv});
-  }).addClass('flexWidth').css({'float':'left','margin-right':'0.4em', 'font-size':'0.72rem'});
-  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left','margin-left':'0.8em','margin-right':'1em'});
+  
+      // divFoot
+  var $buttDefault=$('<button>').on('click', $el.defaultFunc).append(langHtml.Default);
+  var $buttAll=$('<button>').on('click', $el.allFunc).append(langHtml.All);
+  var $buttNone=$('<button>').on('click', $el.noneFunc).append(langHtml.None);
+  var $buttSort=$('<button>').append('Rearrange<br>columns').on('click', function(){
+    var $tmp=oRole.strRole=='customer'?$columnSorterDivC:$columnSorterDivS;
+    $tmp.setUp();    $tmp.setVis();    doHistPush({$view:$tmp});
+  }).addClass('flexWidth').css({'margin-left':'auto', 'margin-right':'1em', 'font-size':'0.72rem'});
+  var $buttonBack=$('<button>').on('click', doHistBack).append(strBackSymbol).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'});
 
   var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
   //var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).css({'vertical-align':'-0.4em', 'text-align':'center', display:'inline-block'});
-  var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).addClass('footDivLabel');
-  var $ButPre=$([]).push($buttAll,$buttDefault, $buttNone).css({'font-size':'80%','float':'right'});
+  var $span=$('<span>').append($tmpImg, langHtml.SelectColumns).addClass('footDivLabel').css({background:oRole.strColor})
+  var $ButPre=$([]).push($buttAll,$buttDefault, $buttNone).css({'font-size':'80%'});
   //var $spanRightB=$('<span>').append().css({'float':'right',margin:'0 0 0 0'});
-  $el.append($buttonBack, $buttSort, $span, $buttNone, $buttDefault, $buttAll).addClass('footDiv'); //,overflow:'hidden'
+  var $divFoot=$('<div>').append($buttonBack, $buttSort, $span, $buttNone, $buttDefault, $buttAll).addClass('footDiv'); //,overflow:'hidden'
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
+
 
 var dragSorterExtend=function($el){
 "use strict"
@@ -4680,12 +4422,12 @@ var dragSorterExtend=function($el){
 }
 
 
-var columnSorterDivExtend=function($el){
+var columnSorterDivExtend=function($el, oRole){
 "use strict"
-  $el.toString=function(){return 'columnSorterDiv';}
+  $el.toString=function(){return 'columnSorterDiv'+oRole.charRoleUC;}
   $el.setUp=function(){
-    arrLabel.length=0;  for(var i=0;i<ColsShow.length;i++){ arrLabel[i]=calcLabel(langHtml.label, ColsShow[i]);  }
-    $dragSorter.setUp(ColsShow,arrLabel);
+    arrLabel.length=0;  for(var i=0;i<oRole.ColsShow.length;i++){ arrLabel[i]=calcLabel(langHtml.label, oRole.ColsShow[i]);  }
+    $dragSorter.setUp(oRole.ColsShow,arrLabel);
     $el.boLoaded=1;
   }
 
@@ -4698,34 +4440,32 @@ var columnSorterDivExtend=function($el){
   $dragSorter.myMouseup=function(){
     tmpf();
     var $tmp=$dragSorter.getMovedRow(), ind=$tmp.index();
-    ColsShow=$dragSorter.myGet(ColsShow);
-    setItem('ColsShow',ColsShow);
-    $tableDiv.colMove($tmp.attr('name'),ind);
+    oRole.ColsShow=$dragSorter.myGet(oRole.ColsShow);
+    setItem('ColsShow'+oRole.charRoleUC, oRole.ColsShow);
+    $TableDiv[oRole.ind].colMove($tmp.attr('name'),ind);
 
   }
 
   var arrLabel=[];
-  $el.append($dragSorter);
-  $el.css({'text-align':'center'});
-  //$el.$dragSorter=$dragSorter;
+  var $divCont=$('<div>').addClass('contDiv').append($dragSorter);
 
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  var $span=$('<span>').append(langHtml.SortColumns).addClass('footDivLabel').css({background:oRole.strColor})
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'center', display:"flex","flex-direction":"column"});
   return $el;
 }
 
-var columnSorterFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
-  var $span=$('<span>').append(langHtml.SortColumns).addClass('footDivLabel');
-  $el.append($buttonBack, $span).addClass('footDiv');  // ,overflow:'hidden' , 'text-align':'center'
-  return $el;
-}
 
 /*
  * tHeadLabel
  */
 
-
-var tHeadLabelExtend=function($el){
+var tHeadLabelExtend=function($el, oRole){
 "use strict"
 
   $el.setArrow=function(strName,dir){
@@ -4734,8 +4474,8 @@ var tHeadLabelExtend=function($el){
   }
 
   var headerCanvas=[];
-  for(var i=0;i<KeyCol.length;i++) {
-    var strName=KeyCol[i];
+  for(var i=0;i<oRole.KeyCol.length;i++) {
+    var strName=oRole.KeyCol[i];
     //var colText=''; if(strName in langHtml.label) colText=langHtml.label[strName];
     var colText=calcLabel(langHtml.label, strName);
     if(strName=='index') colText='';
@@ -4744,12 +4484,12 @@ var tHeadLabelExtend=function($el){
 
   $el.setUpCurrencyInfo=function(){
     var strCurrency='';      boMultCurrency=0;
-    for (var i=0;i<nMTab;i++) { var tmp=MTab[i].currency; if(strCurrency=='') {strCurrency=tmp;} else if(tmp!=strCurrency){boMultCurrency=1; strCurrency=''; break;} }
+    for (var i=0;i<oRole.MTab.length;i++) { var tmp=oRole.MTab[i].currency; if(strCurrency=='') {strCurrency=tmp;} else if(tmp!=strCurrency){boMultCurrency=1; strCurrency=''; break;} }
     var tmpCanvas=makeTextCanvas(strCurrency,-1);
 
     $currencyInfoDivs.each(function(i,el){
       var tmp=Object.create(tmpCanvas);
-      var tmp; if(boImgCreationOK) tmp=cloneCanvas(tmpCanvas); else tmp=makeTextCanvas(strCurrency,-1);
+      var tmp=cloneCanvas(tmpCanvas);
       $(el).html(tmp);
     });
   };
@@ -4758,8 +4498,8 @@ var tHeadLabelExtend=function($el){
     var $ele=$(this); strName=$ele.attr('name');
     boAsc=(thSorted===this)?!boAsc:true;  thSorted=this;
     $sortImages.prop({src:uUnsorted});     var tmp=boAsc?uIncreasing:uDecreasing;  $ele.children('img[data-type=sort]').prop({src:tmp});
-    $tableDiv.$tBody.detach();
-    var $tr=$tableDiv.$tBody.children('tr:lt('+nMTab+')');
+    $TableDiv[oRole.ind].$tBody.detach();
+    var $tr=$TableDiv[oRole.ind].$tBody.children('tr:lt('+oRole.MTab.length+')');
     var $tdNameSort =$tr.children('td[name='+strName+']');
     $tdNameSort.sortElements(function(aT, bT){
       var $a=$(aT), $b=$(bT), a = $a.data('valSort'),  b = $b.data('valSort'),   dire=boAsc?1:-1;
@@ -4769,37 +4509,44 @@ var tHeadLabelExtend=function($el){
       if(boAStr!=boBStr) return ((boAStr<boBStr)?-1:1)*dire;
       if(a==b) {return 0;} else return ((a<b)?-1:1)*dire;
     }, function(){ return this.parentNode;  });
-    $tableDiv.$table.append($tableDiv.$tBody);
+    $TableDiv[oRole.ind].$table.append($TableDiv[oRole.ind].$tBody);
 
     //var $tdT=$tr.children('[name=index]'); $tdT.each(function(i){$(this).html(i);});
-    $tableDiv.setIndex();
-    //$tableDiv.sortTable(i);
+    $TableDiv[oRole.ind].setIndex();
+    //$TableDiv[oRole.ind].sortTable(i);
   }
 
   $el.myCreate=function(){
-    var ColsTmp=myCopy([],ColsShow);
-    for(var j=0;j<StrPropMain.length;j++){var strName=StrPropMain[j]; if(ColsShow.indexOf(strName)==-1) ColsTmp.push(strName); }
+    var ColsTmp=myCopy([],oRole.ColsShow);
+    for(var j=0;j<oRole.Main.StrProp.length;j++){var strName=oRole.Main.StrProp[j]; if(oRole.ColsShow.indexOf(strName)==-1) ColsTmp.push(strName); }
 
 
     for(var i=0;i<ColsTmp.length;i++){
-      var strName=ColsTmp[i], jtmp=colsFlip[strName];
+      var strName=ColsTmp[i], jtmp=oRole.colsFlip[strName];
       var canvas=headerCanvas[strName], $div=$('<div>').append(canvas);
-      var $imgH=''; if(strName in helpBub) { var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,helpBub[strName]); }
+      var $imgH=''; if(strName in oRole.helpBub) { var $imgH=$imgHelp.clone();   popupHoverJQ($imgH,oRole.helpBub[strName]); }
       var $imgSort=$('<img data-type=sort>');
       var $h=$("<th>").append($div,$imgH,$imgSort).addClass('unselectable').attr('name',strName);
-      if(jtmp>0) $h.click(thClick).css({cursor:'pointer'});
+      if(jtmp>0) $h.on('click', thClick).css({cursor:'pointer'});
 
-      if(i>=ColsShow.length) $h.hide();
+      if(i>=oRole.ColsShow.length) $h.hide();
       $r.append($h);
     }
 
-    var $th=$r.children('th');   //if(boIE) $th.css({ 'box-shadow':'-0.5px 0px 0 1px black inset'});
+    var $th=$r.children('th');
     $sortImages=$th.children('img[data-type=sort]').prop({src:uUnsorted});
     $sortImages.css({display:'block',zoom:1.5,'margin':'auto','margin-top':'0.3em','margin-bottom':'0.3em'});
-
+    var $hBut=$("<th>").append($butSel).css({'box-shadow':'0 0'});  $r.append($hBut);
   }
   var $r=$("<tr>"), boAsc=false, thSorted=null;
 
+  var $butSel=$('<button>').append('+').addClass('fixWidth').prop('title',langHtml.AddRemoveColumns).on('click', function(){
+    var i=oRole.ind;
+    $ColumnSelectorDiv[i].setUp();
+    $ColumnSelectorDiv[i].setVis();
+    doHistPush({$view:$ColumnSelectorDiv[i]});
+  });
+  
   $el.append($r);
   var $sortImages=$([]);
 
@@ -4808,21 +4555,15 @@ var tHeadLabelExtend=function($el){
   return $el;
 }
 
-var checkCurrency=function(){
-  var strCurrency='';      boMultCurrency=0;
-  for (var i=0;i<nMTab;i++) { var tmp=MTab[i].currency; if(strCurrency=='') {strCurrency=tmp;} else if(tmp!=strCurrency){boMultCurrency=1; strCurrency=''; break;} }
-  return strCurrency;
-}
 
-
-
-thumbDisExtend=function(el){
+thumbTeamExtend=function(el, oRole){  // Used in plugin
 "use strict"
+  var uRoleTeamImage=oRole==oC?uCustomerTeamImage:uSellerTeamImage;
   el.mySet=function(iMTab){
-    var rT=MTab[iMTab], data=rT.idTeam, tag=rT.imTagTeam;
+    var rT=oRole.MTab[iMTab], data=rT.idTeam, tag=rT.imTagTeam;
     if(data!=0) {
       $(el).show();
-      var strTmp=uTeamImage+data+'?v='+tag;
+      var strTmp=uRoleTeamImage+data+'?v='+tag;
       $img.prop({src:strTmp});
       var url=rT.linkTeam;  if(url && url.length && !RegExp("^https?:\/\/","i").test(url)) { url='http://'+url; }      $(el).prop({href:url});
     }else $(el).hide();
@@ -4831,13 +4572,13 @@ thumbDisExtend=function(el){
   var $img=$('<img>');    $(el).prop({target:"_blank"}).append($img);    return el;
 }
 
-complaintButtonExtend=function(el){
+complaintButtonExtend=function(el, oRole){
 "use strict"
-  el.mySet=function(iMTab){    var rT=MTab[iMTab]; idUser=rT.idUser;   $(el).html(rT.nComplaint);     }
-  $(el).click(function(){
-    $complaintVDiv.setUp(idUser); $complaintVDiv.load();
-    $complaintVDiv.setVis();
-    doHistPush({$view:$complaintVDiv});
+  el.mySet=function(iMTab){    var rT=oRole.MTab[iMTab]; idUser=rT.idUser;   $(el).html(rT.nComplaint);     }
+  $(el).on('click', function(){
+    $complaineeDiv.setUp(oRole, idUser); $complaineeDiv.load();
+    $complaineeDiv.setVis();
+    doHistPush({$view:$complaineeDiv});
   });
   var idUser;      return el;
 }
@@ -4847,26 +4588,18 @@ complaintButtonExtend=function(el){
  * tableDiv
  */
 
-window.MTab=[]; window.nMTab=0;
-var tableDivExtend=function($el){
+
+var tableDivExtend=function($el, oRole){
 "use strict"
-  $el.toString=function(){return 'tableDiv';}
-  $el.setMTab=function(MOrg){
-    if(typeof MOrg =='undefined') nMTab=0;
-    else{
-      nMTab=MOrg.length;
-      for(var i=0;i<nMTab;i++){
-        if(typeof MTab[i] =='undefined') MTab[i]={};
-        for(var j=0;j<KeySel.length;j++){  var name=KeySel[j]; MTab[i][name]=MOrg[i][j];    }
-      }
-    }
-  }
+  var {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
+  var {strRole}=oRole;
+  $el.toString=function(){return 'tableDiv'+oRole.charRoleUC;}
 
   $el.setIndex=function(){ var $td=$tBody.children('tr').children('[name=index]'); $td.each(function(i){$(this).html(i);});}
 
   $el.setRowDisp=function(){
-    var tmpshow='tr:lt('+nMTab+')';
-    var tmphide='tr:gt('+(nMTab-1)+')'; if(nMTab==0) tmphide='tr';
+    var tmpshow='tr:lt('+oRole.nMTab+')';
+    var tmphide='tr:gt('+(oRole.nMTab-1)+')'; if(oRole.nMTab==0) tmphide='tr';
     var $rShow=$tBody.find(tmpshow);
     $rShow.show();
     $tBody.find(tmphide).hide();
@@ -4875,16 +4608,16 @@ var tableDivExtend=function($el){
   var arrCHide=[],arrHHide=[];
   var strCHide='', strHHide='';
   $el.colOrderRefresh=function(){
-    var len=ColsShow.length;
+    var len=oRole.ColsShow.length;
     var $tr=$tBody.add($tHeadLabel).children('tr');
     for(var i=len-1;i>=0;i--) {
-      var strName=ColsShow[i];
+      var strName=oRole.ColsShow[i];
       var $tmp=$tr.children('[name='+strName+']');
       $tmp.each(function(){var $ele=$(this).show(); $ele.parent().prepend($ele);});  //
     }
 
-    //var StrTmp=AMinusBM(StrPropMain,ColsShow);
-    var StrTmp=StrPropMain.concat([]); AMinusBM(StrTmp,ColsShow);
+    //var StrTmp=AMMinusB(StrProp,oRole.ColsShow);
+    var StrTmp=StrProp.concat([]); AMMinusB(StrTmp, oRole.ColsShow);
     arrCHide.length=0; arrHHide.length=0;
     for(var i=0;i<StrTmp.length;i++) {
       arrCHide.push('td[name='+StrTmp[i]+']');
@@ -4900,12 +4633,12 @@ var tableDivExtend=function($el){
     $tBody.find('tr>td[name='+strName+']').toggle(boOn);
   }
   $el.colMove=function(strName,ind){
-    var len=StrPropMain.length;
+    var len=StrProp.length;
     var $movH=$tHeadLabel.find('tr>th[name='+strName+']');
     var $rH=$tHeadLabel.children('tr');
     //if(ind==len-1) $rH.append($movH);  else $rH.children('th:nth-child('+(ind+1)+')').before($movH);
-    //if(ind==len-1) $rH.append($movH);  else $rH.children('th[name='+ColsShow[ind]+']').before($movH);
-    if(ind==0) $rH.prepend($movH);  else $rH.children('th[name='+ColsShow[ind-1]+']').after($movH);
+    //if(ind==len-1) $rH.append($movH);  else $rH.children('th[name='+oRole.ColsShow[ind]+']').before($movH);
+    if(ind==0) $rH.prepend($movH);  else $rH.children('th[name='+oRole.ColsShow[ind-1]+']').after($movH);
 
     var $movD=$tBody.find('tr>td[name='+strName+']');
     var $Tr=$tBody.children('tr');
@@ -4915,9 +4648,9 @@ var tableDivExtend=function($el){
         var $tr=$(this);  $tr.prepend($movD.eq(j));
       });
     }else{
-      var $Td=$tBody.find('tr>td[name='+ColsShow[ind-1]+']');
+      var $Td=$tBody.find('tr>td[name='+oRole.ColsShow[ind-1]+']');
       $Tr.each(function(j){
-        var $tr=$(this);  $tr.children('td[name='+ColsShow[ind-1]+']').after($movD.eq(j));
+        var $tr=$(this);  $tr.children('td[name='+oRole.ColsShow[ind-1]+']').after($movD.eq(j));
       });
     }
   }
@@ -4925,14 +4658,14 @@ var tableDivExtend=function($el){
 
   $el.setCell=function(){
     var $tr=$tBody.children('tr');
-    for(var i=0;i<nMTab;i++){
+    for(var i=0;i<oRole.nMTab;i++){
       var $r=$tr.eq(i); $r.data({iMTab:i});
       $r.children('td').each(function(j){
-        var $ele=$(this), strName=$ele.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
-        //var tmp=''; if(strName in $el.sortTabF) tmp=$el.sortTabF[strName](i,$ele);  else tmp=MTab[i][strName];     $ele.data('valSort',tmp);
-        var tmp=''; if('sortTabF' in tmpObj) tmp=tmpObj.sortTabF(i,$ele);  else tmp=MTab[i][strName];     $ele.data('valSort',tmp);
-        //var tmp=''; if(strName in $el.setTabF) tmp=$el.setTabF[strName](i,$ele);  else tmp=MTab[i][strName];
-        var tmp=''; if('setTabF' in tmpObj) tmp=tmpObj.setTabF(i,$ele);  else tmp=MTab[i][strName];
+        var $ele=$(this), strName=$ele.attr('name'), tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{};
+        //var tmp=''; if(strName in $el.sortTabF) tmp=$el.sortTabF[strName](i,$ele);  else tmp=oRole.MTab[i][strName];     $ele.data('valSort',tmp);
+        var tmp=''; if('sortTabF' in tmpObj) tmp=tmpObj.sortTabF(i,$ele);  else tmp=oRole.MTab[i][strName];     $ele.data('valSort',tmp);
+        //var tmp=''; if(strName in $el.setTabF) tmp=$el.setTabF[strName](i,$ele);  else tmp=oRole.MTab[i][strName];
+        var tmp=''; if('setTabF' in tmpObj) tmp=tmpObj.setTabF(i,$ele);  else tmp=oRole.MTab[i][strName];
         if(typeof tmp!='undefined') $ele.html(tmp);
       });
     }
@@ -4940,44 +4673,44 @@ var tableDivExtend=function($el){
   }
 
   $el.createTBody=function(){
-    var ColsTmp=myCopy([],ColsShow);
-    for(var j=0;j<StrPropMain.length;j++){var strName=StrPropMain[j]; if(ColsShow.indexOf(strName)==-1) ColsTmp.push(strName); }
+    var ColsTmp=myCopy([],oRole.ColsShow);
+    for(var j=0;j<StrProp.length;j++){var strName=StrProp[j]; if(oRole.ColsShow.indexOf(strName)==-1) ColsTmp.push(strName); }
 
-    for(var i=0;i<maxVendor;i++) {
+    var $rows=$([]);
+    for(var i=0;i<maxList;i++) {
       var $row=$('<tr>');
-      if(!boTouch) $row.on('mouseover',function(){$(this).css({background:'#faa'});}).on('mouseout',function(){$(this).css({background:''});});
+      if(!boTouch) $row.on('mouseover',function(){$(this).css({background:'lightgreen'});}).on('mouseout',function(){$(this).css({background:''});});
       for(var j=0;j<ColsTmp.length;j++){
-        var strName=ColsTmp[j], tmpObj=(strName in Prop)?Prop[strName]:emptyObj;
+        var strName=ColsTmp[j], tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{};
         var $td=$('<td>').css({'max-width':'200px','max-height':'40px',overflow:'hidden'}).attr('name',strName);
         if('crTabF' in tmpObj) tmpObj.crTabF($td);
-        if(j>=ColsShow.length) $td.hide();
+        if(j>=oRole.ColsShow.length) $td.hide();
         $row.append($td);  //,'word-break':'break-all'
       }
-      $tBody.append($row);
+      $rows.push($row);
     }
+    $tBody.append($rows);
     var tmp='td:not([name=tel],[name=displayEmail],[name=nComplaint])'; //,[name=link]
     $tBody.on('click',tmp,function(){
       var iMTab=$(this).parent().data('iMTab');
-      $vendorInfoDiv.setContainers(iMTab);
-      $vendorInfoDiv.setVis();
-      doHistPush({$view:$vendorInfoDiv});
+      var $roleInfoDiv=strRole=='customer'?$infoDivC:$infoDivS;
+      $roleInfoDiv.setContainers(iMTab);
+      $roleInfoDiv.setVis();
+      doHistPush({$view:$roleInfoDiv});
     });
   }
 
   $el.getRow=function(iMTab){
-    var $tmp=$tBody.children('tr:lt('+nMTab+')');
+    var $tmp=$tBody.children('tr:lt('+oRole.nMTab+')');
     $tmp=$tmp.filter(function(){return $(this).data('iMTab') == iMTab;});
     return $tmp;
   }
-  $el.getMTabInd=function(idV){
-    for(var i=0;i<nMTab;i++){
-      if(MTab[i].idUser==idV) return i;
+  $el.getMTabInd=function(idU){
+    for(var i=0;i<oRole.nMTab;i++){
+      if(oRole.MTab[i].idUser==idU) return i;
     }
     return NaN;
   }
-
-  //$el.StrProp=
-  //$el.StrGroup=$el.StrGroupFirst=[];
   var indSortedLast=-1, strSortedLast=-1;
 
   $el.$toManyMess=$('<div>').html(langHtml.toManyMess).hide();
@@ -4991,34 +4724,43 @@ var tableDivExtend=function($el){
 
   $el.$table=$table; $el.$tBody=$tBody;
 
-  return $el;
-}
 
 
-var tableFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left','margin-left':'0.8em','margin-right':'1em'}); //'font-size':'1em'
+  var $tHeadLabel=$el.$tHeadLabel=tHeadLabelExtend($('<thead>'), oRole).css({'text-align':'center'});
+  $table.prepend($el.$tHeadLabel);
+
+
+  var $divCont=$('<div>').addClass('contDiv').append($table,$el.$toManyMess);
+
+      // divFoot
+  var $buttonBack=$('<button>').on('click', doHistBack).append(strBackSymbol).addClass('fixWidth').css({'margin-left':'0.8em'}); //'font-size':'1em'
 
   var tmpf=function(){
-    $columnSelectorDiv.setUp();
-    $columnSelectorDiv.setVis();
-    doHistPush({$view:$columnSelectorDiv});
+    var i=oRole.ind;
+    $ColumnSelectorDiv[i].setUp();
+    $ColumnSelectorDiv[i].setVis();
+    doHistPush({$view:$ColumnSelectorDiv[i]});
   };
   var $tmpImg=$('<img>').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $el.$buttShowSelect=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-right':'1em'}).click(tmpf).prop('title',langHtml.AddRemoveColumns);
+  $el.$buttShowSelect=$('<button>').append($tmpImg).addClass('fixWidth').css({'margin-left':'0.8em'}).on('click', tmpf).prop('title',langHtml.AddRemoveColumns);
 
-  //$el.$filterButton=$('<button>').append(langHtml.Filtered,': ').click(function(){  filterButtonClick();  }).css({'float':'right','clear':'both'});
+  var $roleToggler=roleTogglerExtend($('<span>'), oRole, $TableDiv).css({'margin':'0 auto', padding:'0px', display:'flex'});
+  
+  $el.$filterButton=filterButtonExtend($('<button>')).css({'margin-left':'0.8em'});
+  
   var $tmpImg=$('<img>').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
-  //var $span=$('<span>').append($tmpImg,langHtml.ComparisonTable).css({'float':'right',margin:'0.4em 0 0 0'});
-  //$el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
+  var tmp='Table'; //+oRole.charRoleUC;
+  var $span=$('<span>').append($tmpImg, langHtml[tmp]).addClass('footDivLabel').css({background:oRole.strColor});
+  
 
-  //var $span=$('<span>').append($tmpImg, langHtml.ComparisonTable).css({'vertical-align':'-0.4em', 'text-align':'center', display:'inline-block'});
-  var $span=$('<span>').append($tmpImg, langHtml.ComparisonTable).addClass('footDivLabel');
-  $el.$filterButton=$filterButton.clone().click(function(){  filterButtonClick();  });
-  $el.append($buttonBack, $el.$buttShowSelect, $span, $el.$filterButton).addClass('footDiv');  //,'text-align':'center' ,overflow:'hidden'
+  var $divFoot=$('<div>').append($buttonBack, $roleToggler, $el.$buttShowSelect, $el.$filterButton, $span).addClass('footDiv');
+  //if(boIOS && boTouch) $roleToggler.after($el.$buttShowSelect);
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex", "flex-direction":"column"});
   return $el;
 }
-
 
 
 /*******************************************************************************************************************
@@ -5039,36 +4781,45 @@ var firstAJAXCall=function(latLngFirst){
   window.latLngFirstTmp=latLngFirst;
   var pC=merProj.fromLatLngToPoint(latLngFirst);
 
-  var zoomT=-1, VPSizeT=[$mapDiv.width(),$mapDiv.height()];
+  var VPSizeT=[$mapDiv.width(),$mapDiv.height()];
   //if(boVideo) zoomT=14;
 
-  var o1={zoom:zoomT, pC:pC, VPSize:VPSizeT}, oH=$filterDiv.gatherFiltData();
+  var o1={pC:pC, VPSize:VPSizeT}, oFiltC=$filterDivC.$filterDivI.gatherFiltData(), oFiltS=$filterDivS.$filterDivI.gatherFiltData(), OFilt=[oFiltC, oFiltS];
   var vec=[['getSetting',['boShowTeam'],$adminDiv.setUp], ['setupById'], ['VSetPosCond',pC],
-    ['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,getHistRet]];   majax(oAJAX,vec);
-  setMess('... fetching vendors ... ',15,true);
+    ['setUpCond',{CharRole:'cs', OFilt:OFilt}],['setUp',o1,setUpRet],['getList',1,getListRet],['getGroupList',1,getGroupListRet],['getHist',1,getHistRet]];   majax(oAJAX,vec);
+  setMess('',null,true);
 }
 
-loadTabStart=function(boFlexZoom=0){
+//loadTabStart=function(boFlexZoom=0){
+loadTabStart=function(boSetupById=0){
   ga('send', 'event', 'tab', 'loadTab');
   var o1=$mapDiv.getMapStatus(); // pC, zoom, VPSize
-  if(boFlexZoom) {o1.zoom=-1; }
+  //if(boFlexZoom) {o1.zoom=-1; }
 
-  var oH=$filterDiv.gatherFiltData();
-  var vec=[['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,getHistRet]];
-  if(userInfoFrDB.vendor) vec.unshift(['setupById',{Role:'vendor'}]);  // "setupById" is included to change quickdiv button... (I think)
+  var oFiltC=$filterDivC.$filterDivI.gatherFiltData(), oFiltS=$filterDivS.$filterDivI.gatherFiltData(), OFilt=[oFiltC, oFiltS];
+  var vec=[['setUpCond',{CharRole:'cs', OFilt:OFilt}],['setUp',o1,setUpRet],['getList',1,getListRet],['getGroupList',1,getGroupListRet],['getHist',1,getHistRet]];
+  if(boSetupById){
+    var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+    if(arrRole.length) vec.unshift(['setupById',{Role:arrRole}]);
+  }
   majax(oAJAX,vec);
 
-  setMess('... fetching vendors ... ',15,true);
+  setMess('',null,true);
 }
 
-var uploadPosNLoadTabStart=function(latLng){
+var uploadPosNLoadTabStart=function(latLng, hideTimer, oRole){
 "use strict"
   $mapDiv.setCentNMe(latLng);
-  var o1=$mapDiv.getMapStatus();
-  var oH=$filterDiv.gatherFiltData();
-  var vec=[['VUpdate',{hideTimer:Number($quickDiv.$selHideTimer.val())}], ['VShow',o1.pC],
-    ['setupById',{Role:'vendor'}], ['setUpCond',oH],['setUp',o1],['getList',1],['getGroupList',1],['getHist',1,getHistRet]];   majax(oAJAX,vec);
-  setMess('... updating pos and fetching vendors ... ',15,true);
+  var o1=$mapDiv.getMapStatus(), {pC}=o1;
+  
+  var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+  
+  var oFiltC=$filterDivC.$filterDivI.gatherFiltData(), oFiltS=$filterDivS.$filterDivI.gatherFiltData(), OFilt=[oFiltC, oFiltS];
+  var vec=[['RUpdate',{hideTimer: hideTimer, charRole:oRole.charRole}], ['RShow', {x:pC.x, y:pC.y, charRole:oRole.charRole}],  // copySome(o1, oRole, ['charRole'])],
+    ['setupById',{Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}],['setUp',o1,setUpRet],['getList',1,getListRet],['getGroupList',1,getGroupListRet],['getHist',1,getHistRet]];
+  
+  majax(oAJAX,vec);
+  setMess('',null,true);
 }
 
 
@@ -5118,100 +4869,94 @@ var beRet=function(data,textStatus,jqXHR){
 window.GRet=function(data){
 "use strict"
   if('curTime' in data) curTime=data.curTime;
-  if('strMessageText' in data) setMess(data.strMessageText);
+  if('strMessageText' in data) {var tmp=data.strMessageText.length?'<b>Server:</b> ':''; setMess(tmp+data.strMessageText,10);}
   if('CSRFCode' in data) CSRFCode=data.CSRFCode;
   if('sessionLoginIdP' in data) sessionLoginIdP=data.sessionLoginIdP;
   //var WBD=[]; tmp=data.boSpecialistWannaBe; if(typeof tmp!="undefined") {
   //    for(var key in tmp){   if(boSpecialistWannaBe[key]==tmp[key]) {delete tmp[key];} else {boSpecialistWannaBe[key]=tmp[key]; }  } $loginInfo.setStat(); WBD=tmp; }
-  var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if(tmp.vendor) $quickDiv.setUp(); }
-  if('nUserReal' in data) window.nUserReal=data.nUserReal;
-  window.boShowDummy=data.boShowDummy||0;
+  var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if(tmp.customer) $quickDivC.setUp();  if(tmp.seller) $quickDivS.setUp(); }
+  if('nCustomerReal' in data) window.nCustomerReal=data.nCustomerReal;
+  if('nSellerReal' in data) window.nSellerReal=data.nSellerReal;
 
 
   toggleSpecialistButts();
   $loginInfo.setStat();
 
-  var boE=Boolean(userInfoFrDB.vendor);
+  //var boE=Boolean(userInfoFrDB.seller);
 
   if(boFirstLoadTab) {
-    $mapDiv.setVis();
+    $frontDiv.setVis();
   }
-  if(boE){ $payButton.setUp(); }
 
-  /*if(userInfoFrDB.vendor){  //check for changes in the fineprint
+  /*if(userInfoFrDB.seller){  //check for changes in the fineprint
     var tmp=$agreementStart.compareLocalDates(1);  if(!tmp.boFirst && tmp.boNew) { $agreementStart.setLocalDates(1); $agreementStart.openFunc(); }
   }  */
 }
 
 
-//var DRet=function(data){       tmp=data.boShow;   if(typeof tmp!="undefined") {userInfoFrDB.vendor.boShow=tmp; $quickDiv.setUp(); }      resetMess(10);      }
 var errFunc=function(data){ resetMess(10);  }
 
+var setUpRet=function(data){
+  var zoomLevel;  if('zoom' in data) zoomLevel=data.zoom;
+  if(boFirstLoadTab) {
+    $mapDiv.set1(zoomLevel, latLngFirstTmp);
+    var boRefresh=$mapDiv.setTile(zoomLevel);
+  }
+}
+var getListRet=function(data){
+  $frontDiv.$filterButton.setUp(data.NTotNFilt);
+
+  for(var i=0;i<ORole.length;i++){
+    $TableDiv[i].$filterButton.setUp(data.NTotNFilt);
+    $FilterDiv[i].$filterInfoSpan.setRatio(data.NTotNFilt[i]);
+    
+    ORole[i].MTab=tabNStrCol2ArrObj(data.arrList[i]);
+    ORole[i].nMTab=ORole[i].MTab.length;
+  }
+  
+}
+var getGroupListRet=function(data){
+  var boGroupAny=0;
+  for(var i=0;i<2;i++){
+    var boGroupTmp=Boolean(data.arrGroup[i].tab.length);
+    boGroupAny=boGroupAny||boGroupTmp;
+    
+    $TableDiv[i].$toManyMess.toggle(boGroupTmp);
+    $TableDiv[i].$buttShowSelect.toggle(!boGroupTmp);
+    $TableDiv[i].children('table').toggle(!boGroupTmp);
+    if(boGroupTmp) {
+      //ORole[i].MGroupTab=data.arrGroup[i];
+      //ORole[i].MGroupTab=tabNStrCol2ArrObj(data.arrGroup[i]);
+      ORole[i].MGroupTab=data.arrGroup[i].tab;
+      
+      $mapDiv[0].ArrMarker[i].hideMarkers();
+      $mapDiv[0].ElImgGroupOverlay[i].setGroupOverlay(); $mapDiv[0].ElImgGroupOverlay[i].drawGroupOverlay();
+      
+    } else{
+      $mapDiv[0].ArrMarker[i].setMarkers();  $mapDiv[0].ArrMarker[i].drawMarkers();
+      $mapDiv[0].ElImgGroupOverlay[i].hideGroupOverlay();
+      
+      $TableDiv[i].$tHeadLabel.setUpCurrencyInfo();
+      $TableDiv[i].setCell();
+
+      $TableDiv[i].setRowDisp();
+      $TableDiv[i].$tHeadLabel.setArrow('tPos',-1);
+    }
+  }
+  var tmp=boGroupAny?('\n ('+langHtml.toManyMess+')'):'';
+  $frontDiv.$tableButton.prop({disabled:boGroupAny, title:langHtml.ComparisonTable+tmp});  $frontDiv.$tableButton.children('img').css({opacity:boGroupAny?0.4:1});
+  
+  $mapDiv.drawMe();
+  boFirstLoadTab=0;
+}
 
 var getHistRet=function(data){
 "use strict"
-  var zoomLevel;  if('zoom' in data) zoomLevel=data.zoom;
-  var HistPHP=data.Hist||[];
-  if('NVendor' in data) $filterInfoSpan.setNVendor(data.NVendor);
-  //$mapDiv.MGroupTab=data.groupTab||[];
-  var MGroupTab=data.groupTab||[];
-
-
-  var boGroupTmp=Boolean(MGroupTab.length);
-  $tableDiv.$toManyMess.toggle(boGroupTmp);
-  $tableFoot.$buttShowSelect.toggle(!boGroupTmp);
-  $tableButton.prop({disabled:boGroupTmp});  $tableButton.children('img').css({opacity:boGroupTmp?0.4:1});
-  var tmp=boGroupTmp?('\n ('+langHtml.toManyMess+')'):'';  $tableButton.prop('title',langHtml.ComparisonTable+tmp);
-  //$tableButton.toggle(!boGroupTmp);
-
-  $filterDiv.interpretHistPHP(HistPHP)
-
-  $tableDiv.setMTab(data.tab);
-
-
-  if(boMapGoogle){  
-    if(boFirstLoadTab) $mapDiv.set1(zoomLevel, latLngFirstTmp);
-    if(nMTab){   $mapDiv.setMarkers();   }
-    else{
-      if(boFirstLoadTab) {
-        google.maps.event.addListenerOnce($mapDiv.map, 'bounds_changed', function(){
-          $mapDiv.setGroupOverlay(MGroupTab);  }); // Need to wait, since get_bounds will be called within $mapDiv.setGroupOverlay();
-      }else{ $mapDiv.setGroupOverlay(MGroupTab);  }
-    }
-  }else{
-    if(boFirstLoadTab) {
-      $mapDiv.set1(zoomLevel, latLngFirstTmp);
-      var boRefresh=$mapDiv.setTile(zoomLevel);
-    }
-    if(nMTab) {$mapDiv.setMarkers(); $mapDiv.drawMarkers();} else {$mapDiv.setGroupOverlay(MGroupTab); $mapDiv.drawGroupOverlay(); }
-    $mapDiv.drawMe();
+  for(var i=0;i<ORole.length;i++) {
+    $FilterDiv[i].$filterDivI.interpretHistPHP(data.arrHist[i])
+    $FilterDiv[i].$filterDivI.update();
   }
-
-
-  if(nMTab){
-  //if(1){
-    $tHeadLabel.setUpCurrencyInfo();
-    $tableDiv.setCell();
-
-    $tableDiv.setRowDisp();
-    $tHeadLabel.setArrow('posTime',-1);
-    $tableDiv.children('table').show();
-  }
-  else {    $tableDiv.children('table').hide();  }
-  $filterDiv.update();
-
-
-
-
-  if(boFirstLoadTab)  $footDiv.css({visibility:''});
-
-  //if(siteName!='demo' && boShowDummy) $dummyShowingToast.showToast();
-  if(boShowDummy && document.domain.substr(0,4)!='demo') $dummyShowingToast.showToast(12000);
-  boFirstLoadTab=0;
 };
-
-
-
 
 
 
@@ -5334,7 +5079,7 @@ var uploadImageDivExtend=function($el){
     $el.show();
     return true;
   }
-  var strKind='v', callback;
+  var strKind='u', callback;
   //$el=popUpExtend($el);
   //$el.css({'max-width':'20em', padding: '0.3em 0.5em 1.2em 0.6em'});
 
@@ -5342,51 +5087,52 @@ var uploadImageDivExtend=function($el){
   var $formFile=$('<form >'); //enctype="multipart/form-data"
   var $inpFile=$('<input type=file name=file id=file accept="image/*">').css({background:'lightgrey'});
   //var $inpUploadButton=$('<input type="button" value="Upload">');
-  var $uploadButton=$('<button>').text('Upload').prop("disabled",true).css({'margin-right':'0.5em'}); //, 'float':'right'
+  var $uploadButton=$('<button>').text('Upload').prop("disabled",true).css({'margin-right':'0.5em'});
   var $progress=$('<progress max=100, value=0>').css({'display':'block','margin-top':'1em'}).invisible();
   var $divMess=$('<div>').css({'margin-top':'1.2em', 'min-height':'1em'});
 
   var objFile;
-  $inpFile.change(verifyFun).click(function(){$uploadButton.prop("disabled",true);});
+  $inpFile.change(verifyFun).on('click', function(){$uploadButton.prop("disabled",true);});
   $formFile.append($inpFile);   $formFile.css({display:'inline'});
 
 
-  var $closeButton=$('<button>').append('Close').click(doHistBack);
+  var $closeButton=$('<button>').append('Close').on('click', doHistBack);
   var $menuBottom=$('<div>').append($closeButton, $uploadButton).css({'margin-top':'1.2em'});
 
   //$el.append($head, $formFile, $progress, $divMess,$menuBottom);
 
   var $blanket=$('<div>').addClass("blanket");
   var $centerDiv=$('<div>').append($head, $formFile, $progress, $divMess,$menuBottom);
-  $centerDiv.addClass("Center").css({'max-width':'21em', height:'15em', padding: '0.3em 0.5em 1.2em 0.6em'})
-  if(boIE) $centerDiv.css({'width':'20em'});
+  $centerDiv.addClass("Center").css({'max-width':'21em', padding: '0.3em 0.5em 1.2em 0.6em'}); // , height:'15em'
+  //if(boIE) $centerDiv.css({'width':'20em'});
   $el.addClass("Center-Container").append($centerDiv,$blanket); //
 
-  $uploadButton.click(sendFun);
+  $uploadButton.on('click', sendFun);
   $el.css({'text-align':'left'});
   return $el;
 }
 
 
-var teamDivExtend=function($el){
+var teamDivExtend=function($el, oRole){
 "use strict"
-  $el.toString=function(){return 'teamDiv';}
+  var {strRole, charRoleUC}=oRole;
+  $el.toString=function(){return 'teamDiv'+charRoleUC;}
   $el.setUp=function(boShow){
     $el.$id.val('');  $el.$link.val('');
-    var vec=[['teamLoad',1,disLoadRet]];   majax(oAJAX,vec);
+    var vec=[['teamLoad',{strRole:strRole},disLoadRet]];   majax(oAJAX,vec);
     $el.boLoaded=1;
   }
   var disLoadRet=function(data){
     var idUser='', imTag=''
     var tmp=data.idUser;   if(typeof tmp==="undefined")  tmp=''; $el.$id.text(tmp); idUser=tmp;
-    var tmp=data.imTag;   if(typeof tmp==="undefined")  tmp=''; imTag=tmp; $thumb.attr({src:uTeamImage+idUser+'?v='+imTag});
+    var tmp=data.imTag;   if(typeof tmp==="undefined")  tmp=''; imTag=tmp; $thumb.attr({src:uRoleTeamImage+idUser+'?v='+imTag});
     var tmp=data.link;   if(typeof tmp==="undefined")  tmp=''; $el.$link.val(tmp);
     var tmp=data.tab;  if(typeof tmp==='undefined') tmp=[]; $el.tab=tmp;
     $el.$divList.empty();
     //if($el.tab.length==0) return;
     for(var i=0; i<$el.tab.length; i++) {
       var $id=$('<span>').append($el.tab[i][1],' ',$el.tab[i][2],' ',$el.tab[i][3]);
-      var $cb=$('<input type=checkbox>').click(save);
+      var $cb=$('<input type=checkbox>').on('click', save);
       //if(Number($el.tab[i][4])) $cb.attr('checked','checked');
       var boTmp=Boolean(Number($el.tab[i][4])); $cb.attr('checked',boTmp);
       var $row=$('<div>').append($cb,' ',$id);
@@ -5404,109 +5150,125 @@ var teamDivExtend=function($el){
     var vec=[['teamSaveName',{link:link}]];   majax(oAJAX,vec);
   }
   var calcTeamImageUrl=function(){
-    var idUser=userInfoFrDB.team.idUser, tag=userInfoFrDB.team.imTag;  return uTeamImage+idUser+'?v='+tag;
+    var idUser=userInfoFrDB[strRole+'Team'].idUser, tag=userInfoFrDB[strRole+'Team'].imTag;  return uRoleTeamImage+idUser+'?v='+tag;
   }
+  var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
   $el.boLoaded=0;
   $el.$id=$('<span>').css({'font-weight':'bold'});
-  $el.$link=$('<input>').attr({type:'text',size:10}).keypress( function(e){ if(e.which==13) {saveName();return false;}} )
+  $el.$link=$('<input>').attr({type:'text',size:10}).on('keypress', function(e){ if(e.which==13) {saveName();return false;}} )
   //$el.$file=$('<input>').attr({type:'file'});
   var $thumb=$('<img>').css({'vertical-align':'middle'});
   var uploadCallback=function(){
-    userInfoFrDB.team.imTag=randomHash(); $thumb.attr({src:calcTeamImageUrl()});
+    userInfoFrDB[strRole+'Team'].imTag=randomHash(); $thumb.attr({src:calcTeamImageUrl()});
     //var tmpF=function(){$thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['setupById',{Role:'team'},tmpF]];   majax(oAJAX,vec);
   }
-  var $buttUploadImage=$('<button>').html('Upload image').click(function(){$uploadImageDiv.openFunc('t',uploadCallback);});
-  var $buttSaveName=$('<button>').html('Save link').click(saveName);
+  var $buttUploadImage=$('<button>').html('Upload image').on('click', function(){$uploadImageDiv.openFunc(oRole.charRole, uploadCallback);});
+  var $buttSaveName=$('<button>').html('Save link').on('click', saveName);
   $el.$divList=$('<div>');
 
   var $hId=$('<div>').html('Inform the team members of this number, they should enter it in their repective settings tab.');
   var $hLink=$('<div>').html('A link to any other site of yours.');
-  var $hList=$('<div>').html('A list of vendors who wants to belong to your team. Mark those who you approve.');
+  var $hList=$('<div>').html('A list of userss who wants to belong to your team. Mark those who you approve.');
 
   var $hImg0=$imgHelp.clone(), $hImg1=$imgHelp.clone(), $hImg2=$imgHelp.clone(); $hImg0.add($hImg1).add($hImg2).css({'margin-left':'1em'});
   popupHoverJQ($hImg0,$hId);   popupHoverJQ($hImg1,$hLink);   popupHoverJQ($hImg2,$hList);
 
 
-
-  $el.append('Team-Id: ',$el.$id,',',$hImg0,'<br>',
+  var $divCont=$('<div>').addClass('contDiv').append('Team-Id: ',$el.$id,',',$hImg0,'<br>',
           'Thumb image: ',$thumb,' ',$buttUploadImage,' &nbsp;&nbsp;(will be shrunk to fit a 50 x 50 pixel square)<br>',
-          'Link: (optional)',$el.$link,' &nbsp;',$buttSaveName,$hImg1,'<hr>','<b>List of vendors</b>',$hImg2,$el.$divList);
+          'Link: (optional)',$el.$link,' &nbsp;',$buttSaveName,$hImg1,'<hr>','<b>List of users</b>',$hImg2,$el.$divList);
   //$el.append('Link: ',$el.$link,$buttSaveName,'<br>',$a,'<hr>',$el.$divList);
   //$el.append('Name: ',$el.$name,'<br>Link: ',$el.$link,'<br>',$buttSaveName,'<hr>',$el.$divList);
 
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var teamFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $span=$('<span>').append('Team settings').addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
 
 
-var settingDivExtend=function($el){
+var settingDivWExtend=function($el){
 "use strict"
-  $el.toString=function(){return 'settingDiv';}
-  $el.setUp=function(){
-    //var boMapGoogle=Number(getItem('boMapGoogle')); $selMapType.val(boMapGoogle);
-  }
-  var $buttShowMarkSelect=$('<button id=buttShowMarkSelect>').append(langHtml.ChangeMapMarker).click(function(){
-    $markSelectorDiv.setUp();
-    $markSelectorDiv.setVis();
-    doHistPush({$view:$markSelectorDiv});
+  $el.toString=function(){return 'settingDivW';}
+  
+
+  var $buttShowMarkSelectC=$('<button id=buttShowMarkSelectC>').append(langHtml.ChangeMapMarkersC).on('click', function(){
+    var $tmp=$markSelectorDivC; $tmp.setUp(); $tmp.setVis();doHistPush({$view:$tmp});
   });
-
-  var changeMapType=function(){
-    //var boMapGoogle=Number($selMapType.val()); setItem('boMapGoogle',boMapGoogle);    $pMapType.append($spanMess);
-  };
-  var $selMapType=$('<select>').change(changeMapType), $spanMess=$('<span>').append(' Now press reload to refresh ...');
-  var arrT=['Open street map', 'Google maps'];
-  for(var i=0;i<arrT.length;i++){    var $opt=$("<option>").val(i).text(arrT[i]);  $selMapType.append($opt);    }
-  var $pMapType=$('<p>').css({'margin-top':'1em'}).append('Change map type: ',$selMapType);
+  var $buttShowMarkSelectS=$('<button id=buttShowMarkSelectS>').append(langHtml.ChangeMapMarkersS).on('click', function(){
+    var $tmp=$markSelectorDivS; $tmp.setUp(); $tmp.setVis();doHistPush({$view:$tmp});
+  });
+  
 
 
-  var $opt=$([]).push($buttShowMarkSelect, $vendorDiv, $adminButton, $teamButton);  //, $pMapType
+    // userDiv
+  $el.$userDiv=$('<div>');
+  $el.$userDiv.$customerSettingButton=$('<button>').append(langHtml.CustomerSettings).on('click',function(){
+    $settingDivC.setVis(); doHistPush({$view:$settingDivC});
+  });
+  $el.$userDiv.$sellerSettingButton=$('<button>').append(langHtml.SellerSettings).on('click',function(){
+    $settingDivS.setVis(); doHistPush({$view:$settingDivS});
+  });
+  var $complainerButton=$('<button>').append('Complaints from me').on('click',function(){
+    var userT=userInfoFrDB.user, objT={idComplainer:userT.idUser}; copySome(objT, userT, ['image', 'displayName']);
+    $complainerDiv.setUp(objT);
+    //$complainerDiv.setUp(userInfoFrDB.user);
+    $complainerDiv.load();
+    $complainerDiv.setVis(); doHistPush({$view:$complainerDiv});
+  });
+  var $butts=$([]).push($userSettingButton, $el.$userDiv.$customerSettingButton, $el.$userDiv.$sellerSettingButton, '<br>', $complainerButton).css({margin:'1em 0.1em'});
+  var $h=$('<p>').append("Settings for logged in user").css({'font-weight':'bold'});
+  $el.$userDiv.append($h,$butts);
+  $el.$userDiv.css({'background':'#ccc', 'border':'solid 1px', 'padding':'0.2em 0', 'margin':'1em 0.6em 1em 0.6em'});
+  
+  
+  $el.$customerTeamButton=$("<button>").css({display:'block'}).append('Customer team settings').on('click', function(){
+    $teamDivC.setUp(); $teamDivC.setVis(); doHistPush({$view:$teamDivC});
+  });
+  $el.$sellerTeamButton=$("<button>").css({display:'block'}).append('Seller team settings').on('click', function(){
+    $teamDivS.setUp(); $teamDivS.setVis(); doHistPush({$view:$teamDivS});
+  });
+  
+  var $opt=$([]).push($buttShowMarkSelectC, $buttShowMarkSelectS, $el.$userDiv, $adminButton, $el.$customerTeamButton, $el.$sellerTeamButton);  //, $pMapType
   $opt.css({display:'block','margin':'1em 0em 1em 0.6em'});
-  $vendorDiv.css({'margin':'1em 0.6em 1em 0.6em'});
+  
+  $buttShowMarkSelectC.add($el.$userDiv.$customerSettingButton).add($el.$customerTeamButton).css({background:oC.strColor})
+  $buttShowMarkSelectS.add($el.$userDiv.$sellerSettingButton).add($el.$sellerTeamButton).css({background:oS.strColor})
 
-  $el.append($opt);
+  $el.$divCont=$('<div>').addClass('contDiv').append($opt);
 
-  $el.css({'text-align':'left'});
-  return $el;
-}
-var settingFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').click(doHistBack).css({'float':'left', 'margin-left':'0.8em','margin-right':'1em'});
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
   var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
   var $span=$('<span>').append($tmpImg, langHtml.Settings).addClass('footDivLabel');
-  $el.append($buttonBack,$span).addClass('footDiv');
+  var $divFoot=$('<div>').append($buttonBack,$span).addClass('footDiv');
+  
+  $el.append($el.$divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
 
-
-var makeOrdinalEndingEn=function(n){
-  var oneth=n%10, tmp=Math.floor(n/10); tenth=tmp%10;
-  var ending='th';
-  if(tenth!=1){
-    if(oneth==1){ ending='st';}
-    else if(oneth==2){ ending='nd';}
-    else if(oneth==3){ ending='rd';}
-  }
-  return ending;
-}
-var moreDivExtend=function($el){
+  
+var entryDivExtend=function($el, oRole){
 "use strict"
-  $el.toString=function(){return 'moreDiv';}
+  var {strRole, charRoleUC}=oRole;
+  $el.toString=function(){return 'entryDiv'+charRoleUC;}
   $el.setUp=function(){
-    var nNext=nUserReal+1; if(nNext==13) nNext=14;
+    var nTmp=strRole=='customer'?nCustomerReal:nSellerReal;
+    var nNext=nSellerReal+1; //if(nNext==13) nNext=14;
     var ending=makeOrdinalEndingEn(nNext);
     $nNext.html(nNext); //+ending
   }
-  var $headOrdinal=$('<span>').append(langHtml.headOrdinal).css({'font-weight':'bold'});
-  var $labOrdinal=$('<span>').append(langHtml.labOrdinal), $nNext=$labOrdinal.children(':nth-child(1)').css({'font-weight':'bold'});
-  var $labOrdinalB=$('<div>').append(langHtml.labOrdinalB);
+  var $headOrdinal=$('<span>').append(langHtml['headOrdinal'+charRoleUC]).css({'font-weight':'bold'});
+  var $labOrdinal=$('<span>').append(langHtml['labOrdinal'+charRoleUC]), $nNext=$labOrdinal.children(':nth-child(1)').css({'font-weight':'bold'});
+  var $labOrdinalB=$('<div>').append(langHtml['labOrdinalB'+charRoleUC]);
   var $divOrdinal=$('<div>').append($headOrdinal, ' ', $labOrdinal).css({border:'solid green 2px', padding:'0.3em'});  //, $labOrdinalB
   //var func=function(){}; if(!boDbg) func=function(){trackConv(949679695,"wCpMCPHKhQUQz-zrxAM");}
 
@@ -5516,36 +5278,32 @@ var moreDivExtend=function($el){
   }
   var timeSpecialR=0, nSpecialReq=0;
 
-  //var $buttonBack=$('<button>').click(doHistBack).append(langHtml.Back).addClass('fixWidth').css({'margin-left':'0.8em'});
-  //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
-  var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/trackerSites_'+strLang;
-  var $aWiki=$('<a>').prop({href:uWikiT,target:"_blank"}).append(langHtml.InformationPage);
-  var $infoLinkVendor=$('<a>').prop({href:uWiki+'/'+'new_vendors',target:"_blank"}).append(langHtml.gettingStartedLink);
-  var $pSeeAlso=$('<p>').append(langHtml.SeeAlso,': ',$infoLinkVendor);
+  var $infoLinkSeller=$('<a>').prop({href:uWiki+'/'+'New_User',target:"_blank"}).append(langHtml.gettingStartedLink);
+  var $aTOS=$('<a>').prop({href:uWiki+'/'+'ToS',target:"_blank"}).append('Terms of service');
+  //var $pSeeAlso=$('<p>').append(langHtml.SeeAlso,': ',$aTOS);
+  var $pSeeAlso=$('<p>').append($aTOS);
 
 
-
-  var $buttLoginTeam=$("<button>").append(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).click(function(e){
+  var $buttLoginTeam=$("<button>").append(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).on('click', function(e){
     e.stopPropagation();
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'teamFun', caller:'index', code:code};
+      var oT={IP:strIPPrim, fun:'teamFun', strRole:strRole, caller:'index', code:code};
       var vec=[['loginGetGraph', oT], ['setupById', null, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
 
-      history.fastBack($mapDiv);
+      history.fastBack($frontDiv);
 
     })(); flow.next();
     return false;
   }).hide();
 
 
-  if(document.domain.substr(0,4)=='demo') $buttLoginVendor.hide();
+  if(document.domain.substr(0,4)=='demo') $buttLoginSeller.hide();
 
   var $pWiki=$('<div>').append($pSeeAlso);
 
-
-  $iframeLike.css({'float':'right',clear:'both'});
-  //$iframeLike.css({display:'block'});
+  var $loginSelectorDiv=loginSelectorDivExtend($('<div>'), oRole);
+  
 
   //var $hovWhyIsFBNeeded=$hovHelp.clone().text(langHtml.WhyIsFBNeededQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  $bub=$('<div>').html(langHtml.WhyIsFBNeededA);     popupHoverJQ(//$hovWhyIsFBNeeded,$bub,15000);
   //var $NothingIsWrittenToYourFBFlow=$('<div>').append(langHtml.NothingIsWrittenToYourFBFlow);
@@ -5556,22 +5314,23 @@ var moreDivExtend=function($el){
   //var $aDisclaimer=$('<a>').prop({href:'https://closeby.market/Disclaimer_2016-Oct-12'}).append("Disclaimer 2016-Oct-12").css({display:'block'});
   var $aMoreAboutWhyAnIdPIsUsed=$('<a>').prop({href:'https://closeby.market/WhyIsAnIdPUsed'}).append(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
 
-  //var $opt=$([]).push($pWiki, $langSpan, $buttLoginVendor, $buttLoginTeam, $teamApprovedMess);
-  var $rows=$([]).push($divOrdinal, $loginSelectorDiv, $NoteYouCanDeleteYourAccount, $pWiki, $buttLoginTeam, $teamApprovedMess);  // $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanUseCustomImage, , $langSpan, $NoteYouCanDeleteYourAccount
+  //var $opt=$([]).push($pWiki, $langSpan, $buttLoginSeller, $buttLoginTeam, $teamApprovedMess);
+  
+  $el.$teamApprovedMess=$("<div>").css({display:'block'}).append('Team/brand not approved, Contact '+domainName+' to become approved.');
+  var $rows=$([]).push($divOrdinal, $loginSelectorDiv, $pWiki, $buttLoginTeam, $el.$teamApprovedMess);  // , $NoteYouCanDeleteYourAccount  $FBToPreventMultipleAccounts, $NothingIsWrittenToYourFBFlow, $YouCanUseCustomImage, , $langSpan, $NoteYouCanDeleteYourAccount
   var $topDivA=$('<div>').append($iframeLike).css({'margin-top':'1em',overflow:'hidden'});  //$buttonBack,  , $aMoreAboutWhyAnIdPIsUsed
   $rows.css({'margin':'1em 0em 1em 0.6em'});
-  $el.append($topDivA,$rows);
+  var $divCont=$('<div>').addClass('contDiv').append($topDivA,$rows);
 
-  $el.css({'text-align':'left'});
+      // divFoot
+  var $buttonBack=$('<button>').html(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  var $divFoot=$('<div>').append($buttonBack).addClass('footDiv');
+  
+  $el.append($divCont, $divFoot);
+
+  $el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return $el;
 }
-var moreFootExtend=function($el){
-"use strict"
-  var $buttonBack=$('<button>').click(doHistBack).append(strBackSymbol).addClass('fixWidth').css({'float':'left','margin-left':'0.8em','margin-right':'1em'}); //'font-size':'1em'
-  $el.append($buttonBack).addClass('footDiv');
-  return $el;
-}
-
 
 
 /********************************************************************************************************************
@@ -5580,7 +5339,6 @@ var moreFootExtend=function($el){
 
 
 setUp1=function(){
-  emptyObj={}
 
   elHtml=document.documentElement;  elBody=document.body
   $body=$('body');  $html=$('html');
@@ -5589,6 +5347,7 @@ setUp1=function(){
   //$bodyNHtml=$([]);
   $bodyNHtml.css({height:'100%'});
   $body.css({margin:0, padding:0});
+  
   $document=$(document);
   $window=$(window);
 
@@ -5620,7 +5379,9 @@ setUp1=function(){
       //alert(dr);
       //$('#viewportMy').prop('content','initial-scale='+sc);
       //$bodyNHtml.css({"overflow-x":"hidden"});
-      $bodyNHtml.css({"-webkit-overflow-scrolling":"touch", "overflow":"scroll" });  // "height":"100%", "-webkit-overflow-scrolling":"touch"
+      $bodyNHtml.css({"-webkit-overflow-scrolling":"touch", "overflow":"hidden" });  // "height":"100%", "-webkit-overflow-scrolling":"touch"
+      $bodyNHtml.css({height:'100%', overflow:'hidden'});
+      
 
     } else if(boFF){
       dr=window.devicePixelRatio;
@@ -5653,7 +5414,7 @@ setUp1=function(){
     //window.boEmulator=null;    window.startFilter=null;
   //}
   var strHash=window.location.hash||"&",  params=parseQS(strHash.substring(1));
-  window.boEmulator=params.boEmulator||null;   window.startFilter=params.idTeam||null;   window.boVideo=params.boVideo||null;
+  window.boEmulator=params.boEmulator||null;   window.startFilterC=params.idTeamC||null;   window.startFilterS=params.idTeamS||null;   window.boVideo=params.boVideo||null;
 
   if(boIOS  || boIE) strBackSymbol='◄'; else strBackSymbol='◀';
 
@@ -5679,19 +5440,14 @@ setUp1=function(){
 
   //if(boVideo) boTouch=true;
 
-  var imgUriTmp=makeMarker(0);  boImgCreationOK=1;  if(imgUriTmp.length<10) boImgCreationOK=0;
-  //boImgCreationOK=0;
-
   assignSiteSpecific();
   console.log('boDbg='+boDbg);
 
 
-  StrPlugIn=site.StrPlugIn;
-  Prop=site.Prop; KeyCol=Object.keys(Prop); nCol=KeyCol.length;  StrOrderFilt=site.StrOrderFilt;
-  KeySel=calcKeySel(Prop,KeyCol);
 
-  colsFlip=array_flip(KeyCol);
-  StrOrderFiltFlip=array_flip(StrOrderFilt);
+  ORole=site.ORole;
+  [oC,oS]=site.ORole;
+
 
 
   var objLong={fb:'Facebook',google:"Google",idplace:"idPlace"};
@@ -5705,8 +5461,11 @@ setUp1=function(){
   uCanonical=uSite;
 
   uConversion=uSite+'/conversion.html';
-  uTeamImage=uSite+'/image/t';
-  uVendorImage=uSite+'/image/v';
+  //uTeamImage=uSite+'/image/t';
+  //uSellerImage=uSite+'/image/s';
+  uUserImage=uSite+'/image/u';
+  uCustomerTeamImage=uSite+'/image/c';
+  uSellerTeamImage=uSite+'/image/s';
 
 
   wseImageFolder='/'+flImageFolder+'/';
@@ -5731,11 +5490,15 @@ setUp1=function(){
   uList16=uImageFolder+'list16.png';
   uSetting1=uImageFolder+'setting1.png';
   uFilter=uImageFolder+'filter.png';
+  uEqualizer=uImageFolder+'equalizer.png';
   uMapm1=uImageFolder+'mapm1.png';
   uMapm2=uImageFolder+'mapm2.png';
   uColumn16=uImageFolder+'column16.png';
   uMyMarker=uImageFolder+'myMarker.gif';
   uOnePixTransparent=uImageFolder+'dummy.png';
+  //uTogButPinkBlue=uImageFolder+'toggleButtonVerticalPinkBlueBlack.png';
+  uTogVertical=uImageFolder+'toggleButtonVerticalBlack.png';
+  uWheel3Sprite=uImageFolder+'wheel3Sprite.png';
 
 
 
@@ -5748,39 +5511,40 @@ setUp1=function(){
   var oVersion=getItem('version');      if(version!==oVersion) boNewVersion=1; else boNewVersion=0;        setItem('version',version);
 
 
-  colOneMarkDefault='image';
 
 
   langClientFunc();
 
 
   PlugIn=[];
-  var rewriteProg=function(){    for(var i=0;i<StrPlugIn.length;i++){  PlugIn[i]=new CreatorPlugin[StrPlugIn[i]]();   }    };
-
-    //
-    // langHtml.vendor (and plural-, the-, uppercase-versions etc) may be rewritten by some sites.
-    //
-  var rewriteLang=function(){  for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteLang; if(tmp) tmp();   }  };
-  rewriteObj=function(){  for(var i=0;i<PlugIn.length;i++){  PlugIn[i].rewriteObj();   }  };
+  var rewriteProg=function(){
+    for(var i=0;i<site.StrPlugInNArg.length;i++){
+      var nameT=site.StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+      PlugIn[i]=new CreatorPlugin[nameT](charRoleUC);
+    }
+  };
 
   rewriteProg();
+  
 
-
+     //
+     // Make changes to langHtml
+     //
 
      // Create ucfirst versions
-  var StrMakeUCase=['vendor', 'vendors', 'column', 'visible', 'show'];
+  var StrMakeUCase=['seller', 'sellers', 'customer', 'customers', 'column', 'visible', 'show'];
   for(var i=0;i<StrMakeUCase.length;i++){var name=StrMakeUCase[i]; langHtml[ucfirst(name)]=ucfirst(langHtml[name]); }
 
 
      // Store vanilla version
-  var StrStoreVanilla=['vendor', 'vendors', 'Vendor', 'Vendors', 'theVendor', 'theVendors', 'theVendors0', 'IndependentVendor'];
+  var StrStoreVanilla=['seller', 'sellers', 'Seller', 'Sellers', 'theSeller', 'theSellers', 'theSellers0', 'IndependentSeller'];
   for(var i=0;i<StrStoreVanilla.length;i++){var name=StrStoreVanilla[i]; langHtml[name+'Vanilla']=langHtml[name]; }
 
+     // Let plugins rewrite langHtml
+  for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteLang; if(tmp) tmp();   }
 
-  rewriteLang();
-
-  langHtml.label.histActive=langHtml.label.histActive.replace(/<span><\/span>/,lenHistActive);
-  langHtml.helpBub.histActive=langHtml.helpBub.histActive.replace(/<span><\/span>/,lenHistActive);
+  //langHtml.label.histActive=langHtml.label.histActive.replace(/<span><\/span>/,lenHistActive);
+  //langHtml.helpBub.histActive=langHtml.helpBub.histActive.replace(/<span><\/span>/,lenHistActive);
 
 
 
@@ -5790,54 +5554,70 @@ setUp1=function(){
   replaceNom=function(parent,strName){
     parent[strName]=parent[strName].replace(regNom,nomFunc);
   }
-  replaceNom(langHtml.label,'standingByMethod');  // Only used by transportUrgent (taxi, transport)
+  replaceNom(langHtml.label,'standingByMethod');
 
 
   replaceNom(langHtml.helpBub,'link');
-  replaceNom(langHtml.helpBub,'posTime');
+  //replaceNom(langHtml.helpBub,'tPos');
   replaceNom(langHtml.helpBub,'shiftEnd');
-  replaceNom(langHtml.helpBub,'donatedAmount');
+  //replaceNom(langHtml.helpBub,'donatedAmount');
 
-  replaceNom(langHtml,'VendorSettings');
-  //replaceNom(langHtml,'VendorLogin'); // Not used
-  replaceNom(langHtml,'VendorEntry');
+  replaceNom(langHtml,'SellerSettings');
+  //replaceNom(langHtml,'SellerLogin'); // Not used
+  replaceNom(langHtml,'AppearAsCustomer');
+  replaceNom(langHtml,'AppearAsSeller');
   replaceNom(langHtml,'FilterTitle');
-  replaceNom(langHtml,'gettingStartedLink');
+  replaceNom(langHtml,'ToggleBetweenCustomerAndSeller');
+  //replaceNom(langHtml,'gettingStartedLink');
   replaceNom(langHtml,'toManyMess');
   replaceNom(langHtml,'SeeUnActivePopMess');
   replaceNom(langHtml,'writeComplaintPopup');
   replaceNom(langHtml,'introHead');
-  replaceNom(langHtml,'LoginSingInAsVendor');
+  replaceNom(langHtml,'LoginSingInAsSeller');
+  
+  replaceNom(langHtml,'FilterC');
+  replaceNom(langHtml,'FilterS');
+  replaceNom(langHtml,'TableC');
+  replaceNom(langHtml,'TableS');
+  
+  //replaceNom(langHtml,'DummiesShowingMess');
+  //replaceNom(langHtml,'noteLoginSeller');
 
-  replaceNom(langHtml,'DummiesShowingMess');
-  //replaceNom(langHtml,'noteLoginVendor');
 
+  replaceNom(langHtml,'headOrdinalC');
+  replaceNom(langHtml,'headOrdinalDoubleC');
+  if(langHtml.customerRewritten!=langHtml.customer)  langHtml.headOrdinalC=langHtml.headOrdinalDoubleC;
+  replaceNom(langHtml,'labOrdinalC');
+  
+  replaceNom(langHtml,'headOrdinalS');
+  replaceNom(langHtml,'headOrdinalDoubleS');
+  if(langHtml.sellerRewritten!=langHtml.seller)  langHtml.headOrdinalS=langHtml.headOrdinalDoubleS;
+  replaceNom(langHtml,'labOrdinalS');
 
-  replaceNom(langHtml,'headOrdinal');
-  replaceNom(langHtml,'headOrdinalDouble');
-  if(langHtml.vendorRewritten!=langHtml.vendor)  langHtml.headOrdinal=langHtml.headOrdinalDouble;
-  replaceNom(langHtml,'labOrdinal');
-
+  replaceNom(langHtml,'ChangeMapMarkersC');
+  replaceNom(langHtml,'ChangeMapMarkersS');
 
   langHtml.DidYouUseAltIPBefore=langHtml.DidYouUseAltIPBefore.replace(regNom,strIPAltLong);
 
 
+  for(var i=0;i<ORole.length;i++){
+    let oRole=ORole[i];
+    if(boTouch) oRole.ColsShowDefault=oRole.ColsShowDefaultS;
+    if(boReallySmall) oRole.ColsShowDefault=oRole.ColsShowDefaultRS;
+    if(boShowTeam==0) { arrValRemove(oRole.ColsShowDefault,'idTeam');}
+    oRole.ColsShow=[]; oRole.ColsShowCurrency=[];
 
-  if(boTouch) ColsShowDefault=ColsShowDefaultS;
-  if(boReallySmall) ColsShowDefault=ColsShowDefaultRS
-  if(boImgCreationOK==0) {ColsShowDefault.unshift('index'); }
-  if(boShowTeam==0) { arrValRemove(ColsShowDefault,'idTeam');}
-  ColsShow=[]; ColsShowCurrency=[];
-
-  if(boNewVersion) { setItem('colOneMark',colOneMarkDefault);  setItem('ColsShow',ColsShowDefault);}
-  colOneMark=getItem('colOneMark');    if(colOneMark===null) colOneMark=colOneMarkDefault;
-  ColsShow=getItem('ColsShow');   if(ColsShow===null) ColsShow=[].concat(ColsShowDefault);
-  if(StrPropMain.indexOf(colOneMark)==-1) colOneMark=colOneMarkDefault; setItem('colOneMark',colOneMark);
-  intersectionAB(ColsShow,StrPropMain);   setItem('ColsShow',ColsShow);
-
+    let tmpColOneMark='colOneMark'+oRole.charRoleUC, tmpColsShow='ColsShow'+oRole.charRoleUC;
+    let {colOneMarkDefault, ColsShowDefault}=oRole;
+    if(boNewVersion) { setItem(tmpColOneMark, colOneMarkDefault);  setItem(tmpColsShow, ColsShowDefault);}
+    let colOneMark=getItem(tmpColOneMark);    if(colOneMark===null) colOneMark=colOneMarkDefault;
+    let ColsShow=getItem(tmpColsShow);   if(ColsShow===null) ColsShow=[].concat(ColsShowDefault);
+    if(oRole.Main.StrProp.indexOf(colOneMark)==-1) colOneMark=colOneMarkDefault; setItem(tmpColOneMark, colOneMark);
+    intersectionAB(ColsShow, oRole.Main.StrProp);   setItem(tmpColsShow, ColsShow);
+    $.extend(oRole, {colOneMark:colOneMark, ColsShow:ColsShow});
+  }
 
   boMultCurrency=0;
-  //setUpColsShowIndCurrency();
 
 
   sessionLoginIdP={};
@@ -5862,14 +5642,11 @@ setUp1=function(){
 
 
   $imgBusy=$('<img>').prop({src:uBusy});
-  $messageText=messExtend($("<span>"));  window.setMess=$messageText.setMess;  window.resetMess=$messageText.resetMess;  window.appendMess=$messageText.appendMess;  $body.append($messageText);
+  //$messageText=messExtend($("<span>"));  window.setMess=$messageText.setMess;  window.resetMess=$messageText.resetMess;  window.appendMess=$messageText.appendMess;  $body.append($messageText);
+  spanMessageText=new TypeSpanMessageText();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  $body.append($(spanMessageText))
 
   $busyLarge=$('<img>').prop({src:uBusyLarge}).css({position:'fixed',top:'50%',left:'50%','margin-top':'-42px','margin-left':'-42px','z-index':'1000',border:'black solid 1px'}).hide();
   $body.append($busyLarge);
-
-
-
-
 
 
   merProj = new MercatorProjection();
@@ -5877,25 +5654,27 @@ setUp1=function(){
   var tmp=getItem('boFirstVisit');     if(tmp===null) boFirstVisit=1; else boFirstVisit=0;      setItem('boFirstVisit',0);
 
   $imgHelp=$('<img>').prop({src:uHelpFile}).css({'vertical-align':'-0.4em', 'margin-left':'0.6em'});
-  $hovHelp=$('<span>').text('?').css({'font-size':'88%',color:'#a7a7a7','vertical-align':'-0.4em'}); //click(function(){return false;})    //'pointer-events':'none',
+  $hovHelp=$('<span>').text('?').css({'font-size':'88%',color:'#a7a7a7','vertical-align':'-0.4em'}); //on('click', function(){return false;})    //'pointer-events':'none',
 
-  helpBub={}; for(var i=0;i<nCol;i++){
-    var strName=KeyCol[i], text='';
-    if(strName in langHtml.helpBub)  text=langHtml.helpBub[strName];
-    if(text!='') { helpBub[strName]=$('<div>').html(text); }
+  for(var i=0;i<ORole.length;i++){
+    ORole[i].KeyCol=Object.keys(ORole[i].Prop);
+    let nCol=ORole[i].KeyCol.length;
+    ORole[i].colsFlip=array_flip(ORole[i].KeyCol);
+    ORole[i].helpBub={};
+    for(var j=0;j<nCol;j++){
+      var strName=ORole[i].KeyCol[j], text='';
+      if(strName in langHtml.helpBub)  text=langHtml.helpBub[strName];
+      if(text!='') { ORole[i].helpBub[strName]=$('<div>').html(text); }
+    }
+    ORole[i].Label=$.extend({},langHtml.label);
   }
-
+  
   $H1=$('h1:eq(0)').detach();
   $H1.css({background:'#ff0', "box-sizing":"border-box", border:'solid 1px',color:'black','font-size':'1.6em','font-weight':'bold','text-align':'center',
-      padding:'0.4em 0em 0.4em 0em',margin:'0em 0em 0em 0em'});
-  //$divH1=$('<div>').append($H1); //$divH1.css({});
+      padding:'0.4em 0em 0.4em 0em',margin:'0em auto', 'max-width':'800px', width:'100%'});
+  //$H1.css({'border-top':'1px solid black'});
 
-  //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
-  var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
-  $infoLink=$('<a>').prop({href:uWikiT}).append(langHtml.OtherMapApps);
-  $footDiv=$('<div>').css({background:'', "box-sizing":"border-box", 'border-top':'solid 1px',color:'black','font-size':'1.2em','line-height':'1.6em','font-weight':'bold','text-align':'center',
-      padding:'0.2em 0em 0.2em', margin:'1px 0em 0em 0em', flex:'0 0 auto', display:"flex", "justify-content":"space-around"}); //, "justify-content":"space-evenly"
-  $footDiv.css({visibility:'hidden'});
+
 
   $body.css({padding:'0 0 0 0'});
   $body.css({margin:'0 0 0 0'});
@@ -5911,7 +5690,7 @@ setUp1=function(){
   //alert("reExecute");
   //iPop=0;
   $poporder=$('<div>').html('poporder'); $iLoad=$('<div>').html('iLoad'); $iPopstate=$('<div>').html('iPopstate'); $stateMyT=$('<div>').html('stateMyT'); $indT=$('<div>').html('indT'); $dirT=$('<div>').html('dirT');
-  $butClearCounter=$('<button>').append('ClearCounter').click(function(){
+  $butClearCounter=$('<button>').append('ClearCounter').on('click', function(){
     setItem('iLoad', 0);  setItem('iPopstate', 0);  setItem('iPagehide', 0);  setItem('iBeforeunload', 0);
     $iLoad.html('iLoad:'); $iPopstate.html('iPopstate:'); $poporder.html('poporder:');
   });
@@ -6019,166 +5798,140 @@ var setUp2=function(){
   startPopTimer=null;
   //if(boTouch && boIOS) $startPop.openFunc(); else startPopTimer=setTimeout($startPop.openFunc,1000);
 
-  //$seeUnActivePop=seeUnActivePopExtend($('<div>')).css({padding:'2em','text-align':'left'});
 
-  $dummyShowingToast=dummyShowingToastExtend($('<div>')).css({padding:'0.5em','text-align':'center',left:'50%',width:'12em','margin-left':'-6em','z-index':6});
-  $body.append($dummyShowingToast);
+  $noOneIsVisibleToast=noOneIsVisibleToastExtend($('<div>')).css({padding:'0.5em','text-align':'center',left:'50%',width:'12em','margin-left':'-6em','z-index':6});
+  $body.append($noOneIsVisibleToast);
 
-  //$loginDiv=loginDivExtend($('<div>'));    //$loginDiv.css({border:'1px solid #000'});
-  $vendorIntroDiv=vendorIntroDivExtend($('<div>'));
+  $IntroDiv=[];
+  for(var i=0;i<ORole.length;i++){
+    $IntroDiv[i]=roleIntroDivExtend($('<div>'),ORole[i]);
+  }
+  [$introDivC, $introDivS]=$IntroDiv;
 
-  //$vendorButton=$('<button>').append('&equiv;');
-  $quickDiv=quickDivExtend($('<div>'));
-  $payButton=payButtonExtend($('<button>').append(langHtml.vendorPay.head));
-  $payDiv={};//payDivExtend($('<div>').append(langHtml.vendorPay.div)).css({flex:'1 1 0', overflow:'auto'});
-  $payFoot=payFootExtend($('<div>'));
   $userSettingButton=$('<button>').append(langHtml.UserSettings);
-  $userSettingDiv=userSettingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $userSettingFoot=userSettingFootExtend($('<div>'));
-  $vendorSettingButton=$('<button>').append(langHtml.VendorSettings);
-  $vendorSettingDiv=vendorSettingDivExtend($('<div>')).css({flex:'1 1 0', 'overflow-y':'auto', 'overflow-x':'hidden'});
-  $vendorSettingFoot=vendorSettingFootExtend($('<div>'));
-  $priceSettingButton=$('<button>').append(langHtml.Prices);
-  $priceSettingDiv=priceSettingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $priceSettingFoot=priceSettingFootExtend($('<div>'));
+  $userSettingDiv=userSettingDivExtend($('<div>')).addClass('mainDiv');
+  
+  $QuickDiv=[]; $SettingDiv=[];
+  for(var i=0;i<ORole.length;i++){
+    $QuickDiv[i]=quickDivExtend($('<div>'),ORole[i]).css({padding:'0.7em 0.2em 0.1em',margin:'0em 0em 0em',display:'flex','border-top':'solid 1px'});   $QuickDiv[i].hide();
+    $SettingDiv[i]=roleSettingDivExtend($('<div>'),ORole[i]).addClass('mainDiv');
+  }
+  [$quickDivC, $quickDivS]=$QuickDiv;   [$settingDivC,$settingDivS]=$SettingDiv;
+  
   $deleteAccountPop=deleteAccountPopExtend($('<div>'));
 
-  //if(boAndroid) { var h=window.innerHeight/2.5;   $payDiv.add($vendorSettingDiv).add($priceSettingDiv).css({'padding-bottom':h+'px'});  } //make room for keyboard
-  $quickDiv.css({padding:'0.3em 0.2em',margin:'0em 0em 0em',display:'block',background:'#faa','border-top':'solid 1px'});
-
-  $quickDivOuter=$('<div>').append($quickDiv).css({flex:'0 0 auto'});  //'border-top':'solid white 1px'
-  //if(boIOS && boTouch) $quickDivOuter.css({padding:'0em 0em 1.7em'});
 
   $uploadImageDiv=uploadImageDivExtend($('<div>'));
-  $teamDiv=teamDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $teamFoot=teamFootExtend($('<div>'));
+  $teamDivC=teamDivExtend($('<div>'),oC).addClass('mainDiv');
+  $teamDivS=teamDivExtend($('<div>'),oS).addClass('mainDiv');
 
-  $vendorDiv=vendorDivExtend($('<div>')).css({'background':'#ccc','border':'solid 1px','padding':'0.2em 0'});
 
   $adminButton=$('<button>').html('Admin').css({display:'block'});
-  $adminDiv=adminDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $adminFoot=adminFootExtend($('<div>'));
-  $teamButton=$("<button>").css({display:'block'}).append('Team/brand admin settings').click(function(){
-    $teamDiv.setUp();
-    $teamDiv.setVis();
-    doHistPush({$view:$teamDiv});
-  });
-  $teamApprovedMess=$("<div>").css({display:'block'}).append('Team/brand not approved, Contact '+domainName+' to become approved.');
-  $complaintVDiv=complaintVDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $complaintVFoot=complaintVFootExtend($('<div>'));
-  $complaintRDiv=complaintRDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $complaintRFoot=complaintRFootExtend($('<div>'));
-
+  $adminDiv=adminDivExtend($('<div>')).addClass('mainDiv');
+  
+  
+  
+  $complaineeDiv=complaineeDivExtend($('<div>')).addClass('mainDiv');
+  $complainerDiv=complainerDivExtend($('<div>')).addClass('mainDiv');
   $complaintCommentPop=complaintCommentPopExtend($('<div>')).css({border:'1px solid #000'});
   $complaintAnswerPop=complaintAnswerPopExtend($('<div>')).css({border:'1px solid #000'});
 
   //$agreementStart=agreementStartExtend($('<div>'));
   //if(boFirstVisit) $agreementStart.setLocalDates(1);
 
-    // paymentList
-  $paymentListDiv=paymentListDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $paymentListFoot=paymentListFootExtend($('<div>'));
 
-  //boMapGoogle=getItem('boMapGoogle');
-  if(boMapGoogle) $mapDiv=mapDivExtendGoogle($("<div>")); else $mapDiv=mapDivExtend($("<div>"));
-  //$mapDiv.css({'margin-top':'0.9em'});  //,display:'inline-block','margin-top':'1px'
-  $mapDiv.css({overflow:'hidden'});
+  $mapDiv=mapDivExtend($("<div>")).css({overflow:'hidden'});
+  $mapDiv.css({flex:"auto"});  // "overflow-y":"scroll", "-webkit-overflow-scrolling":"touch",
 
     //filter colors
   colButtAllOn='#9f9'; colButtOn='#0f0'; colButtOff='#ddd'; colFiltOn='#bfb'; colFiltOff='#ddd'; colFontOn='#000'; colFontOff='#777'; colActive='#65c1ff'; colStapleOn='#f70'; colStapleOff='#bbb';
 
   maxStaple=20;
 
-    // filterDivs
-  $filterInfoSpan=filterInfoSpanExtend($('<span>'));
-  $filterInfoWrap=$('<span>').append($filterInfoSpan);
-  //$filterButton=$('<button>').append(langHtml.Filter,': (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'right','clear':'both'});//.css({background:colMenuOff});
-  var $tmpImg=$('<img>').prop({src:uFilter}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $filterButton=$('<button>').append($tmpImg,' (',$filterInfoWrap,')').addClass('flexWidth').css({'float':'left'}).prop('title',langHtml.FilterTitle);// ,'clear':'both'  .css({background:colMenuOff});
-  //$filterDiv=filterDivExtend($('<div>'),StrOrderFilt);
-  $filterDiv=new FilterDiv(Prop, $.extend({},langHtml.label), StrOrderFilt, loadTabStart);
-  $filterDiv.css({'background-color':'#eee','padding-bottom':'0.6em', flex:'1 1 0', overflow:'auto'});
-  $filterFoot=filterFootExtend($('<div>'));
-
-
-    // tableDivs
-  var $tmpImg=$('<img>').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $tableButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-right':'1em'}).prop('title',langHtml.ComparisonTable);
-
-  var $tmpImg=$('<img>').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  $settingButton=$('<button>').append($tmpImg).addClass('fixWidth').css({'float':'left', 'margin-left':'0.8em', 'margin-right':'1em'}).prop('title',langHtml.Settings);
-
-  $mapFoot=$('<div>').append($settingButton,$tableButton,$filterButton).addClass('footDiv');
-
-
-  $columnSelectorDiv=columnSelectorDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $columnSelectorFoot=columnSelectorFootExtend($('<div>'));
-  $columnSorterDiv=columnSorterDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $columnSorterFoot=columnSorterFootExtend($('<div>'));
-
+    // FilterDiv, ColumnSelectorDiv, ColumnSorterDiv
+  $FilterDiv=[]; $ColumnSelectorDiv=[]; $ColumnSorterDiv=[];
+  for(var i=0;i<ORole.length;i++){
+    $FilterDiv[i]=new FilterDiv(ORole[i]).addClass('mainDiv').css({'background-color':'#eee'});  //,'padding-bottom':'0.6em'
+    $ColumnSelectorDiv[i]=columnSelectorDivExtend($('<div>'), ORole[i]).addClass('mainDiv');
+    $ColumnSorterDiv[i]=columnSorterDivExtend($('<div>'), ORole[i]).addClass('mainDiv');
+  }
+  [$filterDivC, $filterDivS]=$FilterDiv;   [$columnSelectorDivC, $columnSelectorDivS]=$ColumnSelectorDiv;   [$columnSorterDivC, $columnSorterDivS]=$ColumnSorterDiv;
 
   $currencyInfoDivs=$([]);
 
 
-
-  $tHeadLabel=tHeadLabelExtend($('<thead>')).css({'text-align':'center'});
-
-  $tableDiv=tableDivExtend($("<div>")).css({flex:'1 1 0', overflow:'auto'});
-  $tableFoot=tableFootExtend($("<div>"));
-  $tableDiv.$table.prepend($tHeadLabel);  $tableDiv.$table.addClass('tableDiv');  //.css({'border-top':'0px'});
+  $TableDiv=[];
+  for(var i=0;i<ORole.length;i++){
+    $TableDiv[i]=tableDivExtend($("<div>"), ORole[i]).addClass('mainDiv').css({'max-width':'none'});
+    $TableDiv[i].$table.addClass('tableDiv');  //.css({'border-top':'0px'});
+  }
+  [$tableDivC, $tableDivS]=$TableDiv;
+  
 
   if(0){
     $iframeLike=$('<iframe src="//www.facebook.com/plugins/likebox.php?href=https%3A%2F%2Fwww.facebook.com%2Fgavott&amp;width&amp;height=62&amp;colorscheme=light&amp;show_faces=false&amp;header=true&amp;stream=false&amp;show_border=false&amp;appId=237613486273256" scrolling="no" frameborder="0" style="border:none; overflow:hidden; height:62px;" allowTransparency="true"></iframe>');
   }else{$iframeLike=$('<span>');}
+  $iframeLike.css({'float':'right',clear:'both'});
 
-  $formLoginDiv=formLoginDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto', 'text-align':'left'});
-  $formLoginFoot=formLoginFootExtend($('<div>'));
-  $loginSelectorDiv=loginSelectorDivExtend($('<div>'));//.css({flex:'1 1 0', overflow:'auto'});
-  //$loginSelectorFoot=loginSelectorFootExtend($('<div>'));
-
-  //var $tmp=$('<span>').append('&equiv;').css({height:'0.9em',width:'0.9em',display:'inline-block'});
-  //$moreButton=$('<button>').append($tmp).css({'margin-left':'0.6em','margin-right':'1em'});
-  $moreButton=$('<button>').append(langHtml.VendorEntry).addClass('flexWidth').css({'width':'initial','font-size':'0.7em'}); //'&equiv;'
-  $moreDiv=moreDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $moreFoot=moreFootExtend($("<div>"));
-  if(document.domain.substr(0,4)=='demo') $moreButton.hide();
-  $convertIDDiv=convertIDDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $convertIDFoot=convertIDFootExtend($('<div>'));
+  $formLoginDiv=formLoginDivExtend($('<div>')).addClass('mainDiv').css({'text-align':'left'});
 
 
-  $createUserDiv=createUserDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto', 'text-align':'left'});
-  $createUserFoot=createUserFootExtend($('<div>'));
+
+  $EntryButton=[]; $EntryDiv=[];
+  for(var i=0;i<ORole.length;i++){
+    var tmp=ORole[i].strRole=='customer'?langHtml.AppearAsCustomer:langHtml.AppearAsSeller;
+    $EntryButton[i]=$('<button>').append(tmp).addClass('flexWidth').css({'width':'initial','font-size':'0.7em', background:ORole[i].strColor}); //'&equiv;'
+    $EntryDiv[i]=entryDivExtend($('<div>'), ORole[i]).addClass('mainDiv');
+  }
+  [$entryButtonC, $entryButtonS]=$EntryButton;   [$entryDivC, $entryDivS]=$EntryDiv;
+  
+  if(document.domain.substr(0,4)=='demo') {$entryButtonC.hide(); $entryButtonS.hide();}
+  $convertIDDiv=convertIDDivExtend($('<div>')).addClass('mainDiv');
+
+
+  $createUserDiv=createUserDivExtend($('<div>')).addClass('mainDiv').css({'text-align':'left'});
 
   $changePWPop=changePWPopExtend($('<div>')).css({'text-align':'left'});
   $forgottPWPop=forgottPWPopExtend($('<div>')).css({'text-align':'left'});
 
 
-  $settingDiv=settingDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $settingFoot=settingFootExtend($("<div>"));
-
-  $markSelectorDiv=markSelectorDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $markSelectorFoot=markSelectorFootExtend($("<div>"));
+  $settingDivW=settingDivWExtend($('<div>')).addClass('mainDiv');
 
 
-  $vendorInfoDiv=vendorInfoDivExtend($('<div>')).css({flex:'1 1 0', overflow:'auto'});
-  $vendorInfoFoot=vendorInfoFootExtend($("<div>"));
-  $vendorListCtrlDiv=vendorListCtrlDivExtend($('<div>')).css({display:'inline-block','float':'right'});
+
+  $MarkSelectorDiv=[]; $InfoDiv=[]; $ListCtrlDiv=[];
+  for(var i=0;i<ORole.length;i++){
+    $MarkSelectorDiv[i]=markSelectorDivExtend($('<div>'), ORole[i]).addClass('mainDiv');
+    $InfoDiv[i]=roleInfoDivExtend($('<div>'), ORole[i]).addClass('mainDiv');
+    $ListCtrlDiv[i]=listCtrlDivExtend($('<div>'), ORole[i]).css({display:'inline-block','float':'right'});
+  }
+  [$markSelectorDivC, $markSelectorDivS]=$MarkSelectorDiv;   [$infoDivC, $infoDivS]=$InfoDiv;   [$listCtrlDivC, $listCtrlDivS]=$ListCtrlDiv;
+  
+
+  
+  $frontDiv=frontDivExtend($("<div>")).addClass('mainDiv');
 
 
-  $footDiv.append($infoLink,$moreButton);
+     // Let plugins rewrite objects
+  for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteObj; if(tmp) tmp();   }
 
 
-  rewriteObj();
+  $userSettingDiv.createDivs();
+  for(var i=0;i<ORole.length;i++){
+    $SettingDiv[i].createDivs();
+    $FilterDiv[i].$filterDivI.createDivs();
+    var tmpStartFilter=ORole[i].strRole=='customer'?startFilterC:startFilterS;
+    if(tmpStartFilter){
+      var StrOrderFilt=ORole[i].filter.StrProp, StrOrderFiltFlip=array_flip(StrOrderFilt);
+      $FilterDiv[i].$filterDivI.Filt[StrOrderFiltFlip.idTeam]=[[],[tmpStartFilter],1];
+    }
 
-  $vendorSettingDiv.createDivs();
-  $priceSettingDiv.createDivs();
-  $filterDiv.createDivs();
-  if(startFilter)  $filterDiv.Filt[StrOrderFiltFlip.idTeam]=[[],[startFilter],1];
-  $tableDiv.createTBody();   $tableDiv.setRowDisp();  $tableDiv.css({margin:'0em 0 0.9em 0'});
-  $vendorInfoDiv.createContainers();
-  $columnSelectorDiv.createTable();
-  $markSelectorDiv.createTable();
-
+    $TableDiv[i].createTBody();   $TableDiv[i].setRowDisp();  //$TableDiv[i].css({margin:'0em'});
+  
+    $InfoDiv[i].createContainers();
+    $ColumnSelectorDiv[i].createTable();
+    $MarkSelectorDiv[i].createTable();
+  }
 
   //if(boTouch) $H1.css({'font-size':'0.9em'});
   if(boTouch) $H1=$([]);
@@ -6186,12 +5939,10 @@ var setUp2=function(){
 
 
   if(typeof StrMainDiv=='undefined') StrMainDiv=[];
-  StrMainDiv.push('loginInfo', 'H1', 'mapDiv', 'filterDiv', 'tableDiv', 'userSettingDiv', 'vendorSettingDiv', 'priceSettingDiv', 'vendorInfoDiv', 'adminDiv', 'complaintVDiv', 'complaintRDiv', 'moreDiv', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDiv', 'columnSelectorDiv', 'columnSorterDiv', 'markSelectorDiv', 'paymentListDiv', 'teamDiv', 'deleteAccountPop', 'loginDiv', 'complaintCommentPop', 'complaintAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');    //, 'payDiv'
-  if(boDbgL) StrMainDiv.unshift('divDbg');
+  StrMainDiv.push('frontDiv', 'filterDivC', 'filterDivS', 'tableDivC', 'tableDivS', 'userSettingDiv', 'settingDivC', 'settingDivS', 'infoDivC', 'infoDivS', 'adminDiv', 'complaineeDiv', 'complainerDiv', 'entryDivC', 'entryDivS', 'formLoginDiv', 'createUserDiv', 'convertIDDiv', 'settingDivW', 'columnSelectorDivC', 'columnSelectorDivS', 'columnSorterDivC', 'columnSorterDivS', 'markSelectorDivC', 'markSelectorDivS', 'teamDivC', 'teamDivS', 'deleteAccountPop', 'loginDiv', 'complaintCommentPop', 'complaintAnswerPop', 'uploadImageDiv', 'changePWPop', 'forgottPWPop');    // 'loginInfo', 'H1', 
+  //if(boDbgL) StrMainDiv.unshift('divDbg');
 
 
-  //  List of foots: admin, pay, vendorSetting, priceSetting, paymentList, userSetting, complaintV, complaintR, vendorInfo, filter, markSelector, columnSelector, columnSorter, table, map, team, setting, more, createUser
-  StrMainDiv.push('footDiv', 'quickDivOuter', 'mapFoot', 'filterFoot', 'tableFoot', 'userSettingFoot', 'vendorSettingFoot', 'priceSettingFoot', 'payFoot', 'vendorInfoFoot', 'adminFoot', 'complaintVFoot', 'complaintRFoot', 'moreFoot', 'formLoginFoot', 'createUserFoot', 'convertIDFoot', 'settingFoot', 'columnSelectorFoot', 'columnSorterFoot', 'markSelectorFoot', 'paymentListFoot', 'teamFoot');
 
   var MainDiv=[];
   for(var i=0;i<StrMainDiv.length;i++){
@@ -6200,77 +5951,48 @@ var setUp2=function(){
   }
   $MainDiv=$([]); $MainDiv.push.apply($MainDiv,MainDiv);
   //$MainDiv.css({'border-top':'1px solid white'});
-  //if(!boTouch)
-  $H1.css({'border-top':'1px solid black'});
 
 
-  history.StateMy[history.state.ind]={$view:$mapDiv};
+
+  history.StateMy[history.state.ind]={$view:$frontDiv};
 
 
   $MainDiv.hide();
   $body.append($MainDiv);
-  //$MainDiv=$MainDiv.not($H1.add($footDiv));
-
-  //$mapDivs=$H1.add($mapFoot).add($mapDiv).add($footDiv);  $mapDivs.show();
-  $H1.add($footDiv).add($mapFoot).add($mapDiv).show();
-  if(boDbgL) $divDbg.show();
-  $filterDiv.hide();
+  
+  $frontDiv.show();
 
 
       // Extra functionallity when clicking on menus
-
-  mapButtonClick=function(){
-    $mapDiv.setVis();   doHistPush({$view:$mapDiv});
-    //ga('send', 'pageview', { 'page': '/map',  'title': 'map'});
+  frontButtonClick=function(){
+    $frontDiv.setVis();   doHistPush({$view:$frontDiv});
     ga('send', 'event', 'button', 'click', 'map');
   }
-  tableButtonClick=function(){
-    $tableDiv.setVis();  doHistPush({$view:$tableDiv});
-    //ga('send', 'pageview', { 'page': '/table',  'title': 'table'});
-    ga('send', 'event', 'button', 'click', 'table');
-  }
-  filterButtonClick=function(){
-    $filterDiv.setVis(); doHistPush({$view:$filterDiv});
-    //ga('send', 'pageview', { 'page': '/filter',  'title': 'filter'});
-    ga('send', 'event', 'button', 'click', 'filter');
-  }
-  settingButtonClick=function(){
-    $settingDiv.setVis(); doHistPush({$view:$settingDiv});
-    //ga('send', 'pageview', { 'page': '/setting',  'title': 'setting'});
-    ga('send', 'event', 'button', 'click', 'setting');
-  }
-  $tableButton.on('click',tableButtonClick);
-  $filterButton.on('click',filterButtonClick);
-  $settingButton.on('click',settingButtonClick);
+  
+  
 
 
   $userSettingButton.on('click',function(){
     $userSettingDiv.setVis(); doHistPush({$view:$userSettingDiv});
   });
-  $vendorSettingButton.on('click',function(){
-    $vendorSettingDiv.setVis(); doHistPush({$view:$vendorSettingDiv});
-  });
-  $priceSettingButton.on('click',function(){
-    $priceSettingDiv.setVis(); doHistPush({$view:$priceSettingDiv});
-  });
-  $payButton.on('click',function(){
-    $payDiv.setVis(); doHistPush({$view:$payDiv});
-  });
   $adminButton.on('click',function(){
     $adminDiv.setVis(); doHistPush({$view:$adminDiv});
   });
-  $moreButton.on('click',function(){
-    $moreDiv.setVis(); doHistPush({$view:$moreDiv});
-    //ga('send', 'pageview', { 'page': '/more',  'title': 'more'});
-    ga('send', 'event', 'button', 'click', 'more');
+  $entryButtonC.on('click',function(){
+    $entryDivC.setVis(); doHistPush({$view:$entryDivC});
+    ga('send', 'event', 'button', 'click', 'entryDivC');
+  });
+  $entryButtonS.on('click',function(){
+    $entryDivS.setVis(); doHistPush({$view:$entryDivS});
+    ga('send', 'event', 'button', 'click', 'entryDivS');
   });
 
 
-  $mainDivsTogglable=$MainDiv.not($loginInfo.add($H1));
-  if(boDbgL) $mainDivsTogglable=$MainDiv.not($loginInfo.add($H1).add($divDbg));
+  $mainDivsTogglable=$MainDiv;  // .not($loginInfo.add($H1));
+  //if(boDbgL) $mainDivsTogglable=$MainDiv.not($loginInfo.add($H1).add($divDbg));
+  var $topDivMain=$([]).push($loginInfo, $H1);  if(boDbgL) $topDivMain.push(divDbg);
 
-
-  scalableTog=function(boOn){
+  scalableTog=function(boOn){ return;
     if(typeof boOn=='undefined') boOn=document.body.style.opacity!=0.9999;
     var floatOpacity=boOn?1:0.9999;
     var strVPContent='width=device-width, initial-scale=1, '+(boOn?'maximum-scale=4':'maximum-scale=1, user-scalable=no');
@@ -6279,152 +6001,141 @@ var setUp2=function(){
     //setTimeout(function(){ document.body.style.opacity = 1;  }, 1);
   }
 
-  $mapDiv.setVis=function(){
-    $tableButton.add($filterButton).css({background:colMenuOff});
-    var $tmp=$footDiv.add($mapDiv).add($mapFoot).add($quickDivOuter);
-    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $filterInfoWrap.append($filterInfoSpan);
-    //$moreButton.after($filterButton);
+  $frontDiv.setVis=function(){
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.$topDiv.after($topDivMain);
     //$('meta[name=viewport]').prop({'user-scalable':'false'});
     scalableTog(0);
-    if(boMapGoogle) google.maps.event.trigger($mapDiv.map, 'resize');
-    else $mapDiv[0].dispatchEvent(new Event('myResize'));
+    $mapDiv[0].dispatchEvent(new Event('myResize'));
     return true;
   }
-  $tableDiv.setVis=function(){
-    $filterButton.css({background:colMenuOff});  $tableButton.css({background:colMenuOn});
-    var $tmp=$tableDiv.add($tableFoot);
-    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $tableFoot.$filterButton.children('span').append($filterInfoSpan);
+  $tableDivC.setVis=
+  $tableDivS.setVis=function(){
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.prepend($topDivMain);
     //$('meta[name=viewport]').prop({'user-scalable':'true'});
     scalableTog(1);
     return true;
   }
-  $filterDiv.setVis=function(){
-    $tableButton.css({background:colMenuOff});  $filterButton.css({background:colMenuOn});
-    var $tmp=$filterDiv.add($filterFoot);
-    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $filterFoot.$filterInfoWrap.append($filterInfoSpan);
+  $filterDivC.setVis=
+  $filterDivS.setVis=function(){
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.prepend($topDivMain);
     scalableTog(1);
     return true;
   }
   $userSettingDiv.setVis=function(){
     if(!userInfoFrDB.user) return false;
-    $userSettingDiv.setUp();
-    var $tmp=$userSettingDiv.add($userSettingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.setUp();
     scalableTog(1);
     return true;
   }
-  $vendorSettingDiv.setVis=function(){
-    if(!userInfoFrDB.vendor) return false;
-    $vendorSettingDiv.setUp();
-    var $tmp=$vendorSettingDiv.add($vendorSettingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $settingDivC.setVis=function(){
+    if(!userInfoFrDB.customer) return false;
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.setUp();
     scalableTog(1);
     return true;
   }
-  $priceSettingDiv.setVis=function(){
-    if(!userInfoFrDB.vendor) return false;
-    $priceSettingDiv.setUp();
-    var $tmp=$priceSettingDiv.add($priceSettingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $settingDivS.setVis=function(){
+    if(!userInfoFrDB.seller) return false;
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.setUp();
     scalableTog(1);
     return true;
   }
-  $payDiv.setVis=function(){
-    if(!userInfoFrDB.vendor) return false;
-    $payDiv.setUp();
-    var $tmp=$payDiv.add($payFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    scalableTog(1);
-    return true;
-  }
-  $vendorInfoDiv.setVis=function(){
-    if($vendorInfoDiv.boLoaded==0) return false;
-    var $tmp=$vendorInfoDiv.add($vendorInfoFoot);
+  $infoDivC.setVis=
+  $infoDivS.setVis=function(){
+    var $tmp=this;
+    if($tmp.boLoaded==0) return false;
     $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $vendorInfoDiv.$menuDiv.append($vendorListCtrlDiv);
+    $tmp.$listCtrlDivW.append($ListCtrlDiv[this.indRole]);
     scalableTog(1);
     return true;
   }
-  $complaintVDiv.setVis=function(){
-    if($complaintVDiv.boLoaded==0) return false;
-    var $tmp=$complaintVDiv.add($complaintVFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $complaintVDiv.$topDiv.append($vendorListCtrlDiv);
+  $complaineeDiv.setVis=function(){
+    var $tmp=this;  
+    if($tmp.boLoaded==0) return false;
+    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $ListCtrlDiv[1-this.indRole].detach();
+    $tmp.$listCtrlDivW.append($ListCtrlDiv[this.indRole]);
     scalableTog(1);
     return true;
   }
-  $complaintRDiv.setVis=function(){
-    if($complaintRDiv.boLoaded==0) return false;
-    var $tmp=$complaintRDiv.add($complaintRFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $complainerDiv.setVis=function(){
+    var $tmp=this;  
+    if($tmp.boLoaded==0) return false;
+    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
   $adminDiv.setVis=function(){
-    var $tmp=$adminDiv.add($adminFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
-  $moreDiv.setVis=function(){
-    var $tmp=$moreDiv.add($moreFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $moreDiv.setUp();
+  $entryDivC.setVis=
+  $entryDivS.setVis=function(){
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.setUp();
     scalableTog(1);
     return true;
   }
   $formLoginDiv.setVis=function(){
-    var $tmp=$formLoginDiv.add($formLoginFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $formLoginDiv.setUp();
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.setUp();
     scalableTog(1);
     return true;
   }
-  //$loginSelectorDiv.setVis=function(){
-    //var $tmp=$loginSelectorDiv.add($loginSelectorFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    //$loginSelectorDiv.setUp();
-    //scalableTog(1);
-    //return true;
-  //}
   $createUserDiv.setVis=function(){
-    var $tmp=$createUserDiv.add($createUserFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $createUserDiv.setUp();
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.setUp();
     scalableTog(1);
     return true;
   }
   $convertIDDiv.setVis=function(){
-    var $tmp=$convertIDDiv.add($convertIDFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $convertIDDiv.setUp();
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    $tmp.setUp();
     scalableTog(1);
     return true;
   }
-  $settingDiv.setVis=function(){
-    var $tmp=$settingDiv.add($settingFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    $settingDiv.setUp();
+  $settingDivW.setVis=function(){
+    var $tmp=this;  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+    //$tmp.setUp();
+    $tmp.prepend($topDivMain);
     scalableTog(1);
     return true;
   }
-  $columnSelectorDiv.setVis=function(){
-    if($columnSelectorDiv.boLoaded==0) return false;
-    var $tmp=$columnSelectorDiv.add($columnSelectorFoot); $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $columnSelectorDivC.setVis=
+  $columnSelectorDivS.setVis=function(){
+    var $tmp=this; 
+    if($tmp.boLoaded==0) return false;
+    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
-  $columnSorterDiv.setVis=function(){
-    if($columnSorterDiv.boLoaded==0) return false;
-    var $tmp=$columnSorterDiv.add($columnSorterFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $columnSorterDivC.setVis=
+  $columnSorterDivS.setVis=function(){
+    var $tmp=this;
+    if($tmp.boLoaded==0) return false;
+    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
-  $markSelectorDiv.setVis=function(){
-    if($markSelectorDiv.boLoaded==0) return false;
-    var $tmp=$markSelectorDiv.add($markSelectorFoot); $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $markSelectorDivC.setVis=
+  $markSelectorDivS.setVis=function(){
+    var $tmp=this;
+    if($tmp.boLoaded==0) return false;
+    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
-  $paymentListDiv.setVis=function(){
-    if($paymentListDiv.boLoaded==0) return false;
-    var $tmp=$paymentListDiv.add($paymentListFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
-    scalableTog(1);
-    return true;
-  }
-  $teamDiv.setVis=function(){
-    if($teamDiv.boLoaded==0) return false;
-    var $tmp=$teamDiv.add($teamFoot);  $mainDivsTogglable.not($tmp).hide(); $tmp.show();
+  $teamDivC.setVis=
+  $teamDivS.setVis=function(){
+    var $tmp=this;
+    if($tmp.boLoaded==0) return false;
+    $mainDivsTogglable.not($tmp).hide(); $tmp.show();
     scalableTog(1);
     return true;
   }
@@ -6436,29 +6147,7 @@ var setUp2=function(){
   //}
 
 
-
   $body.css({'text-align':'center'});
-  //$MainDiv.css({'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff'});
-  $MainDiv.css({'margin-left':'auto','margin-right':'auto'});
-  //$MainDiv.not($H1.add($footDiv)).css({'text-align':'left',background:'#fff'});
-  $mainDivsNonFixWidth=$([]);
-  if(!boTouch) {$mainDivsNonFixWidth.push($tableDiv, $paymentListDiv);}
-  $mainDivsFixWidth=$MainDiv.not($mainDivsNonFixWidth).css({'max-width':'800px'});
-  //$H1.add($footDiv).css({'width':'800px'});
-
-  $mainDivsNonFixWidth.css({display:'inline-block','text-align':'left'});
-  $tableDiv.children('table'); //.css({'margin-top':'1em'});
-  $mainDivsNonFixWidth.hide(); // Seems this line is needed because otherwise these divs will be visible untill first ajax returns
-
-  //if(!boTouch)
-  //$H1.css({background:'#ff0','text-align':'center'});
-  //$footDiv.css({background:'#ee8','text-align':'center',border:'1px solid'});
-
-
-  $body.css({display:"flex","flex-direction":"column"});
-  $MainDiv.css({width:"100%"}); //flex:"none",
-  $mapDiv.css({flex:"auto"});  // "overflow-y":"scroll", "-webkit-overflow-scrolling":"touch",
-
 
   $busyLarge.show();
 
@@ -6485,7 +6174,6 @@ var setUp2=function(){
     var latLng={lat:pos.coords.latitude, lng:pos.coords.longitude};
     if(typeof boApproxCalled!='undefined') { 
       $mapDiv.setCentNMe(latLng);
-      if(boMapGoogle){ $mapDiv.map.setOptions({center: latLng}); $mapDiv.curMarker.setPosition(latLng); }
     } else firstAJAXCall(latLng);
     
   }

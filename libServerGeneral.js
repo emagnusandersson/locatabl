@@ -12,6 +12,9 @@ parseCookies=function(req) {
 
 
 
+//
+// Neo4j
+//
 
 MyNeo4j=function(){
   var chars = ['\\"', '\\\'', '\\\\'],   tmpStr='[' +chars.join("") +']';  this.regEscape=new RegExp(tmpStr, 'g');
@@ -20,14 +23,16 @@ MyNeo4j=function(){
 MyNeo4j.prototype.escape=function(str){  return str.replace(this.regEscape,this.funEscape);    }
 
 
+//
+// Errors
+//
+
 ErrorClient=class extends Error {
   constructor(message) {
     super(message);
     this.name = 'ErrorClient';
   }
 }
-
-
 
 getETag=function(headers){var t=false, f='if-none-match'; if(f in headers) t=headers[f]; return t;}
 getRequesterTime=function(headers){if("if-modified-since" in headers) return new Date(headers["if-modified-since"]); else return false;}
@@ -121,34 +126,6 @@ cmdRedis=function*(flow, strCommand,arr){
   redisClient.send_command(strCommand,arr, function(err, valueT){  value=valueT; flow.next();  }); yield;
   return value;
 }
-
-/*
-getRedisStr=function*(flow, strVar){
-  var strTmp=yield* cmdRedis(flow, 'get', [strVar]);   return strTmp;
-}
-setRedisStr=function*(flow, strVar, val){
-  var strTmp=yield* cmdRedis(flow, 'set',[strVar,val]);
-}
-setexRedisStr=function*(flow, strVar, tExpire=maxUnactivity, val){
-  var strTmp=yield* cmdRedis(flow, 'setex',[strVar,tExpire,val]);
-}
-getRedisObj=function*(flow, strVar){
-  var strTmp=yield* cmdRedis(flow, 'get', [strVar]);   return JSON.parse(strTmp);
-}
-setRedisObj=function*(flow, strVar, val){
-  var strA=JSON.stringify(val),  strTmp=yield* cmdRedis(flow, 'set',[strVar,strA]);
-}
-setexRedisObj=function*(flow, strVar, tExpire=maxUnactivity, val){
-  var strA=JSON.stringify(val),  strTmp=yield* cmdRedis(flow, 'setex',[strVar,tExpire,strA]);
-}
-expireRedis=function*(flow, strVar, tExpire=maxUnactivity){
-  var tmp=yield* cmdRedis(flow, 'expire',[strVar,tExpire]);
-}
-delRedis=function*(flow, strVar){
-  var tmp=yield* cmdRedis(flow, 'del',[strVar]);
-}*/
-
-
 getRedis=function*(flow, strVar, boObj=false){
   var strTmp=yield* cmdRedis(flow, 'get', [strVar]);  if(boObj) return JSON.parse(strTmp); else return strTmp;
 }
@@ -200,36 +177,44 @@ end;\n\
 return c";
 
 
-
+CacheUriT=function(){
+  this.set=function*(flow, key, buf, type, boZip, boUglify){
+    var eTag=crypto.createHash('md5').update(buf).digest('hex'); 
+    //if(boUglify) {
+      //var {error, code}=UglifyJS.minify(buf); if(error) return [error]; // {fromString: true}
+      //buf=new Buffer(code,'utf8');
+    //}
+    if(boZip){
+      var bufI=buf;
+      var gzip = zlib.createGzip();
+      var err;
+      zlib.gzip(bufI, function(errT, bufT) { err=errT; buf=bufT; flow.next(); });  yield; if(err) return [err];
+    }
+    this[key]={buf:buf,type:type,eTag:eTag,boZip:boZip,boUglify:boUglify};
+    return [null];
+  }
+}
 
 var regFileType=RegExp('\\.([a-z0-9]+)$','i'),    regZip=RegExp('^(css|js|txt|html)$'),   regUglify=RegExp('^js$');
 readFileToCache=function*(flow, strFileName) {
   var type, Match=regFileType.exec(strFileName);    if(Match && Match.length>1) type=Match[1]; else type='txt';
   var boZip=regZip.test(type),  boUglify=regUglify.test(type);
   var err, buf;
-  fs.readFile(strFileName, function(errT, bufT) {  err=errT; buf=bufT;  flow.next();   });  yield;
-  if(!err) {    yield* CacheUri.set(flow, '/'+strFileName, buf, type, boZip, boUglify);    }
-  return err;
+  fs.readFile(strFileName, function(errT, bufT) {  err=errT; buf=bufT;  flow.next();   });  yield;  if(err) return [err];
+  var [err]=yield* CacheUri.set(flow, '/'+strFileName, buf, type, boZip, boUglify);
+  return [err];
 }
 
-CacheUriT=function(){
-  var self=this;
-  this.set=function*(flow, key, buf, type, boZip, boUglify){
-    var eTag=crypto.createHash('md5').update(buf).digest('hex'); 
-    //if(boUglify) {
-      //var objU; objU=UglifyJS.minify(bufO.toString(), {fromString: true});
-      //bufO=new Buffer(objU.code,'utf8');
-    //}
-    if(boZip){
-      var bufI=buf;
-      var gzip = zlib.createGzip();
-      var err;
-      zlib.gzip(bufI, function(errT, bufT) { err=errT; buf=bufT; flow.next(); });  yield; 
-      if(err){  console.log(err);  process.exit(); return;}
+makeWatchCB=function(strFolder, StrFile) {
+  return function(ev,filename){
+    if(StrFile.indexOf(filename)!=-1){
+      var strFileName=path.normalize(strFolder+'/'+filename)
+      console.log(filename+' changed: '+ev);
+      var flow=( function*(){ 
+        var [err]=yield* readFileToCache(flow, strFileName); if(err) console.error(err);
+      })(); flow.next();
     }
-    self[key]={buf:buf,type:type,eTag:eTag,boZip:boZip,boUglify:boUglify};
   }
-  
 }
 
 isRedirAppropriate=function(req){

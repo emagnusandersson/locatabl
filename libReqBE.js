@@ -99,7 +99,7 @@
    //libReqBE->go, libReq->reqPubKeyStore  --->  libReqBE->go
    
 //req.sessionID+'_UserInfoFrDB'
-   //libReqBE->go, loginGetGraph, setupById, VDelete  --->  libReqBE->go
+   //libReqBE->go, loginGetGraph, setupById, UDelete  --->  libReqBE->go
 //req.sessionID+'_LoginIdP'
    //libReqBE->loginGetGraph  --->  libReqBE->go
 //req.sessionID+'_LoginIdUser'  (idUser)
@@ -124,14 +124,13 @@
 //BE calls that need to transfer idUser to  setupById
 //BE calls that precede setupById
 //deleteImage
-//SUseRebateCode (payDiv)
-//VUpdate (vendorSettingDiv, priceSettingDiv)
-//VHide (quickDiv)
-//VIntroCB (vendorIntroDiv)
+//RUpdate (roleSettingDiv)
+//RHide (quickDiv)
+//RIntroCB (sellerIntroDiv)
 //RIntroCB (complainerIntroDiv)
 //UUpdate (userSettingDiv)
 //loginGetGraph (userSettingDiv, convertIDDiv, complaintCommentButt, moreDiv)
-//VUpdate (convertIDDiv, uploadPosNLoadTabStart)
+//RUpdate (convertIDDiv, uploadPosNLoadTabStart)
 //complaintUpdateComment (complaintCommentPop)
 //(nothing really) (loadTabStart, firstAJAXCall, teamDiv)
 
@@ -195,7 +194,6 @@ ReqBE.prototype.mesEO=function(e){
 ReqBE.prototype.go=function*(){
   var req=this.req, flow=req.flow, res=this.res, site=req.site;
    
-
     // Extract input data either 'POST' or 'GET'
   var jsonInput;
   if(req.method=='POST'){ 
@@ -209,7 +207,7 @@ ReqBE.prototype.go=function*(){
       if(err){this.mesEO(err);  return; } 
       
       this.File=files['fileToUpload[]'];
-      if('kind' in fields) this.kind=fields.kind; else this.kind='v';
+      if('kind' in fields) this.kind=fields.kind; else this.kind='s';
       if(!(this.File instanceof Array)) this.File=[this.File];
       jsonInput=fields.vec;
 
@@ -254,9 +252,9 @@ ReqBE.prototype.go=function*(){
   var arrCSRF, arrNoCSRF, allowed, boCheckCSRF, boSetNewCSRF;
   if(caller=='index'){
       // Arrays of functions
-    arrCSRF=['UUpdate','VIntroCB','RIntroCB','VSetPosCond','VUpdate','VShow','VHide','VDelete','SUseRebateCode','teamLoad','teamSaveName','teamSave','rebateCodeCreate','adminMonitorClear',
+    arrCSRF=['UUpdate','RIntroCB','VSetPosCond','RUpdate','RShow','RHide','UDelete','teamLoad','teamSaveName','teamSave',
     'complaintUpdateComment','complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
-    arrNoCSRF=['setupById','setUpCond','setUp','getList','getGroupList','getHist','VPaymentList','adminNVendor','complaintOneGet','complaintVGet','complaintRGet','logout','getSetting'];  // ,'testA','testB'
+    arrNoCSRF=['setupById','setUpCond','setUp','getList','getGroupList','getHist','complaintOneGet','getComplaintsOnComplainee','getComplaintsFromComplainer','logout','getSetting'];  // ,'testA','testB'
     allowed=arrCSRF.concat(arrNoCSRF);
 
       // Assign boCheckCSRF and boSetNewCSRF
@@ -326,7 +324,7 @@ ReqBE.prototype.go=function*(){
  * sendLoginLink  and loginWEmail
  ******************************************************************************/
 
-ReqBE.prototype.sendLoginLink=function*(inObj){ 
+ReqBE.prototype.sendLoginLink=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, userTab=site.TableName.userTab;
 
   var expirationTime=20*60;
@@ -369,7 +367,7 @@ ReqBE.prototype.loginWEmail=function*(inObj){
   for(var i=0; i<StrRequired.length; i++){      var tmp=StrRequired[i]; if(!(tmp in inObj)) { return [new ErrorClient('The parameter: '+tmp+' is required')]; }     }
   
 
-  Sql.push("SELECT idUser, password FROM "+userTab+" WHERE email=?");
+  Sql.push("SELECT idUser, hashPW AS password FROM "+userTab+" WHERE email=?");
   Val.push(inObj.email);
 
   var sql=Sql.join('\n');
@@ -485,7 +483,7 @@ ReqBE.prototype.changePW=function*(inObj){
   var passwordNew=inObj.passwordNew;
 
   var Sql=[], Val=[];
-  //Sql.push("UPDATE "+userTab+" SET password=? WHERE password=? AND idUser=?;");
+  //Sql.push("UPDATE "+userTab+" SET hashPW=? WHERE hashPW=? AND idUser=?;");
   //Val.push(inObj.password, inObj.passwordOld, idUser);
   Sql.push("START TRANSACTION;");
   Sql.push("CALL "+siteName+"setPassword(?,?,?);"); Val.push(idUser, passwordOld, passwordNew);
@@ -536,11 +534,10 @@ ReqBE.prototype.verifyEmail=function*(inObj){
   this.mes('Email sent');
   Ou.boOK=1;
   return [null, [Ou]];
-
 }
 
 
-ReqBE.prototype.verifyPWReset=function*(inObj){ 
+ReqBE.prototype.verifyPWReset=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
   var userTab=site.TableName.userTab;
   var Ou={boOK:0};
@@ -632,7 +629,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
 
   var idFB, idIdPlace, idOpenId;
   if(strIP=='fb'){ 
-    if(!objGraph.verified) { var tmp="Your facebook account is not verified. Try search internet for  \"How to verify facebook account\".";   return [new ErrorClient(tmp)];  }
+    //if(!objGraph.verified) { var tmp="Your facebook account is not verified. Try search internet for  \"How to verify facebook account\".";   return [new ErrorClient(tmp)];  }
     var idFB=objGraph.id, email=objGraph.email, nameIP=objGraph.name, image=objGraph.picture.data.url;
   }else if(strIP=='google'){
     var idGoogle=objGraph.id, email=objGraph.email, nameIP=objGraph.name.givenName+' '+objGraph.name.familyName, image=objGraph.image.url;
@@ -649,34 +646,36 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   
   var [err,con]=yield*mysqlGetConnection(flow, this.pool);  if(err) return [err];   this.con=con;
   var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
-  if(['vendorFun', 'complainerFun', 'teamFun', 'adminFun', 'refreshFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
+  if(['userFun', 'complainerFun', 'customerFun', 'sellerFun', 'teamFun', 'adminFun', 'refetchFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
     var [err, result]=yield *this[strFun](inObj);  if(err) return [err];
   }
   if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
   return [null, [Ou]];
 }
 
-ReqBE.prototype.complainerFun=function*(){
+ReqBE.prototype.userFun=
+ReqBE.prototype.complainerFun=
+ReqBE.prototype.customerFun=
+ReqBE.prototype.sellerFun=function*(){
   var Ou={};
-  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMerge.call(this, objT); if(err) return [err];
   return [null, Ou];
 }
-ReqBE.prototype.vendorFun=function*(){
+ReqBE.prototype.teamFun=function*(inObj){
+  var req=this.req, flow=req.flow, site=req.site, {userTab, customerTeamTab, sellerTeamTab}=site.TableName;
   var Ou={};
-  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
-  return [null, Ou];
-}
-ReqBE.prototype.teamFun=function*(){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, teamTab}=site.TableName;
-  var Ou={};
-  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMerge.call(this, objT); if(err) return [err];
   
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
   ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
   
-  Sql.push("INSERT INTO "+teamTab+" (idUser,created) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
+  if(inObj.strRole=='customer'){
+    Sql.push("INSERT INTO "+customerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
+  }else{
+    Sql.push("INSERT INTO "+sellerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
+  }
   var sql=Sql.join('\n');
   var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
   //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -685,22 +684,22 @@ ReqBE.prototype.teamFun=function*(){
 ReqBE.prototype.adminFun=function*(){
   var req=this.req, flow=req.flow, site=req.site, {userTab, adminTab}=site.TableName;
   var Ou={};
-  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeTwo.call(this, objT); if(err) return [err];
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMerge.call(this, objT); if(err) return [err];
   
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
   ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
-  Sql.push("INSERT INTO "+adminTab+" VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
+  Sql.push("INSERT INTO "+adminTab+" VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
   var sql=Sql.join('\n');
   var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
   //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.refetchFun=function*(){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, teamTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, {userTab}=site.TableName;
   var Ou={};
-  var objT=this.sessionLoginIdP, [err, results]=yield* accountMergeThree.call(this, objT); if(err) return [err];
+  var objT=this.sessionLoginIdP, [err, results]=yield* accountMerge.call(this, objT); if(err) return [err];
   
   var idUser=this.sessionUserInfoFrDB.user.idUser;
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
@@ -714,36 +713,38 @@ ReqBE.prototype.refetchFun=function*(){
 
 
 
-ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against the vendor-table and return diverse data
+ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against the seller-table and return diverse data
 "use strict"
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Ou={};
   
   var StrRole=null; if(inObj && typeof inObj=='object' && 'Role' in inObj) StrRole=inObj.Role;
   
-  var StrRoleAll=['vendor','team','admin','complainer'];
+  var StrRoleAll=['customer', 'seller','customerTeam','sellerTeam','admin','complainer','complainee'];
   if(typeof StrRole=='undefined' || !StrRole) StrRole=StrRoleAll; 
   if(typeof StrRole=='string') StrRole=[StrRole];
-
+  var BoTest={};
+  for(var i=0;i<StrRoleAll.length;i++) { var strRole=StrRoleAll[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
+  
   var userInfoFrDBUpd={};
   
   var idUser=this.sessionUserInfoFrDB.user.idUser||null;
   var {idFB, idIdPlace, idOpenId}=this.sessionLoginIdP;
   if(!idUser) { idUser=yield* getRedis(flow, req.sessionID+'_LoginIdUser'); }
-  var BoTest={};
-  for(var i=0;i<StrRoleAll.length;i++) { var strRole=StrRoleAll[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
-  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.vendor, BoTest.team, BoTest.admin, BoTest.complainer];
-  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, @OboOK, @Omess);");
+  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.customer, BoTest.seller, BoTest.customerTeam, BoTest.sellerTeam, BoTest.admin, BoTest.complainer, BoTest.complainee];
+  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
   var sql=Sql.join('\n');
   
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var res=results[0], c=res.length; 
   if(c==1) {
     userInfoFrDBUpd.user=res[0];
-    var res=results[1], c=res.length; if(BoTest.vendor) userInfoFrDBUpd.vendor=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.vendor=='object') extend(userInfoFrDBUpd.vendor,userInfoFrDBU);
-    var res=results[2]; if(BoTest.vendor && res.length && 'n' in res[0]  &&  userInfoFrDBUpd.vendor) userInfoFrDBUpd.vendor.nPayment=res[0].n;  
-    var res=results[3], c=res.length; if(BoTest.team) userInfoFrDBUpd.team=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.team=='object') extend(userInfoFrDBUpd.team,userInfoFrDBU);
-    var res=results[4], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0; //if(typeof userInfoFrDBUpd.admin=='object') extend(userInfoFrDBUpd.admin,userInfoFrDBU);
-    var res=results[5]; if(BoTest.complainer ) {   var  c=res[0].n;  userInfoFrDBUpd.complainer=c?{idUser:userInfoFrDBUpd.user.idUser, c:c}:0;    }
+    var res=results[1], c=res.length; if(BoTest.customer) userInfoFrDBUpd.customer=c==1?res[0]:0;
+    var res=results[2], c=res.length; if(BoTest.seller) userInfoFrDBUpd.seller=c==1?res[0]:0;
+    var res=results[3], c=res.length; if(BoTest.customerTeam) userInfoFrDBUpd.customerTeam=c==1?res[0]:0;
+    var res=results[4], c=res.length; if(BoTest.sellerTeam) userInfoFrDBUpd.sellerTeam=c==1?res[0]:0;
+    var res=results[5], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0;
+    var n=results[6][0].n;   if(BoTest.complainer) userInfoFrDBUpd.complainer=n?{idUser:userInfoFrDBUpd.user.idUser, n:n}:0; 
+    var n=results[7][0].n;   if(BoTest.complainee) userInfoFrDBUpd.complainee=n?{idUser:userInfoFrDBUpd.user.idUser, n:n}:0;  
   } else extend(userInfoFrDBUpd, specialistDefault);
   
   extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
@@ -752,19 +753,23 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   return [null, [Ou]];
 }
 
-
-
 ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, Ou={};
- 
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for vendors as well as any visitor) 
-  var {idUser,coordinatePrecisionM}=vendor;
+  var req=this.req, flow=req.flow, site=req.site, Ou={}, {customerTab, sellerTab}=site.TableName;
+  var {user, customer, seller}=this.sessionUserInfoFrDB; if(!customer && !seller) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for sellers as well as any visitor) 
   var {x,y}=inObj;
   var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
-  var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
-
-  var sql="UPDATE "+site.TableName.vendorTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  if(seller){
+    var {idUser,coordinatePrecisionM}=seller;
+    var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
+    var sql="UPDATE "+sellerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
+    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  }
+  if(customer){
+    var {idUser,coordinatePrecisionM}=customer;
+    var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
+    var sql="UPDATE "+customerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
+    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  }
   return [null, [Ou]];
 }
 
@@ -776,56 +781,64 @@ ReqBE.prototype.logout=function*(inObj){
   this.mes('Logged out'); return [null, [Ou]];
 }
 
-
-
 ReqBE.prototype.setUpCond=function*(inObj){
-  var site=this.req.site, req=this.req, flow=req.flow, StrOrderFilt=site.StrOrderFilt, Prop=site.Prop;
-  var Ou={};
-  var tmp=setUpCond(site.KeySel, StrOrderFilt, Prop, inObj);
-  copySome(this,tmp,['strCol', 'Where']);
+  var site=this.req.site, req=this.req, flow=req.flow, [oC, oS]=site.ORole;
+  if(typeof inObj.CharRole!='string') return [new ErrorClient("typeof inObj.CharRole!='string'")];
+  if(inObj.CharRole.length>2) return [new ErrorClient("inObj.CharRole.length>2")];
+    // Check CharRole input
+  var oFound={}
+  for(var i=0;i<inObj.CharRole.length;i++){
+    var charRole=inObj.CharRole[i];
+    if("cs".indexOf(charRole)==-1) return [new ErrorClient('"cs".indexOf(charRole)==-1')];
+    if(charRole in oFound) return [new ErrorClient("charRole in oFound")];
+    oFound[charRole]=1;
+  }
+  this.CharRole=inObj.CharRole;
+  this.OFilt=inObj.OFilt;
+  
+  var Ou={};  this.OQueryPart=[];
+  for(var i=0;i<this.CharRole.length;i++){
+    var charRole=this.CharRole[i],  oR=charRole=='c'?oC:oS,  oFilt=inObj.OFilt[i];
+    this.OQueryPart[i]=setUpCond(oR, oFilt);
+  }
   return [null, [Ou]];
-}
-
-
-ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize, pC, zoom, boShowDummy).
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, vendorTab}=site.TableName;
+} 
+ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize, pC, zoom).
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, customerTab, sellerTab}=site.TableName;
   
   var Ou={},  Sql=[];
   Sql.push("SELECT UNIX_TIMESTAMP(now()) AS now;");
 
-  
-  var zoom=Number(inObj.zoom), boCalcZoom=zoom==-1?1:0; 
+  //var zoom=Number(inObj.zoom), boCalcZoom=zoom==-1; 
+  var zoom=Number(inObj.zoom), boCalcZoom=!('zoom' in inObj);
   this.VPSize=inObj.VPSize;  
   this.pC=inObj.pC; var xC=Number(this.pC.x), yC=Number(this.pC.y), wVP=Number(this.VPSize[0]), hVP=Number(this.VPSize[1]); 
   //Sql.push("SET @xC="+xC+"; SET @yC="+yC+"; SET @wVP="+wVP+"; SET @hVP="+hVP+";
   
-
-  //sql="UPDATE "+vendorTab+" SET boShow=0, posTime=now() WHERE boShow=1 AND now()>DATE_ADD(posTime, INTERVAL hideTimer SECOND)";
+  //sql="UPDATE "+sellerTab+" SET boShow=0, tPos=now() WHERE boShow=1 AND now()>DATE_ADD(tPos, INTERVAL hideTimer SECOND)";
   Sql.push("CALL "+siteName+"IFunPoll;"); 
 
   if(boCalcZoom){  
-      // If too few vehicles are visible then show the dummies
-    var whereDummyFilter="!(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL";
-    Sql.push("SELECT (@boShowDummy:=count(u.idUser)<1) AS boShowDummy FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE boShow=1 AND ("+whereDummyFilter+");");
-    Sql.push("SELECT count(u.idUser) AS nUserReal FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser  WHERE  "+whereDummyFilter+";");
-    if(typeof buDbgShowDummies=='undefined') Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=0, posTime=now() WHERE idOpenId REGEXP '^Dummy';"); 
-    else Sql.push("UPDATE "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser SET boShow=@boShowDummy, posTime=now() WHERE idOpenId REGEXP '^Dummy';");   
-
-    
-    //strCond=array_filter(Where).join(' AND '); if(strCond.length>0) strCond='AND '+strCond;
-    var WhereTmp=this.Where.concat("boShow=1"),  strCond=array_filter(WhereTmp).join(' AND ');
+    Sql.push("SELECT count(u.idUser) AS nCustomerReal FROM "+userTab+" u JOIN "+customerTab+" ro ON u.idUser=ro.idUser;");
+    Sql.push("SELECT count(u.idUser) AS nSellerReal FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
+ 
+    var WhereTmpC=this.OQueryPart[0].Where.concat("boShow=1", sqlBeforeHiding),  strCondC=array_filter(WhereTmpC).join(' AND ');
+    var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", sqlBeforeHiding),  strCondS=array_filter(WhereTmpS).join(' AND ');
     
     var xOpp, xAddTerm; if(xC>128) {xOpp=xC-128; xAddTerm="IF(x<"+xOpp+",256,0)";}  else {xOpp=xC+128;  xAddTerm="IF(x>"+xOpp+",-256,0)"; } // xOpp : x of opposite side of planet
     var tmp="min(greatest(abs(x+"+xAddTerm+"-"+xC+"),abs(y-"+yC+")))";
-    Sql.push("SELECT "+tmp+" AS distMin FROM "+vendorTab+" v WHERE "+strCond+";");
+    Sql.push("SELECT "+tmp+" AS distMin FROM "+customerTab+" ro WHERE "+strCondC+";");
+    Sql.push("SELECT "+tmp+" AS distMin FROM "+sellerTab+" ro WHERE "+strCondS+";");
   }
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   this.GRet.curTime=results[0][0].now; 
   if(boCalcZoom){
-    this.GRet.boShowDummy=results[2][0].boShowDummy;
-    this.GRet.nUserReal=results[3][0].nUserReal||0; 
-    var distMin=results[5][0].distMin; 
+    this.GRet.nCustomerReal=results[2][0].nCustomerReal||0; 
+    this.GRet.nSellerReal=results[3][0].nSellerReal||0; 
+    var distMinC=results[4][0].distMin,   distMinS=results[5][0].distMin;
+    if(distMinC===null) distMinC=intMax;  if(distMinS===null) distMinS=intMax;
+    var distMin=Math.min(distMinC,distMinS);  
     var minVP=Math.min(wVP,hVP);    
     if(distMin>0.001){
       var zFac=minVP/distMin;
@@ -835,84 +848,115 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
     } else zoom=4; //zoom=15;
   }
   this.zoom=zoom;
+  Ou.zoom=zoom;
   return [null, [Ou]];
-}  
+} 
 
 //ReqBE.prototype.addMapCond=function*(inObj){}
 
+
 ReqBE.prototype.getList=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, vendorTab, teamTab, complaintTab, complaintTab}=site.TableName;
-  var strCol=this.strCol;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, customerTab, customerTeamTab, complaintTab}=site.TableName;
+
   var Ou={};
-  this.tab=[];this.NVendor=[0,0];
   var xl,xh,yl,yh;
   if(this.zoom>1){
     var projs=new MercatorProjection();
-    //var sw, ne, tmp=projs.getBounds(inObj.pC,this.zoom,inObj.VPSize);   sw=tmp[0]; ne=tmp[1];  xl=sw[0]; xh=ne[0]; yl=ne[1]; yh=sw[1];
     var {sw, ne}=projs.getBounds(this.pC,this.zoom,this.VPSize); xl=sw.x; xh=ne.x; yl=ne.y; yh=sw.y;
   }  else {xl=0; xh=256; yl=0; yh=256;}
   if(xh-xl>256) {xl=0; xh=256;}
   [xl]=normalizeAng(xl,128,256);   [xh]=normalizeAng(xh,128,256);
   this.whereMap="y>"+yl+" AND y<"+yh+" AND "; if(xl<xh) this.whereMap+="x>"+xl+" AND x<"+xh; else this.whereMap+="(x>"+xl+" OR x<"+xh+")";
-  //this.WhereM=this.Where.concat(whereMap);
   
   var Sql=[];
-  var WhereTmp=this.Where.concat(this.whereMap,"boShow=1"),  strCond=array_filter(WhereTmp).join(' AND ');
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM (("+vendorTab+" v NATURAL JOIN "+userTab+" u) LEFT JOIN "+teamTab+" tea on tea.idUser=v.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idVendor=v.idUser \
-WHERE "+strCond+" GROUP BY v.idUser ORDER BY posTime DESC LIMIT 0, "+maxVendor+";");
+  for(var i=0;i<this.CharRole.length;i++){
+    var charRole=this.CharRole[i];
+    var roleTab=charRole=='c'?customerTab:sellerTab;
+    var roleTeamTab=charRole=='c'?customerTeamTab:sellerTeamTab;
+    
+    var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", sqlBeforeHiding),  strCond=array_filter(WhereTmp).join(' AND ');
+    var strColT=this.OQueryPart[i].strCol;
+//Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM (("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idComplainee=ro.idUser WHERE "+strCond+" GROUP BY ro.idUser ORDER BY tPos DESC LIMIT 0, "+maxList+";");
+    Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM ("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam  WHERE "+strCond+" LIMIT 0, "+maxList+";"); // ORDER BY tPos DESC GROUP BY ro.idUser
+    Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
 
-  Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
-
-  var WhereTmp=[this.whereMap,"boShow=1"],  strCond=array_filter(WhereTmp).join(' AND ');
-  Sql.push("SELECT count(*) AS n FROM "+vendorTab+" v WHERE "+strCond+";"); // nUnFiltered
- 
+    var WhereTmp=[this.whereMap, "boShow=1", sqlBeforeHiding],  strCond=array_filter(WhereTmp).join(' AND ');
+    Sql.push("SELECT count(*) AS n FROM "+roleTab+" ro WHERE "+strCond+";"); // nUnFiltered
+  }
+  
+  
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var nFound=results[1][0].n;
-  this.boUseOrdinaryList=nFound<=maxVendor;
-  if(this.boUseOrdinaryList){
-    for(var i=0;i<results[0].length;i++) {
-      var row=results[0][i], len=site.KeySel.length; 
-      var rowN=Array(len); //for(var j=0;j<len;j++) { rowN[j]=row[j];}
-      for(var j=0;j<len;j++){ var key=site.KeySel[j]; rowN[j]=row[key]; }
-      this.tab.push(rowN);
-    }      
-  } 
-  this.Str.push("Found: "+nFound);  
-  this.NVendor=[nFound, results[2][0].n];
+
+  Ou.NTotNFilt=[]; Ou.arrList=[]; this.BoUseList=[];
+  for(var i=0;i<this.CharRole.length;i++){
+    var nFound=results[3*i+1][0].n;
+    this.BoUseList[i]=nFound<=maxList;
+    var tmp=[]; if(this.BoUseList[i]){ tmp=results[3*i]; } Ou.arrList[i]=arrObj2TabNStrCol(tmp);
+    //var tmp=this.CharRole[i]=='c'?'Customers':'Sellers';  this.mes(tmp+": "+nFound);
+    Ou.NTotNFilt[i]=[nFound, results[3*i+2][0].n];
+  }
+  //copySome(Ou, this, ['arrGroup']);
   return [null, [Ou]];
-}
+} 
+
+
 
 ReqBE.prototype.getGroupList=function*(inObj){  
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var vendorTab=site.TableName.vendorTab;
-  var Ou={};
-  this.groupTab=[];
-  if(this.boUseOrdinaryList) {return [null, [Ou]];}
-  var Sql=[];
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, customerTab, sellerTab}=site.TableName;
+  
   //var zoomFac=Math.pow(2,this.zoom-4.3);
   var zoomFac=Math.pow(2,this.zoom-5);
-  var WhereTmp=this.Where.concat([this.whereMap, "boShow=1"]),  strCond=array_filter(WhereTmp).join(' AND ');
-  Sql.push("SELECT round(x*"+zoomFac+")/"+zoomFac+" AS roundX, round(y*"+zoomFac+")/"+zoomFac+" AS roundY, count(*) AS n FROM "+vendorTab+" v \
-                 WHERE "+strCond+" GROUP BY roundX, roundY;");
+  
+  var Ou={}, Sql=[];
+  for(var i=0;i<this.CharRole.length;i++){
+    if(!this.BoUseList[i]){
+      var charRole=this.CharRole[i];
+      var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", sqlBeforeHiding]),  strCond=array_filter(WhereTmp).join(' AND ');
+      var roleTab=charRole=='c'?customerTab:sellerTab;
+      //var strTableRef=roleTab+' ro';
+      var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
+      Sql.push("SELECT round(x*"+zoomFac+")/"+zoomFac+" AS roundX, round(y*"+zoomFac+")/"+zoomFac+" AS roundY, count(*) AS n FROM "+strTableRef+" WHERE "+strCond+" GROUP BY roundX, roundY;");
+    } else Sql.push("SELECT 1 FROM DUAL;");
+  }
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  for(var i=0;i<results.length;i++) {var {roundX,roundY,n}=results[i]; this.groupTab.push([roundX,roundY,n]); }
+  
+  //if(!(results instanceof Array)) results=[results];
+  if(this.CharRole.length==1) results=[results];
+  Ou.arrGroup=[];
+  for(var i=0;i<this.CharRole.length;i++){
+    //if(!this.BoUseList[i])  Ou.arrGroup[i]=arrObj2TabNStrCol(results[i]);
+    //else Ou.arrGroup[i]=[];
+    var tmp=[]; if(!this.BoUseList[i]) tmp=results[i];  Ou.arrGroup[i]=arrObj2TabNStrCol(tmp);
+  }
   return [null, [Ou]];
-}
+} 
+
 
 ReqBE.prototype.getHist=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, vendorTab=site.TableName.vendorTab;
-  var Ou={}
-  var arg={strTableRef:vendorTab+' v', Ou:Ou, WhereExtra:[this.whereMap, "boShow=1"]};  // , strTableRefCount:vendorTab+' v'
-  copySome(arg, site, ['Prop','StrOrderFilt']);
-  copySome(arg, this, ['Where']); arg.strDBPrefix=site.siteName;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, customerTab, sellerTab}=site.TableName;
+  var Ou={arrHist:[]};
+  for(var i=0;i<this.CharRole.length;i++){
+    var charRole=this.CharRole[i], charRoleUC=charRole.toUpperCase();
+    var roleTab=charRole=='c'?customerTab:sellerTab;
+    
+    
+    var strTableRef=roleTab+' ro';
+    var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
+    
+    var arg={strTableRef:strTableRef, WhereExtra:[this.whereMap, "boShow=1", sqlBeforeHiding]};  //, Ou:Ou
+    arg.Filt=this.OFilt[i];
+    arg.oRole=site['o'+charRoleUC];
+    arg.Where=this.OQueryPart[i].Where;
+    arg.strDBPrefix=site.siteName;
 
-  var [err, Hist]=yield* getHist(flow, this.pool, arg); if(err) return [err];
-  Ou.Hist=Hist; copySome(Ou, this,['zoom', 'tab', 'NVendor', 'groupTab']);
+    var [err, Hist]=yield* getHist(flow, this.pool, arg); if(err) return [err];
+    Ou.arrHist[i]=Hist;
+  }
+
   return [null, [Ou]];
 }
-
 
 /*********************************************************************************************
  * User-function
@@ -926,8 +970,8 @@ ReqBE.prototype.UUpdate=function*(inObj){  // writing needSession
   var idUser=user.idUser;
   
   var Sql=[], Val=[];
-  Val.push(inObj.email, idUser);
-  Sql.push("UPDATE "+userTab+" SET email=? WHERE idUser=?;");
+  Val.push(inObj.displayName, idUser);
+  Sql.push("UPDATE "+userTab+" SET displayName=? WHERE idUser=?;");
   
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -938,91 +982,7 @@ ReqBE.prototype.UUpdate=function*(inObj){  // writing needSession
 }
 
 
-/*********************************************************************************************
- * Vendor-functions
- *********************************************************************************************/
-
-ReqBE.prototype.VIntroCB=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Prop=site.Prop, {userTab, vendorTab}=site.TableName;
-  var Ou={}; 
-  var objT=this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
-  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
-
-  if(inObj.email) email=inObj.email;
-  
-    // An entry in userTab may exist (if the user is a complainer). However an entry in vendorTab is something one can assume does not exist.
-  var Sql=[], Val=[];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
-  Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
-  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image,   email, nameIP, image);
-  Sql.push("INSERT INTO "+vendorTab+" (idUser,created, lastPriceChange, posTime, tLastWriteOfTA, histActive) VALUES (@idUser, now(), now(), now(), now(), 1 ) ON DUPLICATE KEY UPDATE idUser=idUser;");
-  //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
-  Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
-
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
-  
-  var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var c=results[0].affectedRows; if(c!=1) return [new Error(c+" userTab rows affected")];
-  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
-  
-  var boIns=site.boGotNewVendors=Number(results[3][0].boInserted);
-  site.nUser=Number(results[4][0].n);
-  var  tmpMes='Data '+(boIns?'inserted':'updated'); this.mes(tmpMes);
-  return [null, [Ou]];
-}
-
-ReqBE.prototype.VUpdate=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Prop=site.Prop, {userTab, vendorTab}=site.TableName;
-  //var VendorUpdF=site.VendorUpdF;
-  var Ou={}; 
-  var user=this.sessionUserInfoFrDB.user, objT;
-  if(user) objT=user;  else if(this.sessionLoginIdP) objT=this.sessionLoginIdP;  else {this.mes('No session'); return [null, [Ou]]; }
-  var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objT; 
-  if(typeof idUser=='undefined') {return [new Error('no idUser')];}
-
-  var objVar=extend({},inObj);
-  
-  var boPrice='boPrice' in objVar; if(boPrice) delete objVar.boPrice;
-  //var boInsert='boInsert' in objVar; if(boInsert) delete objVar.boInsert;
-  if('image' in objVar) delete objVar.image;
-    
-  var arrK=[], arrVal=[], arrUpdQM=[];
-  for(var name in objVar){
-    if(site.arrAllowed.indexOf(name)==-1) {return [new Error('Forbidden input')];}
-    arrK.push(name);
-    var value=objVar[name]; if(typeof value!='number') {value=this.pool.escape(value);  value=value.slice(1, -1); }
-    var QMark='?';
-    //if(name in VendorUpdF) { var tmp=VendorUpdF[name].call(site.Enum,name,value);  QMark=tmp[0]; value=tmp[1]; }
-    if('vendorUpdF' in Prop[name]) { var tmp=Prop[name].vendorUpdF.call(Prop,name,value);  QMark=tmp[0]; value=tmp[1]; }
-
-    objVar[name]=value;
-    arrVal.push(value);
-    //QMark=QMark.replace(/\?/,value); 
-    arrUpdQM.push("`"+name+"`="+QMark);
-  }
-  var strCol=arrK.join(', ');
-  var strUpdQM=arrUpdQM.join(', ');
-    
-  var Sql=[], Val=[];
-
-  var strTeamTmp='';     if('idTeamWanted' in objVar) {    var idTmp=Number(objVar.idTeamWanted);    strTeamTmp=", idTeamWanted="+idTmp+", idTeam= IF(idTeam="+idTmp+",idTeam,0)";      }
-  var strPriceTmp='';  if(boPrice) strPriceTmp=', lastPriceChange=now()';
-  var tmp=strUpdQM+" "+strPriceTmp+" "+strTeamTmp;
-  if(tmp.length>2) {
-    Sql.push("UPDATE "+vendorTab+" SET "+tmp+" WHERE idUser=?;");
-    Val=Val.concat(arrVal); Val.push(idUser);
-  }
-
-  var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  this.mes('Data updated');      
-  return [null, [Ou]];
-}
-
-
-
-ReqBE.prototype.VDelete=function*(inObj){  // writing needSession
+ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site;
   var userTab=site.TableName.userTab;
   var Ou={};
@@ -1035,116 +995,170 @@ ReqBE.prototype.VDelete=function*(inObj){  // writing needSession
   this.sessionUserInfoFrDB=extend({}, specialistDefault);    yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
   extend(this.GRet.userInfoFrDBUpd, specialistDefault); 
 
-  Sql.push("SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;");
+  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  site.boGotNewVendors=1; // variabel should be called boNUsers changed or something..
+  site.boGotNewSellers=1; // variabel should be called boNUsers changed or something..
   site.nUser=Number(results[1][0].n);
   this.mes('deleted');      
   return [null, [Ou]];
 }
 
 
-ReqBE.prototype.VShow=function*(inObj){  // writing needSession
+/*********************************************************************************************
+ * Role-functions
+ *********************************************************************************************/
+
+ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
+  var req=this.req, flow=req.flow, site=req.site, {userTab, customerTab, sellerTab}=site.TableName, [oC, oS]=site.ORole;
+  var Ou={}; 
+  var objT=this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
+  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
+
+  //if(inObj.email) email=inObj.email;
+  var {tel, displayName, currency, charRole, boIdIPImage}=inObj;
+  var boImgOwn=1-Number(boIdIPImage);
+  
+  
+  var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  var roleTab=charRole=='c'?customerTab:sellerTab;
+  var oRole=charRole=='c'?oC:oS;
+  
+  
+    // An entry in userTab may exist (if the user is a complainer). However an entry in roleTab is something one can assume does not exist.
+  var Sql=[], Val=[];
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW, displayName, boImgOwn) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
+  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn,   email, nameIP, image);
+  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  Val.push(tel, currency);
+  //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
+  Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
+
+  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+  
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var c=results[0].affectedRows; if(c>1) return [new Error(c+" userTab rows affected")];
+  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  
+  var boIns=site.boGotNewSellers=Number(results[3][0].boInserted);
+  site.nUser=Number(results[4][0].n);
+  var  tmpMes='Data '+(boIns?'inserted':'updated'); this.mes(tmpMes);
+  return [null, [Ou]];
+}
+
+
+ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
+  var req=this.req, flow=req.flow, site=req.site, [oC, oS]=site.ORole, {userTab, customerTab, sellerTab}=site.TableName;
+  var Ou={}; 
+
+  var user=this.sessionUserInfoFrDB.user, objT;
+  if(user) objT=user;  else if(this.sessionLoginIdP) objT=this.sessionLoginIdP;  else {this.mes('No session'); return [null, [Ou]]; }
+  var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objT; 
+  if(typeof idUser=='undefined') {return [new Error('no idUser')];}
+  
+  var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  var roleTab=charRole=='c'?customerTab:sellerTab;
+  var oRole=charRole=='c'?oC:oS;
+
+  var objVar=extend({},inObj); delete objVar.charRole;
+  
+  //var boInsert='boInsert' in objVar; if(boInsert) delete objVar.boInsert;
+  if('image' in objVar) delete objVar.image;
+  
+  //var boPrice='boPrice' in objVar; if(boPrice) delete objVar.boPrice;
+  //var boPrice=intersectBool(['currency', 'price', 'priceStart', 'pricePerDist', 'pricePerHour', 'fixedPricePerUnit','fixedPricePerUnitUnit'], Object.keys(objVar));
+  
+    // Create SqlPriceComp, ValPriceComp 
+  var arrPriceAllowed=['currency', 'price', 'priceStart', 'pricePerDist', 'pricePerHour', 'fixedPricePerUnit','fixedPricePerUnitUnit'];
+  var arrPriceT=[], ValPriceComp=[];
+  for(var name in objVar){
+    if(arrPriceAllowed.indexOf(name)!=-1) {arrPriceT.push(name+"!=?"); ValPriceComp.push(objVar[name]);}
+  }
+  var SqlPriceComp=[]; if(arrPriceT.length) SqlPriceComp.push("tLastPriceChange= IF("+arrPriceT.join(' OR ')+",now(),tLastPriceChange)");
+  
+    // Create SqlVar, ValVar 
+  var SqlVar=[], ValVar=[];
+  for(var name in objVar){
+    if(oRole.arrAllowed.indexOf(name)==-1) {return [new ErrorClient('Forbidden input')];}
+    var strQ='?', value=objVar[name];
+    if('roleUpdF' in oRole.Prop[name]) { var [strQ,value]=oRole.Prop[name].roleUpdF.call(oRole.Prop, name, value);  }
+
+    objVar[name]=value;
+    SqlVar.push("`"+name+"`="+strQ);
+    ValVar.push(value);
+  }
+ 
+    // Create SqlTeam, ValTeam 
+  var SqlTeam=[], ValTeam=[];   if('idTeamWanted' in objVar) {    SqlTeam.push("idTeamWanted=?", "idTeam= IF(idTeam=?,idTeam,0)");  ValTeam.push(objVar.idTeamWanted, objVar.idTeamWanted);     }
+
+  var SqlUpd=[].concat(SqlPriceComp, SqlTeam, SqlVar);
+  var ValUpd=[].concat(ValPriceComp, ValTeam, ValVar);
+  
+    // Create Sql, Val 
+  var Sql=[], Val=[];
+  if(SqlUpd.length) {
+    var tmp=SqlUpd.join(', ').trim();
+    Sql.push("UPDATE "+roleTab+" SET "+tmp+" WHERE idUser=?;");
+    Val=Val.concat(ValUpd, idUser);
+  }
+
+  var sql=Sql.join('\n');
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  this.mes('Data updated');      
+  return [null, [Ou]];
+}
+
+ReqBE.prototype.RShow=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var vendorTab=site.TableName.vendorTab;
+  var {customerTab, sellerTab}=site.TableName;
   var Ou={};
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
-  var {idUser,coordinatePrecisionM}=vendor;
+  var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  var {user, customer, seller}=this.sessionUserInfoFrDB; if(!user || (!customer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var roleTab=charRole=='c'?customerTab:sellerTab;
+  var role=charRole=='c'?customer:seller;
+  
+  var roleTabAlt=charRole=='c'?sellerTab:customerTab;
+  
+  var {idUser,coordinatePrecisionM}=role;
   var {x,y}=inObj;
   var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
   var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
 
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne("+idUser+");"); 
-  Sql.push("UPDATE "+vendorTab+" SET x=?, y=?, boShow=1, posTime=now(), histActive=histActive|1 WHERE idUser="+idUser+";");
-  Val=[xtmp,ytmp];
+  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
+  Sql.push("UPDATE "+roleTab+" SET x=?, y=?, boShow=1, tPos=now(), histActive=histActive|1 WHERE idUser=?;");
+  Sql.push("UPDATE "+roleTabAlt+" SET boShow=0, tPos=0, histActive=histActive|1 WHERE idUser=?;");
+  Val=[idUser,xtmp,ytmp,idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  this.mes('Vendor visible');      
+  var strTmp=charRole=='c'?'Customer':'Seller';   this.mes(strTmp+' visible');    
   return [null, [Ou]];
 }
-ReqBE.prototype.VHide=function*(inObj){  // writing needSession
+ReqBE.prototype.RHide=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var vendorTab=site.TableName.vendorTab;
+  var {customerTab, sellerTab}=site.TableName;
   var Ou={};
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
-  var idUser=user.idUser; 
+  var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  var {user, customer, seller}=this.sessionUserInfoFrDB; if(!user || (!customer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var idUser=user.idUser;
+  var roleTab=charRole=='c'?customerTab:sellerTab;
 
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne("+idUser+");"); 
-  Sql.push("UPDATE "+vendorTab+" SET boShow=0, posTime=0, histActive=histActive|1 WHERE idUser="+idUser+";");
+  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
+  Sql.push("UPDATE "+roleTab+" SET boShow=0, tPos=0, histActive=histActive|1 WHERE idUser=?;");
+  Val=[idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  this.mes('Vendor hidden');      
+  var strTmp=charRole=='c'?'Customer':'Seller';   this.mes(strTmp+' hidden');      
   return [null, [Ou]];
 }
 
 
-
-ReqBE.prototype.SUseRebateCode=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, {vendorTab, rebateCodeTab}=site.TableName;
-  var Ou={};
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
-  var idUser=user.idUser; 
-  
-  var Sql=[], Val=[];
-  var code=this.pool.escape(inObj.rebateCode);
-  Sql.push("CALL "+siteName+"UseRebateCode("+code+", "+idUser+", @monthsToAdd, @boOK, @mess);");
-  Sql.push("SELECT @monthsToAdd AS monthsToAdd, @boOK AS boOK, @mess AS mess;");
-  var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var monthsToAdd=results[1][0].monthsToAdd, boOK=results[1][0].boOK, mess=results[1][0].mess;
-  if(!boOK) this.mes(mess);
-  else {
-    if(monthsToAdd!=intMax) tmpStr=monthsToAdd+" months added "; else tmpStr='Free account';     this.mes(tmpStr);
-  }
-  return [null, [Ou]];
-}
-
-
-
-ReqBE.prototype.VPaymentList=function*(inObj){ // needSession
-  var req=this.req, flow=req.flow, site=req.site;
-  var paymentTab=site.TableName.paymentTab;
-  var Ou={};
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou,'errFunc']];}
-  var idUser=user.idUser; 
-
-  var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
-  var Sql=[], Val=[];
-  var strCol="txn_id, payer_email, amount, currency, tax, VATNumber, monthsToAdd, UNIX_TIMESTAMP(payment_date) AS payment_date, UNIX_TIMESTAMP(created) AS created";
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM "+paymentTab+" WHERE idUser="+idUser+" ORDER BY paymentNumber ASC LIMIT "+offset+", "+rowCount+";"); 
-
-  Sql.push("SELECT FOUND_ROWS() AS n;");
-  var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var Ou=arrObj2TabNStrCol(results[0]);
-  Ou.nCur=results[0].length;
-  Ou.nTot=results[1][0].n;
-  return [null, [Ou]];
-}
-
-
-ReqBE.prototype.adminNVendor=function*(inObj){ 
-  var req=this.req, flow=req.flow, site=req.site, vendorTab=site.TableName.vendorTab;
-  var sql="SELECT count(*) AS n FROM "+vendorTab, Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  var Ou={}; Ou.n=results[0].n;
-  return [null, [Ou]];
-}
-ReqBE.prototype.adminMonitorClear=function*(inObj){ 
-  var req=this.req, flow=req.flow, site=req.site;
-  var userTab=site.TableName.userTab;
-  var Ou={};
-  var {user, admin}=this.sessionUserInfoFrDB; if(!user || !admin) { this.mes('No session'); return [null, [Ou,'errFunc']];}
-  if(!admin.boApproved) { this.mes('Not approved'); return [null, [Ou,'errFunc']]; }
-  var sql="SELECT count(*) AS n FROM "+userTab+" WHERE !(idOpenId REGEXP '^Dummy') OR idOpenID IS NULL;", Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  Ou.n=results[0].n;
-  return [null, [Ou]];
-}
-
+//
+// Complaints
+//
 
 ReqBE.prototype.complaintUpdateComment=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
@@ -1154,29 +1168,37 @@ ReqBE.prototype.complaintUpdateComment=function*(inObj){
   var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
 
 
-  var idVendor=inObj.idVendor;
+  var idComplainee=inObj.idComplainee;
   var comment=inObj.comment;  comment=comment.substr(0,10000);
   if(comment.length==0) comment=null;
 
   var Sql=[], Val=[];
-  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image,   email, nameIP, image);
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, password) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image, nameIP,   email, nameIP, image);
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW, displayName) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ? ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  
+  Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Sql.push("SELECT @idComplainer:=LAST_INSERT_ID() AS idUser;");
   
-  Sql.push("INSERT INTO "+complaintTab+" (idVendor,idComplainer,comment,created) VALUES (?,@idComplainer,?,now()) ON DUPLICATE KEY UPDATE comment=?, modified=now();");
-  Val.push(idVendor,comment,comment);
-  Sql.push("DELETE FROM "+complaintTab+" WHERE comment IS NULL AND answer IS NULL;");
-  Sql.push("SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=@idComplainer;"); 
+  //Sql.push("INSERT INTO "+complaintTab+" (idComplainee,idComplainer,comment,tCreated) VALUES (?,@idComplainer,?,now()) ON DUPLICATE KEY UPDATE comment=?, tCommentModified=now();");
+  //Val.push(idComplainee,comment,comment);
+  //Sql.push("DELETE FROM "+complaintTab+" WHERE comment IS NULL AND answer IS NULL;");
+  //Sql.push("SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=@idComplainer;"); 
+  
+  
+  Val.push(idComplainee,comment);
+  Sql.push("CALL "+siteName+"UpdateComplaint(?, @idComplainer, ?);");
+  
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var StrMes=[];
   
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
-  var c=results[2].affectedRows; if(c==1) StrMes.push("Entry inserted"); else if(c==2) StrMes.push("Entry updated");
-  var c=results[3].affectedRows; if(c==1) StrMes.push("Entry deleted"); else if(c>1) StrMes.push(c+" entries deleted");
-  var n=results[4][0].n; if(n==0) StrMes.push("No comments remaining");
+  //var c=results[2].affectedRows; if(c==1) StrMes.push("Entry inserted"); else if(c==2) StrMes.push("Entry updated");
+  //var c=results[3].affectedRows; if(c==1) StrMes.push("Entry deleted"); else if(c>1) StrMes.push(c+" entries deleted");
+  //var n=results[4][0].n; if(n==0) StrMes.push("No comments remaining");
 
+  var mess=results[2][0].mess; StrMes.push(mess);
   
   var mestmp=StrMes.join(', ');
   this.mes(mestmp);
@@ -1184,24 +1206,29 @@ ReqBE.prototype.complaintUpdateComment=function*(inObj){
   return [null, [Ou]];
 }
 ReqBE.prototype.complaintUpdateAnswer=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
   var complaintTab=site.TableName.complaintTab;
   var Ou={};
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
+  var {user, seller}=this.sessionUserInfoFrDB; if(!user || !seller) { this.mes('No session'); return [null, [Ou]];}
 
   var idComplainer=inObj.idComplainer;
-  var idVendor=user.idUser;
+  var idComplainee=user.idUser;
   var answer=inObj.answer;  answer=answer.substr(0,10000);
   if(answer.length==0) answer=null;
   var Sql=[], Val=[];
-  Sql.push("UPDATE "+complaintTab+" SET answer=? WHERE idVendor=? AND idComplainer=?;");
-  Val.push(answer,idVendor,idComplainer);
-  Sql.push("DELETE FROM "+complaintTab+" WHERE  comment IS NULL AND answer IS NULL;");
+  //Sql.push("UPDATE "+complaintTab+" SET answer=? WHERE idComplainee=? AND idComplainer=?;");
+  //Val.push(answer,idComplainee,idComplainer);
+  //Sql.push("DELETE FROM "+complaintTab+" WHERE  comment IS NULL AND answer IS NULL;");
+  
+  Val.push(idComplainee, idComplainer, answer);
+  Sql.push("CALL "+siteName+"UpdateAnswer(?, ?, ?);");
   var sql=Sql.join('\n');
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var StrMes=[];
-  var c=results[0].affectedRows; if(c==1) StrMes.push("Entry updated"); else if(c>1) StrMes.push(c+" entries updated");
-  var c=results[1].affectedRows; if(c==1) StrMes.push("Entry deleted"); else if(c>1) StrMes.push(c+" entries deleted");
+  //var c=results[0].affectedRows; if(c==1) StrMes.push("Entry updated"); else if(c>1) StrMes.push(c+" entries updated");
+  //var c=results[1].affectedRows; if(c==1) StrMes.push("Entry deleted"); else if(c>1) StrMes.push(c+" entries deleted");
+  
+  var mess=results[0][0].mess; StrMes.push(mess);
   var mestmp=StrMes.join(', ');
   this.mes(mestmp);
   return [null, [Ou]];
@@ -1211,13 +1238,13 @@ ReqBE.prototype.complaintOneGet=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, {userTab, complaintTab}=site.TableName;
   var Ou={};   
   //debugger
-  var {user, vendor, complainer}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
-  var idComplainer, idVendor;
+  var {user, seller, complainer}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var idComplainer, idComplainee;
   if('idComplainer' in inObj) idComplainer=inObj.idComplainer;  else if(complainer) idComplainer=complainer.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
-  if('idVendor' in inObj) idVendor=inObj.idVendor; else if(vendor) idVendor=vendor.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
+  if('idComplainee' in inObj) idComplainee=inObj.idComplainee; else if(seller) idComplainee=seller.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   
-  var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+complaintTab+" r ON u.idUser=r.idVendor WHERE idVendor=? AND idComplainer=? "; 
-  var Val=[idVendor,idComplainer];
+  var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainee=? AND idComplainer=? "; 
+  var Val=[idComplainee,idComplainer];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var c=results.length; 
   var mestmp; if(c>0){ Ou.row=results[0]; mestmp="Feedback fetched"; }else{ Ou.row={}; mestmp="No existing feedback";}
@@ -1225,17 +1252,15 @@ ReqBE.prototype.complaintOneGet=function*(inObj){
   return [null, [Ou]];
 }
 
-
-
-ReqBE.prototype.complaintVGet=function*(inObj){
+ReqBE.prototype.getComplaintsOnComplainee=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, {userTab, complaintTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
   
-  var idVendor=inObj.idVendor;
+  var idComplainee=inObj.idComplainee;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS idComplainer, nameIP, image, comment, answer, UNIX_TIMESTAMP(created) AS created FROM "+complaintTab+" r JOIN "+userTab+" u ON r.idComplainer=u.idUser WHERE idVendor=? ORDER BY created DESC LIMIT "+offset+","+rowCount+";"); 
-  Val.push(idVendor);
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS idComplainer, IF(boImgOwn,'',image) AS image, displayName, boImgOwn, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+complaintTab+" co JOIN "+userTab+" u ON co.idComplainer=u.idUser WHERE idComplainee=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
+  Val.push(idComplainee);
   Sql.push("SELECT FOUND_ROWS() AS n;");
   var sql=Sql.join("\n ");
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
@@ -1244,14 +1269,14 @@ ReqBE.prototype.complaintVGet=function*(inObj){
   Ou.nTot=results[1][0].n;
   return [null, [Ou]];
 }
-ReqBE.prototype.complaintRGet=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, vendorTab, complaintTab}=site.TableName;
+ReqBE.prototype.getComplaintsFromComplainer=function*(inObj){
+  var req=this.req, flow=req.flow, site=req.site, {userTab, sellerTab, complaintTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
 
   var idComplainer=inObj.idComplainer;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser, idFB, idIdPlace, idOpenId, image, displayName, boImgOwn, imTag, comment, answer, UNIX_TIMESTAMP(r.created) AS created FROM "+userTab+" u JOIN "+vendorTab+" v ON u.idUser=v.idUser JOIN "+complaintTab+" r ON u.idUser=r.idVendor WHERE idComplainer=? ORDER BY r.created DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser AS idUser, IF(boImgOwn,'',image) AS image, displayName, boImgOwn, imTag, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainer=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
   Val.push(idComplainer); 
   Sql.push("SELECT FOUND_ROWS() AS n;"); 
   var sql=Sql.join("\n ");
@@ -1264,50 +1289,62 @@ ReqBE.prototype.complaintRGet=function*(inObj){
 }
 
 
+//
+// Team
+//
 
 ReqBE.prototype.teamSaveName=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site;
-  var teamTab=site.TableName.teamTab;
   var Ou={};
-  var {user, team}=this.sessionUserInfoFrDB; if(!user || !team) { this.mes('No session'); return [null, [Ou]];}
-  var {idUser, boApproved}=team; if(!boApproved){this.mes('Team not approved'); return [null, [Ou]];}
+  var strRole=inObj.strRole; if(strRole!='customer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
+  var roleTeamTab=site.TableName[strRole+'TeamTab'];
 
-  var link=this.pool.escape(inObj.link);  
-  var sql="UPDATE "+teamTab+" SET link=? WHERE idUser=?;", Val=[link, idUser];
+  var {user}=this.sessionUserInfoFrDB, roleTeam=this.sessionUserInfoFrDB[strRole+'Team'];
+  if(!user || !roleTeam) { this.mes('No session'); return [null, [Ou]];}
+  var {idUser, boApproved}=roleTeam; if(!boApproved){this.mes('Team not approved'); return [null, [Ou]];}
+  
+  var sql="UPDATE "+roleTeamTab+" SET link=? WHERE idUser=?;", Val=[inObj.link, idUser];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   this.mes('Data saved');
   return [null, [Ou]];
 }
 ReqBE.prototype.teamSave=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site;
-  var vendorTab=site.TableName.vendorTab;
   var Ou={};
-  var {user, team}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
-  if(!team.boApproved){ this.mes('Team not approved'); return [null, [Ou]];}
+  var strRole=inObj.strRole; if(strRole!='customer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
+  var roleTab=site.TableName[strRole+'Tab'];
+  
+  var {user}=this.sessionUserInfoFrDB, roleTeam=this.sessionUserInfoFrDB[strRole+'Team'];
+  if(!user || !roleTeam) { this.mes('No session'); return [null, [Ou]];}
+  if(!roleTeam.boApproved){ this.mes('Team not approved'); return [null, [Ou]];}
   
   var idUser=Number(inObj.idUser),   boOn=Number(inObj.boOn); 
-  var sql="UPDATE "+vendorTab+" SET idTeam=IF(?,idTeamWanted,0) WHERE idUser=?;", Val=[boOn,idUser];
+  var sql="UPDATE "+roleTab+" SET idTeam=IF(?,idTeamWanted,0) WHERE idUser=?;", Val=[boOn,idUser];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   this.mes('Data saved');
   return [null, [Ou]];
 }
 
 ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, {userTab, vendorTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, {userTab}=site.TableName;
   var Ou={};
-  var {user, team}=this.sessionUserInfoFrDB; if(!user || !team) { this.mes('No session'); return [null, [Ou]];}
-  var {idUser, boApproved, imTag, link}=team;  if(boApproved==0){ this.mes('Team not approved'); return [null, [Ou]];}
+  var strRole=inObj.strRole; if(strRole!='customer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
+  var roleTab=site.TableName[strRole+'Tab'];
   
-  copySome(Ou, team, ['idUser', 'imTag', 'link']);
+  var {user}=this.sessionUserInfoFrDB, roleTeam=this.sessionUserInfoFrDB[strRole+'Team'];
+  if(!user || !roleTeam) { this.mes('No session'); return [null, [Ou]];}
+  var {idUser, boApproved, imTag, link}=roleTeam;  if(boApproved==0){ this.mes('Team not approved'); return [null, [Ou]];}
+  
+  copySome(Ou, roleTeam, ['idUser', 'imTag', 'link']);
 
   var TmpCol=['u.idUser', 'idFB', 'idIdPlace', 'idOpenId', 'displayName', 'idTeam', 'imTag'];
   for(var i=0;i<TmpCol.length;i++){TmpCol[i]+=" AS '"+i+"'";} 
   var strCol=TmpCol.join(', ');
-  var sql="SELECT "+strCol+" FROM "+vendorTab+" v JOIN "+userTab+" u ON v.idUser=u.idUser WHERE idTeamWanted=?";
+  var sql="SELECT "+strCol+" FROM "+roleTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE idTeamWanted=?";
   var Val=[idUser];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var nRow=results.length;
-  if(nRow==0) { this.mes('No vendors connected');  }
+  if(nRow==0) { this.mes('No '+strRole+'s connected');  }
   else{
     Ou.tab=[];
     for(var i=0;i<nRow;i++) {
@@ -1321,14 +1358,14 @@ ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
 
 
 ReqBE.prototype.deleteImage=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, {vendorTab, vendorImageTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, userImageTab}=site.TableName;
   var Ou={};
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
+  var {user, seller}=this.sessionUserInfoFrDB; if(!user || !seller) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
 
   var Sql=[];
-  Sql.push("DELETE FROM "+vendorImageTab+" WHERE idUser="+idUser+";");
-  Sql.push("UPDATE "+vendorTab+" SET boImgOwn=0 WHERE idUser="+idUser+";");
+  Sql.push("DELETE FROM "+userImageTab+" WHERE idUser="+idUser+";");
+  Sql.push("UPDATE "+userTab+" SET boImgOwn=0 WHERE idUser="+idUser+";");
   var sql=Sql.join("\n "), Val=[];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var nDel=results[0].affectedRows; 
@@ -1339,16 +1376,15 @@ ReqBE.prototype.deleteImage=function*(inObj){
 
 ReqBE.prototype.pubKeyStore=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
-  //var pubKeyTab=site.TableName.pubKeyTab;
-  var {vendorTab}=site.TableName;
+  var {userTab}=site.TableName;
   var Ou={};
-  var {user, vendor}=this.sessionUserInfoFrDB; if(!user || !vendor) { this.mes('No session'); return [null, [Ou]];}
+  var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   //var idUser=user.idUser, pubKey=inObj.pubKey;
-  //var sql="INSERT INTO "+pubKeyTab+" (idUser,pubKey) VALUES (?, ?) ON DUPLICATE KEY UPDATE pubKey=VALUES(pubKey), iSeq=0",  Val=[inObj.idUser,  inObj.pubKey];
-  var sql="UPDATE "+vendorTab+" SET pubKey=?, iSeq=0 WHERE idUser=?",   Val=[inObj.pubKey,  inObj.idUser];
+  var sql="UPDATE "+userTab+" SET pubKey=?, iSeq=0 WHERE idUser=?",   Val=[inObj.pubKey,  user.idUser];
   var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
-  if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="(same key)";}
+  //if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
+  if(nUpd==1) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
   Ou.boOK=boOK;    Ou.strMess=mestmp;
   return [null, [Ou]];
 }
@@ -1376,49 +1412,12 @@ ReqBE.prototype.setSetting=function*(inObj){
   return [null, [Ou]];    
 }
 
-  // obsolete
-ReqBE.prototype.getDBSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, site=req.site;
-  var settingTab=site.TableName.settingTab;
-  var Ou={};
-  if(!isAWithinB(inObj,['boShowTeam'])) {this.mes('Illegal invariable'); return [null, [Ou]];}
-  var strV=inObj.join("', '");
-  var sql="SELECT * FROM "+settingTab+" WHERE name IN('"+strV+"')";
-  var Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  for(var i=0; i<results.length;i++){ var tmp=results[i]; Ou[tmp.name]=tmp.value;  }
-  return [null, [Ou]];
-}
-
-  // obsolete
-ReqBE.prototype.setDBSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, site=req.site;
-  var settingTab=site.TableName.settingTab;
-  var Ou={};
-  var Str=[];
-  if(this.sessionUserInfoFrDB.admin) Str=['boShowTeam','boGotNewVendors','nUser'];  
-  var Key=Object.keys(inObj);
-  if(!isAWithinB(Key, Str)) { this.mes('Illegal invariable'); return [null, [Ou]];}
-
-  var Sql=[], sqlA="INSERT INTO "+settingTab+" (name,value) VALUES (?,?) ON DUPLICATE KEY UPDATE value=?";
-  for(var name in inObj){
-    var value=inObj[name];
-    Sql.push(sqlA); Val.push(name,value,value);
-    Ou[name]=value;
-  }
-  var sql=Sql.join("\n ");
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
-  for(var name in inObj){
-    var value=inObj[name];        Ou[name]=value;
-  }
-  return [null, [Ou]];
-}
-
 
 
 
 ReqBE.prototype.uploadImage=function*(inObj){
-  var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {vendorTab, teamTab, teamImageTab, vendorImageTab}=site.TableName;
+  var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
+  var {userTab, sellerTeamTab, sellerTeamImageTab, customerTeamTab, customerTeamImageTab, userImageTab}=site.TableName;
   var Ou={};
   var regImg=RegExp("^(png|jpeg|jpg|gif|svg)$");
 
@@ -1426,8 +1425,8 @@ ReqBE.prototype.uploadImage=function*(inObj){
   var n=File.length; this.mes("nFile: "+n);
 
   var file=File[0], tmpname=file.path, fileName=file.name; 
-  var Match=RegExp('\\.(\\w{1,3})$').exec(fileName); 
-  if(!Match){ Ou.strMessage="The file name should have a three or four letter extension, ex: \".xxx\""; return [null, [Ou]]; }
+  var Match=RegExp('\\.(\\w{1,4})$').exec(fileName); 
+  if(!Match){ Ou.strMessage="The file name should have a three or four letter extension, ex: \".jpg\""; return [null, [Ou]]; }
   var type=Match[1].toLowerCase();
   var err, buf;  fs.readFile(tmpname, function(errT, bufT) { err=errT; buf=bufT;  flow.next();  }); yield;  if(err) return [err];
   var data=buf; 
@@ -1446,20 +1445,33 @@ ReqBE.prototype.uploadImage=function*(inObj){
   if(!semCB) { semY=1; yield;}
   if(err) return [err];
 
-  //var kind=this.kind||'v';
-  var boTeam=this.kind=='t';
+  var {user, customer, seller, customerTeam, sellerTeam}=this.sessionUserInfoFrDB;
+  
+  var kind=this.kind;
+  if(kind=='u'){
+    if(!customer && !seller) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=this.sessionUserInfoFrDB.user.idUser, tab=userImageTab;
+  }
+  else if(kind=='c'){
+    if(!customerTeam) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=this.sessionUserInfoFrDB.customerTeam.idUser, tab=customerTeamImageTab;
+  }
+  else if(kind=='s'){
+    if(!sellerTeam) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=this.sessionUserInfoFrDB.sellerTeam.idUser, tab=sellerTeamImageTab;
+  }
+  else return [new ErrorClient("kind="+kind)];
 
-  var {user, vendor, team}=this.sessionUserInfoFrDB; if(!user || !vendor || (boTeam && !team)) { this.mes('No session'); return [null, [Ou]];}
-  var strKind=boTeam?'team':'vendor', idUser=this.sessionUserInfoFrDB[strKind].idUser;
-  
+
+
   console.log('uploadImage data.length: '+data.length);
-  if(data.length==0) {  return [new Error('data.length==0')]; }
+  if(data.length==0) return [new Error('data.length==0')];
   
-  var tab; if(boTeam) tab=teamImageTab; else tab=vendorImageTab;
   var Sql=[], Val=[];
   Sql.push("REPLACE INTO "+tab+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
-  if(boTeam){     Sql.push("UPDATE "+teamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
-  else {    Sql.push("UPDATE "+vendorTab+" SET boImgOwn=1,imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser);    }
+  if(kind=='u') {    Sql.push("UPDATE "+userTab+" SET boImgOwn=1,imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser);    }
+  else if(kind=='c'){     Sql.push("UPDATE "+customerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
+  else if(kind=='s'){     Sql.push("UPDATE "+sellerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
   
   //var sql='INSERT INTO imgTab SET ?';
   var sql=Sql.join('\n');

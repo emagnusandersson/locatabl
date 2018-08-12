@@ -1,8 +1,4 @@
 
-
-
-
-
 /*
 var rangeExtendSel=function($el,Filt,Hist,vBoHasRem,StrOrderFilt,iFeat, changeFunc){  
       // filt: 'B/BF'-features: [vOffNames,vOnNames, boWhite],     'S'-features: [iOn,iOff]
@@ -292,7 +288,7 @@ var rowButtExtend=function($el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, iFeat
   $el.createCont=function(){
     var len=Prop[strName].feat.n; if(typeof len=='undefined') len=maxGroupsInFeat+1;
     //if(strName in $el) {var tmpObj=$el[strName]; setRowButtF=('setRowButtF' in tmpObj)?tmpObj.setRowButtF:null, crRowButtF=('crRowButtF' in tmpObj)?tmpObj.crRowButtF:null; }
-    var tmpObj=(strName in Prop)?Prop[strName]:emptyObj; 
+    var tmpObj=(strName in Prop)?Prop[strName]:{}; 
     setRowButtF=('setRowButtF' in tmpObj)?tmpObj.setRowButtF:null; crRowButtF=('crRowButtF' in tmpObj)?tmpObj.crRowButtF:null; 
     for(var i=0;i<len;i++){
       var $staple=$('<span>').css({width:10,display:'inline-block',position:'relative',bottom:'-1px'}); 
@@ -410,13 +406,24 @@ Filt=function(Prop, StrOrderFilt){
   return el;
 }
 Filt.tmpPrototype={};
-Filt.tmpPrototype.filtClear=function(){
+Filt.tmpPrototype.filtAll=function(){
 "use strict"
   var el=this;
   for(var i=0;i<el.nFeat;i++){  
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;
     if(kind[0]=='S') {el[i][0]=0; el[i][1]=len; }
     else if(kind[0]=='B') {   var tmp; if(kind=='BF') tmp=stepN(0,len); else tmp=[];      el[i][0]=[]; el[i][1]=tmp; el[i][2]=0;    }
+  }
+}
+Filt.tmpPrototype.filtNone=function(){
+"use strict"
+  var el=this;
+  for(var i=0;i<el.nFeat;i++){  
+    var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;
+    if(kind[0]=='S') {
+      if(kind[1]=='1') el[i][0]=len; else el[i][1]=0;
+    }
+    else if(kind[0]=='B') {   var tmp; if(kind=='BF') tmp=stepN(0,len); else tmp=[];      el[i][0]=tmp; el[i][1]=[]; el[i][2]=1;    }
   }
 }
 Filt.tmpPrototype.filtDefault=function(){   
@@ -450,9 +457,19 @@ Hist.tmpPrototype.histClear=function(){  var el=this;  for(var i=0;i<el.nFeat;i+
       
       // TODO  variables starting with v should have it removed (v is for 'vector'). (My new naming conversion uses a capital letter to denote arrays.)
 
-FilterDivProt={};
-FilterDivProt.update=function(){  var $el=this; for(var i=0;i<$el.nFeat;i++){ $el.arrFeat[i].update();}  } 
-FilterDivProt.createDivs=function(){
+FilterDivI=function(oRole, changeFunc){ 
+  var $el=$('<div>'); $.extend($el, FilterDivI.tmpPrototype);
+  //$el.oRole=oRole;
+  $el.changeFunc=changeFunc;
+  copySome($el, oRole, ['Prop', 'Label', 'helpBub']);
+  copySome($el, oRole.filter, ['StrProp', 'StrGroupFirst', 'StrGroup']);
+  $el.StrOrderFilt=oRole.filter.StrProp;
+  return $el;
+}
+
+FilterDivI.tmpPrototype={};
+FilterDivI.tmpPrototype.update=function(){  var $el=this; for(var i=0;i<$el.nFeat;i++){ $el.arrFeat[i].update();}  } 
+FilterDivI.tmpPrototype.createDivs=function(){
 "use strict"
   var $el=this;
   $el.nFeat=$el.StrOrderFilt.length;
@@ -462,14 +479,13 @@ FilterDivProt.createDivs=function(){
   $el.Filt=new Filt($el.Prop, $el.StrOrderFilt);  $el.Filt.filtDefault();
   $el.Hist=new Hist($el.nFeat);
 
-  $el.helpBub=$.extend({},helpBub); if(typeof $el.Unit=='undefined') $el.Unit={};
+  $el.helpBub=$.extend({},$el.helpBub); if(typeof $el.Unit=='undefined') $el.Unit={};
       
   var boRangeControlOK=0;
   //if(typeof rangeExtend!='undefined') boRangeControlOK=boImgCreationOK;
   boRangeControlOK=1;
   var rangeExtender; if(boRangeControlOK) rangeExtender=rangeExtend; else rangeExtender=rangeExtendSel;
-
-
+  
   for(var i=0;i<$el.nFeat;i++){
     var $p, $h='', $imgH='';
     var strName=$el.StrOrderFilt[i];
@@ -478,7 +494,6 @@ FilterDivProt.createDivs=function(){
     if(strName in $el.helpBub){ $imgH=$imgHelp.clone().css({'vertical-align':'top'});  popupHoverJQ($imgH,$el.helpBub[strName]);    }   
     var strUnit=''; if(strName in $el.Unit) strUnit=' ['+$el.Unit[strName]+']';
     if($el.Prop[strName].feat.kind[0]=='B') { 
-      //$h=$('<div>').append($el.arrLabel[strName],strUnit,': ',$imgH); //.css({'margin':'0.3em 0em 0em'})
       $h=$('<div>').append(calcLabel($el.Label,strName),strUnit,': ',$imgH); //.css({'margin':'0.3em 0em 0em'})
       $p=$('<p>').css({'padding':'0.3em 0em 0em','font-size': '85%'}); 
       rowButtExtend($p, $el.Prop, $el.Filt, $el.Hist, $el.BoHasRem, $el.StrOrderFilt, i, $el.changeFunc);  $p.createCont();
@@ -495,8 +510,8 @@ FilterDivProt.createDivs=function(){
     
     var $hr=$('<hr>').css({clear:'both','margin':'1em 0em 0em'});
     if(!boRangeControlOK) $hr.css({'margin':'0em 0em'});
-    //$divT.append($h,$p,$hr); $el.$divCont.append($divT);
-    $divT.append($h,$p); $el.$divCont.append($divT);
+    //$divT.append($h,$p,$hr); $el.append($divT);
+    $divT.append($h,$p); $el.append($divT);
 
     if('span' in $el.Prop[strName].feat ){ 
       $divT.css({display:'inline-block', 'padding': '0 0.6em 0 0.6em','margin-right':'0.2em'}); //,'border-width':'0 1px 1px 0', 'border-style':'solid'
@@ -509,10 +524,10 @@ FilterDivProt.createDivs=function(){
 
   for(var i=0;i<$el.StrGroup.length;i++){
     var $h=$('<div>').append(langHtml[$el.StrGroup[i]],':').css({'font-size':'130%','font-weight':'bold', 'margin-top':'1em'});
-    $el.$divCont.find('div[name='+$el.StrGroupFirst[i]+']').before($h);
+    $el.find('div[name='+$el.StrGroupFirst[i]+']').before($h);
   }
 }
-FilterDivProt.interpretHistPHP=function(HistPHP){
+FilterDivI.tmpPrototype.interpretHistPHP=function(HistPHP){
 "use strict"
   var $el=this;
   for(var i=0;i<$el.nFeat;i++) { 
@@ -541,19 +556,19 @@ FilterDivProt.interpretHistPHP=function(HistPHP){
     }
   } 
 }
-FilterDivProt.gatherFiltData=function(){
+FilterDivI.tmpPrototype.gatherFiltData=function(){
 "use strict"
   var $el=this;
   var Filt=$el.Filt;
-  var o={Filt:[]};
+  var FiltOut={};
   for(var i=0;i<Filt.length;i++){
     var strName=$el.StrOrderFilt[i];
     var filtT; if($el.Prop[strName].feat.kind[0]=='B'){ var vSpec=Filt[i][Filt[i][2]];  filtT=[vSpec,Filt[i][2]];} else filtT=Filt[i];
-    o.Filt.push(filtT);
+    FiltOut[strName]=filtT;
   }
-  return o;
+  return FiltOut;
 }
-FilterDivProt.toStored=function(){
+FilterDivI.tmpPrototype.toStored=function(){
 "use strict"
   var $el=this;
   var Filt=$el.Filt;
@@ -563,7 +578,7 @@ FilterDivProt.toStored=function(){
   }
   return FiltS;
 }
-FilterDivProt.frStored=function(o){
+FilterDivI.tmpPrototype.frStored=function(o){
 "use strict"
   var $el=this;
   var Filt=$el.Filt, FiltS=o.Filt;
