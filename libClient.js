@@ -57,103 +57,6 @@ detectIE=function() {
 }
 
 
-//
-// JQuery extentions
-//
-$.fn.pop = function(){
-  var top = this.get(-1);
-  this.splice(this.length-1,1);
-  return top;
-};
-$.fn.shift = function(){
-  var bottom = this.get(0);
-  this.splice(0,1);
-  return bottom;
-};
-$.fn.pushOne = function(selector){
-    Array.prototype.push.apply(this, $.makeArray($(selector)));
-    return this;
-};
-$.fn.push = function(){
-  for(var i=0; i<arguments.length; i++){
-    this.pushOne(arguments[i]);
-  }
-  return this;
-}
-$.fn.visible = function() {    return this.css('visibility', 'visible');  };
-$.fn.invisible = function() {    return this.css('visibility', 'hidden');  };
-$.fn.visibilityToggle = function() {
-    if(arguments.length) return this.css('visibility', arguments[0]?'visible':'hidden');
-    return this.css('visibility', function(i, visibility) {
-        return (visibility == 'visible') ? 'hidden' : 'visible';
-    });
-};
-$.fn.sortElements = (function(){
- 
-    var funcSort = [].sort;
-    //var funcSort=merge_sort;
-    var funcSort = [].msort;
- 
-    return function(comparator, getSortable){
- 
-        getSortable = getSortable || function(){return this;};
- 
-        var placements = this.map(function(){   // A vector of functions, each function asumes that its 'this' will be the moved object, which will then be moved to the corresponding 'flagNode'
- 
-            var sortElement = getSortable.call(this),
-                parentNode = sortElement.parentNode,
- 
-                // Since the element itself will change position, we have
-                // to have some way of storing it's original position in
-                // the DOM. The easiest way is to have a 'flag' node:
-                flagNode = parentNode.insertBefore(
-                    document.createTextNode(''),
-                    sortElement.nextSibling
-                );
- 
-            return function(){
- 
-                if (parentNode === this){
-                    throw new Error(
-                        "You can't sort elements if any one is a descendant of another."
-                    );
-                }
- 
-                // Insert before flag:
-                parentNode.insertBefore(this, flagNode);
-                // Remove flag:
-                parentNode.removeChild(flagNode);
- 
-            };
- 
-        });
- 
-
-        //var tmp=funcSort.call(this, comparator); 
-        //var tmp=this.msort(comparator); 
-        var tmp=msort.call(this,comparator); 
-
-        //var tmp=merge_sort(this, comparator); 
-        return tmp.forEach(function(v,i){
-            placements[i].call(getSortable.call(v));
-        });
-        /*return this.each(function(i){
-            placements[i].call(getSortable.call(this));
-        });*/
-        //return funcSort.call(this, comparator).each(function(i){
-        //    placements[i].call(getSortable.call(this));
-        //});
- 
-    };
- 
-})();
-
-
-
-// Add stable merge sort to Array and jQuery prototypes
-
-  // expose to Array and jQuery
-//Array.prototype.msort = $.fn.msort = msort;
 
 msort=function(compare){
 "use strict"
@@ -191,8 +94,33 @@ var extend=function(out) {
   return out;
 };
 
+var deepExtend=function(oA, oB) {
+    // Handle the 3 simple types, and null or undefined
+  if(oB==null || typeof oB != "object" ) return oB;
+  
+    // Handle Date
+  if(oB instanceof Date){  oA = new Date(); oA.setTime(oB.getTime()); return oA;  }
+
+    // Handle Array
+  if(oB instanceof Array) {
+    if(typeof oA=='undefined') oA=[];
+    for(var i=0; i<oB.length; i++) oA[i]=deepExtend(oA[i],oB[i]);
+    return oA;
+  }
+    // Handle Object
+  if(oB instanceof Object) {
+    if(typeof oA=='undefined') oA={};
+    for(var key in oB) {
+      if(oB.hasOwnProperty(key)) oA[key] = deepExtend(oA[key],oB[key]);
+    }
+    return oA;
+  }
+ 
+  throw new Error("Unable to copy oB! Its type isn't supported.");
+};
+
 /*******************************************************************************************************************
- * DOM handling (non-jQuery)
+ * DOM handling
  *******************************************************************************************************************/
 
 var findPos=function(el) {
@@ -219,44 +147,148 @@ var removeChildren=function(myNode){
 var scrollTop=function(){ return window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop; }
 var scrollLeft=function(){ return window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft; }
 
-EventTarget.prototype.on=EventTarget.prototype.addEventListener;
-EventTarget.prototype.off=EventTarget.prototype.removeEventListener;
+EventTarget.prototype.on=function(){ this.addEventListener.apply(this, [...arguments]); return this; }
+EventTarget.prototype.off=function(){ this.removeEventListener.apply(this, [...arguments]); return this; }
 if(!Node.prototype.append) Node.prototype.append=Node.prototype.appendChild;
 if(!Node.prototype.prepend) Node.prototype.prepend=function(el){ this.insertBefore(el, this.firstChild);  }
-
-Node.prototype.appendChildren=function() {
-  for(var i=0; i<arguments.length; i++)
-    this.append(arguments[i]);
+Node.prototype.myAppend=function(){ this.append.apply(this, [...arguments]); return this; }
+Node.prototype.myAppendB=function(){
+  var arg=[...arguments], elTmp=null, argB=[];
+  arg.forEach(ele=>{
+    if(typeof ele=='string') {
+      if(!elTmp) elTmp=createElement('div');
+      elTmp.innerHTML=ele; argB.push(...elTmp.childNodes);
+    } else argB.push(ele);
+  }); 
+  this.append.call(this, ...argB); return this;
+}
+Node.prototype.myBefore=function(elN){
+  this.parentNode.insertBefore(elN,this); return this;
+}
+Node.prototype.empty = function() {
+  while (this.lastChild) {
+    this.lastChild.remove();
+  }
   return this;
 }
-Node.prototype.css=function(styles, boChildren=false){
-  if(this instanceof DocumentFragment) boChildren=true;
-  if(!boChildren) Object.assign(this.style, styles);
-  else 
-    this.childNodes.forEach(function(elA){ Object.assign(elA.style, styles);  });
+Element.prototype.insertChildAtIndex=function(child, index){
+  if(!index) index=0;
+  if(index >= this.children.length){
+    this.appendChild(child);
+  }else{
+    this.insertBefore(child, this.children[index]);
+  }
+}
+Element.prototype.attr=function(attr, value) {
+  if(!attr) return;
+  if(typeof attr=='string') {
+    if(arguments.length<2) return this.getAttribute(attr);
+    this.setAttribute(attr, value); return this;
+  }
+  for(var key in attr) { this.setAttribute(key, attr[key]);}
+  return this;
+}
+Element.prototype.prop=function(prop, value) {
+  if(!prop) return;
+  if(typeof prop=='string') {
+    if(arguments.length<2) return this[prop];
+    this[prop]=value; return this;
+  }
+  for(var key in prop) { this[key]=prop[key];}
+  return this;
+}
+Element.prototype.css=function(style, value) {
+  if(!style) return;
+  if(typeof style=='string') {
+    if(arguments.length<2) return this.style[style];
+    this.style[style]=value; return this;
+  }
+  for(var key in style) { this.style[key]=style[key];}
+  return this;
+}
+Element.prototype.addClass=function() {this.classList.add(...arguments);return this;}
+Element.prototype.removeClass=function() {this.classList.remove(...arguments);return this;}
+Element.prototype.toggleClass=function() {this.classList.toggle(...arguments);return this;}
+Element.prototype.hasClass=function() {return this.classList.contains(...arguments);}
+Node.prototype.cssChildren=function(styles){  this.childNodes.forEach(function(elA){ Object.assign(elA.style, styles);  }); return this;  }
+Node.prototype.myText=function(str){
+  if(typeof str=='undefined') { return this.textContent; }
+  if(typeof str!='string') { if(str===null) str=' '; str=str.toString(); }
+  if(!this.firstChild) { this.textContent=str||' '; return this;}
+  this.firstChild.nodeValue=str||' ';  return this;
+}
+Node.prototype.myText=function(str){
+  if(typeof str=='undefined') { return this.textContent; }
+  if(typeof str!='string') { if(str===null) str=' '; str=str.toString(); }
+  if(this.childNodes.length==1 && this.firstChild.nodeName=="#text" ) { this.firstChild.nodeValue=str||' ';  return this;}
+  this.textContent=str||' '; return this;
+}
+Node.prototype.myHtml=function(str=' '){
+  if(typeof str!='string') { if(str===null) str=' '; str=str.toString(); }
+  this.innerHTML=str||' '; return this;
+}
+Node.prototype.hide=function(){
+  if(this.style.display=='none') return this;
+  this.displayLast=this.style.display;
+  this.style.display='none';
+  return this;
+}
+Node.prototype.show=function(){
+  if(this.style.display!='none') return this;
+  if(typeof this.displayLast!='undefined') var tmp=this.displayLast; else var tmp='';
+  this.style.display=tmp;
+  return this;
+}
+Node.prototype.toggle=function(b){
+  if(typeof b=='undefined') b=this.style.display=='none'?1:0;
+  if(b==0) this.hide(); else this.show();
+  return this;
+}
+NodeList.prototype.toggle=function(b){
+  if(typeof b=='undefined') {if(this.length) b=this[0].style.display=='none'?1:0; else return this;}
+  this.forEach(function(ele){ ele.toggle(b); });
   return this;
 }
 createTextNode=function(str){ return document.createTextNode(str); }
 createElement=function(str){ return document.createElement(str); }
-createFragment=function(str){ return document.createDocumentFragment(); }
+createFragment=function(){ fr=document.createDocumentFragment(); if(arguments.length) fr.append(...arguments); return fr; }
+
+getNodeIndex=function( elm ){ return [...elm.parentNode.children].indexOf(elm); }
+Element.prototype.myIndex=function() {return [...this.parentNode.children].indexOf(this);}
+
+Element.prototype.offset=function() {
+  var rect = this.getBoundingClientRect();
+  return { top: rect.top + document.body.scrollTop,  left: rect.left + document.body.scrollLeft  };
+}
+
+Element.prototype.visible = function() {    this.style.visibility='';  return this;};
+Element.prototype.invisible = function() {    this.style.visibility='hidden'; return this; };
+Element.prototype.visibilityToggle=function(b){
+  if(typeof b=='undefined') b=this.style.visibility=='hidden'?1:0;
+  this.style.visibility= b?'':'hidden';
+  return this;
+};
+
+Node.prototype.detach=function(){ this.remove(); return this; }
 
 isVisible=function(el) {
   return !!( el.offsetWidth || el.offsetHeight || el.getClientRects().length );
 }
 
 
+
+
+
 /*******************************************************************************************************************
  * popupHover: popup a elBubble when you hover over elArea
  *******************************************************************************************************************/
-function popupHover(elArea,elBubble){
+popupHover=function(elArea,elBubble){
   elBubble.css({position:'absolute', 'box-sizing':'border-box', margin:'0px'}); //
   function setBubblePos(e){
     var xClear=6, yClear=6;
     var x = e.pageX, y = e.pageY;
 
     var borderMarg=10;
-    //var $win = $(window), $doc=$(document);
-    //var winW=$win.width(),winH=$win.height(),   bubW=$(elBubble).width(),bubH=$(elBubble).height(),   scrollX=$doc.scrollLeft(),scrollY=$doc.scrollTop();
     var winW=window.innerWidth,winH=window.innerHeight,   bubW=elBubble.clientWidth,bubH=elBubble.clientHeight,   scrollX=scrollLeft(),scrollY=scrollTop();
 
 
@@ -285,76 +317,73 @@ function popupHover(elArea,elBubble){
     }
     if(x<scrollX) x=scrollX;
     if(y<scrollY) y=scrollY;
-    elBubble.style.top=y+'px'; elBubble.style.left=x+'px';
+    //elBubble.style.top=y+'px'; elBubble.style.left=x+'px';
+    elBubble.css({top:y+'px', left:x+'px'});
     //if(boRight) {elBubble.style.left=x+'px'; elBubble.style.right='';} else {elBubble.style.left=''; elBubble.style.right=x+'px'; }
     //if(boBottom) {elBubble.style.top=y+'px'; elBubble.style.bottom='';} else {elBubble.style.top=''; elBubble.style.bottom=y+'px'; } 
   };
   var closeFunc=function(){ 
     if(boTouch){ 
       elBubble.remove(); 
-      if(boIOS) elBlanket.remove();
+      if(boIOSTmp) elBlanket.remove();
     } 
     else { elBubble.remove();  }
   }
-  var elBlanket;
-  if(boIOS){
-    //$blanket=$('<div>').css({'background':'#555',opacity:0,'z-index': 9001,top:'0px',left:'0px',width:'100%',position:'fixed',height:'100%'}).click(closeFunc);
-    elBlanket=document.createElement('div'); elBlanket.css({'background':'#555',opacity:0,'z-index': 9001,top:'0px',left:'0px',width:'100%',position:'fixed',height:'100%'});
+  var elBlanket, timer, boIOSTmp=boTouch;
+  if(boIOSTmp){
+    elBlanket=createElement('div').css({'background':'#555',opacity:0,'z-index': 9001,top:'0px',left:'0px',width:'100%',position:'fixed',height:'100%'});
     elBlanket.on('click', closeFunc);
   }
   if(boTouch){
-    elArea.on('click', function(e){ e.stopPropagation();  elBody.appendChild(elBubble); setBubblePos(e); setTimeout(closeFunc, 4000); if(boIOS) elBody.appendChild(elBlanket);  });
-    elBubble.on('click', function(e){ closeFunc(); });
-    elHtml.on('click', function(e){ closeFunc(); });
+    elArea.on('click', function(e){
+      e.stopPropagation();
+      if(elBubble.parentNode) closeFunc();
+      else {
+        elBody.append(elBubble); setBubblePos(e);
+        clearTimeout(timer); timer=setTimeout(closeFunc, 4000);
+        if(boIOSTmp) elBody.append(elBlanket);
+      }
+    });
+    elBubble.on('click', closeFunc);
+    elHtml.on('click', closeFunc);
     
   }else{
     elArea.on('mousemove', setBubblePos);  
-    elArea.on('mouseenter', function(e){elBody.appendChild(elBubble);});
-    elArea.on('mouseleave', function(){elBubble.remove();});
+    elArea.on('mouseenter', function(e){elBody.append(elBubble);});
+    elArea.on('mouseleave', closeFunc);
   }
   elBubble.classList.add('popupHover'); 
 }
 
-  // Wrappers of popupHover
-function popupHoverM(elArea,elBubble){
-  elBubble.css({'z-index':9005,'text-align':'left',padding:'0.4em'}); 
-  popupHover(elArea,elBubble);    
-  return elArea;
-}
-function popupHoverJQ($area,$bubble){
-  $bubble.css({'z-index':9005,'text-align':'left',padding:'0.4em'});  
-  popupHover($area[0],$bubble[0]);    
-  return $area;
-}
 
 
 
-var vippButtonExtend=function($el){
+var vippButtonExtend=function(el){
 "use strict"
-  $el.setStat=function(bo1){
-    if(!bo1) {$el.css(o0);} else {$el.css(o1);}
-    $el.attr({boOn:bo1});
+  el.setStat=function(bo1){
+    if(!bo1) {el.css(o0);} else {el.css(o1);}
+    el.attr({boOn:bo1});
   }
   var o0={background:'url('+uVipp0+') no-repeat'}, o1={background:'url('+uVipp1+') no-repeat'};
 
-  $el.attr({boOn:0});
-  $el.css({'background':'url('+uVipp0+') no-repeat',height:'33px',width:'90px',zoom:'60%','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
-  $el.on('click',function(){var t=1-$el.attr('boOn');   $el.setStat(t);});
-  return $el;
+  el.attr({boOn:0});
+  el.css({'background':'url('+uVipp0+') no-repeat',height:'33px',width:'90px',zoom:'60%','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
+  el.on('click',function(){var t=1-el.attr('boOn');   el.setStat(t);});
+  return el;
 }
 
-var toggleButtonExtend=function($el){
-  $el.setStat=function(bo1){
-    if(bo1) {$el.css(colOn);} else {$el.css(colOff);}
-    //$el.toggleClass('on',Boolean(bo1));
-    $el.attr({boOn:bo1});
+var toggleButtonExtend=function(el){
+  el.setStat=function(bo1){
+    if(bo1) {el.css(colOn);} else {el.css(colOff);}
+    //el.toggleClass('on',Boolean(bo1));
+    el.attr({boOn:bo1});
   }
   var colOn={background:'#4f4'}, colOff={background:''};
 
-  $el.attr({boOn:0});
-  $el.css({height:'1em',width:'1em'});
-  $el.on('click',function(){var t=1-$el.attr('boOn');   $el.setStat(t);});
-  return $el;
+  el.attr({boOn:0});
+  el.css({height:'1em',width:'1em'});
+  el.on('click',function(){var t=1-el.attr('boOn');   el.setStat(t);});
+  return el;
 }
 
 
@@ -381,7 +410,7 @@ makeMarker=function(strText){
   
     //Calculate dimensions of the bubble
   var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
-  var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
+  var widthText=0;     for(var i=0; i<arrText.length; i++){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
   var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
   
     //Reseting canvas with new dimensions
@@ -397,7 +426,7 @@ makeMarker=function(strText){
   ctx.fillStyle="#FF7700";  ctx.fill();    
     
     // Write text
-  ctx.fillStyle = "white";     for(var i in arrText){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
+  ctx.fillStyle = "white";     for(var i=0; i<arrText.length; i++){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
   return canvas.toDataURL("image/png");
 }
 
@@ -411,7 +440,7 @@ makeMarkerBubble=function(obj){
   
     //Calculate dimensions of the bubble
   var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
-  var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
+  var widthText=0;     for(var i=0; i<arrText.length; i++){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
   var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
   
     //Reseting canvas with new dimensions
@@ -432,7 +461,7 @@ makeMarkerBubble=function(obj){
     
   ctx.font = "Symbol";
     // Write text
-  ctx.fillStyle = "black";     for(var i in arrText){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
+  ctx.fillStyle = "black";     for(var i=0; i<arrText.length; i++){   ctx.fillText(arrText[i], 2, 7+i*leading );    }
   //return canvas.toDataURL("image/png");
   return {url:canvas.toDataURL("image/png"), anchor:{x:widthBox/2, y:heightImg}};
 }
@@ -447,7 +476,7 @@ makeTextCanvas=function(strText,rot){
   
     //Calculate dimensions of the bubble
   var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
-  var widthText=0;     for(var i in arrText){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
+  var widthText=0;     for(var i=0; i<arrText.length; i++){   var tmp=ctx.measureText(arrText[i]).width;    if(tmp > widthText) widthText=tmp;    }
   var widthBox=widthText+4, heightBox=arrText.length*leading+3;
   if(rot==1 || rot==-1){ var tmp=heightBox; heightBox=widthBox; widthBox=tmp; }
   
@@ -463,7 +492,7 @@ makeTextCanvas=function(strText,rot){
   
   ctx.rotate(rot*Math.PI/2);
   ctx.textAlign = "left";
-  ctx.fillStyle = "black";     for(var i in arrText){   ctx.fillText(arrText[i], 2, fontHeight+i*leading );    }
+  ctx.fillStyle = "black";     for(var i=0; i<arrText.length; i++){   ctx.fillText(arrText[i], 2, fontHeight+i*leading );    }
   ctx.restore();
   
   return canvas;

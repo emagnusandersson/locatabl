@@ -1,6 +1,6 @@
 // Inactive users may be deleted
 
-two31=Math.pow(2,31);  intMax=two31-1;  intMin=-two31; uintMax=1024*1024*1024*4-1;
+two31=Math.pow(2,31);  intMax=two31-1;  intMin=-two31; uintMax=Math.pow(2,32)-1;
 sPerDay=24*3600;  sPerMonth=sPerDay*30;
 
 
@@ -27,7 +27,7 @@ hideTimerDefault=30*24*3600;
 hideTimerDefault=365*24*3600;
 hideTimerDefault=uintMax;
 if(boDbg) hideTimerDefault=30*60;
-hideTimerDefault=uintMax;
+hideTimerDefault=intMax;
 
    // DB- TableNameProt
 StrTableKey=["seller","sellerTeam","sellerTeamImage","customer","customerTeam","customerTeamImage","userImage","complaint","admin","setting","user"]; 
@@ -110,9 +110,9 @@ PluginF={};
 PluginF.general=function(site){
   var [oC,oS]=site.ORole;
     // Both ////////////////////
-  var arrTCreatedLabel=[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48], arrTCreatedMin=[].concat(eMultSc(arrTCreatedLabel,sPerMonth)); arrTCreatedLabel.splice(-1,1, '&ge;48');
-  var arrTPosLabel=[0, 1, 2, 4, 8, 16, 24, 48], arrTPosMin=[].concat(eMultSc(arrTPosLabel,3600)); arrTPosLabel.splice(-1,1, '&ge;48');
-  var arrTAccumulatedLabel=[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48], arrTAccumulatedMin=[].concat(eMultSc(arrTAccumulatedLabel,sPerMonth)); arrTAccumulatedLabel.splice(-1,1, '&ge;48');
+  var arrTCreatedLabel=[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48], arrTCreatedMin=[].concat(eMultSc(arrTCreatedLabel,sPerMonth)); arrTCreatedLabel.splice(-1,1, '≥48');
+  var arrTPosLabel=[0, 1, 2, 4, 8, 16, 24, 48], arrTPosMin=[].concat(eMultSc(arrTPosLabel,3600)); arrTPosLabel.splice(-1,1, '≥48');
+  var arrTAccumulatedLabel=[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48], arrTAccumulatedMin=[].concat(eMultSc(arrTAccumulatedLabel,sPerMonth)); arrTAccumulatedLabel.splice(-1,1, '≥48');
 
   //                       012345678
   var PropTmp={
@@ -128,7 +128,7 @@ PluginF.general=function(site){
   histActive:          {b:'001110111',type:'BIGINT UNSIGNED', default:0},  // feat:{kind:'S10',min:[0,1,2,4,6,10,15,20,24,26,28,29,30]}},
   tLastWriteOfTA:      {b:'000000110',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP'},  // tLastWriteOfTimeAccumulated 
   tAccumulated:        {b:'011110111',type:'INT(8) UNSIGNED', default:0, feat:{kind:'S10',min:arrTAccumulatedMin, bucketLabel:arrTAccumulatedLabel}},
-  hideTimer:           {b:'110000110',type:'INT(8) UNSIGNED', default:hideTimerDefault},
+  hideTimer:           {b:'110000110',type:'INT(8)', default:hideTimerDefault},  // Not UNSIGNED because mysql cant have uint in expressions that end up negative
   //terminationDate:   {b:'010000101',type:'TIMESTAMP', default:0},
   displayName:         {b:'001000000'},
   tel:                 {b:'111010110',type:'VARCHAR(65)', default:''},
@@ -686,7 +686,7 @@ featCalcValExtend=function(Prop){
 
       if(!('bucketLabel' in feat)) { // (labels in histogram)
         feat.bucketLabel=[].concat(feat.min);
-        feat.bucketLabel[feat.last]='&ge;'+feat.bucketLabel[feat.last];  
+        feat.bucketLabel[feat.last]='≥'+feat.bucketLabel[feat.last];  
       }
 
       Prop[name].feat=feat;
