@@ -87,7 +87,7 @@ AMUnionB=function(A,B){ // Modifies A
 }
 
 mySplice1=function(arr,iItem){ var item=arr[iItem]; for(var i=iItem, len=arr.length-1; i<len; i++)  arr[i]=arr[i+1];  arr.length = len; return item; }  // GC-friendly splice
-myCopy=function(arr,brr){  if(typeof arr=="undefined") arr=[]; for(var i=0, len=brr.length; i<len; i++)  arr[i]=brr[i];  arr.length = len; return arr; }  // GC-friendly copy
+myCopy=function(arr,brr){ var len=brr.length; if(typeof arr=="undefined") arr=Array(len); else arr.length = len; for(var i=0; i<len; i++)  arr[i]=brr[i];   return arr; }  // GC-friendly copy
 //myCopy=function(arr,brr){  if(typeof arr=="undefined") arr=[]; arr.length=0; arr.push.apply(arr,brr);  }  // GC-friendly copy
 myCompare=function(arr,brr){  var la=arr.length,lb=brr.length; if(la!=lb) return false; for(var i=0; i<la; i++)  if(arr[i]!=brr[i]) return false;  return true;}  // compare
   
@@ -412,8 +412,8 @@ distCalc=function(lng1,lat1,lng2,lat2){
   return d;
 }
 
-approxDist=function(mWhole,boArr){  
-  if(typeof boArr !='undefined' && boArr==1){} else boArr=0;
+approxDist=function(mWhole,boArr=0){  
+  //if(typeof boArr !='undefined' && boArr==1){} else boArr=0;
   var n, u; 
   var aMWhole=Math.abs(mWhole);
   if(mWhole>=1000){n=Math.round(mWhole/(1000)); u='km';} 

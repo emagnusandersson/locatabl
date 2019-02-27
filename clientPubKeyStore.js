@@ -1,56 +1,72 @@
 
 
 
-messExtend=function($el){
-  $el.resetMess=function(time){ 
-    if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
-    else {$el.html(''); clearTimeout(messTimer);} 
+spanMessageTextCreate=function(){
+  var el=createElement('span'); //, txt=createTextNode('');  el.appendChild(txt);
+  var spanInner=createElement('span');
+  el.appendChild(spanInner, imgBusy)
+  //var el=createElement('span');  el.textContent='';
+  el.resetMess=function(time){
+    clearTimeout(messTimer);
+    if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
+    //txt.nodeValue='';
+    el.myText(' ');
+    imgBusy.hide();
   }
-  $el.setMess=function(str,time,boRot){  
-    $el.html(str);  clearTimeout(messTimer); 
-    if(typeof time =='number')     messTimer=setTimeout(resetMess,time*1000);
-    if(boRot) $el.append($imgBusy);
+  el.setMess=function(str,time,boRot){
+    //txt.nodeValue=str;
+    spanInner.myText(str);
+    clearTimeout(messTimer);
+    if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
+    //if(boRot) el.appendChild(imgBusy);
+    imgBusy.toggle(Boolean(boRot));
+  };
+  el.setHtml=function(str,time,boRot){
+    spanInner.myHtml(str);
+    clearTimeout(messTimer);
+    if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
+    //if(boRot) el.appendChild(imgBusy);
+    imgBusy.toggle(Boolean(boRot));
   };
   var messTimer;
-  $el.addClass('message').css({'z-index':8100,position:'fixed'}); 
-  return $el;
+  el.addClass('message').css({'z-index':8100,position:'fixed'});
+  return el;
 }
 
-
-var loginInfoExtend=function($el){
+var loginInfoExtend=function(el){
 "use strict"
-  $el.setStat=function(){
+  el.setStat=function(){
     var arrKind=[];
     for(var key in userInfoFrDB){   if(userInfoFrDB[key] && key!='user') {  arrKind.push(langHtml.loginInfo[key]); }   }
     var boShow=Boolean(arrKind.length);
     if(boShow){
-      $spanName.html(userInfoFrDB.user.nameIP);
+      spanName.myText(userInfoFrDB.user.nameIP);
       var strTmp=arrKind.join(', '); if(strTmp) strTmp='('+strTmp+')';
-      $spanKind.html(strTmp);
-      $el.show();
+      spanKind.myText(strTmp);
+      el.show();
     }else {
-      $el.hide(); 
+      el.hide(); 
     } 
   }
-  var $spanName=$('<span>'), $spanKind=$('<span>'); 
-  var $logoutButt=$('<a>').prop({href:''}).text(langHtml.loginInfo.logoutButt).css({'float':'right'});
-  $logoutButt.on('click', function(){ 
-    sessionLoginIdP={}; userInfoFrDB=$.extend({}, specialistDefault);
-    var vec=[['logout',1, function(data){$yesDiv.setStat();}]];   majax(oAJAX,vec);
+  var spanName=createElement('span'), spanKind=createElement('span').css({'margin':'0,0.4em'}); 
+  var logoutButt=createElement('a').prop({href:''}).myText(langHtml.loginInfo.logoutButt).css({'float':'right'});
+  logoutButt.on('click', function(){ 
+    sessionLoginIdP={}; userInfoFrDB=extend({}, specialistDefault);
+    var vec=[['logout',1, function(data){yesDiv.setStat();}]];   majax(oAJAX,vec);
     return false;
   });
   
-  $el.append($spanName,' ',$spanKind,' ',$logoutButt);
-  $el.hide();
-  return $el;
+  el.append(spanName,spanKind,logoutButt);
+  el.hide();
+  return el;
 }
 
 
 
 window.loginReturnC=function(data){
-  $yesDiv.setStat();
-  $loginInfo.setStat();
-  $messageText.html('');
+  yesDiv.setStat();
+  loginInfo.setStat();
+  setMess('');
 }
 
 window.loginReturn=function(strQS, strHash){
@@ -61,7 +77,7 @@ window.loginReturn=function(strQS, strHash){
 
 var OAuthT=function(){
   this.createUrlNSetStatVar=function(IP, uRedir, fun, caller, cb){
-    $.extend(this, {IP:IP, fun:fun, caller:caller, cb:cb});
+    extend(this, {IP:IP, fun:fun, caller:caller, cb:cb});
     this.nonce=randomHash(); //CSRF protection
     var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
     if(IP=='fb')   arrQ.push("display=popup");
@@ -72,22 +88,22 @@ var OAuthT=function(){
 }
 
 
-loginDivExtend=function($el){
+loginDivExtend=function(el){
   var popupWin=function(IP) {
-    var uPop=OAuth.createUrlNSetStatVar(IP, strSchemeLong+site.wwwLoginRet, strType+'Fun', caller, $el.loginReturn);
+    var uPop=OAuth.createUrlNSetStatVar(IP, strSchemeLong+site.wwwLoginRet, strType+'Fun', caller, el.loginReturn);
 
     if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
 
-    $el.winMy=window.open(uPop, '_blank', 'width=580,height=400');
+    el.winMy=window.open(uPop, '_blank', 'width=580,height=400');
 
-    if($el.winMy && $el.winMy.closed){
-      $mess.empty();  $mess.append('Signing you in ',$imgBusy);
+    if(el.winMy && el.winMy.closed){
+      mess.empty();  mess.append(createTextNode('Signing you in '),imgBusy);
       clearInterval(timerClosePoll);
-      timerClosePoll = setInterval(function() { if($el.winMy.closed){ clearInterval(timerClosePoll); $mess.html('Sign-in canceled'); }  }, 500);  
+      timerClosePoll = setInterval(function() { if(el.winMy.closed){ clearInterval(timerClosePoll); mess.myText('Sign-in canceled'); }  }, 500);  
     }
     return 0;
   }
-  $el.loginReturn=function(params){ 
+  el.loginReturn=function(params){ 
     if('error' in params) { setMess(params.error); }
     else{
       if('code' in params) { 
@@ -97,87 +113,107 @@ loginDivExtend=function($el){
         }]];   majax(oAJAX,vec);
       } else setMess('no "code" parameter in response');
     }
-    $el.myReset();
+    el.myReset();
   }
   window.OAuth=new OAuthT();
   var strType="seller";
   var timerClosePoll=null;
-  $el.myReset=function(){     $mess.empty(); clearInterval(timerClosePoll);   }
+  el.myReset=function(){     mess.empty(); clearInterval(timerClosePoll);   }
 
   var uLoginImage=window['u'+ucfirst(strIPPrim)];
 
-  var $mess=$('<span>').css({"margin-left":"0.3em"});
+  var mess=createElement('span').css({"margin-left":"0.3em"});
   var strButtonSize='2em';
-  var $fbIm=$('<img>').on('click', function(){popupWin(strIPPrim);}).prop({src:uLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
-  var $fbHelp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html(langHtml.helpLoginSeller);     popupHoverJQ($fbHelp,$bub);  
+  var fbIm=createElement('img').on('click', function(){popupWin(strIPPrim);}).prop({src:uLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
+  var fbHelp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText(langHtml.helpLoginSeller);     popupHover(fbHelp,bub);  
 
-  var $label=$('<span>').append('Login first, then click yes: ').css({'font-size':'1.3em','font-weight':'bold'});
-  $el.append($label,$fbIm,$mess); //,$fbHelp
-  return $el;
+  var label=createElement('span').myText('Login first, then click yes: ').css({'font-size':'1.3em','font-weight':'bold'});
+  el.append(label,fbIm,mess); //,fbHelp
+  return el;
 }
 
 
-yesDivExtend=function($el){
-  $el.setStat=function(){ 
+yesDivExtend=function(el){
+  el.setStat=function(){ 
     var boDb=Boolean(userInfoFrDB.user);//Boolean(userInfoFrDB);
-    var boIp=isSet(sessionLoginIdP), boWannaBe=boIp && !boDb; $loginDiv.toggle(!boDb);  $buttStore.prop({disabled:!boDb}); $spanErr.toggle(boWannaBe); 
+    var boIp=isSet(sessionLoginIdP), boWannaBe=boIp && !boDb; loginDiv.toggle(!boDb);  buttStore.prop({disabled:!boDb}); spanErr.toggle(boWannaBe); 
   }
   var storeF=function(){
     var vec=[['pubKeyStore',{pubKey:pubKey},retF]];   majax(oAJAX,vec);
   }
   var retF=function(data){   
     var tmp,strMess="";//boOK=false;
-    tmp=data.boOK;   if(typeof tmp!="undefined") boOK=tmp; if(boOK) setTimeout(function(){ $divLeaveMess.toggle(Boolean(boOK)); }, 2000);
-    tmp=data.strMess;   if(typeof tmp!="undefined") strMess=tmp; $divStrMess.text(strMess); 
+    tmp=data.boOK;   if(typeof tmp!="undefined") boOK=tmp; if(boOK) setTimeout(function(){ divLeaveMess.toggle(Boolean(boOK)); }, 2000);
+    tmp=data.strMess;   if(typeof tmp!="undefined") strMess=tmp; divStrMess.myText(strMess); 
     
   }
-  //var $yesSpan=$('<div>').append('Yes').css({'text-align':'center'});
-  var $buttStore=$('<button>').html('Yes').on('click', storeF).prop({disabled:true}).css({'margin-bottom':'1em'});
-  var $aTmp=$('<a>').attr({href:uSite,target:"_blank"}).text(wwwSite);
-  var $spanErr=$('<div>').css({'margin-bottom':'.5em'}).append('Not registered! Go to the main page: ',$aTmp, ' and register first.').hide();
+  //var yesSpan=createElement('div').myText('Yes').css({'text-align':'center'});
+  var buttStore=createElement('button').myText('Yes').on('click', storeF).prop({disabled:true}).css({'margin-bottom':'1em'});
+  var aTmp=createElement('a').attr({href:uSite,target:"_blank"}).myText(wwwSite);
+  var spanErr=createElement('div').css({'margin-bottom':'.5em'}).myAppend('Not registered! Go to the main page: ',aTmp, ' and register first.').hide();
 
-  var $divStrMess=$('<div>').css({'margin-top': '1em'});//.hide();
-  var $divLeaveMess=$('<div>').append(strLeaveMess).css({'margin-top': '1em'}).hide();
-  $el.append($buttStore, $loginDiv, $spanErr, $divStrMess,$divLeaveMess);    
+  var divStrMess=createElement('div').css({'margin-top': '1em'});//.hide();
+  var divLeaveMess=createElement('div').myText(strLeaveMess).css({'margin-top': '1em'}).hide();
+  el.append(buttStore, loginDiv, spanErr, divStrMess,divLeaveMess);    
   
-  return $el;
+  return el;
 }
 
 
-majax=function(oAJAX,vec){  // Each argument of vec is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
-  //$body.prepend('t');
-  var makeRetF=function(vecT){ return function(data,textStatus,jqXHR){ 
-      var dataArr=data.dataArr;  // Each argument of dataArr is an array either [argument] or [altFuncArg,altFunc]
-      delete data.dataArr;
-      beRet(data,textStatus,jqXHR);
-      for(var i=0;i<dataArr.length;i++){ 
-        var r=dataArr[i];
-        if(r.length==1) {var f=vecT[i][2]; if(f) f(r[0]);} else { window[r[1]].call(window,r[0]);   } 
-      }
-      
-    }; 
+
+'use strict';
+majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', uBE, true);
+  //var vecMod=vecIn.map(el=>{return el.slice(0,2)});
+  //var arrRet=[]; vecIn.forEach(function(el,i){arrRet[i]=el[2]||null; delete el[2];}); // Put return functions in a separate array
+  var arrRet=[]; vecIn.forEach(function(el,i){var f=null; if(el.length==3) f=el.pop(); arrRet[i]=f;}); // Put return functions in a separate array
+  vecIn.push(['CSRFCode',CSRFCode]);
+  vecIn.push(['caller',caller]);
+  //if(boFormData){
+  if(vecIn.length==2 && vecIn[0][1] instanceof FormData){
+    var formData=vecIn[0][1]; vecIn[0][1]=0; // First element in vecIn contains the formData object. Rearrange it as "root object" and add the remainder to a property 'vec'
+    formData.append('vec', JSON.stringify(vecIn));
+    var tmp=window.btoa(Math.random().toString()).substr(0, 12);
+    //xhr.setRequestHeader("Content-Type", "multipart/form-data;boundary=----WebKitFormBoundary" + tmp);
+    //xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    //xhr.setRequestHeader("Content-Length", formData.length);
+    var dataOut=formData;
+    xhr.setRequestHeader('x-type','single');
+  } else {  var dataOut=JSON.stringify(vecIn); }
+  
+  xhr.onload=function () {
+    var dataFetched=this.response;
+    var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
+    
+    var dataArr=data.dataArr;  // Each argument of dataArr is an array, either [argument] or [altFuncArg,altFunc]
+    delete data.dataArr;
+    beRet(data);
+    for(var i=0;i<dataArr.length;i++){
+      var r=dataArr[i];
+      if(r.length==1) {var f=arrRet[i]; if(f) f(r[0]);} else { window[r[1]].call(window,r[0]);   }
+    }
   }
-  $.ajaxSetup(oAJAX);
-  var vecN=$.extend(true, [], vec);
-  for(var i=0; i<vecN.length; i++){delete vecN[i][2];}
-  vecN.push(['CSRFCode',CSRFCode]);
-  vecN.push(['caller',caller]);
-  var tmp=JSON.stringify(vecN);
+  xhr.onerror=function(e){ var tmp='statusText : '+xhr.statusText;  setMess(tmp); console.log(tmp);   throw 'bla';}
   
-  var func=makeRetF(vec);
-  if(oAJAX.crossDomain) $.ajax({success:func,data:o});   
-  else   $.ajax({success:func,data:tmp});
-
-  setMess('');
+  xhr.send(dataOut);
 }
 
 
-beRet=function(data,textStatus,jqXHR){
-  var tmp=jqXHR.responseText;
+
+//beRet=function(data,textStatus,jqXHR){
+  //var tmp=jqXHR.responseText;
+  //for(var key in data){
+    //window[key].call(this,data[key]); 
+  //}
+//}
+var beRet=function(data){
+"use strict"
   for(var key in data){
-    window[key].call(this,data[key]); 
+    window[key].call(this,data[key]);
   }
 }
+
 GRet=function(data){
   var tmp;
   tmp=data.strMessageText;   if(typeof tmp!="undefined") setMess(tmp);
@@ -185,16 +221,15 @@ GRet=function(data){
   tmp=data.sessionLoginIdP; if(typeof tmp!="undefined") {sessionLoginIdP=tmp;}
   tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }   }
   
-  $loginInfo.setStat();
-  $yesDiv.setStat();
+  loginInfo.setStat();
+  yesDiv.setStat();
 }
 
 
 setUp=function(){
 
   elHtml=document.documentElement;  elBody=document.body
-  $body=$('body');  $html=$('html');
-  $body.css({margin:0, padding:0});
+  elBody.css({margin:0, padding:0});
 
   boTouch = Number('ontouchstart' in document.documentElement);  //boTouch=1;
 
@@ -205,24 +240,6 @@ setUp=function(){
 
   boChrome= /chrome/i.test(ua);
   boIOS= /iPhone|iPad|iPod/i.test(ua);
-  if(boTouch){
-    if(boIOS) {  
-      dr=window.devicePixelRatio;      sc=1/dr; 
-      if(dr>=2) {      sc=1;    }
-      $('#viewportMy').prop('content','initial-scale='+sc);
-    } else if(boFennec){
-      dr=window.devicePixelRatio;      sc=1/dr; 
-      var h=screen.height, w=screen.width;  
-    }  
-    else {
-      sc=1;
-      var h=window.innerHeight, w=window.innerWidth;
-      if(boTouch && h*w>230400) $body.css({'font-size':'120%'}); // between 320*480=153600 and 480*640=307200
-      if(boTouch && h*w<115200) $body.css({'font-size':'85%'});  // between 240*320=76800 and 320*480=153600
-    }
-  }  
-
-
 
   strScheme='http'+(boTLS?'s':'');    strSchemeLong=strScheme+'://';    uSite=strSchemeLong+wwwSite;     uCommon=strSchemeLong+wwwCommon;    uBE=uSite+"/"+leafBE;
 
@@ -237,77 +254,58 @@ setUp=function(){
   uBusy=uImageFolder+'busy.gif';
 
 
-  $imgBusy=$('<img>').attr({src:uBusy});
-  $imgHelp=$('<img>').prop({src:uHelpFile}).css({'vertical-align':'-0.4em'});
-
+  imgBusy=createElement('img').attr({src:uBusy});
+  imgHelp=createElement('img').prop({src:uHelpFile}).css({'vertical-align':'-0.4em'});
 
 
   sessionLoginIdP={};
-  userInfoFrDB=$.extend({}, specialistDefault);
+  userInfoFrDB=extend({}, specialistDefault);
 
-  $.ajaxSetup({
-    url: uBE,
-    global: false,
-    type: "POST",
-    //dataType:'json',
-    contentType:'application/json',
-    processData:false,
-    success: beRet,
-    //success: function(data){alert('ss');},
-    error: function(jqXHR, textStatus, errorThrown){
-      setMess('responseText: '+jqXHR.responseText+', textStatus: '+' '+textStatus+', errorThrown: '+errorThrown);     throw 'bla';
-    }
-  });
-  oAJAX={url:uBE,type: "POST",dataType:'json', processData:false,success: beRet};
+  oAJAX={};
    //uPubKeyStoreBE
-
 
   assignSiteSpecific();
   langClientFunc();
 
 
+  loginDiv=loginDivExtend(createElement('div')).hide();
+  loginInfo=loginInfoExtend(createElement('div'));  loginInfo.css({padding:'0em 0em 0em 0em','font-size':'75%'});
 
 
-
-
-
-
-  $loginDiv=loginDivExtend($('<div>')).hide();
-  $loginInfo=loginInfoExtend($('<div>'));  $loginInfo.css({padding:'0em 0em 0em 0em','font-size':'75%'});
-
-
-  $tmpB=$('<b>').append(wwwSite);
-  $aTmp=$('<a>').attr({href:'https://wikipedia.org/wiki/Key_pair',target:"_blank"}).text('key pair');
+  tmpB=createElement('b').myAppend(wwwSite);
+  aTmp=createElement('a').attr({href:'https://wikipedia.org/wiki/Key_pair',target:"_blank"}).myText('key pair');
   strShow='Show key'; strHide='Hide key';
-  $buttonShowKey=$('<button>').append(strShow).data({'boOn':false}).css({'margin-left':'1em'}).on('click', function(){
-    var $b=$(this), boOn=!$b.data('boOn'); $b.data({'boOn':boOn}); $b.html(boOn?strHide:strShow); $divKey.toggle(boOn);
+  buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).css({'margin-left':'1em'}).on('click', function(){
+    var b=this; b.boOn=!b.boOn;  b.myText(b.boOn?strHide:strShow); divKey.toggle(b.boOn);
   });
-  $divKey=$('<div>').append(pubKey).hide().css({'font-weight':'bold'});
-  $headA=$('<div>').append('You are now on ',$tmpB, ' with one part of a ',$aTmp,'.',$buttonShowKey,$divKey).css({'margin-top':'0.5em'});
+  divKey=createElement('div').myText(pubKey).hide().css({'font-weight':'bold'});
+  headA=createElement('div').myAppend('You are now on ',tmpB, ' with one part of a ',aTmp,'.',buttonShowKey,divKey).css({'margin-top':'0.5em'});
 
-  var $imgTmp=$imgHelp.clone().css({margin:'0 0 0 1em'}),  $bub=$('<div>').html("Storing the key will allow the sender (the owner of the other part of the key pair) to write certain data on this site: (position (lat/lang), visibility (on/off), hideTimer)");     popupHoverJQ($imgTmp,$bub);  
-  $headB=$('<div>').append('Do you want to store this key?',$imgTmp);
+  var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText("Storing the key will allow the sender (the owner of the other part of the key pair) to write certain data on this site: (position (lat/lang), visibility (on/off), hideTimer)");     popupHover(imgTmp,bub);  
+  headB=createElement('div').myAppend('Do you want to store this key?',imgTmp);
   //<b>position</b>, <b>last activity</b> and <b>visibility</b>
 
-  $messageText=messExtend($("<span>"));  window.setMess=$messageText.setMess;  window.resetMess=$messageText.resetMess;  $messageText.css({font:'courier'});  
+  //messageText=messExtend(createElement('span'));  window.setMess=messageText.setMess;  window.resetMess=messageText.resetMess;  messageText.css({font:'courier'});  
+  spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
 
 
-  $buttCancel=$('<button>').append('Cancel').on('click', function(){window.close();});
+  buttCancel=createElement('button').myText('Cancel').on('click', function(){window.close();});
 
   strLeaveMess="(Click browser-back-button to leave.)";
   cssAns={width:'50%',display:'inline-block','box-sizing': 'border-box','text-align':'center',padding:'1em',flex:1};
   //cssAns={'text-align':'center',padding:'1em'};
-  $yesDiv=yesDivExtend($('<div>')).css(cssAns).css({'background':'lightgreen'});
-  $noSpan=$('<div>').append('No').css({'text-align':'center','margin-bottom':'1em'});
-  $noDiv=$('<div>').css(cssAns).css({'border-left':'2px solid grey','vertical-align':'top','background':'pink'}).append($noSpan,strLeaveMess);
-  $answerDiv=$('<div>').append($yesDiv,$noDiv).css({display:'flex'}); //
-  $mainDivs=$([]).push($loginInfo).push($headA).push($headB).push($answerDiv);
+  yesDiv=yesDivExtend(createElement('div')).css(cssAns).css({'background':'lightgreen'});
+  noSpan=createElement('div').myText('No').css({'text-align':'center','margin-bottom':'1em'});
+  noDiv=createElement('div').css(cssAns).css({'border-left':'2px solid grey','vertical-align':'top','background':'pink'}).myAppend(noSpan,strLeaveMess);
+  answerDiv=createElement('div').myAppend(yesDiv,noDiv).css({display:'flex'}); //
+  //mainDivs=([]).push(loginInfo).push(headA).push(headB).push(answerDiv);
+  var MainDiv=[loginInfo, headA, headB, answerDiv];
 
 
-  $body.append($mainDivs,$messageText); 
+  elBody.append(...MainDiv,spanMessageText); 
 
-  $body.css({'text-align':'center'});
-  $mainDivs.css({'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff','max-width':'800px'});
+  elBody.css({'text-align':'center'});
+  MainDiv.forEach(ele=>ele.css({'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff','max-width':'800px'}) )
 
   var vec=[['setupById']];   majax(oAJAX,vec);
 }

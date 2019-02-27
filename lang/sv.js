@@ -2,7 +2,6 @@
 
 langClientFunc=function(){
 langHtml={
-
 Cancel:'Avbryt',
 Yes:'Ja',
 No:'Nej',
@@ -21,32 +20,33 @@ Cargo:'Last',
 customerRewritten:'kund',
 sellerRewritten:'entreprenör',
 
-seller:'entreprenör', sellers:'entreprenörer',
+
+seller:'entreprenör', sellers:'ent­re­pre­nör­er',
 theSeller:"entreprenören", theSellers:"entreprenörerna",
 theSellers0:"entreprenörerna",
 IndependentSeller:'Obunden',
 
-driver:'förare', drivers:'förare',
+driver:'förare', drivers:'för­are',
 theDriver:'föraren', theDrivers:'förarna',
 theDrivers0:'förarna',
 IndependentDriver:'Friåkare',
 
-cleaner:'städare', cleaners:'städare',
+cleaner:'städare', cleaners:'städ­are',
 theCleaner:'städaren', theCleaners:'städarna',
 theCleaners0:'städarna',
 IndependentCleaner:'Inget lag',
 
-programmer:'programmerare', programmers:'programmerare',
+programmer:'programmerare', programmers:'prog­ramm­erare',
 theProgrammer:'programmeraren', theProgrammers:'programmerarna',
 theProgrammers0:'programmerarna',
 IndependentProgrammer:'Frilans',
 
-picker:"plockare", pickers:"plockare",
+picker:"plockare", pickers:"plock­are",
 thePicker:"plockaren", thePickers:"plockarna",
 thePickers0:"plockarna",
 IndependentPicker:'Inget lag',
 
-snowShoveler:"snöskottare", snowShovelers:"snöskottare",
+snowShoveler:"snöskottare", snowShovelers:"snö­skott­are",
 theSnowShoveler:"snöskottaren", theSnowShovelers:"snöskottarna",
 theSnowShovelers0:"snöskottarna",
 IndependentSnowShoveler:'Inget lag',
@@ -56,7 +56,8 @@ lawnmower:'gräsklippare',
 snowRemovalWorker:'snöskottare',
 
 
-customer:'kund', customers:'kunder',
+
+customer:'kund', customers:'kund­er',
 theCustomer:"kunden", theCustomers:"kunderna",
 theCustomers0:"kunderna",
 IndependentCustomer:'Inget lag',
@@ -66,22 +67,24 @@ Languages:'Kunskaper (högre nummer är bättre)',
 RequestedSkills:'Önskade kunskaper',
 Tools:'Utrustning',
 
-
 Reputation:'Rykte',
 Price:'Pris',
 Type:'Typ',
 Other:'Övrigt',
+Map:'Karta',
 ShowMoreData:'Visa mer data',
+Columns:'Kolumner',
 SelectColumns:'Välj kolumner',
 AddRemoveColumns:'Visa fler/ta bort kolumner (data)',
+MapMarkers:'kartmarkörer',
 ChangeMapMarkers:'Ändra kartmarkörer',
 ChangeMapMarkersC:'Ändra <span nom="customer">kund</span>-kartmarkörer',
 ChangeMapMarkersS:'Ändra <span nom="seller">säljare</span>-kartmarkörer',
 Prices:'Priser',
 UserInfo:'Användarinfo',
 UserSettings:'Användarinställningar',
-DriverSettings:'Förarinställningar',
 Deadline:'Deadline',
+
 DistanceUnit:'Distansenhet',
 
 Wiki:'Wiki',
@@ -134,6 +137,7 @@ Back:'⇦',
 
 
 Compare:'Jämför',
+//Compare:'&#63523,
 Filter:'Filter',
 FilterC:'<span nom="Customer">Kund</span> filter',
 FilterS:'Filter (<span nom="seller">entreprenör</span>)',
@@ -148,15 +152,13 @@ YourImage:'Din bild',
 uploadNewImg:'Ladda upp ny bild',
 
 DragOrZoom:'Dra/zooma kartan för att ladda om markörer',
+
 moreInfo:'Mer info',
 TeamAdmin:'Lag-administratör',
-loginAsTeam:'Logga in som lag-admin',
 gettingStartedLink:'Komma igång',
 //gettingStartedLink:'Komma igång som <span nom="seller">entreprenör</span>',
 SeeAlso:'Se också',
 
-
-//labOrdinal:'Be the <span></span> <span nom="seller">seller</span> to join.',
 headOrdinalC:'Ny <span nom="customer">kund</span>?',
 headOrdinalDoubleC:'Ny entreprenör (<span nom="customerRewritten">entreprenör</span>)?',
 labOrdinalC:'Logga in nu och bli <span nom="customer">kund</span> nummer <span></span>.',
@@ -192,11 +194,12 @@ idDriverGovernment:'(6-siffrig kod på förarlicens)<br>För att kunden ska kunn
 tel:'Nummret som kunden ska ringa till',
 contactEmail:'Visas ej för kunder.',
 homeTown:'Bra om man t.ex. är i en annan stad och vill komma i kontakt med kunder som ska åt samma håll',
-
 standingByMethod:'Hur väntar du',
 //idTeam:'Om du är ansluten till ett lag som i sin tur är ansluten till taxiselector.com',
 shiftEnd:'När slutar du för dagen.<br>Bra för kunder som vill boka i förväg eller som vill åka längre sträckor'
 },
+
+
 
 writeComplaintPopup:'<span nom="theSeller">Säljaren</span> kan radera sitt konto, vilket gör att all ryktes data (inklusive klagomål) raderas.',
 
@@ -212,7 +215,8 @@ loginInfo:{'complainer':'klagare',
 'seller':'entreprenör',
 'team':'team',
 'admin':'admin',
-'logoutButt':'Logga ut'},
+'logoutButt':'Logga ut'
+},
 
 Login:'Logga in',
 SignInAs:'Sign in as',
@@ -243,7 +247,8 @@ FacebookIsRecommended:'Facebook rekommenderas (snabbare att logga in, färre lö
 NoteYouCanDeleteYourAccount:'Om du ändrar dig om att dela data till denna sajt, så kan du radera kontot (all data) när som helst. Så testa gärna och berätta vad du tycker.',
 moreInfoOnFAQ:'Mer info (FAQ-sida)',
 
-//<div><hr><button>Radera konto</button></div>
+
+CreateAccount:"Create account",
 DeleteAccount:"Radera konto",
 
 deleteBox:{
@@ -286,8 +291,6 @@ Hide:'Dold',
 
 obligatory:{head:'Obligatorsk info'},
 
-
-
   //filter
 histsRem:'Rest: ',
 min:'Min',
@@ -308,7 +311,7 @@ mo:['mån','mån','månad','månader'],
 y:['år','år','år','år']
 },
 
-ago:'för <span></span> sedan',
+//ago:'för <span></span> sedan',
 
 Currency:'Valuta',
 StartPrice:'Startpris',
@@ -329,7 +332,6 @@ introHead:'Ny <span nom="seller">entreprenörer</span>, välkommen!',
 introBread:'En kontaktemail behövs om sajten byter ID-leverantör. (Kontaktemailen visas ej för kunder.)',
 Tel:'Tel',
 ContactEmail:'Kontakt email',
-
 
 comparePrice:{head:'Jämförprisparametrar'},
 Distance:'Distans',
@@ -363,8 +365,8 @@ shiftEnd:'När slutar du för dagen',
 idTeam:'idTeam'
 },
 
-
 NotYetApproved:'Ej godkänd än',
+
 
 objCompassPoint:{ N:'Nord', E:'Öst', S:'Syd', W:'Väst', NE:'Nordost', SE:'Sydost', SW:'Sydväst', NW:'Nordväst'},
 
@@ -534,7 +536,7 @@ livestock:'<img></img>',
 vehicleTowing:'<img></img>',
 keyword:'',
 skyLift:''
-} 
+}
 } // langHtml
 } // function
 
@@ -620,6 +622,10 @@ if('programmer' in Site) Site.programmer.langSetup=function(){
 //Site.bla.langSetup=function(){this.strTitle="App för entreprenörer"; this.strH1="App för entreprenörer"; this.strSummary='<div></div>';}
 
 }
+
+
+
+
 
 
 

@@ -73,7 +73,7 @@ app.reqCurlEnd=function*(){
     var {boShow, hideTimer, tDiff, boOK, mess}=results[1][0];
     if(!boOK) {this.mesO(mess); return;}
     var str='Hidden';
-    if(boShow){ var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   var str='Visible'; if(hideTimer!=uintMax) str+=", Hiding in "+tDiffF+" "+u; };
+    if(boShow){ var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   var str='Visible'; if(hideTimer!=intMax) str+=", Hiding in "+tDiffF+" "+u; };
     this.mes(str);
   }
   else{
@@ -82,7 +82,7 @@ app.reqCurlEnd=function*(){
       if(!("lat" in inObj || "lng" in inObj)){this.mesO('"lng" or "lat" are not set'); return;}
       if(!("hideTimer" in inObj)) {this.mesO('"hideTimer" is not set'); return;} 
       var {lat,lng}=inObj;
-      var projs=new MercatorProjection(),   tmp=projs.fromLatLngToPointV([lat, lng]),  x=tmp[0],  y=tmp[1], hideTimer=inObj.hideTimer; 
+      var projs=new MercatorProjection(),   tmp=projs.fromLatLngToPointV([lat, lng]),  x=tmp[0],  y=tmp[1], hideTimer=bound(inObj.hideTimer, 0, intMax); 
     }else{var x=128, y=128, lat=0, hideTimer=0;}
     Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(inObj.iRole, sixPub, iSeqN, x, y, lat, boShow, hideTimer);
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
@@ -122,7 +122,7 @@ app.reqPubKeyStore=function*(){
   //var uCommon='http://'+wwwCommon;
   var uCommon=req.strSchemeLong+wwwCommon;
   var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
-  Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
+  //Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
   //uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.min.js"; Str.push('<script src="'+uJQuery+'"></script>');
  
 
@@ -275,7 +275,7 @@ app.reqIndex=function*() {
 
   Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1"+strTmp+strTmpB+"'/>");
 
-  Str.push('<meta name="theme-color" content="#ff0">');
+  Str.push('<meta name="theme-color" content="#ff0"/>');
 
   require('./lang/'+strLang+'.js');  langServerFunc();
   site.langSetup();
@@ -312,7 +312,7 @@ app.reqIndex=function*() {
     FB.init({\n\
       appId      : "'+fiIdTmp+'",\n\
       xfbml      : true,\n\
-      version    : "v2.7"\n\
+      version    : "v3.2"\n\
     });\n\
   };\n\
 \n\
@@ -335,37 +335,20 @@ app.reqIndex=function*() {
   //\{[^\}]*\}=
   //function\s*\*\(
   
-  Str.push('<script>\n\
-  (function(){\n\
-try {\n\
-  eval("(function *(){})");\n\
-} catch(err) {\n\
-  alert("This browser does not support generators:\\n"+ err); return;\n\
-}\n\
-try {\n\
-  eval("(function(a=0){})");\n\
-} catch(err) {\n\
-  alert("This browser does not support default parameters:\\n"+ err); return;\n\
-}\n\
-var tmpf=function(){return {a:1};};\n\
-try {\n\
-  eval("var {a}=tmpf();");\n\
-} catch(err) {\n\
-  alert("This browser does not support destructuring assignment:\\n"+ err); return;\n\
-}\n\
-var tmpf=function(){return [1];}\n\
-try {\n\
-  eval("[a]=tmpf();");\n\
-} catch(err) {\n\
-  alert("This browser does not support destructuring assignment with arrays:\\n"+ err); return;\n\
-}\n\
-})();</script>');
 
+  Str.push(`<script> (function(){
+try { eval("(function *(){})");} catch(err) { alert("This browser does not support generators:\\n"+ err); return;}
+try { eval("(function(a=0){})");} catch(err) { alert("This browser does not support default parameters:\\n"+ err); return;}
+var tmpf=function(){return {a:1};};
+try { eval("var {a}=tmpf();");} catch(err) { alert("This browser does not support destructuring assignment:\\n"+ err); return;}
+var tmpf=function(){return [1];}
+try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support destructuring assignment with arrays:\\n"+ err); return;}
+})();</script>`);
   //var uCommon='http://'+wwwCommon;
   var uCommon=req.strSchemeLong+wwwCommon;
   var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
-  Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
-  //var uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.min.js";  Str.push('<script src="'+uJQuery+'"></script>');
+  //Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
+  //var uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.js";  Str.push('<script src="'+uJQuery+'"></script>');
 
   Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
   
@@ -410,7 +393,7 @@ try {\n\
   }
   Str.push(strTracker);
   
-  Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit'></script>");
+  Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit' async defer></script>");
 
   Str.push("</head>");
   Str.push('<body style="visibility:hidden">');
@@ -752,6 +735,8 @@ app.reqStat=function*(){
   var flow=req.flow;
 
   var siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
+  
+  var charRole=objQS.role||'s';
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
@@ -795,6 +780,76 @@ app.reqStat=function*(){
 }
 
 
+app.reqStatBoth=function*(){
+  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
+  var flow=req.flow;
+
+  var siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
+  
+  var charRole=objQS.role||'s';
+
+  var Sql=[];
+  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+  
+  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, displayName";
+  //var strColsC="c.homeTown, c.currency, c.boShow, c.tPos, CONVERT(BIN(c.histActive),CHAR(30)) AS c_histActive, c.tLastWriteOfTA, c.tAccumulated, c.hideTimer";
+  //var strColsS="s.homeTown, s.currency, s.boShow, s.tPos, CONVERT(BIN(s.histActive),CHAR(30)) AS s_histActive, s.tLastWriteOfTA, s.tAccumulated, s.hideTimer";
+
+  var StrRoleCols=[];
+  var StrColsProt=["homeTown", "currency", "boShow", "tPos", "tLastWriteOfTA", "tAccumulated", "hideTimer"];
+  for(var i=0;i<2;i++){
+    var strRole=i?'s':'c', StrTmp=[];
+    for(var j=0;j<StrColsProt.length;j++){
+      StrTmp[j]=strRole+'.'+StrColsProt[j]+" AS "+strRole+'_'+StrColsProt[j];
+    }
+    StrTmp.push("CONVERT(BIN("+strRole+".histActive),CHAR(30)) AS "+strRole+"_histActive");
+    StrRoleCols[i]=StrTmp.join(', ');
+  }
+  var [strColsC, strColsS]=StrRoleCols;
+
+  Sql.push("SELECT "+strColsU+", "+strColsC+", "+strColsS+" FROM "+userTab+" u LEFT JOIN "+customerTab+" c ON u.idUser=c.idUser LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
+
+  Sql.push("SELECT "+strColsU+", "+strColsC+" FROM "+userTab+" u RIGHT JOIN "+customerTab+" c ON u.idUser=c.idUser WHERE u.idUser IS NULL;");
+  Sql.push("SELECT "+strColsU+", "+strColsS+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
+  var sql=Sql.join('\n'), Val=[];
+  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return;  }
+  var nUser=results[0][0].n;
+  if('code' in objQS && objQS.code=='amfoen') {site.boGotNewSellers=0; site.nUser=nUser;}
+  var matA=results[1];
+  var matB=results[2];
+  var matC=results[3];
+  
+  var Str=[];
+  Str.push('<!DOCTYPE html> \n\
+<html><head> \n\
+<meta name="robots" content="noindex"> \n\
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> \n\
+<style> table,td,tr {border: solid 1px;border-collapse:collapse}</style> \n\
+</head> \n\
+<body>');
+  var nA=matA.length;
+  Str.push("user OUTER JOIN seller ("+nA+")");
+  if(nA>0){
+    var Keys=Object.keys(matA[0]);
+    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].tAccumulated); matA[i].tAccumulated=Math.round(ttmp)+u; }
+    Str.push(makeTable(Keys,matA));
+  }
+  var nB=matB.length;
+  Str.push("<hr>seller.idUser with no user.idUser ("+nB+")");
+  if(nB>0){
+    var Keys=Object.keys(matB[0]);
+    Str.push(makeTable(Keys,matB));
+  }
+  var nC=matC.length;
+  Str.push("<hr>seller.idUser with no user.idUser ("+nC+")");
+  if(nC>0){
+    var Keys=Object.keys(matC[0]);
+    Str.push(makeTable(Keys,matC));
+  }
+  
+  Str.push("</body></html>");
+  var str=Str.join('\n');  res.end(str);
+}
  
 
 /******************************************************************************
@@ -1298,7 +1353,7 @@ CLIENT_FOUND_ROWS
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetValuesToController(IiRole INT, Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT UNSIGNED, OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetValuesToController(IiRole INT, Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, VidUser, ViSeq, intMax INT; \n\
       CALL "+siteName+"GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess); \n\
@@ -1306,9 +1361,9 @@ CLIENT_FOUND_ROWS
       CALL "+siteName+"TimeAccumulatedUpdOne(VidUser); \n\
   \n\
       IF IiRole=0 THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos)+hideTimer -UNIX_TIMESTAMP(now()) INTO OboShow, OhideTimer, OtDiff FROM "+customerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM "+customerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
       ELSE \n\
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos)+hideTimer -UNIX_TIMESTAMP(now()) INTO OboShow, OhideTimer, OtDiff FROM "+sellerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM "+sellerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
       END IF; \n\
       SET Vc=FOUND_ROWS(); \n\
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF; \n\
@@ -1318,7 +1373,7 @@ CLIENT_FOUND_ROWS
     END");
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(IiRole INT, Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT UNSIGNED, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
+  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(IiRole INT, Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
     proc_label:BEGIN \n\
       DECLARE Vc, Vn, VidUser, ViSeq, VresM INT; \n\
       START TRANSACTION; \n\

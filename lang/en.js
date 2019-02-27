@@ -21,32 +21,32 @@ customerRewritten:'customer',
 sellerRewritten:'seller',
 
 
-seller:'seller', sellers:'sellers',
+seller:'seller', sellers:'sell­ers',
 theSeller:"the seller", theSellers:"the sellers",
 theSellers0:"sellers",
-IndependentSeller:'Independent<br>Seller',
+IndependentSeller:'Independent Seller',
 
-driver:'driver', drivers:'drivers',
+driver:'driver', drivers:'driv­ers',
 theDriver:'the driver', theDrivers:'the drivers',
 theDrivers0:'drivers',
-IndependentDriver:'Independent<br>Driver',
+IndependentDriver:'Independent Driver',
 
-cleaner:'cleaner', cleaners:'cleaners',
+cleaner:'cleaner', cleaners:'clean­ers',
 theCleaner:'the cleaner', theCleaners:'the cleaners',
 theCleaners0:'cleaners',
 IndependentCleaner:'No team',
 
-programmer:'programmer', programmers:'programmers',
+programmer:'programmer', programmers:'pro­gram­mers',
 theProgrammer:'the programmer', theProgrammers:'the programmers',
 theProgrammers0:'programmers',
 IndependentProgrammer:'Freelance',
 
-picker:"picker", pickers:"pickers",
+picker:"picker", pickers:"pick­ers",
 thePicker:"the picker", thePickers:"the pickers",
 thePickers0:"pickers",
 IndependentPicker:'No team',
 
-snowShoveler:"snow shoveler", snowShovelers:"snow shovelers",
+snowShoveler:"snow shoveler", snowShovelers:"snow shov­elers",
 theSnowShoveler:"the snow shoveler",  theSnowShovelers:"the snow shovelers",
 theSnowShovelers0:"snow shovelers",
 IndependentSnowShoveler:'No team',
@@ -57,7 +57,7 @@ snowRemovalWorker:'snow removal worker',
 
 
 
-customer:'customer', customers:'customers',
+customer:'customer', customers:'cust­omers',
 theCustomer:"the customer", theCustomers:"the customers",
 theCustomers0:"customers",
 IndependentCustomer:'No team',
@@ -71,9 +71,12 @@ Reputation:'Reputation',
 Price:'Price',
 Type:'Type',
 Other:'Other',
+Map:'Map',
 ShowMoreData:'Show more data',
+Columns:'Columns',
 SelectColumns:'Select columns',
 AddRemoveColumns:'Add/remove columns',
+MapMarkers:'Map markers',
 ChangeMapMarkers:'Change map markers',
 ChangeMapMarkersC:'Change <span nom="customer">customer</span> map markers',
 ChangeMapMarkersS:'Change <span nom="seller">seller</span> map markers',
@@ -173,7 +176,7 @@ OtherMapApps:'Other map apps',
 OtherMarkets:'Other markets',
 ComparisonTable:'Comparison table',
 FilterTitle:'Filter (hide uninteresting <span nom="sellers">sellers</span>)',
-ToggleBetweenCustomerAndSeller:'Toggle between customer and <span nom="seller">seller</span>',
+ToggleBetweenCustomerAndSeller:'Toggle between customers and <span nom="sellers">sellers</span>',
 
 //toManyMess:'To many <span nom="sellers">sellers</span> for listing details, zoom in, or use filter to reduce the number below '+maxList,
 //toManyMess:'Max '+maxList+' <span nom="sellers">sellers</span> to see the comparisson table, zoom in, or use filter to reduce the number.',
@@ -183,25 +186,25 @@ toManyMess:'Disabled when the number of filtered <span nom="sellers">sellers</sp
 // Help-popup-texts:
 tsPopup:'Exact timepoint', // As in opposite of approximate timepoint 
 
-SeeUnActivePopMess:'<p>No <span nom="seller">seller</span> uploaded his position during the last <span></span> hours.</p><p>Use the <b>Filter</b>-button to include older positions.</p>',
-SeeUnActivePopMessButt:'Include older positions now.',
+//SeeUnActivePopMess:'<p>No <span nom="seller">seller</span> uploaded his position during the last <span></span> hours.</p><p>Use the <b>Filter</b>-button to include older positions.</p>',
+//SeeUnActivePopMessButt:'Include older positions now.',
 
-driverTextPopup:{
-idDriverGovernment:'Serves as verification to the customer that you are a real taxi driver',
-tel:'The number you want the customers to call',
-contactEmail:'Will not be displayed to the public',
-homeTown:'Good if you are in other town and wants to get in contact with customers heading in the same direction',
-standingByMethod:'How are you waiting',
-//idTeam:'If you are connected to a team who in turn is connected to taxiselecor.com',
-shiftEnd:'When do you end for the day.<br>Useful for customers that wants to book ahead, or to go on long trips'
-},
+//driverTextPopup:{
+//idDriverGovernment:'Serves as verification to the customer that you are a real taxi driver',
+//tel:'The number you want the customers to call',
+//contactEmail:'Will not be displayed to the public',
+//homeTown:'Good if you are in other town and wants to get in contact with customers heading in the same direction',
+//standingByMethod:'How are you waiting',
+////idTeam:'If you are connected to a team who in turn is connected to taxiselecor.com',
+//shiftEnd:'When do you end for the day.<br>Useful for customers that wants to book ahead, or to go on long trips'
+//},
 
 
 
 writeComplaintPopup:'<span nom="theSeller">The seller</span> may delete his account, which means that all collected reputation data (including complaints) are deleted.',
 
 quickHelp:'Set the timer and click "On" to become visible.<p>Click "Off" to hide.',
-  
+
 
 pricePref:{pop:"Change distance and time"}, 
 
@@ -217,7 +220,7 @@ loginInfo:{'complainer':'complainer',
 
 Login:'Login',
 SignInAs:'Sign in as',
-helpLoginCommenter:'<p>This is to prevent that people tries to appear as more than one person.<p>Your integrity has the highest priority. No data is sent to the ID provider. You can at any time remove your comments an thereby all references to you',
+//helpLoginCommenter:'<p>This is to prevent that people tries to appear as more than one person.<p>Your integrity has the highest priority. No data is sent to the ID provider. You can at any time remove your comments an thereby all references to you',
 
 LoginSingInAsSeller:'Login / Sign in as <span nom="seller">seller</span>',
 IdProviderNeeded:'ID-provider needed',
@@ -225,8 +228,7 @@ anIdentityIsNeeded:'An identity is needed...',
 pendingMessLogin:'Signing you in',
 cancelMessLogin:'Sign-in canceled',
 WhyOAuth:'Why is an external ID-provider used?',
-noteLoginSeller:'<p>This is to prevent that people tries to appear as more than one person.<p>Your integrity has the highest priority. No data is sent to the ID provider.<p>If your disappointed or just want to try around, then just login, play around, and delete you account, no hard feelings (And you are welcome back any time)',
-//noteLoginSeller:'<p>idPlace.org (the ID provider) is a separate site which tries to ensure unique accounts (so that noone tries to appear as more than one person).<p>Your integrity has the highest priority. No data is sent to the ID provider.<p>If your disappointed or just want to try around, then just login, play around, and delete you account, no hard feelings (And you are welcome back any time)',
+//noteLoginSeller:'<p>This is to prevent that people tries to appear as more than one person.<p>Your integrity has the highest priority. No data is sent to the ID provider.<p>If your disappointed or just want to try around, then just login, play around, and delete you account, no hard feelings (And you are welcome back any time)',
 whatDoesItMeanLoggingInWithAnExternalId:'What does it mean logging in with an external ID',
 toContinueAFacebookAccountIsNeeded:"To continue a Facebook account is needed",
 goAHead:"Go ahead ...",
@@ -246,8 +248,7 @@ FacebookIsRecommended:'Facebook is recommended (quicker to sign up, no need to r
 NoteYouCanDeleteYourAccount:'If you change your mind about sharing data to this site, then you can delete your account (all data about you) whenever you want. So feel free to try it out.',
 moreInfoOnFAQ:'More info (FAQ)',
 
-
-//<div><hr><button>Delete account</button></div>
+CreateAccount:"Create account",
 DeleteAccount:"Delete account",
 
 deleteBox:{
@@ -310,7 +311,7 @@ mo:['mo','mo','month','months'],
 y:['y','y','year','years']
 },
 
-ago:'<span></span> ago',
+//ago:'<span></span> ago',
 
 Currency:'Currency',
 StartPrice:'Start price',
@@ -420,7 +421,7 @@ tAccumulated:'Accumulated time as visible',
 tLastWriteOfTA:'',
 hideTimer:'Hide timer',
 hideTime:'Automatically hide',
-comparePrice:'Compare\nprice',
+comparePrice:'Compare price',
 coordinatePrecisionM:'Coordinate precision (±) [m]',
 dist:'Distance',
 image:'Picture',
@@ -463,6 +464,101 @@ ridingMower:'Riding mower',
 edger:'Edger',
 cuttingWidth:'Cutting width [cm]'
 },
+
+
+
+prop:{
+index:{label:'index', boRot:0},
+idUser:{label:'idSeller', boRot:1},
+IP:{label:'IP', boRot:0},
+idFB:{label:'idFB', boRot:0},
+idIdPlace:{label:'idIdPlace', boRot:1},
+idOpenId:{label:'idOpenId', boRot:1},
+terminationDate:{label:'', boRot:1},
+donatedAmount:{label:'Don­ated amo­unt [USD]', boRot:0},
+tCreated:{label:'Acc­ount age', boRot:0},
+displayName:{label:'Name', boRot:0},
+tel:{label:'Tel', boRot:0},
+displayEmail:{label:'Email', boRot:0},
+link:{label:'Link', boRot:0},
+homeTown:{label:'Home town', boRot:0},
+standingByMethod:{label:'How is <span nom="theSeller">the seller</span> waiting', boRot:0},
+//standingByMethod:{label:'How is the seller waiting', boRot:1},
+idDriverGovernment:{label:'Dri­ver-ID (gov)', boRot:0},
+vehicleType:{label:'Vehicle type', boRot:0},
+brand:{label:'Brand', boRot:0},
+nPassengers:{label:'Num­ber of pass­engers', boRot:0},
+nExtraSeat:{label:'Extra seats', boRot:0},
+nChildSeat:{label:'Child seats', boRot:0},
+nWheelChairPlaces:{label:'Wheel­chair places', boRot:0},
+currency:{label:'Cur­ren­cy', boRot:0},
+priceStart:{label:'Start price', boRot:0},
+strUnitDist:{label:'Dist­ance unit', boRot:0},
+pricePerDist:{label:'Price per dist', boRot:0},
+pricePerHour:{label:'Price per hour', boRot:0},
+tLastPriceChange:{label:'Price age', boRot:0},
+tPos:{label:'Posi­tion age', boRot:0},
+shiftEnd:{label:'Shift ends in', boRot:0},
+boShow:{label:'', boRot:1},
+x:{label:'', boRot:1},
+y:{label:'', boRot:1},
+imTag:{label:'', boRot:1},
+imTagTeam:{label:'', boRot:1},
+idTeam:{label:'Team', boRot:0},
+idTeamWanted:{label:'idTeam', boRot:0},
+linkTeam:{label:'', boRot:0},
+bla:{label:'', boRot:0},
+nComplaint:{label:'Com­pla­ints', boRot:0},
+histActive:{label:'Active days per last-<span></span>-days', boRot:0},
+tAccumulated:{label:'Accumu­lated time as visi­ble', boRot:0},
+tLastWriteOfTA:{label:'', boRot:0},
+hideTimer:{label:'Hide timer', boRot:0},
+hideTime:{label:'Auto­matic­ally hide', boRot:0},
+comparePrice:{label:'Comp­are price', boRot:0},
+coordinatePrecisionM:{label:'Coord­inate prec­ision (±) [m]', boRot:0},
+dist:{label:'Dist­ance', boRot:0},
+image:{label:'Picture', boRot:0},
+info:{label:'Info', boRot:0},
+
+payload:{label:'Pay­load [ton]', boRot:0},
+generalCargo:{label:'Gen­eral cargo', boRot:0},
+tailLift:{label:'Tail lift', boRot:0},
+loaderCrane:{label:'Load­er crane', boRot:0},
+tipper:{label:'Tip­per', boRot:0},
+loadableFromTheSide:{label:'Load­able from the side', boRot:0},
+iso20:{label:'ISO 20', boRot:0},
+iso40:{label:'ISO 40', boRot:0},
+tiltBed:{label:'Tilt bed', boRot:0},
+sideLift:{label:'Side lift', boRot:0},
+rollerContainer:{label:'Hook lift', boRot:0},
+otherContainer:{label:'Other cont­ainer', boRot:0}, //(Specify standard in the keyword field)
+tankTruck:{label:'Tank truck', boRot:0},
+flatbed:{label:'Flat­bed', boRot:0},
+lowboy:{label:'Low­boy', boRot:0},
+loggingTruck:{label:'Logg­ing truck', boRot:0},
+automobileTransport:{label:'Auto­mobile trans­port', boRot:0},
+livestock:{label:'Live­stock', boRot:0},
+vehicleTowing:{label:'Veh­icle tow­ing', boRot:0},
+keyword:{label:'Key­word', boRot:0},
+
+boHome:{label:'Home clean­ing', boRot:0},
+boOffice:{label:'Off­ice clean­ing', boRot:0},
+boIndustrial:{label:'Indu­strial clean­ing', boRot:0},
+boGotEquipment:{label:'Got own equip­ment', boRot:0},
+ladder:{label:'Ladd­er', boRot:0},
+skyLift:{label:'Sky­lift', boRot:0},
+nWindow:{label:'Num­ber of Win­dows', boRot:0},
+customerHasEquipment:{label:'Cust­omer has equip­ment', boRot:0},
+area:{label:'Area [m²]', boRot:0},
+experience:{label:'Exper­ience [years]', boRot:0},
+
+pushMower:{label:'Push mower', boRot:0},
+ridingMower:{label:'Ri­ding mower', boRot:0},
+edger:{label:'Edger', boRot:0},
+cuttingWidth:{label:'Cut­ting width [cm]', boRot:0}
+},
+
+
 
 helpBub:{
 index:'',

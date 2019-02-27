@@ -203,7 +203,9 @@ ReqBE.prototype.go=function*(){
       //form.uploadDir='tmp';
       
       var err, fields, files;
-      form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; flow.next();  });  yield;
+      var semY=0, semCB=0;  form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
+      //form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; flow.next();  });  yield;
+  
       if(err){this.mesEO(err);  return; } 
       
       this.File=files['fileToUpload[]'];
@@ -625,7 +627,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   this.objGraph=objGraph;
 
     // interpretGraph
-  if('error' in objGraph) {var {type,message}=objGraph.error, tmp='Error accessing data from ID provider: '+type+' '+message+'<br>';  return [new Error(tmp)]; }
+  if('error' in objGraph) {var {type,message}=objGraph.error, tmp='Error accessing data from ID provider: '+type+' '+message+'\n';  return [new Error(tmp)]; }
 
   var idFB, idIdPlace, idOpenId;
   if(strIP=='fb'){ 
