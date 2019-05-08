@@ -328,7 +328,8 @@ WaitingForYourPositionHelp:'No collected data is saved',
 CurrentlyNoOneIsVisible:'Currently no one is visible',
 
 
-introHead:'New <span nom="seller">seller</span>, welcome!',
+introHeadC:'New <span nom="customer">customer</span>, welcome!',
+introHeadS:'New <span nom="seller">seller</span>, welcome!',
 introBread:'A contact email is needed incase the site changes ID-provider. (The contact email will not be be shown to the public.)',
 Tel:'Tel',
 ContactEmail:'Contact email',

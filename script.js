@@ -26,7 +26,13 @@ UglifyJS = require("uglify-js");
 //sendgrid  = require('sendgrid');
 sgMail = require('@sendgrid/mail');
 ip = require('ip');
+Streamify = require('streamify-string');
+validator = require('validator');
+serialize = require('serialize-javascript');
 var argv = require('minimist')(process.argv.slice(2));
+app=(typeof window==='undefined')?global:window;
+
+
 require('./libMath.js');
 require('./lib.js');
 require('./libServerGeneral.js');
@@ -37,7 +43,6 @@ require('./lib/foundOnTheInternet/sha1.js');
 //require('./store.js');
 
 strAppName='tracker';
-app=(typeof window==='undefined')?global:window;
 extend=util._extend;
 
 strInfrastructure=process.env.strInfrastructure||'local';
@@ -47,7 +52,7 @@ boLocal=strInfrastructure=='local';
 boDO=strInfrastructure=='do'; 
 
 
-StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummies']; // , 'createDummy'
+StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'populateSetting', 'truncate', 'createDummies']; // , 'createDummy'
   
 helpTextExit=function(){
   var arr=[];
@@ -72,17 +77,23 @@ if(  (urlRedis=process.env.REDISTOGO_URL)  || (urlRedis=process.env.REDISCLOUD_U
 }
 
 
+//strCookieProp="; SameSite=Lax; HttpOnly";
+
+var StrCookiePropProt=["HttpOnly", "Path=/","max-age="+3600*24*30];
+//if(boDO) { StrCookiePropProt.push("secure"); }
+var StrCookiePropStrict=StrCookiePropProt.concat("SameSite=Strict"),   StrCookiePropLax=StrCookiePropProt.concat("SameSite=Lax"),   StrCookiePropNormal=StrCookiePropProt.concat();
+strCookiePropStrict=";"+StrCookiePropStrict.join(';');  strCookiePropLax=";"+StrCookiePropLax.join(';');  strCookiePropNormal=";"+StrCookiePropNormal.join(';');
 
 var flow=( function*(){
 
     // Default config variables
   UriDB={};
-  boDbg=0; boAllowSql=1; port=5000; levelMaintenance=0; googleSiteVerification='googleXXX.html';
+  boDbg=0; port=5000; levelMaintenance=0; googleSiteVerification='googleXXX.html';
   wwwCommon='';
   boShowTeam=false;
   intDDOSMax=100; tDDOSBan=5; 
-  maxUnactivity=3600*24;
-  maxLoginUnactivity=10*60;
+  maxUnactivity=3600*24;  // Used on _Main, CSRFCode, _UserInfoFrDB
+  maxLoginUnactivity=10*60;  // Used on _LoginIdP, _LoginIdUser
   leafLoginBack="loginBack.html"; 
   boVideo=0;
   
@@ -105,6 +116,12 @@ var flow=( function*(){
   var tmp=yield *getRedis(flow, redisVar);
   var boNewConfig=strMd5Config!==tmp; 
   if(boNewConfig) { var tmp=yield *setRedis(flow, redisVar, strMd5Config);  }
+  
+  //var redisVar='str'+ucfirst(strAppName)+'Md5Config';
+  //var [err,tmp]=yield* cmdRedis(flow, 'GET', [redisVar]);
+  //var boNewConfig=strMd5Config!==tmp; 
+  //if(boNewConfig) { var [err,tmp]=yield* cmdRedis(flow, 'SET',[redisVar,strMd5Config]);  }
+  
 
   if('levelMaintenance' in process.env) levelMaintenance=process.env.levelMaintenance;
   SiteName=Object.keys(Site);
@@ -129,7 +146,7 @@ var flow=( function*(){
   if(typeof argv.sql!='undefined'){
     if(typeof argv.sql!='string') {console.log('sql argument is not a string'); process.exit(-1); return; }
     var tTmp=new Date().getTime();
-    var objSetupSql=new SetupSql(); yield *objSetupSql.doQuery(flow, argv.sql);
+    var SetupSql=new SetupSqlT(); yield *SetupSql.doQuery(flow, argv.sql);
     console.log('Time elapsed: '+(new Date().getTime()-tTmp)/1000+' s'); 
     process.exit(0);
   }
@@ -188,32 +205,72 @@ var flow=( function*(){
       else if(boDO) { boTLS=true; }
 
 
-      var cookies = parseCookies(req);
-      var sessionID;  if('sessionID' in cookies) sessionID=cookies.sessionID; else { sessionID=randomHash();   res.setHeader("Set-Cookie", "sessionID="+sessionID+"; SameSite=Lax"); }  //+ " HttpOnly" 
-
+        //res.setHeader("X-Frame-Options", "deny");  // Deny for all (note: this header is removed for images (see reqMediaImage) (should also be removed for videos))
+      res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");  // Deny for all (note: this header is removed in certain requests)
+      res.setHeader("X-Content-Type-Options", "nosniff");  // Don't try to guess the mime-type (I prefer the rendering of the page to fail if the mime-type is wrong)
+      //if(boDO) res.setHeader("Strict-Transport-Security", "max-age="+3600*24*365); // All future requests must be with https (forget this after a year)
+      res.setHeader("Referrer-Policy", "origin");  //  Don't write the refer unless the request comes from the origin
       
-      var ipClient=getIP(req);
-      var redisVarSession=sessionID+'_UserInfoFrDB', redisVarCounter=sessionID+'_Counter', redisVarCounterIP=ipClient+'_Counter'; 
-      
-        // get intCount
-      var semY=0, semCB=0, err, intCount;
-      var tmp=redisClient.send_command('eval',[luaCountFunc, 3, redisVarSession, redisVarCounter, redisVarCounterIP, tDDOSBan], function(errT,intCountT){
-        err=errT; intCount=intCountT; if(semY) req.flow.next();   semCB=1;
-      });
-      if(!semCB) { semY=1; yield;}
-      if(err) {console.error(err); return;}
-      if(intCount>intDDOSMax) {res.outCode(429,"Too Many Requests ("+intCount+"), wait "+tDDOSBan+"s\n"); return; }
 
 
+      var domainName=req.headers.host; 
       var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=querystring.parse(qs),  pathNameOrg=objUrl.pathname;
-      var wwwReq=req.headers.host+pathNameOrg;
+      var wwwReq=domainName+pathNameOrg;
       var {siteName,wwwSite}=Site.getSite(wwwReq);  
       if(!siteName){ res.out404("404 Nothing at that url\n"); return; }
       var pathName=wwwReq.substr(wwwSite.length); if(pathName.length==0) pathName='/';
       var site=Site[siteName];
 
       if(boDbg) console.log(pathName);
+      
+      
+      var cookies = parseCookies(req);
+      req.cookies=cookies;
 
+      req.boCookieNormalOK=req.boCookieLaxOK=req.boCookieStrictOK=false;
+      
+        // Check if a valid sessionID-cookie came in
+      var boSessionCookieInInput='sessionIDNormal' in cookies, sessionID=null, redisVarSessionMain;
+      if(boSessionCookieInInput) {
+        sessionID=cookies.sessionIDNormal;  redisVarSessionMain=sessionID+'_Main';
+        var [err, tmp]=yield* cmdRedis(req.flow, 'EXISTS', redisVarSessionMain); req.boCookieNormalOK=tmp;
+      } 
+      
+      if(req.boCookieNormalOK){
+          // Check if Lax / Strict -cookies are OK
+        req.boCookieLaxOK=('sessionIDLax' in cookies) && cookies.sessionIDLax===sessionID;
+        req.boCookieStrictOK=('sessionIDStrict' in cookies) && cookies.sessionIDStrict===sessionID;
+        var redisVarDDOSCounter=sessionID+'_Counter';
+      }else{
+        sessionID=randomHash();  redisVarSessionMain=sessionID+'_Main';
+        var ipClient=getIP(req), redisVarDDOSCounter=ipClient+'_Counter';
+      }
+      
+        // Increase DDOS counter 
+      var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
+      var [err, intCount]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDOSCounter, tDDOSBan]);
+      
+      
+      res.setHeader("Set-Cookie", ["sessionIDNormal="+sessionID+strCookiePropNormal, "sessionIDLax="+sessionID+strCookiePropLax, "sessionIDStrict="+sessionID+strCookiePropStrict]);
+       
+        // Check if to many requests comes in a short time (DDOS)
+      if(intCount>intDDOSMax) {res.outCode(429,"Too Many Requests ("+intCount+"), wait "+tDDOSBan+"s\n"); return; }
+      
+      
+        // Refresh / create  redisVarSessionMain
+      if(req.boCookieNormalOK){
+        var luaCountFunc=`local c=redis.call('GET',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
+        var [err, value]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarSessionMain, maxUnactivity]); req.sessionCache=JSON.parse(value)
+      } else { 
+        yield* setRedis(req.flow, redisVarSessionMain, 1, maxUnactivity); 
+        req.sessionCache={};
+      }
+      
+
+        // Set mimetype if the extention is recognized
+      var regexpExt=RegExp('\.([a-zA-Z0-9]+)$');
+      var Match=pathName.match(regexpExt), strExt; if(Match) strExt=Match[1];
+      if(strExt in MimeType) res.setHeader('Content-type', MimeType[strExt]);
 
 
       var strScheme='http'+(boTLS?'s':''),   strSchemeLong=strScheme+'://';
@@ -225,40 +282,37 @@ var flow=( function*(){
       //req.app_id=req.rootDomain.fb.app_id;   req.app_secret=req.rootDomain.fb.app_secret;
 
 
+      if(levelMaintenance){res.outCode(503, "Down for maintenance, try again in a little while."); return;}
       var objReqRes={req:req, res:res};
-      if(pathName.substr(0,5)=='/sql/'){
-        if(!boDbg && !boAllowSql){ res.out200('Set boAllowSql=1 (or boDbg=1) in the config.js-file');  return }
-        var reqSql=new ReqSql(req, res),  objSetupSql=new SetupSql();
-        req.pathNameWOPrefix=pathName.substr(5);
-        if(req.pathNameWOPrefix=='zip'){       reqSql.createZip(objSetupSql);     }
-        else {  reqSql.toBrowser(objSetupSql); }
+      objReqRes.myMySql=new MyMySql(DB[site.db].pool);
+      if(pathName=='/'){
+        if("pubKey" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
+        else if("pubKey" in objQS){      yield* reqPubKeyStore.call(objReqRes);    }
+        else{      yield* reqIndex.call(objReqRes);      }
       }
-      else {
-        if(levelMaintenance){res.outCode(503, "Down for maintenance, try again in a little while."); return;}
-        if(pathName=='/'){
-          if("pubKey" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
-          else if("pubKey" in objQS){      yield* reqPubKeyStore.call(objReqRes);    }
-          else{      yield* reqIndex.call(objReqRes);      }
-        }
-        //else if(pathName=='/'+leafAssign){    var reqAssign=new ReqAssign(req, res);    reqAssign.go();    }
-        else if(pathName.indexOf('/image/')==0){      yield* reqImage.call(objReqRes);   } //RegExp('^/image/').test(pathName)
-        else if(pathName=='/'+leafBE){        var reqBE=new ReqBE(req, res);  yield* reqBE.go();    }
-        else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html'){   yield* reqStatic.call(objReqRes);  }
-        else if(pathName=='/'+leafLoginBack){   yield* reqLoginBack.call(objReqRes);   }
-        else if(pathName=='/monitor.html'){     yield* reqMonitor.call(objReqRes);     }
-        else if(pathName=='/stat.html'){        yield* reqStat.call(objReqRes);        }
-        else if(pathName=='/statBoth.html'){        yield* reqStatBoth.call(objReqRes);        }
-        //else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
-        else if(pathName=='/'+leafLoginWLink){  yield* reqLoginWLink.call(objReqRes);  }
-        else if(pathName=='/'+leafVerifyPWResetReturn){  yield* reqVerifyPWResetReturn.call(objReqRes);  }
-        else if(pathName=='/'+leafVerifyEmailNCreateUserReturn){  yield* reqVerifyEmailNCreateUserReturn.call(objReqRes);  }
-        //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
-        else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
-        else if(pathName=='/debug'){    debugger  }
-        else if(pathName=='/prev.html'){        yield* reqPrev.call(objReqRes);        }
-        else if(pathName=='/'+googleSiteVerification) res.end('google-site-verification: '+googleSiteVerification);
-        else {res.out404("404 Not Found\n"); return; }
+      //else if(pathName=='/'+leafAssign){    var reqAssign=new ReqAssign(req, res);    reqAssign.go();    }
+      else if(pathName.indexOf('/image/')==0){      yield* reqImage.call(objReqRes);   } //RegExp('^/image/').test(pathName)
+      else if(pathName=='/'+leafBE){        var reqBE=new ReqBE(objReqRes);  yield* reqBE.go();    }
+      else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html'){
+        if(pathName=='/conversion.html') res.removeHeader("Content-Security-Policy");
+        yield* reqStatic.call(objReqRes);
       }
+      else if(pathName=='/'+leafLoginBack){   yield* reqLoginBack.call(objReqRes);   }
+      else if(pathName=='/monitor.html'){     yield* reqMonitor.call(objReqRes);     }
+      else if(pathName=='/stat.html'){        yield* reqStat.call(objReqRes);        }
+      else if(pathName=='/statBoth.html'){        yield* reqStatBoth.call(objReqRes);        }
+      //else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
+      else if(pathName=='/'+leafLoginWLink){  yield* reqLoginWLink.call(objReqRes);  }
+      else if(pathName=='/'+leafVerifyPWResetReturn){  yield* reqVerifyPWResetReturn.call(objReqRes);  }
+      else if(pathName=='/'+leafVerifyEmailNCreateUserReturn){  yield* reqVerifyEmailNCreateUserReturn.call(objReqRes);  }
+      //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
+      else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
+      else if(pathName=='/debug'){    debugger  }
+      else if(pathName=='/prev.html'){        yield* reqPrev.call(objReqRes);        }
+      else if(pathName=='/'+googleSiteVerification) res.end('google-site-verification: '+googleSiteVerification);
+      else {res.out404("404 Not Found\n"); return; }
+      objReqRes.myMySql.fin();
+      
       
     
     })(); req.flow.next();

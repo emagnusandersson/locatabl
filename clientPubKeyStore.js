@@ -125,7 +125,7 @@ loginDivExtend=function(el){
   var mess=createElement('span').css({"margin-left":"0.3em"});
   var strButtonSize='2em';
   var fbIm=createElement('img').on('click', function(){popupWin(strIPPrim);}).prop({src:uLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
-  var fbHelp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText(langHtml.helpLoginSeller);     popupHover(fbHelp,bub);  
+  //var fbHelp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText(langHtml.helpLoginSeller);     popupHover(fbHelp,bub);  
 
   var label=createElement('span').myText('Login first, then click yes: ').css({'font-size':'1.3em','font-weight':'bold'});
   el.append(label,fbIm,mess); //,fbHelp
@@ -165,22 +165,16 @@ yesDivExtend=function(el){
 majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
   var xhr = new XMLHttpRequest();
   xhr.open('POST', uBE, true);
-  //var vecMod=vecIn.map(el=>{return el.slice(0,2)});
-  //var arrRet=[]; vecIn.forEach(function(el,i){arrRet[i]=el[2]||null; delete el[2];}); // Put return functions in a separate array
+  xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
   var arrRet=[]; vecIn.forEach(function(el,i){var f=null; if(el.length==3) f=el.pop(); arrRet[i]=f;}); // Put return functions in a separate array
   vecIn.push(['CSRFCode',CSRFCode]);
   vecIn.push(['caller',caller]);
-  //if(boFormData){
   if(vecIn.length==2 && vecIn[0][1] instanceof FormData){
     var formData=vecIn[0][1]; vecIn[0][1]=0; // First element in vecIn contains the formData object. Rearrange it as "root object" and add the remainder to a property 'vec'
     formData.append('vec', JSON.stringify(vecIn));
-    var tmp=window.btoa(Math.random().toString()).substr(0, 12);
-    //xhr.setRequestHeader("Content-Type", "multipart/form-data;boundary=----WebKitFormBoundary" + tmp);
-    //xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    //xhr.setRequestHeader("Content-Length", formData.length);
     var dataOut=formData;
     xhr.setRequestHeader('x-type','single');
-  } else {  var dataOut=JSON.stringify(vecIn); }
+  } else { var dataOut=JSON.stringify(vecIn); }
   
   xhr.onload=function () {
     var dataFetched=this.response;
@@ -198,6 +192,8 @@ majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSid
   
   xhr.send(dataOut);
 }
+
+
 
 
 

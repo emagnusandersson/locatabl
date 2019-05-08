@@ -1,9 +1,10 @@
 
-
-
-var rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, iFeat, changeFunc){  
 "use strict"
+
+window.rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSetting, iFeat, changeFunc){  
   elHtml=document.documentElement;  elBody=document.body;
+
+  var {colButtAllOn, colButtOn, colButtOff, colFiltOn, colFiltOff, colFontOn, colFontOff, colActive, colStapleOn, colStapleOff, maxStaple}=objSetting;
     
       // filt: 'B/BF'-features: [vOffNames,vOnNames, boWhite],     'S'-features: [iOn,iOff]
       // hist: 'B'-features: [vPosName,vPosVal],       'S'/'BF'-features: [vPosInd,vPosVal]
@@ -120,7 +121,6 @@ var rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, iFeat, c
   
   arrHandW.forEach(ele=>ele.css({width:'0px',display:'inline-block'}));
   
-  
   var strMouseDownEvent='mousedown', strMouseMoveEvent='mousemove', strMouseUpEvent='mouseup';  if(boTouch){  strMouseDownEvent='touchstart'; strMouseMoveEvent='touchmove'; strMouseUpEvent='touchend';  }
   arrHand.forEach(ele=>ele.on(strMouseDownEvent,myMousedown));
   
@@ -156,8 +156,8 @@ var rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, iFeat, c
   return el;
 }
 
-var rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, iFeat, changeFunc){    // filter-buttons
-"use strict"
+window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSetting, iFeat, changeFunc){    // filter-buttons
+  var {colButtAllOn, colButtOn, colButtOff, colFiltOn, colFiltOff, colFontOn, colFontOff, colActive, colStapleOn, colStapleOff, maxStaple}=objSetting;
   var calcAllOnNLight=function(){return vOff.length==0 && filt[2]==0 && boIfAllOnDoLight;}  
   var clickFunc=function(){
     var val=this.myVal;
@@ -301,11 +301,11 @@ var rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, iFeat,
 
       // filt: 'B/BF'-features: [vOffNames,vOnNames, boWhite],     'S'-features: [iOn,iOff]
       // hist: 'B'-features: [vPosName,vPosVal],       'S'/'BF'-features: [vPosInd,vPosVal]
-Filt=function(Prop, StrOrderFilt){ 
+window.Filt=function(Prop, StrOrderFilt){ 
   var el=[];  extend(el,Filt.tmpPrototype);
   el.StrOrderFilt=StrOrderFilt; el.Prop=Prop; el.nFeat=StrOrderFilt.length;
   var StrOrderFiltFlip=array_flip(StrOrderFilt);
-  el.iParent=StrOrderFiltFlip.parent
+  el.iParent=StrOrderFiltFlip.parent;
   for(var i=0;i<el.nFeat;i++){  
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;
     if(kind[0]=='S') el[i]=[0,len];
@@ -317,16 +317,15 @@ Filt.tmpPrototype={};
 Filt.tmpPrototype.filtAll=function(){
 "use strict"
   var el=this;
-  for(var i=0;i<el.nFeat;i++){  
+  for(var i=0;i<el.nFeat;i++){
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;
     if(kind[0]=='S') {el[i][0]=0; el[i][1]=len; }
     else if(kind[0]=='B') {   var tmp; if(kind=='BF') tmp=stepN(0,len); else tmp=[];      el[i][0]=[]; el[i][1]=tmp; el[i][2]=0;    }
   }
 }
 Filt.tmpPrototype.filtNone=function(){
-"use strict"
   var el=this;
-  for(var i=0;i<el.nFeat;i++){  
+  for(var i=0;i<el.nFeat;i++){
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;
     if(kind[0]=='S') {
       if(kind[1]=='1') el[i][0]=len; else el[i][1]=0;
@@ -344,7 +343,7 @@ Filt.tmpPrototype.filtDefault=function(){
 
 
 
-Hist=function(nFeat){ 
+window.Hist=function(nFeat){ 
   var el=[]; extend(el,Hist.tmpPrototype);  for(var i=0;i<nFeat;i++){ el[i]=[[],[]];}
   el.nFeat=nFeat;
   return el;
@@ -365,10 +364,10 @@ Hist.tmpPrototype.histClear=function(){  var el=this;  for(var i=0;i<el.nFeat;i+
       
       // TODO  variables starting with v should have it removed (v is for 'vector'). (My new naming conversion uses a capital letter to denote arrays.)
 
-filterDivICreator=function(oRole, changeFunc){ 
+window.filterDivICreator=function(objArg, changeFunc){ 
   var el=createElement('div'); extend(el, filterDivICreator.tmpPrototype);
   el.changeFunc=changeFunc;
-  copySome(el, oRole, ['Prop', 'Label', 'helpBub',   'StrGroupFirst', 'StrGroup',   'StrOrderFilt']); // ,   'StrProp'
+  copySome(el, objArg, ['Prop', 'Label', 'helpBub',   'StrGroupFirst', 'StrGroup',   'StrOrderFilt', 'objSetting']); // ,   'StrProp'
   //copySome(el, oRole, ['Prop', 'Label', 'helpBub']);
   //copySome(el, oRole.filter, ['StrProp', 'StrGroupFirst', 'StrGroup']);
   //el.StrOrderFilt=oRole.filter.StrProp;
@@ -378,7 +377,6 @@ filterDivICreator=function(oRole, changeFunc){
 filterDivICreator.tmpPrototype={};
 filterDivICreator.tmpPrototype.update=function(){  var el=this; for(var i=0;i<el.nFeat;i++){ el.arrFeat[i].update();}  } 
 filterDivICreator.tmpPrototype.createDivs=function(){
-"use strict"
   var el=this;
   el.nFeat=el.StrOrderFilt.length;
 
@@ -387,7 +385,8 @@ filterDivICreator.tmpPrototype.createDivs=function(){
   el.Filt=new Filt(el.Prop, el.StrOrderFilt);  el.Filt.filtDefault();
   el.Hist=new Hist(el.nFeat);
 
-  el.helpBub=extend({},el.helpBub); if(typeof el.Unit=='undefined') el.Unit={};
+  //el.helpBub=extend({},el.helpBub);
+  if(typeof el.Unit=='undefined') el.Unit={};
       
   var boRangeControlOK=0;
   //if(typeof rangeExtend!='undefined') boRangeControlOK=boImgCreationOK;
@@ -405,11 +404,11 @@ filterDivICreator.tmpPrototype.createDivs=function(){
     if(el.Prop[strName].feat.kind[0]=='B') { 
       h=createElement('div').myAppend(calcLabel(el.Label,strName),strUnit,': ',imgH); //.css({'margin':'0.3em 0em 0em'})
       var p=createElement('p').css({'padding':'0.3em 0em 0em','font-size': '85%'}); 
-      rowButtExtend(p, el.Prop, el.Filt, el.Hist, el.BoHasRem, el.StrOrderFilt, i, el.changeFunc);     p.createCont();
+      rowButtExtend(p, el.Prop, el.Filt, el.Hist, el.BoHasRem, el.StrOrderFilt, el.objSetting, i, el.changeFunc);     p.createCont();
     }  
     else if(el.Prop[strName].feat.kind[0]=='S') { 
       h=createElement('div').myAppend(calcLabel(el.Label,strName),strUnit,': ',imgH); 
-      var p=createElement('p');  p=rangeExtender(p, el.Prop, el.Filt, el.Hist, el.BoHasRem, el.StrOrderFilt, i, el.changeFunc);
+      var p=createElement('p');  p=rangeExtender(p, el.Prop, el.Filt, el.Hist, el.BoHasRem, el.StrOrderFilt, el.objSetting, i, el.changeFunc);
       if(boRangeControlOK) {h.css({'margin':'0 1em 0 0'});   p.css({'line-height':'100%','padding':'0 0 1em 0','text-align':'center'}); } 
       else { h.css({'margin':'0.3em 0em -0.4em'});  p.css({'margin':'0',display:'block'}); }
     } 
@@ -433,7 +432,6 @@ filterDivICreator.tmpPrototype.createDivs=function(){
   }
 }
 filterDivICreator.tmpPrototype.interpretHistPHP=function(HistPHP){
-"use strict"
   var el=this;
   for(var i=0;i<el.nFeat;i++) { 
     var strName=el.StrOrderFilt[i]; 
@@ -459,10 +457,20 @@ filterDivICreator.tmpPrototype.interpretHistPHP=function(HistPHP){
         if(el.Filt[i][listType].indexOf(name)==-1) el.Filt[i][listAlt].push(name);  // Keep el.Filt[i][listType] as is and add any potential new "name"'s
       }
     }
-  } 
+  }
+  //var Sum=new Array(HistPHP.length).fill(0);
+  //for(var i=0;i<HistPHP.length;i++){
+    //var histPHP=HistPHP[i];
+    //var strName=el.StrOrderFilt[i];
+    //for(var j=0;j<histPHP.length;j++){
+      //Sum[i]=Sum[i]+histPHP[j][1];
+    //}
+    //console.log(strName+': '+Sum[i]);
+  //}
+  //console.log('------------');
 }
+
 filterDivICreator.tmpPrototype.gatherFiltData=function(){
-"use strict"
   var el=this;
   var Filt=el.Filt;
   var FiltOut={};
@@ -473,25 +481,26 @@ filterDivICreator.tmpPrototype.gatherFiltData=function(){
   }
   return FiltOut;
 }
+
 filterDivICreator.tmpPrototype.toStored=function(){
-"use strict"
-  var el=this;
-  var Filt=el.Filt;
-  var FiltS=[];
-  for(var i=0;i<Filt.length;i++){
-    FiltS[i]=extend(true, [], Filt[i]);
-  }
+  var el=this, Filt=el.Filt;
+  //var FiltS=[];
+  //for(var i=0;i<Filt.length;i++){
+  //  FiltS[i]=extend(true, [], Filt[i]);
+  //}
+  var FiltS = JSON.parse(JSON.stringify(Filt));
   return FiltS;
 }
+
 filterDivICreator.tmpPrototype.frStored=function(o){
-"use strict"
   var el=this;
   var Filt=el.Filt, FiltS=o.Filt;
   for(var i=0;i<Filt.length;i++){
     var strName=el.StrOrderFilt[i];
     if(el.Prop[strName].feat.kind[0]=='B'){ 
-      for(var j=0;j<FiltS[i][0].length;j++)     Filt[i][0][j]=FiltS[i][0][j];
-      for(var j=0;j<FiltS[i][1].length;j++)     Filt[i][1][j]=FiltS[i][1][j];
+      //for(var j=0;j<FiltS[i][0].length;j++)     Filt[i][0][j]=FiltS[i][0][j];
+      //for(var j=0;j<FiltS[i][1].length;j++)     Filt[i][1][j]=FiltS[i][1][j];
+      myCopy(Filt[i][0],FiltS[i][0]);  myCopy(Filt[i][1],FiltS[i][1]);
       Filt[i][2]=FiltS[i][2];
     } else  { Filt[i][0]=FiltS[i][0]; Filt[i][1]=FiltS[i][1]; }
   }

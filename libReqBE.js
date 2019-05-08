@@ -117,6 +117,7 @@
    //libReqBE->verifyPWReset  --->  libReq->reqVerifyPWResetReturn
 
 
+//req.sessionID+'_Main'
 
 
 
@@ -140,14 +141,20 @@
 /******************************************************************************
  * ReqBE
  ******************************************************************************/
-var ReqBE=app.ReqBE=function(req, res){
-  this.req=req; this.res=res; this.site=req.site; this.pool=DB[this.site.db].pool; this.Str=[]; 
-  this.Out={GRet:{userInfoFrDBUpd:{}}, dataArr:[]}; this.GRet=this.Out.GRet; 
+//app.ReqBE=function(req, res){
+  //this.req=req; this.res=res; this.site=req.site; this.Str=[];  //this.pool=DB[this.site.db].pool;
+  //this.Out={GRet:{userInfoFrDBUpd:{}}, dataArr:[]}; this.GRet=this.Out.GRet; 
+//}
+app.ReqBE=function(objReqRes){
+  Object.assign(this, objReqRes);
+  this.site=this.req.site
+  this.Str=[];  this.Out={GRet:{userInfoFrDBUpd:{}}, dataArr:[]};  this.GRet=this.Out.GRet; 
 }
 
   // Method "mesO" and "mesEO" are only called from "go". Method "mes" can be called from any method.
 ReqBE.prototype.mes=function(str){ this.Str.push(str); }
 ReqBE.prototype.mesO=function(e){
+  var res=this.res;
     // Prepare an error-message for the browser.
   var strEBrowser;
   if(typeof e=='string'){strEBrowser=e; }
@@ -163,9 +170,16 @@ ReqBE.prototype.mesO=function(e){
     // closebymarket-specific
   this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
-  this.res.end(JSON.stringify(this.Out));  
+  var str=serialize(this.Out);
+  if(str.length<lenGZ) res.end(str);
+  else{
+    res.setHeader("Content-Encoding", 'gzip');
+    //res.setHeader('Content-Type', MimeType.txt);
+    Streamify(str).pipe(zlib.createGzip()).pipe(res);
+  }
 }
 ReqBE.prototype.mesEO=function(e){
+  var res=this.res;
     // Prepare an error-message for the browser and one for the error log.
   var StrELog=[], strEBrowser;
   if(typeof e=='string'){strEBrowser=e; StrELog.push(e);}
@@ -185,15 +199,19 @@ ReqBE.prototype.mesEO=function(e){
     // closebymarket-specific
   this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
-  this.res.writeHead(500, {"Content-Type": "text/plain"}); 
-  this.res.end(JSON.stringify(this.Out));
+  //res.writeHead(500, {"Content-Type": MimeType.txt}); 
+  res.end(serialize(this.Out));
 }
 
 
 
 ReqBE.prototype.go=function*(){
   var req=this.req, flow=req.flow, res=this.res, site=req.site;
-   
+  
+  if('x-requested-with' in req.headers && req.headers['x-requested-with']=="XMLHttpRequest") ; else { this.mesEO("Ajax-request: req.headers['x-requested-with']!='XMLHttpRequest'");  return; }
+  var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length;
+  if('referer' in req.headers && req.headers.referer.slice(0,lTmp)==urlT) ; else { this.mesEO("Referer is wrong");  return; }
+  
     // Extract input data either 'POST' or 'GET'
   var jsonInput;
   if(req.method=='POST'){ 
@@ -219,26 +237,31 @@ ReqBE.prototype.go=function*(){
     }
   }
   else if(1){ this.mesO('send me a POST'); return; }
-  else if(req.method=='GET'){
-    var objUrl=url.parse(req.url), qs=objUrl.query||''; jsonInput=urldecode(qs);
-  }
+  //else if(req.method=='GET'){ var objUrl=url.parse(req.url), qs=objUrl.query||''; jsonInput=urldecode(qs); }
 
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
+  if(!req.boCookieStrictOK) {this.mesEO('Strict cookie not set');  return;   }
   
   this.sessionUserInfoFrDB=yield *getRedis(flow, req.sessionID+'_UserInfoFrDB', true);
+  //var [err,value]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
   if(!this.sessionUserInfoFrDB || typeof this.sessionUserInfoFrDB!='object'  ) {
     this.sessionUserInfoFrDB=extend({}, specialistDefault);
   }
   yield* setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
 
-  this.sessionLoginIdP=yield *getRedis(flow, req.sessionID+'_LoginIdP', true);
-  //if(this.sessionLoginIdP ) { yield* setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity); }
-  if(this.sessionLoginIdP ) { yield* expireRedis(flow, req.sessionID+'_LoginIdP', maxLoginUnactivity); } else this.sessionLoginIdP={};
+  //this.sessionLoginIdP=yield *getRedis(flow, req.sessionID+'_LoginIdP', true);
+  //if(this.sessionLoginIdP ) { yield* expireRedis(flow, req.sessionID+'_LoginIdP', maxLoginUnactivity); } else this.sessionLoginIdP={};
+
+  //var [err, value]=yield* cmdRedis(flow, 'GET',[req.sessionID+'_LoginIdP']);  this.sessionLoginIdP=JSON.parse(value);
+  //if(this.sessionLoginIdP ) { yield* cmdRedis(flow, 'EXPIRE', [req.sessionID+'_LoginIdP', maxLoginUnactivity]); } else this.sessionLoginIdP={};
+  
+  var luaCountFunc=`local c=redis.call('GET',KEYS[1]); if(c) then redis.call('EXPIRE',KEYS[1], ARGV[1]); end; return c`;
+  var [err, value]=yield* cmdRedis(flow, 'EVAL',[luaCountFunc, 1, req.sessionID+'_LoginIdP', maxLoginUnactivity]);   this.sessionLoginIdP=value?JSON.parse(value):{};
   
   
   
-  res.setHeader("Content-type", "application/json");
+  res.setHeader("Content-type", MimeType.json);
 
 
     // Remove 'CSRFCode' and 'caller' form beArr
@@ -296,22 +319,13 @@ ReqBE.prototype.go=function*(){
     var strFun=beArr[k][0];
     if(in_array(strFun,allowed)) {
       var inObj=beArr[k][1],     tmpf; if(strFun in this) tmpf=this[strFun]; else tmpf=global[strFun];
+      if(typeof inObj!='object') {this.mesO('typeof inObj!="object"'); return;}
       var fT=[tmpf,inObj];   Func.push(fT);
     }
   }
 
-  //for(var k=0; k<Func.length; k++){
-    //var [func,inObj]=Func[k],   objT=yield* func.call(this, inObj);
-    //var err=null;  if(typeof objT=='undefined') err='unknown error'; else if(objT instanceof(Error)) err=objT; else if(objT.err) err=objT.err;
-    //if(err) { if(!res.finished) { this.mesEO(err); } return; }
-    //else this.Out.dataArr.push(objT.result);
-  //}
-
-
   for(var k=0; k<Func.length; k++){
     var [func,inObj]=Func[k],   [err, result]=yield* func.call(this, inObj);
-    //if(typeof objT=='object') {    if('err' in objT) err=objT.err; else err=objT;    }    else if(typeof objT=='undefined') err='Error when calling BE-fun: '+k;    else err=objT;
-    
     if(res.finished) return;
     else if(err){
       if(typeof err=='object' && err.name=='ErrorClient') this.mesO(err); else this.mesEO(err);     return;
@@ -319,6 +333,7 @@ ReqBE.prototype.go=function*(){
     else this.Out.dataArr.push(result);
   }
   this.mesO();
+  
 }
 
 
@@ -338,7 +353,7 @@ ReqBE.prototype.sendLoginLink=function*(inObj){
   Val.push(email);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   if(results.length==0) { return [new ErrorClient('No such email in the database')];}
   
   var code=randomHash();
@@ -348,10 +363,10 @@ ReqBE.prototype.sendLoginLink=function*(inObj){
   var wwwSite=req.wwwSite;
   var uLink=req.strSchemeLong+wwwSite+'/'+leafLoginWLink+'?code='+code;
   
-  var strTxt='<h3>Login link to '+wwwSite+'</h3> \n\
-<p>Someone (maybe you) uses '+wwwSite+' and wants to login using '+email+'. Is this you, then click this link to login: <a href="'+uLink+'">'+uLink+'</a> .</p> \n\
-<p>Otherwise neglect this message.</p>';
-//<p>Note! The link stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+  var strTxt=`<h3>Login link to `+wwwSite+`</h3>
+<p>Someone (maybe you) uses `+wwwSite+` and wants to login using `+email+`. Is this you, then click this link to login: <a href="`+uLink+`">`+uLink+`</a> .</p>
+<p>Otherwise neglect this message.</p>`;
+//<p>Note! The link stops working `+expirationTime/60+` minutes after the email was sent.</p>`;
   
   if(boDbg) wwwSite="closeby.market";
   const msg = { to:email, from:'noreply@'+wwwSite, subject:'Login link',  html:strTxt};    sgMail.send(msg);
@@ -373,7 +388,7 @@ ReqBE.prototype.loginWEmail=function*(inObj){
   Val.push(inObj.email);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   
   if(results.length==0) return [new ErrorClient('Email not found')];
   var objT=results[0];
@@ -407,7 +422,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
   Sql.push("SELECT * FROM "+userTab+" WHERE email=?;");
   Val.push(email);
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   if(results.length) { return [new ErrorClient('Account (email) already exists.')];}
   
 
@@ -421,10 +436,10 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
     // Send email
   var wwwSite=req.wwwSite;
   var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailNCreateUserReturn+'?code='+code;
-  var strTxt='<h3>Email verification / account creation on '+wwwSite+'</h3> \n\
-<p>Someone (maybe you) uses '+wwwSite+' and claims that '+email+' is their email address and they want to become a user. Is this you? If so use the link below to create an account.</p> \n\
-<p>Otherwise neglect this message.</p> \n\
-<p><a href='+uVerification+'>'+uVerification+'</a></p>';
+  var strTxt=`<h3>Email verification / account creation on `+wwwSite+`</h3>
+<p>Someone (maybe you) uses `+wwwSite+` and claims that `+email+` is their email address and they want to become a user. Is this you? If so use the link below to create an account.</p>
+<p>Otherwise neglect this message.</p>
+<p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
   if(boDbg) wwwSite="closeby.market";
@@ -453,12 +468,12 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
   
   //var Sql=[]; 
   //Sql.push("INSERT INTO "+userTab+" SET email=?, nameIP=?, password=?, tCreated=now();");
-  //var Val=[inObj.email, inObj.name, inObj.password];
+  //var Val=[myJSEscape(inObj.email), myJSEscape(inObj.name), inObj.password];
   //Sql.push("SELECT LAST_INSERT_ID() AS idUser;");
   ////Sql.push("UPDATE "+userTab+" SET imageHash=LAST_INSERT_ID()%32 WHERE idUser=LAST_INSERT_ID();");
 
   //var sql=Sql.join('\n');
-  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); 
+  //var [err, results]=yield* this.myMySql.query(flow, sql, Val); 
   
   //var boOK, mestmp;
   //if(err && (typeof err=='object') && err.code=='ER_DUP_ENTRY'){boOK=0; mestmp='dup email';}
@@ -479,8 +494,10 @@ ReqBE.prototype.changePW=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
   var userTab=site.TableName.userTab;
   var Ou={boOK:0};
-  if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
-  var idUser=this.sessionUserInfoFrDB.user.idUser
+  //if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
+  //var idUser=this.sessionUserInfoFrDB.user.idUser;
+  var {user}=this.sessionUserInfoFrDB; if(!user) { return [new ErrorClient('No session')];}
+  var idUser=user.idUser;
   var passwordOld=inObj.passwordOld;
   var passwordNew=inObj.passwordNew;
 
@@ -492,7 +509,7 @@ ReqBE.prototype.changePW=function*(inObj){
   Sql.push("COMMIT;");
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
   var mess=results[1][0].mess;
   if(mess=='Password changed') Ou.boOK=1;
@@ -504,8 +521,10 @@ ReqBE.prototype.changePW=function*(inObj){
 ReqBE.prototype.verifyEmail=function*(inObj){ 
   var req=this.req, flow=req.flow, site=req.site;
   var userTab=site.TableName.userTab;
-  if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
-  var idUser=this.sessionUserInfoFrDB.user.idUser;
+  //if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
+  //var idUser=this.sessionUserInfoFrDB.user.idUser;
+  var {user}=this.sessionUserInfoFrDB; if(!user) { return [new ErrorClient('No session')];}
+  var idUser=user.idUser;
 
   var expirationTime=20*60;
 
@@ -519,16 +538,16 @@ ReqBE.prototype.verifyEmail=function*(inObj){
   Val.push(idUser);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
   if(results.length==0) { this.mes('No such idUser in the database'); return [null, [Ou]];}
   var email=results[0].email;
   var wwwSite=req.wwwSite;
   var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailReturn+'?code='+code;
-  var strTxt='<h3>Email verification on '+wwwSite+'</h3> \n\
-<p>Someone (maybe you) uses '+wwwSite+' and claims that '+email+' is their email address. Is this you? If so use the link below to verify that you are the owner of this email address.</p> \n\
-<p>Otherwise neglect this message.</p> \n\
-<p><a href='+uVerification+'>'+uVerification+'</a></p>';
+  var strTxt=`<h3>Email verification on `+wwwSite+`</h3>
+<p>Someone (maybe you) uses `+wwwSite+` and claims that `+email+` is their email address. Is this you? If so use the link below to verify that you are the owner of this email address.</p>
+<p>Otherwise neglect this message.</p>
+<p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
 
   if(boDbg) wwwSite="closeby.market";
@@ -552,7 +571,7 @@ ReqBE.prototype.verifyPWReset=function*(inObj){
   Val.push(email);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
   if(results.length==0) { this.mes('No such email in the database'); return [null, [Ou]];}
 
@@ -564,11 +583,11 @@ ReqBE.prototype.verifyPWReset=function*(inObj){
 
   var wwwSite=req.wwwSite;
   var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyPWResetReturn+'?code='+code;
-  var strTxt='<h3>Password reset request on '+wwwSite+'</h3> \n\
-<p>Someone (maybe you) tries to reset their '+wwwSite+' password and entered '+email+' as their email.</p> \n\
-<p>Is this you, then use the link below to have a new password generated and sent to you.</p> \n\
-<p>Otherwise neglect this message.</p> \n\
-<p><a href='+uVerification+'>'+uVerification+'</a></p>';
+  var strTxt=`<h3>Password reset request on `+wwwSite+`</h3>
+<p>Someone (maybe you) tries to reset their `+wwwSite+` password and entered `+email+` as their email.</p>
+<p>Is this you, then use the link below to have a new password generated and sent to you.</p>
+<p>Otherwise neglect this message.</p>
+<p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
   if(boDbg) wwwSite="closeby.market";
@@ -646,14 +665,17 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   yield *setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity);
   
   
-  var [err,con]=yield*mysqlGetConnection(flow, this.pool);  if(err) return [err];   this.con=con;
-  var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
+  //var [err,con]=yield*mysqlGetConnection(flow, this.pool);  if(err) return [err];   this.con=con;
+  //var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
+  var [err]=yield* this.myMySql.startTransaction(flow);  if(err) return [err]; 
   if(['userFun', 'complainerFun', 'customerFun', 'sellerFun', 'teamFun', 'adminFun', 'refetchFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
-    var [err, result]=yield *this[strFun](inObj);  if(err) return [err];
+    var [err, result]=yield *this[strFun](inObj);  //if(err) return [err];
   }
-  if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
+  //if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
+  if(err){ yield* this.myMySql.rollbackNRelease(flow); return [err]; } else{ [err]=yield* this.myMySql.commitNRelease(flow); if(err) return [err]; }
   return [null, [Ou]];
 }
+
 
 ReqBE.prototype.userFun=
 ReqBE.prototype.complainerFun=
@@ -670,8 +692,8 @@ ReqBE.prototype.teamFun=function*(inObj){
   
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
-  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
+  Sql.push(`INSERT INTO `+userTab+` (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND()))
+  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;`);
   
   if(inObj.strRole=='customer'){
     Sql.push("INSERT INTO "+customerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
@@ -679,8 +701,8 @@ ReqBE.prototype.teamFun=function*(inObj){
     Sql.push("INSERT INTO "+sellerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
   }
   var sql=Sql.join('\n');
-  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
-  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results, fields]=yield* this.myMySql.query(flow, sql, Val);  if(err) return [err];
+  //var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.adminFun=function*(){
@@ -690,12 +712,12 @@ ReqBE.prototype.adminFun=function*(){
   
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND())) \n\
-  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;");
-  Sql.push("INSERT INTO "+adminTab+" VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
+  Sql.push(`INSERT INTO `+userTab+` (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND()))
+  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;`);
+  Sql.push(`INSERT INTO `+adminTab+` VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);`);
   var sql=Sql.join('\n');
-  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
-  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results, fields]=yield* this.myMySql.query(flow, sql, Val);  if(err) return [err];
+  //var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
   return [null, Ou];
 }
 ReqBE.prototype.refetchFun=function*(){
@@ -706,10 +728,10 @@ ReqBE.prototype.refetchFun=function*(){
   var idUser=this.sessionUserInfoFrDB.user.idUser;
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image, idUser];
-  Sql.push("UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=? WHERE idUser=?;");
+  Sql.push(`UPDATE `+userTab+` SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=? WHERE idUser=?;`);
   var sql=Sql.join('\n');
-  var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
-  //var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results, fields]=yield* this.myMySql.query(flow, sql, Val);  if(err) return [err];
+  //var [err, results, fields]=yield*mysqlQuery(flow, this.con, sql, Val);  if(err) return [err];
   return [null, Ou];
 }
 
@@ -732,11 +754,13 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   var idUser=this.sessionUserInfoFrDB.user.idUser||null;
   var {idFB, idIdPlace, idOpenId}=this.sessionLoginIdP;
   if(!idUser) { idUser=yield* getRedis(flow, req.sessionID+'_LoginIdUser'); }
+  //if(!idUser) { var [err,idUser]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_LoginIdUser']); }
+    
   var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.customer, BoTest.seller, BoTest.customerTeam, BoTest.sellerTeam, BoTest.admin, BoTest.complainer, BoTest.complainee];
   Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
   var sql=Sql.join('\n');
   
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var res=results[0], c=res.length; 
   if(c==1) {
     userInfoFrDBUpd.user=res[0];
@@ -764,13 +788,13 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
     var {idUser,coordinatePrecisionM}=seller;
     var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
     var sql="UPDATE "+sellerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
-    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
   if(customer){
     var {idUser,coordinatePrecisionM}=customer;
     var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
     var sql="UPDATE "+customerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
-    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
   return [null, [Ou]];
 }
@@ -778,13 +802,13 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
 
 ReqBE.prototype.logout=function*(inObj){
   var req=this.req, flow=req.flow, Ou={};
-  var tmp=yield* cmdRedis(flow, 'del',[req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser']);
+  var [err,tmp]=yield* cmdRedis(flow, 'DEL', [req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser']);
   this.sessionLoginIdP={};  this.sessionUserInfoFrDB=extend({}, specialistDefault);  this.GRet.userInfoFrDBUpd=extend({},specialistDefault);
   this.mes('Logged out'); return [null, [Ou]];
 }
 
 ReqBE.prototype.setUpCond=function*(inObj){
-  var site=this.req.site, req=this.req, flow=req.flow, [oC, oS]=site.ORole;
+  var site=this.req.site, req=this.req, flow=req.flow, ORole=site.ORole;  //[oC, oS]
   if(typeof inObj.CharRole!='string') return [new ErrorClient("typeof inObj.CharRole!='string'")];
   if(inObj.CharRole.length>2) return [new ErrorClient("inObj.CharRole.length>2")];
     // Check CharRole input
@@ -795,13 +819,18 @@ ReqBE.prototype.setUpCond=function*(inObj){
     if(charRole in oFound) return [new ErrorClient("charRole in oFound")];
     oFound[charRole]=1;
   }
+    // Check OFilt input
+  if(!(inObj.OFilt instanceof Array)) return [new ErrorClient('!(inObj.OFilt instanceof Array)')]; 
+  if(typeof inObj.OFilt[0]!='object') return [new ErrorClient('typeof inObj.OFilt[0]!="object"')]; 
+  if(typeof inObj.OFilt[1]!='object') return [new ErrorClient('typeof inObj.OFilt[1]!="object"')]; 
+  
   this.CharRole=inObj.CharRole;
   this.OFilt=inObj.OFilt;
   
   var Ou={};  this.OQueryPart=[];
   for(var i=0;i<this.CharRole.length;i++){
-    var charRole=this.CharRole[i],  oR=charRole=='c'?oC:oS,  oFilt=inObj.OFilt[i];
-    this.OQueryPart[i]=setUpCond(oR, oFilt);
+    var oR=ORole[i],  arg={KeySel:oR.KeySel, Prop:oR.Prop, Filt:inObj.OFilt[i]};
+    this.OQueryPart[i]=setUpCond(arg);
   }
   return [null, [Ou]];
 } 
@@ -833,7 +862,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
     Sql.push("SELECT "+tmp+" AS distMin FROM "+sellerTab+" ro WHERE "+strCondS+";");
   }
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   this.GRet.curTime=results[0][0].now; 
   if(boCalcZoom){
     this.GRet.nCustomerReal=results[2][0].nCustomerReal||0; 
@@ -888,7 +917,7 @@ ReqBE.prototype.getList=function*(inObj){
   
   
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
   Ou.NTotNFilt=[]; Ou.arrList=[]; this.BoUseList=[];
   for(var i=0;i<this.CharRole.length;i++){
@@ -922,7 +951,7 @@ ReqBE.prototype.getGroupList=function*(inObj){
     } else Sql.push("SELECT 1 FROM DUAL;");
   }
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   
   //if(!(results instanceof Array)) results=[results];
   if(this.CharRole.length==1) results=[results];
@@ -947,13 +976,16 @@ ReqBE.prototype.getHist=function*(inObj){
     var strTableRef=roleTab+' ro';
     var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
     
-    var arg={strTableRef:strTableRef, WhereExtra:[this.whereMap, "boShow=1", sqlBeforeHiding]};  //, Ou:Ou
+    var arg={strTableRef:strTableRef, WhereExtra:[this.whereMap, "boShow=1", sqlBeforeHiding], myMySql:this.myMySql};  //, Ou:Ou
     arg.Filt=this.OFilt[i];
-    arg.oRole=site['o'+charRoleUC];
+    //arg.mysqlPool=this.pool;
+    //arg.oRole=site['o'+charRoleUC];
+    arg.Prop=site['o'+charRoleUC].Prop;
     arg.Where=this.OQueryPart[i].Where;
     arg.strDBPrefix=site.siteName;
 
-    var [err, Hist]=yield* getHist(flow, this.pool, arg); if(err) return [err];
+    var [err, Hist]=yield* getHist(flow, arg); if(err) return [err];  //Ou.Hist=Hist;
+    //var [err, Hist]=yield* getHist(flow, arg); if(err) return [err];
     Ou.arrHist[i]=Hist;
   }
 
@@ -972,11 +1004,11 @@ ReqBE.prototype.UUpdate=function*(inObj){  // writing needSession
   var idUser=user.idUser;
   
   var Sql=[], Val=[];
-  Val.push(inObj.displayName, idUser);
+  Val.push(myJSEscape(inObj.displayName), idUser);
   Sql.push("UPDATE "+userTab+" SET displayName=? WHERE idUser=?;");
   
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var c=results.affectedRows, mestmp=c+" affected row"; if(c!=1) mestmp+='s';
   
   this.mes(mestmp);      
@@ -999,7 +1031,7 @@ ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   site.boGotNewSellers=1; // variabel should be called boNUsers changed or something..
   site.nUser=Number(results[1][0].n);
   this.mes('deleted');      
@@ -1019,6 +1051,7 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
 
   //if(inObj.email) email=inObj.email;
   var {tel, displayName, currency, charRole, boIdIPImage}=inObj;
+  tel=myJSEscape(tel); displayName=myJSEscape(displayName); currency=myJSEscape(currency);
   var boImgOwn=1-Number(boIdIPImage);
   
   
@@ -1040,7 +1073,7 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var c=results[0].affectedRows; if(c>1) return [new Error(c+" userTab rows affected")];
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
@@ -1071,6 +1104,16 @@ ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
   
   //var boPrice='boPrice' in objVar; if(boPrice) delete objVar.boPrice;
   //var boPrice=intersectBool(['currency', 'price', 'priceStart', 'pricePerDist', 'pricePerHour', 'fixedPricePerUnit','fixedPricePerUnitUnit'], Object.keys(objVar));
+  
+  for(var name in objVar){
+    var value=objVar[name];
+    //if(/link/.test(name)) objVar[name]=myLinkEscape(value);
+    if(/link/.test(name) && value.length) {
+      var boOK=validator.isURL(value, {protocols: ['http','https']}); if(!boOK) return [new ErrorClient(name+' validation failed.')];
+    } else if(/email/i.test(name) && value.length) {
+      var boOK=validator.isEmail(value); if(!boOK) return [new ErrorClient(name+" didn't pass validation test.")];
+    } else if(typeof value=='string') objVar[name]=myJSEscape(value);
+  }
   
     // Create SqlPriceComp, ValPriceComp 
   var arrPriceAllowed=['currency', 'price', 'priceStart', 'pricePerDist', 'pricePerHour', 'fixedPricePerUnit','fixedPricePerUnitUnit'];
@@ -1107,7 +1150,7 @@ ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
   }
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   this.mes('Data updated');      
   return [null, [Ou]];
 }
@@ -1134,7 +1177,7 @@ ReqBE.prototype.RShow=function*(inObj){  // writing needSession
   Sql.push("UPDATE "+roleTabAlt+" SET boShow=0, tPos=0, histActive=histActive|1 WHERE idUser=?;");
   Val=[idUser,xtmp,ytmp,idUser,idUser];
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var strTmp=charRole=='c'?'Customer':'Seller';   this.mes(strTmp+' visible');    
   return [null, [Ou]];
 }
@@ -1152,7 +1195,7 @@ ReqBE.prototype.RHide=function*(inObj){  // writing needSession
   Sql.push("UPDATE "+roleTab+" SET boShow=0, tPos=0, histActive=histActive|1 WHERE idUser=?;");
   Val=[idUser,idUser];
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var strTmp=charRole=='c'?'Customer':'Seller';   this.mes(strTmp+' hidden');      
   return [null, [Ou]];
 }
@@ -1171,7 +1214,7 @@ ReqBE.prototype.complaintUpdateComment=function*(inObj){
 
 
   var idComplainee=inObj.idComplainee;
-  var comment=inObj.comment;  comment=comment.substr(0,10000);
+  var comment=inObj.comment;  comment=comment.substr(0,10000); comment=myJSEscape(comment);
   if(comment.length==0) comment=null;
 
   var Sql=[], Val=[];
@@ -1191,7 +1234,7 @@ ReqBE.prototype.complaintUpdateComment=function*(inObj){
   Sql.push("CALL "+siteName+"UpdateComplaint(?, @idComplainer, ?);");
   
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var StrMes=[];
   
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
@@ -1211,11 +1254,12 @@ ReqBE.prototype.complaintUpdateAnswer=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
   var complaintTab=site.TableName.complaintTab;
   var Ou={};
-  var {user, seller}=this.sessionUserInfoFrDB; if(!user || !seller) { this.mes('No session'); return [null, [Ou]];}
+  //var {user, seller}=this.sessionUserInfoFrDB; if(!user || !seller) { this.mes('No session'); return [null, [Ou]];}
+  var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
 
   var idComplainer=inObj.idComplainer;
   var idComplainee=user.idUser;
-  var answer=inObj.answer;  answer=answer.substr(0,10000);
+  var answer=inObj.answer;  answer=answer.substr(0,10000); answer=myJSEscape(answer);
   if(answer.length==0) answer=null;
   var Sql=[], Val=[];
   //Sql.push("UPDATE "+complaintTab+" SET answer=? WHERE idComplainee=? AND idComplainer=?;");
@@ -1225,7 +1269,7 @@ ReqBE.prototype.complaintUpdateAnswer=function*(inObj){
   Val.push(idComplainee, idComplainer, answer);
   Sql.push("CALL "+siteName+"UpdateAnswer(?, ?, ?);");
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var StrMes=[];
   //var c=results[0].affectedRows; if(c==1) StrMes.push("Entry updated"); else if(c>1) StrMes.push(c+" entries updated");
   //var c=results[1].affectedRows; if(c==1) StrMes.push("Entry deleted"); else if(c>1) StrMes.push(c+" entries deleted");
@@ -1240,14 +1284,14 @@ ReqBE.prototype.complaintOneGet=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, {userTab, complaintTab}=site.TableName;
   var Ou={};   
   //debugger
-  var {user, seller, complainer}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var {user}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idComplainer, idComplainee;
-  if('idComplainer' in inObj) idComplainer=inObj.idComplainer;  else if(complainer) idComplainer=complainer.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
-  if('idComplainee' in inObj) idComplainee=inObj.idComplainee; else if(seller) idComplainee=seller.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
+  if('idComplainer' in inObj) idComplainer=inObj.idComplainer;  else if(user) idComplainer=user.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
+  if('idComplainee' in inObj) idComplainee=inObj.idComplainee; else if(user) idComplainee=user.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   
   var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainee=? AND idComplainer=? "; 
   var Val=[idComplainee,idComplainer];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var c=results.length; 
   var mestmp; if(c>0){ Ou.row=results[0]; mestmp="Feedback fetched"; }else{ Ou.row={}; mestmp="No existing feedback";}
   this.mes(mestmp);
@@ -1265,7 +1309,7 @@ ReqBE.prototype.getComplaintsOnComplainee=function*(inObj){
   Val.push(idComplainee);
   Sql.push("SELECT FOUND_ROWS() AS n;");
   var sql=Sql.join("\n ");
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var Ou=arrObj2TabNStrCol(results[0]);
   Ou.nCur=results[0].length; 
   Ou.nTot=results[1][0].n;
@@ -1282,7 +1326,7 @@ ReqBE.prototype.getComplaintsFromComplainer=function*(inObj){
   Val.push(idComplainer); 
   Sql.push("SELECT FOUND_ROWS() AS n;"); 
   var sql=Sql.join("\n ");
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var Ou=arrObj2TabNStrCol(results[0]);
   Ou.nCur=results[0].length; 
   Ou.nTot=results[1][0].n;   
@@ -1305,8 +1349,11 @@ ReqBE.prototype.teamSaveName=function*(inObj){  // writing needSession
   if(!user || !roleTeam) { this.mes('No session'); return [null, [Ou]];}
   var {idUser, boApproved}=roleTeam; if(!boApproved){this.mes('Team not approved'); return [null, [Ou]];}
   
+  
+  var boOK=validator.isURL(inObj.link, {protocols: ['http','https']}); if(!boOK) return [new ErrorClient('Link url is not approved')];
+  
   var sql="UPDATE "+roleTeamTab+" SET link=? WHERE idUser=?;", Val=[inObj.link, idUser];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   this.mes('Data saved');
   return [null, [Ou]];
 }
@@ -1322,7 +1369,7 @@ ReqBE.prototype.teamSave=function*(inObj){  // writing needSession
   
   var idUser=Number(inObj.idUser),   boOn=Number(inObj.boOn); 
   var sql="UPDATE "+roleTab+" SET idTeam=IF(?,idTeamWanted,0) WHERE idUser=?;", Val=[boOn,idUser];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   this.mes('Data saved');
   return [null, [Ou]];
 }
@@ -1344,7 +1391,7 @@ ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
   var strCol=TmpCol.join(', ');
   var sql="SELECT "+strCol+" FROM "+roleTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE idTeamWanted=?";
   var Val=[idUser];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var nRow=results.length;
   if(nRow==0) { this.mes('No '+strRole+'s connected');  }
   else{
@@ -1362,14 +1409,14 @@ ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
 ReqBE.prototype.deleteImage=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, {userTab, userImageTab}=site.TableName;
   var Ou={};
-  var {user, seller}=this.sessionUserInfoFrDB; if(!user || !seller) { this.mes('No session'); return [null, [Ou]];}
+  var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
 
   var Sql=[];
   Sql.push("DELETE FROM "+userImageTab+" WHERE idUser="+idUser+";");
   Sql.push("UPDATE "+userTab+" SET boImgOwn=0 WHERE idUser="+idUser+";");
   var sql=Sql.join("\n "), Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var nDel=results[0].affectedRows; 
   Ou.boOK=0; if(nDel==1) {Ou.boOK=1; this.mes('Image deleted'); } else { this.mes(nDel+" images deleted!?");}
   return [null, [Ou]];
@@ -1382,8 +1429,8 @@ ReqBE.prototype.pubKeyStore=function*(inObj){
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   //var idUser=user.idUser, pubKey=inObj.pubKey;
-  var sql="UPDATE "+userTab+" SET pubKey=?, iSeq=0 WHERE idUser=?",   Val=[inObj.pubKey,  user.idUser];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var sql="UPDATE "+userTab+" SET pubKey=?, iSeq=0 WHERE idUser=?",   Val=[myJSEscape(inObj.pubKey),  user.idUser];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
   //if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
   if(nUpd==1) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
@@ -1394,11 +1441,12 @@ ReqBE.prototype.pubKeyStore=function*(inObj){
 
 ReqBE.prototype.getSetting=function*(inObj){ 
   var req=this.req, flow=req.flow, site=req.site;
+  var Var=inObj.Var;
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var Str=['boShowTeam','boAllowEmailAccountCreation'];
-  if(!isAWithinB(inObj,Str)) {this.mes('Illegal invariable'); return [null, [Ou]]; }
-  for(var i=0;i<inObj.length;i++){ var name=inObj[i]; Ou[name]=app[name]; }
+  if(!isAWithinB(Var,Str)) {this.mes('Illegal invariable'); return [null, [Ou]]; }
+  for(var i=0;i<Var.length;i++){ var name=Var[i]; Ou[name]=app[name]; }
   return [null, [Ou]];
 }
 ReqBE.prototype.setSetting=function*(inObj){ 
@@ -1452,15 +1500,15 @@ ReqBE.prototype.uploadImage=function*(inObj){
   var kind=this.kind;
   if(kind=='u'){
     if(!customer && !seller) { this.mes('No session'); return [null, [Ou]];}
-    var idUser=this.sessionUserInfoFrDB.user.idUser, tab=userImageTab;
+    var idUser=user.idUser, tab=userImageTab;
   }
   else if(kind=='c'){
     if(!customerTeam) { this.mes('No session'); return [null, [Ou]];}
-    var idUser=this.sessionUserInfoFrDB.customerTeam.idUser, tab=customerTeamImageTab;
+    var idUser=customerTeam.idUser, tab=customerTeamImageTab;
   }
   else if(kind=='s'){
     if(!sellerTeam) { this.mes('No session'); return [null, [Ou]];}
-    var idUser=this.sessionUserInfoFrDB.sellerTeam.idUser, tab=sellerTeamImageTab;
+    var idUser=sellerTeam.idUser, tab=sellerTeamImageTab;
   }
   else return [new ErrorClient("kind="+kind)];
 
@@ -1477,7 +1525,7 @@ ReqBE.prototype.uploadImage=function*(inObj){
   
   //var sql='INSERT INTO imgTab SET ?';
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) return [err];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
   Ou.strMessage="Done";
   return [null, [Ou]];

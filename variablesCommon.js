@@ -35,9 +35,15 @@ StrViewsKey=["hist"];
 TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
 ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
 
-//"pubKey",
+
+//StrTableKey=["sellerTab","sellerTeamTab","sellerTeamImageTab","customerTab","customerTeamTab","customerTeamImageTab","userImageTab","complaintTab","adminTab","settingTab","userTab"]; 
+//StrViewsKey=["histView"]; 
+//TableName={};for(var i=0;i<StrTableKey.length;i++) {var name=StrTableKey[i]; TableName[name]=strDBPrefix+'_'+name.slice(0,-3);}
+//ViewName={};for(var i=0;i<StrViewsKey.length;i++) {var name=StrViewsKey[i]; ViewName[name]=strDBPrefix+'_'+name.slice(0,-4);}
 
 
+lenGZ=100;
+nHash=1000;
 
 
 EnumUnitDist=['km','mile']
@@ -155,9 +161,9 @@ PluginF.general=function(site){
   boImgOwn:            {b:'001000000'},
   linkTeam:            {b:'101000000'},
   nComplaint:          {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
-  nComplaintCum:          {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
+  nComplaintCum:       {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
   nComplaintGiven:     {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
-  nComplaintGivenCum:     {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
+  nComplaintGivenCum:  {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
   coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:1000},
   dist:                {b:'000010000'},
   experience:          {b:'111011111',type:'INT(4)', default:0, feat:{kind:'BN'}}
@@ -663,30 +669,28 @@ PluginF.programmer=function(site){
 
 featCalcValExtend=function(Prop){
   for(var name in Prop){
-    var vv=Prop[name];
-    if(!('feat' in vv)) continue;
-    var feat=vv.feat, boBucket='bucket' in feat, boMin='min' in feat;
+    var prop=Prop[name];
+    if(!('feat' in prop)) continue;
+    var feat=prop.feat, boBucket='bucket' in feat, boMin='min' in feat;
     if(boBucket||boMin){  // set n (=length) (if applicable)
-      var len;   if(boBucket) len=feat.bucket.length; else if(boMin) len=feat.min.length; 
+      var len=boBucket?feat.bucket.length:feat.min.length;
       Prop[name].feat.n=len;  Prop[name].feat.last=len-1;
     }
   
     if(feat.kind[0]=='S'){
+      if(!('max' in feat)){
             // Create feat.max;  maxClosed
-      feat.max=[]; var maxClosed=[];
-      var jlast=feat.last;    
-      for(var j=0;j<jlast;j++){ 
-        var tmp=feat.min[j+1]; feat.max[j]=tmp; maxClosed[j]=tmp-1;
+        feat.max=[]; var maxClosed=[];
+        var jlast=feat.last;    
+        for(var j=0;j<jlast;j++){ 
+          var tmp=feat.min[j+1]; feat.max[j]=tmp; maxClosed[j]=tmp-1;
+        }
+        feat.max[jlast]=intMax; maxClosed[jlast]=intMax;
       }
-      feat.max[jlast]=intMax; maxClosed[jlast]=intMax;
 
-            // Create minName/maxName (labels in 'sel0') and  feat.maxName (labels in 'sel1') (only needed in rangeExtendSel with <select>-tags (I think))
-      //feat.minName=[].concat(feat.min);
-      //feat.maxName=[].concat(maxClosed);  feat.maxName[feat.last]="&infin;";
-
-      if(!('bucketLabel' in feat)) { // (labels in histogram)
+      if(!('bucketLabel' in feat)){ // (labels in histogram)
         feat.bucketLabel=[].concat(feat.min);
-        feat.bucketLabel[feat.last]='≥'+feat.bucketLabel[feat.last];  
+        feat.bucketLabel[feat.last]='≥'+feat.bucketLabel[feat.last];
       }
 
       Prop[name].feat=feat;

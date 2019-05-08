@@ -12,7 +12,7 @@
 // nComplaints not reduced when deleteAccount is called
 // nComplaint, nComplaintGiven, donatedAmount, boImgOwn, image, imTag, displayName, tea.link (linkTeam), tea.imTag (imTagTeam) in roleTab
 
-// cookie aren't allowed, are they?
+// cookies aren't allowed, are they?
 // viewColumnSorterCreator: Can it be used without creating two instances?
 // Obscurifying
 // oBuyer instead of oC
@@ -28,9 +28,8 @@
 // delete me as customer resp delete me as driver
 // Ability to see and select image in introPop
 
-var CreatorPlugin={};
 
-
+//0123456789abcdef pluginGeneral.js
 CreatorPlugin.general=function(){
   
   strUnitDist='km';
@@ -253,7 +252,7 @@ CreatorPlugin.general=function(){
       var c=createElement('span');
       var thumb=c.thumb=createElement('img').css({'vertical-align':'middle'});
       c.butDeleteImg=createElement('button').myText(langHtml.Delete).on('click', function(){
-        var vec=[['deleteImage',1,function(data){
+        var vec=[['deleteImage',{},function(data){
           if(data.boOK) userInfoFrDB.user.boImgOwn=0;
           //for(var i=0;i<2;i++){viewSetting.ElRole[i].setUp();}
           viewUserSetting.setUp();
@@ -291,6 +290,7 @@ CreatorPlugin.general=function(){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//0123456789abcdef pluginVehicleType.js
 CreatorPlugin.vehicleType=function(){
 
   //enumVehicleType=Enum.vehicleType;
@@ -407,6 +407,7 @@ CreatorPlugin.vehicleType=function(){
           // comparePrice  calcComparePrice
 
 
+//0123456789abcdef pluginDistNTimePrice.js
 CreatorPlugin.distNTimePrice=function(){
   
   if(typeof StrMainProt=='undefined') StrMainProt=[]; StrMainProt.push('comparePriceDataPop');
@@ -641,11 +642,13 @@ CreatorPlugin.distNTimePrice=function(){
 
 
 
+//0123456789abcdef pluginPrice.js
 CreatorPlugin.price=function(){
   this.rewriteObj=function(){}
 };
 //0123456789abcdef
 
+//0123456789abcdef pluginTransportCustomer.js
 CreatorPlugin.transportCustomer=function(){
   this.rewriteObj=function(){
     var tmpSet=function(iMTab,c){  return oC.MTab[iMTab].distStartToGoal+' km ('+oC.MTab[iMTab].compassPoint+')'; }
@@ -661,6 +664,7 @@ CreatorPlugin.transportCustomer=function(){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginStandingByMethod.js
 CreatorPlugin.standingByMethod=function(){
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
@@ -683,6 +687,7 @@ CreatorPlugin.standingByMethod=function(){
 };
 //0123456789abcdef
 
+//0123456789abcdef pluginShiftEnd.js
 CreatorPlugin.shiftEnd=function(){
 
   //this.rewriteLang=function(){};
@@ -723,6 +728,7 @@ CreatorPlugin.shiftEnd=function(){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginHourlyPrice.js
 CreatorPlugin.hourlyPrice=function(charRoleUC){
   var oRole=charRoleUC=='C'?oC:oS;
   
@@ -747,12 +753,14 @@ CreatorPlugin.hourlyPrice=function(charRoleUC){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginFixedPricePerUnit.js
 CreatorPlugin.fixedPricePerUnit=function(){
 }
 //0123456789abcdef
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//0123456789abcdef pluginTaxi.js
 CreatorPlugin.taxi=function(){
   strUnitTime='min';
   var StrS=oS.StrPropE;  // ['brand', 'idDriverGovernment', 'nExtraSeat']
@@ -852,6 +860,7 @@ CreatorPlugin.taxi=function(){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginTransport.js
 CreatorPlugin.transport=function(){
   strUnitTime='min';
   var StrS=oS.StrPropE;  // ['brand']
@@ -956,6 +965,7 @@ CreatorPlugin.transport=function(){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginCleaner.js
 CreatorPlugin.cleaner=function(){
   var StrC=oC.StrPropE;  // ['household','janitor','sanitation', 'exterior','customerHasEquipment']
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
@@ -1042,6 +1052,7 @@ CreatorPlugin.cleaner=function(){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginWindowcleaner.js
 CreatorPlugin.windowcleaner=function(){
   var StrC=oC.StrPropE, StrS=oS.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
@@ -1130,6 +1141,7 @@ CreatorPlugin.windowcleaner=function(){
 };
 //0123456789abcdef
 
+//0123456789abcdef pluginLawnmower.js
 CreatorPlugin.lawnmower=function(){
   var StrC=oC.StrPropE, StrS=oS.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice'],   ['pushMower','ridingMower', 'edger']
@@ -1218,6 +1230,7 @@ CreatorPlugin.lawnmower=function(){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginSnowremoval.js
 CreatorPlugin.snowremoval=function(){
   var StrC=oC.StrPropE, StrS=oS.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
@@ -1312,6 +1325,7 @@ CreatorPlugin.snowremoval=function(){
 //0123456789abcdef
 
 
+//0123456789abcdef pluginFruitpicker.js
 CreatorPlugin.fruitpicker=function(){
   var StrC=oC.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
@@ -1383,6 +1397,7 @@ CreatorPlugin.fruitpicker=function(){
 };
 //0123456789abcdef
 
+//0123456789abcdef pluginProgrammer.js
 CreatorPlugin.programmer=function(){
   var StrC=oC.StrPropE, StrS=oS.StrPropE;
   
@@ -1485,8 +1500,7 @@ CreatorPlugin.programmer=function(){
 
 
 //0123456789abcdef client.js
-setUp=function(){
-
+window.onload=function(){
 
 /*******************************************************************************************************************
  *******************************************************************************************************************
@@ -1507,7 +1521,7 @@ calcLabel=function(obj,strName){ var objA=obj[strName]; return (objA&&objA.label
 spanMessageTextCreate=function(){
   var el=createElement('span');
   var spanInner=createElement('span');
-  el.appendChild(spanInner, imgBusy)
+  el.appendChild(spanInner, imgBusy.hide());
   el.resetMess=function(time){
     clearTimeout(messTimer);
     if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
@@ -1907,10 +1921,12 @@ viewFormLoginCreator=function(){
     inpEmail.value='';    inpPass.value='';
   }
 
-  var loginWEmail=function(){
+  var loginWEmail=function(e){
+    e.preventDefault();
     var flow=(function*(){
-      var tmp=SHA1(inpPass.value+strSalt);
-      var vec=[['loginWEmail',{email:inpEmail.value, password:tmp}], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      //var tmp=SHA1(inpPass.value+strSalt);
+      var hashPW=inpPass.value+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
+      var vec=[['loginWEmail',{email:inpEmail.value, password:hashPW}], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
       history.fastBack(viewFront);
 
     })(); flow.next();
@@ -1926,7 +1942,7 @@ viewFormLoginCreator=function(){
   var inpEmail=formLogin.querySelector("input[name='email']").css({'max-width':'100%'});
   var inpPass=formLogin.querySelector("input[name='password']").css({'max-width':'100%'});
   var buttLogin=formLogin.querySelector("button[name='submit']").css({"margin-top": "1em"}).on('click',loginWEmail);
-  [...formLogin.querySelectorAll('input[type=text],[type=email],[type=number],[type=password]')].forEach( ele=>ele.css({display:'block'}).on('keypress',(e)=>{if(e.which==13) loginWEmail();} ) );
+  [...formLogin.querySelectorAll('input[type=text],[type=email],[type=number],[type=password]')].forEach( ele=>ele.css({display:'block'}).on('keypress',(e)=>{if(e.which==13) loginWEmail(e);} ) );
 
   var messDiv=createElement('div').css({color:'red'});
   var buttForgot=createElement('a').prop({href:''}).myText('Forgot your password?').on('click', function(e){  viewForgottPWPop.openFunc(); e.preventDefault(); });
@@ -2021,7 +2037,8 @@ var viewCreateUserCreator=function(){
     var strEmail=inpEmail.value.trim(); if(/\S+@\S+/.test(strEmail)) ; else {setMess('Invalid email', 5); return;}
 
     var strTmp=grecaptcha.getResponse(); if(!strTmp) {setMess("Captcha response is empty", 5); return; }
-    var o={name:strName, email:strEmail, password:SHA1(strPassword+strSalt),  'g-recaptcha-response': grecaptcha.getResponse()};
+    var hashPW=strPassword+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
+    var o={name:strName, email:strEmail, password:hashPW,  'g-recaptcha-response': grecaptcha.getResponse()};
 
     //var vec=[['createUser',o], ['setupById',{}, el.cb]];   majax(oAJAX,vec);
     var vec=[['sendVerifyEmailNCreateUserMessage',o, saveRet]];   majax(oAJAX,vec);
@@ -2093,7 +2110,9 @@ var viewChangePWPopCreator=function(){
     if(inpPass.value.trim()!==inpPassB.value.trim()) { setMess('The new password fields are not equal', 5); return; }
     var lTmp=boDbg?2:6; if(inpPass.value.trim().length<lTmp) { setMess('The password must be at least '+lTmp+' characters long', 5); return; }
 
-    var o={passwordOld:SHA1(inpPassOld.value.trim()+strSalt), passwordNew:SHA1(inpPass.value.trim()+strSalt)};
+    var hashPWO=inpPassOld.value.trim()+strSalt; for(var i=0;i<nHash;i++) hashPWO=SHA1(hashPWO);
+    var hashPWN=inpPass.value.trim()+strSalt; for(var i=0;i<nHash;i++) hashPWN=SHA1(hashPWN);
+    var o={passwordOld:hashPWO, passwordNew:hashPWN};
 
     var vec=[['changePW',o,changePWRet]];   majax(oAJAX,vec);
     setMess('',null,true);
@@ -2277,7 +2296,8 @@ var viewFilterCreator=function(){
   el.FilterInfoSpan=[];
   for(var i=0;i<2;i++){
     var oRole=ORole[i];
-    var oArg=copySome({}, oRole, ['Prop', 'Label', 'helpBub']); copySome(oArg, oRole.filter, ['StrGroupFirst', 'StrGroup']); oArg.StrOrderFilt=oRole.filter.StrProp;
+    var oArg=copySome({}, oRole, ['Prop', 'Label']); copySome(oArg, oRole.filter, ['StrGroupFirst', 'StrGroup']); oArg.StrOrderFilt=oRole.filter.StrProp; oArg.objSetting=objFilterSetting;
+    oArg.helpBub=extend({},oRole.helpBub);
     ElRole[i]=filterDivICreator(oArg, loadTabStart).addClass('contDiv');
     el.FilterInfoSpan[i]=filterInfoSpanCreator();
   }
@@ -2585,6 +2605,7 @@ var viewUploadImageCreator=function(){
     formData.append('vec', JSON.stringify(vecIn));
     var xhr = new XMLHttpRequest();
     xhr.open('POST', uBE, true);
+    xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
     var dataOut=formData;
     xhr.setRequestHeader('x-type','single');
     
@@ -2667,7 +2688,7 @@ var viewDeleteAccountPopCreator=function(){
   var yes=createElement('button').myText(langHtml.Yes).on('click', function(){
     //var vec=[['UDelete',1,function(data){doHistBack();doHistBack();}]];   majax(oAJAX,vec);
     sessionLoginIdP={};  userInfoFrDB=extend({}, specialistDefault);
-    var vec=[['UDelete',1], ['logout',1, function(data){
+    var vec=[['UDelete',{}], ['logout',{}, function(data){
       history.fastBack(viewFront,true);
     }]];   majax(oAJAX,vec);
 
@@ -2779,7 +2800,7 @@ var viewSettingCreator=function(){
   el.ElRole=ElRole;
   
     // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'}); if(boIE) roleToggler.css({display:''});
   
   var buttonSave=createElement('button').on('click', save).myText(langHtml.Save).addClass('flexWidth').css({'margin-right':'.2em'});
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').on('click', doHistBack).css({'margin-left':'0.8em','margin-right':'1em'});
@@ -2970,7 +2991,7 @@ var mainLoginInfoCreator=function(){
   var logoutButt=createElement('button').myText(langHtml.loginInfo.logoutButt).css({'margin-left':'auto', 'font-size':'90%'});
   logoutButt.on('click', function(){
     sessionLoginIdP={}; userInfoFrDB=extend({}, specialistDefault);
-    var vec=[['logout',1, function(data){
+    var vec=[['logout', {}, function(data){
       history.fastBack(viewFront,true);
     }]];
     majax(oAJAX,vec);
@@ -3070,7 +3091,7 @@ var viewEntryCreator=function(oRole){
 var mainIntroPopCreator=function(oRole){
 "use strict"
   var el=createElement('div');
-  var {charRole, strRole}=oRole;
+  var {charRole, strRole, charRoleUC}=oRole;
   var save=function(){ 
     resetMess();  
     var strTel=inpTel.value.trim(); inpTel.value=strTel; if(strTel.length==0) {setMess('telephone number can not be empty'); return; }
@@ -3101,7 +3122,7 @@ var mainIntroPopCreator=function(oRole){
   var helpPopup=createElement('div').myText('At least one of email or phone should be entered');
   var imgH=imgHelp.cloneNode().css({'margin-left':'1em'});   popupHover(imgH,helpPopup);
          
-  var head=createElement('h3').myText(langHtml.introHead);
+  var head=createElement('h3').myText(langHtml['introHead'+charRoleUC]);
   var pBread=createElement('p').myText("Data shown to other users (can be changed later in the settings).");
   //var pBread=createElement('p').myText("A telephone number is needed for customers to contact you. You may want to use a separate phone for this.");
   var inpName=createElement('input').prop('type','text').css({width:'70%', 'box-sizing':'border-box'});
@@ -4581,7 +4602,7 @@ var viewMarkSelectorCreator=function(){
   el.ElRole=ElRole;
   
       // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'}); if(boIE) roleToggler.css({display:''});
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').css({'margin-left':'0.8em','margin-right':'1em'}).on('click', doHistBack);
   var spanRole=createElement('span');
   var spanLab=createElement('span').myAppend(langHtml.MapMarkers, spanRole).addClass('footDivLabel');
@@ -4686,21 +4707,21 @@ var viewColumnSelectorCreator=function(){
   el.ElRole=ElRole;
   
       // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'}); if(boIE) roleToggler.css({display:''});
   
   var buttDefault=createElement('button').myText(langHtml.Default).on('click', defaultFunc);
   var buttAll=createElement('button').myText(langHtml.All).on('click', allFunc);
   var buttNone=createElement('button').myText(langHtml.None).on('click', noneFunc);
   var tmpImg=createElement('img').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//, 'margin-right':'0.5em'
   //var buttSort=createElement('button').myAppend(tmpImg).css({'margin-left':'auto', 'margin-right':'1em', 'font-size':'0.72rem'}).addClass('flexWidth');
-  var buttSort=createElement('button').myAppend(tmpImg).css({'margin-left':'auto', 'margin-right':'1em'}).addClass('fixWidth').on('click', function(){
+  var buttSort=createElement('button').myAppend('sort').css({'margin-left':'auto', 'margin-right':'1em'}).addClass('flexWidth').on('click', function(){
     //var viewTmp=oRole.strRole=='customer'?viewColumnSorterC:viewColumnSorterS;
     //viewTmp.setVis();    doHistPush({view:viewTmp});
     viewColumnSorter.setVis();    doHistPush({view:viewColumnSorter});
   });
   var buttonBack=createElement('button').myText(strBackSymbol).css({'margin-left':'0.8em','margin-right':'1em'}).addClass('fixWidth').on('click', doHistBack);
 
-  var tmpImg=createElement('img').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
+  var tmpImg=createElement('img').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});// uSetting1
   var spanRole=createElement('span');
   var spanLab=createElement('span').myAppend(tmpImg, langHtml.Columns, spanRole).addClass('footDivLabel');
   buttAll.css({'font-size':'80%'}); buttDefault.css({'font-size':'80%'}); buttNone.css({'font-size':'80%'});
@@ -4766,7 +4787,7 @@ var dragSorterCreator=function(cbMouseup){
   el.getMovedRow=function(){return movedRow;}
   el.setUp=function(arrName,arrLabel){    el.empty();    el.myAdd(arrName,arrLabel);  }
   el.myRemove=function(arrName){  for(var i=0;i<arrName.length;i++){ el.querySelector('[name='+arrName[i]+']').remove(); }  }
-  el.myGet=function(arrO=[]){  arrO.length=0;  [...el.children].forEach(function(ele,i){ arrO[i]=ele.attr("name"); }); return arrO;   }
+  el.myGet=function(arrO=[]){  arrO.length=0;  [...el.childNodes].forEach(function(ele,i){ arrO[i]=ele.attr("name"); }); return arrO;   }
 
   el.addClass('unselectable');    el.prop({unselectable:"on"}); //class: needed by firefox, prop: needed by opera, firefox and ie
   var movedRow;
@@ -4804,7 +4825,7 @@ var viewColumnSorterCreator=function(){
   var divCont=createElement('div').addClass('contDiv').myAppend(dragSorter);
 
     // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'}); if(boIE) roleToggler.css({display:''});
   var buttonBack=createElement('button').css({'margin-left':'0.8em','margin-right':'1em'}).myText(strBackSymbol).addClass('fixWidth').on('click', doHistBack);
   var spanRole=createElement('span');
   var spanLab=createElement('span').myAppend(langHtml.SortColumns, spanRole).addClass('footDivLabel');
@@ -4887,11 +4908,11 @@ var tHeadLabelCreator=function(oRole){
       r.append(h);
     }
 
-    var hBut=createElement("th").css({'box-shadow':'0 0'}).myAppend(butSel); r.append(hBut);
+    var hBut=createElement("th").css({'box-shadow':'0 0', background:'white'}).myAppend(butSel); r.append(hBut);
   }
   var r=createElement("tr"), boAsc=false, thSorted=null;
 
-  var tmpImg=createElement('img').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
+  var tmpImg=createElement('img').prop({src:uColumn16}).css({height:'1rem',width:'1rem','vertical-align':'text-bottom'});// uSetting1
   var butSel=createElement('button').prop('title',langHtml.AddRemoveColumns).addClass('fixWidth').myAppend(tmpImg).on('click', function(){
     //var i=oRole.ind;  ViewColumnSelector[i].setVis();  doHistPush({view:ViewColumnSelector[i]});
     viewColumnSelector.setVis();  doHistPush({view:viewColumnSelector});
@@ -5090,14 +5111,14 @@ var viewTableCreator=function(){
   var tmpImg=createElement('img').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
   var buttShowSelect=createElement('button').css({'margin-left':'0.8em'}).prop('title',langHtml.AddRemoveColumns).addClass('fixWidth').on('click', tmpf).myAppend(tmpImg);
 
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', display:'flex'}); if(boIE) roleToggler.css({display:''});
   
   el.filterButton=filterButtonCreator().css({'margin-left':'0.8em'});
   
   var tmpImg=createElement('img').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
   var spanRole=createElement('span');
   var spanLab=createElement('span').myAppend(tmpImg, langHtml.Table, spanRole).addClass('footDivLabel');
-  var divFoot=createElement('div').addClass('footDiv').myAppend(buttonBack, roleToggler, buttShowSelect, el.filterButton, spanLab);
+  var divFoot=createElement('div').addClass('footDiv').myAppend(buttonBack, roleToggler, el.filterButton, spanLab); //, buttShowSelect
   
   el.append(divCont, divFoot);
 
@@ -5128,8 +5149,8 @@ var firstAJAXCall=function(latLngFirst){
 
   var o1={pC:pC, VPSize:VPSizeT}, OFilt=[];
   for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-  var vec=[['getSetting',['boShowTeam'],viewAdmin.setUp], ['setupById'], ['VSetPosCond',pC],
-    ['setUpCond',{CharRole:'cs', OFilt:OFilt}],['setUp',o1,setUpRet],['getList',1,getListRet],['getGroupList',1,getGroupListRet],['getHist',1,getHistRet]];   majax(oAJAX,vec);
+  var vec=[['getSetting',{Var:['boShowTeam']},viewAdmin.setUp], ['setupById', {}], ['VSetPosCond',pC],
+    ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];   majax(oAJAX,vec);
   setMess('',null,true);
 }
 
@@ -5140,7 +5161,7 @@ loadTabStart=function(boSetupById=0){
   //if(boFlexZoom) {o1.zoom=-1; }
 
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-  var vec=[['setUpCond',{CharRole:'cs', OFilt:OFilt}],['setUp',o1,setUpRet],['getList',1,getListRet],['getGroupList',1,getGroupListRet],['getHist',1,getHistRet]];
+  var vec=[['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
   if(boSetupById){
     var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
     if(arrRole.length) vec.unshift(['setupById',{Role:arrRole}]);
@@ -5159,7 +5180,7 @@ var uploadPosNLoadTabStart=function(latLng, hideTimer, oRole){
   
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
   var vec=[['RUpdate',{hideTimer: hideTimer, charRole:oRole.charRole}], ['RShow', {x:pC.x, y:pC.y, charRole:oRole.charRole}],  // copySome(o1, oRole, ['charRole'])],
-    ['setupById',{Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}],['setUp',o1,setUpRet],['getList',1,getListRet],['getGroupList',1,getGroupListRet],['getHist',1,getHistRet]];
+    ['setupById',{Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
   
   majax(oAJAX,vec);
   setMess('',null,true);
@@ -5207,6 +5228,7 @@ var uploadPosNLoadTabStart=function(latLng, hideTimer, oRole){
 majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
   var xhr = new XMLHttpRequest();
   xhr.open('POST', uBE, true);
+  xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
   var arrRet=[]; vecIn.forEach(function(el,i){var f=null; if(el.length==3) f=el.pop(); arrRet[i]=f;}); // Put return functions in a separate array
   vecIn.push(['CSRFCode',CSRFCode]);
   if(vecIn.length==2 && vecIn[0][1] instanceof FormData){
@@ -5249,7 +5271,7 @@ var beRet=function(data){
 window.GRet=function(data){
 "use strict"
   if('curTime' in data) curTime=data.curTime;
-  if('strMessageText' in data) {var tmp=data.strMessageText.length?'Server: ':''; setMess(tmp+data.strMessageText,10);}
+  if('strMessageText' in data) {var strMess=data.strMessageText, tmp=strMess.length?'Server: ':''; setMess(tmp+strMess,10); if(/error/i.test(strMess)) navigator.vibrate(100);}
   if('CSRFCode' in data) CSRFCode=data.CSRFCode;
   if('sessionLoginIdP' in data) sessionLoginIdP=data.sessionLoginIdP;
   //var WBD=[]; tmp=data.boSpecialistWannaBe; if(typeof tmp!="undefined") {
@@ -5274,7 +5296,7 @@ window.GRet=function(data){
 }
 
 
-var errFunc=function(data){ resetMess(10);  }
+var errFunc=function(data){ resetMess(10); navigator.vibrate(100); }
 
 var setUpRet=function(data){
   var zoomLevel;  if('zoom' in data) zoomLevel=data.zoom;
@@ -5450,9 +5472,9 @@ setUp1=function(){
   strIPAltLong=objLong[strIPAlt];
 
 
-  var Match=RegExp("^[^/]+").exec(wwwSite);    domainName=Match[0];
+  var Match=RegExp("^[^/]+").exec(site.wwwSite);    domainName=Match[0];
 
-  strScheme='http'+(boTLS?'s':'');    strSchemeLong=strScheme+'://';    uSite=strSchemeLong+wwwSite;     uCommon=strSchemeLong+wwwCommon;    uBE=uSite+"/"+leafBE;
+  strScheme='http'+(boTLS?'s':'');    strSchemeLong=strScheme+'://';    uSite=strSchemeLong+site.wwwSite;     uCommon=strSchemeLong+wwwCommon;    uBE=uSite+"/"+leafBE;
   uCanonical=uSite;
 
   uConversion=uSite+'/conversion.html';
@@ -5569,7 +5591,8 @@ setUp1=function(){
   replaceNom(langHtml,'toManyMess');
   //replaceNom(langHtml,'SeeUnActivePopMess');
   replaceNom(langHtml,'writeComplaintPopup');
-  replaceNom(langHtml,'introHead');
+  replaceNom(langHtml,'introHeadC');
+  replaceNom(langHtml,'introHeadS');
   replaceNom(langHtml,'LoginSingInAsSeller');
   
   replaceNom(langHtml,'FilterC');
@@ -5670,7 +5693,7 @@ setUp1=function(){
 
 
 
-  strHistTitle=wwwSite;
+  strHistTitle=site.wwwSite;
   histList=[];
   stateLoaded=history.state;
   var tmpi=stateLoaded?stateLoaded.ind:0;    stateLoadedNew={hash:randomHash(), ind:tmpi};
@@ -5678,8 +5701,8 @@ setUp1=function(){
   stateTrans=stateLoadedNew;
   history.StateMy=[];
   window.on('popstate', function(event) {
-
     var dir=history.state.ind-stateTrans.ind;
+    //if(Math.abs(dir)>1) {debugger; alert('dir=',dir); }
     var boSameHash=history.state.hash==stateTrans.hash;
     if(boSameHash){
       var tmpObj=history.state;
@@ -5689,13 +5712,11 @@ setUp1=function(){
         history.boResetHashCurrent=false;
       }
 
-
       var stateMy=history.StateMy[history.state.ind];
       if(typeof stateMy!='object' ) {
-
-        //var tmpStr=window.location.href +" Error: typeof stateMy: "+(typeof stateMy)+', history.state.ind:'+history.state.ind+', history.StateMy.length:'+history.StateMy.length+', Object.keys(history.StateMy):'+Object.keys(history.StateMy);
-        //if(!boEpiphany) alert(tmpStr); else  console.log(tmpStr);
-        //debugger;
+        var tmpStr=window.location.href +" Error: typeof stateMy: "+(typeof stateMy)+', history.state.ind:'+history.state.ind+', history.StateMy.length:'+history.StateMy.length+', Object.keys(history.StateMy):'+Object.keys(history.StateMy);
+        if(!boEpiphany) alert(tmpStr); else  console.log(tmpStr);
+        debugger;
         return;
       }
       var view=stateMy.view;
@@ -5706,8 +5727,7 @@ setUp1=function(){
       } else {
         //var scrollT=stateMy.scroll;  setTimeout(function(){  window.scrollTop(scrollT);}, 1);
       }
-
-
+      
       if('funOverRule' in history && history.funOverRule) {history.funOverRule(); history.funOverRule=null;}
       else{
         if('fun' in stateMy && stateMy.fun) {var fun=stateMy.fun(stateMy); }
@@ -5715,7 +5735,6 @@ setUp1=function(){
 
       stateTrans=extend({}, tmpObj);
     }else{
-      //elBody.append('≠');
       stateTrans=history.state; extend(stateTrans, {hash:randomHash()}); history.replaceState(stateTrans, '', uCanonical);
       history.go(sign(dir));
     }
@@ -5746,8 +5765,9 @@ setUp1=function(){
 var setUp2=function(){
 
     //filter colors
-  colButtAllOn='#9f9'; colButtOn='#0f0'; colButtOff='#ddd'; colFiltOn='#bfb'; colFiltOff='#ddd'; colFontOn='#000'; colFontOff='#777'; colActive='#65c1ff'; colStapleOn='#f70'; colStapleOff='#bbb';
-  maxStaple=20;
+  //colButtAllOn='#9f9'; colButtOn='#0f0'; colButtOff='#ddd'; colFiltOn='#bfb'; colFiltOff='#ddd'; colFontOn='#000'; colFontOff='#777'; colActive='#65c1ff'; colStapleOn='#f70'; colStapleOff='#bbb';
+  //maxStaple=20;
+  window.objFilterSetting={colButtAllOn:'#9f9', colButtOn:'#0f0', colButtOff:'#ddd', colFiltOn:'#bfb', colFiltOff:'#ddd', colFontOn:'#000', colFontOff:'#777', colActive:'#65c1ff', colStapleOn:'#f70', colStapleOff:'#bbb', maxStaple:20};
   arrDivAdditionalCurrency=[];
   
   elBody.querySelector('body>div:not(:last-of-type)').detach();
@@ -6074,9 +6094,11 @@ var setUp2=function(){
 
 }
 
+setUp1();
 };
 
-window.onload=function(){  setUp(); setUp1();};
+//0123456789abcdef
+
 
 
 
