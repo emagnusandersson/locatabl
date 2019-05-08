@@ -1,13 +1,14 @@
 
+"use strict"
 
 //
 // Storage, DOM etc
 //
 
-getItem=function(name){    var tmp=localStorage.getItem(name);   if(tmp!==null) tmp=JSON.parse(tmp);  return tmp;   }
-setItem=function(name,value){  if(typeof value=='undefined') value=null; localStorage[name]=JSON.stringify(value); }
-getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!==null) tmp=JSON.parse(tmp);   return tmp;   }
-setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
+var getItem=function(name){    var tmp=localStorage.getItem(name);   if(tmp!==null) tmp=JSON.parse(tmp);  return tmp;   }
+var setItem=function(name,value){  if(typeof value=='undefined') value=null; localStorage[name]=JSON.stringify(value); }
+var getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!==null) tmp=JSON.parse(tmp);   return tmp;   }
+var setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
 
 
 
@@ -15,7 +16,7 @@ setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
 // Hardware checking
 //
 
-getBrowser=function(){
+var getBrowser=function(){
     var ua=navigator.userAgent.toLowerCase();
 
     var match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
@@ -30,7 +31,7 @@ getBrowser=function(){
     
     return {brand:brand,version:version};
 };
-detectIE=function() {
+var detectIE=function() {
     var ua = window.navigator.userAgent;
 
     var msie = ua.indexOf('MSIE ');
@@ -58,7 +59,7 @@ detectIE=function() {
 
 
 
-msort=function(compare){
+var msort=function(compare){
 "use strict"
   var length = this.length,  middle = Math.floor(length / 2);
   //if(length < 2) return this;
@@ -69,7 +70,7 @@ msort=function(compare){
   return merge(    msort.call(a,compare),    msort.call(b,compare),    compare    );
 }
 
-merge=function(left, right, compare){
+var merge=function(left, right, compare){
 "use strict"
   var result = [];
 
@@ -214,13 +215,7 @@ Node.prototype.cssChildren=function(styles){  this.childNodes.forEach(function(e
 Node.prototype.myText=function(str){
   if(typeof str=='undefined') { return this.textContent; }
   if(typeof str!='string') { if(str===null) str=' '; str=str.toString(); }
-  if(!this.firstChild) { this.textContent=str||' '; return this;}
-  this.firstChild.nodeValue=str||' ';  return this;
-}
-Node.prototype.myText=function(str){
-  if(typeof str=='undefined') { return this.textContent; }
-  if(typeof str!='string') { if(str===null) str=' '; str=str.toString(); }
-  if(this.childNodes.length==1 && this.firstChild.nodeName=="#text" ) { this.firstChild.nodeValue=str||' ';  return this;}
+  if(this.childNodes.length==1 && this.firstChild.nodeName=="#text" ) { this.firstChild.nodeValue=str||' ';  return this;} // Being a bit GC-friendly
   this.textContent=str||' '; return this;
 }
 Node.prototype.myHtml=function(str=' '){
@@ -249,12 +244,12 @@ NodeList.prototype.toggle=function(b){
   this.forEach(function(ele){ ele.toggle(b); });
   return this;
 }
-createTextNode=function(str){ return document.createTextNode(str); }
-createElement=function(str){ return document.createElement(str); }
-createFragment=function(){ fr=document.createDocumentFragment(); if(arguments.length) fr.append(...arguments); return fr; }
+var createTextNode=function(str){ return document.createTextNode(str); }
+var createElement=function(str){ return document.createElement(str); }
+var createFragment=function(){ var fr=document.createDocumentFragment(); if(arguments.length) fr.append(...arguments); return fr; }
 
-getNodeIndex=function( elm ){ return [...elm.parentNode.children].indexOf(elm); }
-Element.prototype.myIndex=function() {return [...this.parentNode.children].indexOf(this);}
+var getNodeIndex=function( elm ){ return [...elm.parentNode.childNodes].indexOf(elm); }
+Element.prototype.myIndex=function() {return [...this.parentNode.childNodes].indexOf(this);}
 
 Element.prototype.offset=function() {
   var rect = this.getBoundingClientRect();
@@ -271,7 +266,7 @@ Element.prototype.visibilityToggle=function(b){
 
 Node.prototype.detach=function(){ this.remove(); return this; }
 
-isVisible=function(el) {
+var isVisible=function(el) {
   return !!( el.offsetWidth || el.offsetHeight || el.getClientRects().length );
 }
 
@@ -282,7 +277,7 @@ isVisible=function(el) {
 /*******************************************************************************************************************
  * popupHover: popup a elBubble when you hover over elArea
  *******************************************************************************************************************/
-popupHover=function(elArea,elBubble){
+var popupHover=function(elArea,elBubble){
   elBubble.css({position:'absolute', 'box-sizing':'border-box', margin:'0px'}); //
   function setBubblePos(e){
     var xClear=6, yClear=6;
@@ -393,7 +388,7 @@ var toggleButtonExtend=function(el){
 // Canvas
 //
 
-cloneCanvas=function(oldCanvas){
+var cloneCanvas=function(oldCanvas){
     //var newCanvas = new Canvas();
     var newCanvas = document.createElement("canvas");
     newCanvas.width=oldCanvas.width;   newCanvas.height=oldCanvas.height
@@ -402,7 +397,7 @@ cloneCanvas=function(oldCanvas){
     return newCanvas;
 }
 
-makeMarker=function(strText){
+var makeMarker=function(strText){
 "use strict"
   if(typeof strText !='string') strText=strText.toString();
   var strFont="8pt Arial", leading=10;
@@ -431,7 +426,7 @@ makeMarker=function(strText){
 }
 
 
-makeMarkerBubble=function(obj){
+var makeMarkerBubble=function(obj){
 "use strict"
   var strText=obj.text||'text';
   if(typeof strText !='string') strText=strText.toString();
@@ -468,7 +463,7 @@ makeMarkerBubble=function(obj){
 
 
 
-makeTextCanvas=function(strText,rot){
+var makeTextCanvas=function(strText,rot){
   if(typeof rot=='undefined'){rot=0;}
   var fontHeight=12;
   var strFont=fontHeight+"pt Arial", leading=fontHeight+6;

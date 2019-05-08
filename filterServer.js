@@ -1,8 +1,7 @@
-
-setUpCond=function(oRole, Filt){
 "use strict"
-  var KeySel=oRole.KeySel;
-  var Prop=oRole.Prop;
+
+app.setUpCond=function(arg){
+  var {KeySel, Prop, Filt}=arg;
   var StrProp=Object.keys(Filt);
   var Where=[];
 
@@ -27,9 +26,9 @@ setUpCond=function(oRole, Filt){
       var strNot=boWhite?'':' NOT';
          
       if(arrSpec.length==0){   if(boWhite==1) arrCondInFeat.push('FALSE'); }  // "FALSE" to prevent all matches 
-      else {  
+      else {
         var boAddExtraNull=Prop[name].boIncludeNull && !boWhite,    arrCondOuter=[];
-        var tmpName; if('condBNameF' in Prop[name]) tmpName=Prop[name].condBNameF(name,arrSpec); else tmpName="`"+name+"`"; 
+        var tmpName; if('condBNameF' in Prop[name]) tmpName=Prop[name].condBNameF(name,arrSpec); else tmpName="`"+name+"`";
         var arrCondInner=[];
         var ind=arrSpec.indexOf(null);
         if(ind!=-1) {arrCondInner.push(pre+tmpName+" IS "+strNot+" NULL"); mySplice1(arrSpec,ind);  boAddExtraNull=0;}
@@ -37,7 +36,7 @@ setUpCond=function(oRole, Filt){
         if(arrSpec.length){
           for(var j=0;j<arrSpec.length;j++){ 
             var value=arrSpec[j];
-            if(feat.kind=='BF') {value=feat.bucket[value];  arrSpec[j]="'"+value+"'"; } 
+            if(feat.kind=='BF' && !(feat.boUseInd)) {value=feat.bucket[value];  arrSpec[j]="'"+value+"'"; } 
             else {       value=mysql.escape(value);          arrSpec[j]=value;   }
           }
           arrCondInner.push(pre+tmpName+strNot+' IN('+arrSpec.join(', ')+')');
@@ -77,12 +76,11 @@ setUpCond=function(oRole, Filt){
 
 
 
-getHist=function*(flow, mysqlPool, arg){
+app.getHist=function*(flow, arg){
   var Sql=[], TypeNInd=[];
-  var {oRole}=arg, {Prop}=oRole;
+  var {Prop}=arg;
   var StrProp=Object.keys(arg.Filt), nFilt=StrProp.length;
   var WhereWExtra=array_merge(arg.Where,arg.WhereExtra);
-  var Ou={err:null};
   for(var i=0;i<nFilt;i++){
     var name=StrProp[i];
     var pre; if('pre' in Prop[name]) pre=Prop[name].pre; else pre=preDefault;
@@ -90,6 +88,7 @@ getHist=function*(flow, mysqlPool, arg){
     var kind=feat.kind;
     
     var WhereTmp=[].concat(WhereWExtra); WhereTmp.splice(i,1);
+    Sql.push("\n  -- "+name);
     
     var boIsButt=(kind[0]=='B'); 
     if(boIsButt){ 
@@ -116,9 +115,8 @@ getHist=function*(flow, mysqlPool, arg){
       
       var strOrder='bin ASC';
 
-      var feat=Prop[name].feat;
       var nameT=name; if('nameDBBinTab' in feat){ nameT=feat.nameDBBinTab; }
-      var binTable=arg.strDBPrefix+"_bins"+ucfirst(nameT);   
+      var binTable=arg.strDBPrefix+"_bins"+ucfirst(nameT);
       WhereTmp.push(colExpCond+" BETWEEN b.minVal AND b.maxVal");
       var WhereTmp=array_filter(WhereTmp), strCond=''; if(WhereTmp.length) strCond='WHERE '+WhereTmp.join(' AND ');
       Sql.push("SELECT b.id AS bin, "+countExp+" AS groupCount FROM "+binTable+" b, \n("+arg.strTableRef+")\n"+strCond+"\nGROUP BY bin ORDER BY "+strOrder+";");
@@ -126,8 +124,7 @@ getHist=function*(flow, mysqlPool, arg){
     }
   }
   var sql=Sql.join('\n\n'), Val=[]; //set GLOBAL max_heap_table_size=128*1024*1024, GLOBAL tmp_table_size=128*1024*1024
-//debugger
-  var [err, results]=yield* myQueryGen(flow, sql, Val, mysqlPool);  if(err) return [err];
+  var [err, results]=yield* arg.myMySql.query(flow, sql, Val);  if(err) return [err];
   var NInRelaxedCond=[], Hist=[];
   for(var i=0;i<results.length;i++){
     var [kind,ii]=TypeNInd[i]; 
@@ -152,7 +149,7 @@ getHist=function*(flow, mysqlPool, arg){
 }
 
 
-addBinTableSql=function(SqlTabDrop,SqlTab,strDBPrefix,Prop,engine,collate){
+app.addBinTableSql=function(SqlTabDrop,SqlTab,strDBPrefix,Prop,engine,collate){
   var SqlTabDropTmp=[]
   for(var name in Prop){
     var prop=Prop[name];
@@ -164,7 +161,7 @@ addBinTableSql=function(SqlTabDrop,SqlTab,strDBPrefix,Prop,engine,collate){
       //SqlTabDrop.push("DROP TABLE IF EXISTS "+binsTable+"");
       SqlTab.push("CREATE TABLE IF NOT EXISTS "+binsTable+" (id INT, minVal INT, maxVal INT, PRIMARY KEY (id)) ENGINE="+engine+" COLLATE "+collate+"");
 
-      SqlVal=[];
+      var SqlVal=[];
       var len=feat.n;
       for(var i=0;i<len;i++){
         var val0=feat.min[i],  val1=feat.max[i]-1;

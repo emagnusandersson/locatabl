@@ -1,4 +1,5 @@
 
+"use strict"
 
 //mesOMake=function(glue){ return function(str){
   //if(str) this.Str.push(str);
@@ -9,15 +10,32 @@
   //this.Str.push('E: '+err.syscal+' '+err.code);
   //var str=this.Str.join(glue); this.res.end(str);  
 //}}
-mesOMakeJSON=function(glue){ return function(str){
+app.mesOMakeJSON=function(glue){ return function(str){
+  var res=this.res;
   if(str) this.Str.push(str);
-  var str=this.Str.join(glue);  this.res.end(JSON.stringify(str));
+  var str=this.Str.join(glue);
+  str=serialize(str);
+  if(str.length<lenGZ) res.end(str);
+  else{
+    res.setHeader("Content-Encoding", 'gzip');
+    res.setHeader('Content-Type', MimeType.json);
+    Streamify(str).pipe(zlib.createGzip()).pipe(res);
+  }
 }}
-mesEOMakeJSON=function(glue){ return function(err){
+app.mesEOMakeJSON=function(glue){ return function(err){
+  var res=this.res;
   console.error(err);
   var tmp=err.syscal||''; this.Str.push('E: '+tmp+' '+err.code);
-  var str=this.Str.join(glue); this.res.end(JSON.stringify(str));  
+  var str=this.Str.join(glue);
+  str=serialize(str);
+  if(str.length<lenGZ) res.end(str);
+  else{
+    res.setHeader("Content-Encoding", 'gzip');
+    res.setHeader('Content-Type', MimeType.json);
+    Streamify(str).pipe(zlib.createGzip()).pipe(res);
+  }
 }}
+
 
 
 "use strict"
@@ -28,7 +46,7 @@ mesEOMakeJSON=function(glue){ return function(err){
  * reqCurlEnd
  ******************************************************************************/
 app.reqCurlEnd=function*(){  
-  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS; this.pool=DB[req.site.db].pool
+  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS; //this.pool=DB[req.site.db].pool
   var flow=req.flow;
   
   this.mes=function(str){ this.Str.push(str); }
@@ -36,7 +54,7 @@ app.reqCurlEnd=function*(){
   this.mesEO=mesEOMakeJSON('\n');
   var Str=this.Str=[];
   
-  res.setHeader("Content-type", "application/json");
+  res.setHeader('Content-Type', MimeType.json);
   res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept");
   
   //var http_origin = req.uDomain; 
@@ -45,6 +63,7 @@ app.reqCurlEnd=function*(){
     var boAllowDbg=boDbg && RegExp("^http\:\/\/(localhost|192\.168\.0)").test(http_origin);
     if(boAllowDbg || http_origin == "https://control.closeby.market" || http_origin == "https://controlclosebymarket.herokuapp.com" || http_origin == "https://emagnusandersson.github.io" ){
         res.setHeader("Access-Control-Allow-Origin", http_origin);
+        res.setHeader("Vary", "Origin"); 
     }
     if(req.method=='OPTIONS'){  this.mesO(); return;}
   }
@@ -69,7 +88,7 @@ app.reqCurlEnd=function*(){
     Sql.push("CALL "+siteName+"GetValuesToController(?, ?, ?, @boShow, @hideTimer, @tDiff, @boOk, @mess);"); Val.push(inObj.iRole, sixPub, iSeqN);
     Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tDiff AS tDiff, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
-    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err){this.mesEO(err); return; } 
+    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){this.mesEO(err); return; } 
     var {boShow, hideTimer, tDiff, boOK, mess}=results[1][0];
     if(!boOK) {this.mesO(mess); return;}
     var str='Hidden';
@@ -87,7 +106,7 @@ app.reqCurlEnd=function*(){
     Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(inObj.iRole, sixPub, iSeqN, x, y, lat, boShow, hideTimer);
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
-    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err){this.mesEO(err); return; } 
+    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){this.mesEO(err); return; } 
     var {boShow, tDiff, boOK, mess}=results[1][0];
     if(!boOK) {this.mesO(mess); return;}
     var str=inObj.boShow?'Visible':'Hidden'; this.mes(str);
@@ -101,7 +120,7 @@ app.reqCurlEnd=function*(){
  * reqPubKeyStore
  ******************************************************************************/
 app.reqPubKeyStore=function*(){
-  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS, uSite=req.uSite; this.pool=DB[site.db].pool;
+  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS, uSite=req.uSite; //this.pool=DB[site.db].pool;
   var flow=req.flow;
   //this.mesO=mesOMake('\n');
   
@@ -110,13 +129,13 @@ app.reqPubKeyStore=function*(){
 
   //var Str=this.Str=[];
   var Str=[];
-  Str.push('<!DOCTYPE html> \n\
-<html><head> \n\
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> \n\
-<meta name="viewport" id="viewportMy" content="initial-scale=1" /> \n\
-<meta name="robots" content="noindex"> \n\
-</head> \n\
-<body>');
+  Str.push(`<!DOCTYPE html>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" id="viewportMy" content="initial-scale=1" />
+<meta name="robots" content="noindex">
+</head>
+<body>`);
 
 
   //var uCommon='http://'+wwwCommon;
@@ -142,28 +161,19 @@ app.reqPubKeyStore=function*(){
   yield* setRedis(flow, req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode, maxUnactivity); 
   
 
-  Str.push("\n\
-<script>\n\
-CSRFCode="+JSON.stringify(CSRFCode)+";\n\
-caller="+JSON.stringify(caller)+";\n\
-\n\
-specialistDefault="+JSON.stringify(specialistDefault)+";\n\
-pubKey="+JSON.stringify(pubKey)+";\n\
-maxList="+JSON.stringify(maxList)+";\n\
-\n\
-\n\
-wwwSite="+JSON.stringify(req.wwwSite)+";\n\
-wwwCommon="+JSON.stringify(wwwCommon)+";\n\
-boTLS="+JSON.stringify(req.boTLS)+";\n\
-leafBE="+JSON.stringify(leafBE)+";\n\
-flImageFolder="+JSON.stringify(flImageFolder)+";\n\
-UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
-response_type="+JSON.stringify(response_type)+";\n\
-</script>");
+  Str.push("<script>");
+  var objOut={CSRFCode:CSRFCode, caller:caller, specialistDefault:specialistDefault, pubKey:pubKey, maxList:maxList, wwwCommon:wwwCommon, leafBE:leafBE, flImageFolder:flImageFolder, UrlOAuth:UrlOAuth, response_type:response_type};
+  copySome(objOut,req,['wwwSite', 'boTLS']);
 
+  Str.push(`function indexAssign(){
+  var tmp=`+serialize(objOut)+`;
+  extend(window, tmp);
+}`);
+  Str.push("</script>");
   Str.push("</body></html>");
   //this.mesO();
 
+  res.setHeader('Content-Type', MimeType.html);
   var str=Str.join('\n');   res.writeHead(200, "OK");   res.end(str); 
 }
 
@@ -173,15 +183,15 @@ response_type="+JSON.stringify(response_type)+";\n\
  ******************************************************************************/
 app.reqPrev=function*() {
   var req=this.req, res=this.res;
-  res.end('<!DOCTYPE html>\n\
-<html><head>\n\
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n\
-<meta name="viewport" id="viewportMy" content="initial-scale=1" />\n\
-<meta name="robots" content="noindex">\n\
-</head><body>\n\
-<p>Prev\n\
-<p><a href='+req.uSite+'>index</a>\n\
-</body></html>');
+  res.end(`<!DOCTYPE html>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" id="viewportMy" content="initial-scale=1" />
+<meta name="robots" content="noindex">
+</head><body>
+<p>Prev
+<p><a href=`+req.uSite+`>index</a>
+</body></html>`);
 }
 
 /******************************************************************************
@@ -212,7 +222,7 @@ app.reqIndex=function*() {
   var Match=/^(.*),(.*)$/.exec(strTmp);
   var boOK=Boolean(Match.length);
   //if(!boOK) coordApprox=[0,0]; else coordApprox=Match.slice(1);
-  if(!boOK) coordApprox=[0,0]; else coordApprox=[Number(Match[1]),Number(Match[2])];
+  var coordApprox; if(!boOK) coordApprox=[0,0]; else coordApprox=[Number(Match[1]),Number(Match[2])];
 
 
   var strLangBrowser=getBrowserLang(req); if(!checkIfLangIsValid(strLangBrowser)){ strLangBrowser='en'; }
@@ -250,10 +260,10 @@ app.reqIndex=function*() {
   //yield* setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity); 
 
   var Str=[];
-  Str.push('<!DOCTYPE html>\n\
-<html xmlns="http://www.w3.org/1999/xhtml"\n\
-      xmlns:og="http://ogp.me/ns#"\n\
-      xmlns:fb="http://www.facebook.com/2008/fbml">');
+  Str.push(`<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:og="http://ogp.me/ns#"
+      xmlns:fb="http://www.facebook.com/2008/fbml">`);
   Str.push('<head>\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>');
 
 
@@ -286,44 +296,43 @@ app.reqIndex=function*() {
   var strSummary=site.serv.strSummary;
 
 
-  Str.push('\
-<meta name="description" content="'+strDescription+'"/>\n\
-<meta name="keywords" content="'+strKeywords+'"/>\n\
-<link rel="canonical" href="'+uSite+'"/>\n');
+  Str.push(`
+<meta name="description" content="`+strDescription+`"/>
+<meta name="keywords" content="`+strKeywords+`"/>
+<link rel="canonical" href="`+uSite+`"/>`);
 
-  var fbTmp=req.rootDomain.fb, fiIdTmp=fbTmp?fbTmp.id:'';
-  var tmp='\
-<meta property="og:title" content="'+wwwSite+'"/>\n\
-<meta property="og:type" content="website" />\n\
-<meta property="og:url" content="http://'+wwwSite+'"/>\n\
-<meta property="og:image" content="'+uIcon200+'"/>\n\
-<meta property="og:site_name" content="'+wwwSite+'"/>\n\
-<meta property="fb:admins" content="100002646477985"/>\n\
-<meta property="fb:app_id" content="'+fiIdTmp+'"/>\n\
-<meta property="og:description" content="'+strDescription+'"/>\n\
-<meta property="og:locale:alternate" content="sv_se" />\n\
-<meta property="og:locale:alternate" content="en_US" />\n';
+  var fbTmp=req.rootDomain.fb, fiIdTmp=fbTmp?fbTmp.id:``;
+  var tmp=`
+<meta property="og:title" content="`+wwwSite+`"/>
+<meta property="og:type" content="website" />
+<meta property="og:url" content="http://`+wwwSite+`"/>
+<meta property="og:image" content="`+uIcon200+`"/>
+<meta property="og:site_name" content="`+wwwSite+`"/>
+<meta property="fb:admins" content="100002646477985"/>
+<meta property="fb:app_id" content="`+fiIdTmp+`"/>
+<meta property="og:description" content="`+strDescription+`"/>
+<meta property="og:locale:alternate" content="sv_se" />
+<meta property="og:locale:alternate" content="en_US" />`;
   if(!boDbg) Str.push(tmp);
 
 
-  var tmp='\
-<script>\n\
-  window.fbAsyncInit = function() {\n\
-    FB.init({\n\
-      appId      : "'+fiIdTmp+'",\n\
-      xfbml      : true,\n\
-      version    : "v3.2"\n\
-    });\n\
-  };\n\
-\n\
-  (function(d, s, id){\n\
-     var js, fjs = d.getElementsByTagName(s)[0];\n\
-     if (d.getElementById(id)) {return;}\n\
-     js = d.createElement(s); js.id = id;\n\
-     js.src = "//connect.facebook.net/en_US/sdk.js";\n\
-     fjs.parentNode.insertBefore(js, fjs);\n\
-   }(document, "script", "facebook-jssdk"));\n\
-</script>\n';
+  var tmp=`
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : "`+fiIdTmp+`",
+      xfbml      : true,
+      version    : "v3.2"
+    });
+  };
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "//connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, "script", "facebook-jssdk"));
+</script>`;
   Str.push(tmp);
 
 
@@ -373,7 +382,7 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
   Str.push("\n<script type=\"text/javascript\" language=\"JavaScript\" charset=\"UTF-8\"> var CreatorPlugin={};</script>");
   var StrPlugInNArg=site.StrPlugInNArg;
   for(var i=0;i<StrPlugInNArg.length;i++){
-	  var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+    var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
     var Name=ucfirst(nameT); 
     var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
   }
@@ -381,54 +390,54 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
 
   var strTracker, tmpID=site.googleAnalyticsTrackingID||null;
   if(boDbg||!tmpID){strTracker="<script> ga=function(){};</script>";}else{ 
-  strTracker="\n\
-<script type=\"text/javascript\">\n\
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){\n\
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),\n\
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)\n\
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');\n\
-  ga('create', '"+tmpID+"', 'auto');\n\
-  ga('send', 'pageview');\n\
-</script>\n";
+  strTracker=`
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', '`+tmpID+`', 'auto');
+  ga('send', 'pageview');
+</script>`;
   }
   Str.push(strTracker);
   
-  Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit' async defer></script>");
+  Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit' defer></script>");
 
   Str.push("</head>");
   Str.push('<body style="visibility:hidden">');
 
   Str.push("<title>"+strTitle+"</title>\n<h1>"+strH1+"</h1>\n"+strSummary);
 
-  Str.push("\n<script type=\"text/javascript\" language=\"JavaScript\" charset=\"UTF-8\">\n\
-\n\
-\n\
-strLang="+JSON.stringify(strLang)+";\n\
-\n\
-coordApprox="+JSON.stringify(coordApprox)+";\n\
-boTLS="+JSON.stringify(req.boTLS)+";\n\
-UrlOAuth="+JSON.stringify(UrlOAuth)+";\n\
-strReCaptchaSiteKey="+JSON.stringify(strReCaptchaSiteKey)+";\n\
-strSalt="+JSON.stringify(strSalt)+";\n\
-m2wc="+JSON.stringify(m2wc)+";\n\
-</script>\n\
-<form  id=formLogin>\n\
-<label name=email>Email</label><input type=email name=email>\n\
-<label name=password>Password</label><input type=password name=password>\n\
-<button type=submit name=submit class=highStyle value=\"Sign in\">Sign in</button> \n\
-</form>\n\
-<form  id=formCreateAccount>\n\
-<label name=name>Full name</label><input type=text name=name>\n\
-<label name=email>Email</label><input type=email name=email>\n\
-<label name=password>Password</label><input type=password name=password>\n\
-<label name=passwordB>Password again</label><input type=password name=passwordB>\n\
-</form>\n\
-</body>\n\
-</html>");
-//response_type="+JSON.stringify(response_type)+";\n\
+  Str.push(`<script type="text/javascript" language="JavaScript" charset="UTF-8">`);
+
+  var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash};
+  copySome(objOut,req, ['boTLS']);
+
+  Str.push(`var tmp=`+serialize(objOut)+`;\n extend(window, tmp);`);
+  
+  Str.push(`
+</script>
+<form  id=formLogin>
+<label name=email>Email</label><input type=email name=email>
+<label name=password>Password</label><input type=password name=password>
+<button type=submit name=submit class=highStyle value="Sign in">Sign in</button> 
+</form>
+<form  id=formCreateAccount>
+<label name=name>Full name</label><input type=text name=name>
+<label name=email>Email</label><input type=email name=email>
+<label name=password>Password</label><input type=password name=password>
+<label name=passwordB>Password again</label><input type=password name=passwordB>
+</form>
+</body>
+</html>`);
 
 
-  var str=Str.join('\n');   res.writeHead(200, "OK", {'Content-Type': 'text/html'});   res.end(str);    
+  var str=Str.join('\n');
+  //res.writeHead(200, "OK", {'Content-Type': MimeType.html});   res.end(str);    
+  res.setHeader("Content-Encoding", 'gzip'); 
+  res.setHeader('Content-Type', MimeType.html);  
+  Streamify(str).pipe(zlib.createGzip()).pipe(res); 
 }
 
 
@@ -438,22 +447,24 @@ m2wc="+JSON.stringify(m2wc)+";\n\
  * reqLoginWLink
  ******************************************************************************/
 app.reqLoginWLink=function*(){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var userTab=site.TableName.userTab;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var code=objQS.code;
-  var redisVar=code+'_LoginWLink';
-  var email=yield* getRedis(flow, redisVar);
+  //var email=yield* getRedis(flow, code+'_LoginWLink');
+  var [err,email]=yield* cmdRedis(flow, 'GET', [code+'_LoginWLink']); 
   if(!email) {  res.out200('No such code'); return;  }
   //if(email!=inObj.email) {  res.out200('email does not match'); return; }
 
 
   var sql="SELECT idUser FROM "+userTab+" WHERE email=?;", Val=[email];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
   if(results.length==0) { res.out200('No such email in the database'); return;}
   
-  var idUser=results[0].idUser;    yield *setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  var idUser=results[0].idUser;
+  yield *setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  //var [err,tmp]=yield* cmdRedis(flow, 'SET', [req.sessionID+'_LoginIdUser',idUser,'EX', maxLoginUnactivity]);
 
   res.end("You are now logged in, close this tab, go back the web app and reload.");
 }
@@ -465,7 +476,7 @@ app.reqLoginWLink=function*(){
  * reqImage
  ******************************************************************************/
 app.reqImage=function*() {
-  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var flow=req.flow;
   
   var site=req.site, objQS=req.objQS, uSite=req.uSite, siteName=site.siteName, pathName=req.pathName, id, kind;
@@ -484,7 +495,7 @@ app.reqImage=function*() {
   else if(kind=='c') tab=customerTeamImageTab;
   else if(kind=='s')tab=sellerTeamImageTab; 
   var sql = "SELECT data FROM "+tab+" WHERE idUser=?", Val=[id];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool);  if(err) { res.out500(err); return;}
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) { res.out500(err); return;}
   if(results.length>0){
     var strData=results[0].data;
     var eTag=crypto.createHash('md5').update(strData).digest('hex'); 
@@ -493,7 +504,7 @@ app.reqImage=function*() {
     res.writeHead(200, {"Content-Type": mimeType, "Content-Length":strData.length, ETag: eTag, "Cache-Control":"public, max-age="+maxAge}); // "Last-Modified": maxModTime.toUTCString(),
     res.end(strData);
   }else{
-    //res.setHeader("Content-type", "image/png");
+    //res.setHeader("Content-type", MimeType.png);
     id=id%32;
     var tmp; if(kind=='u'){tmp='anonPng'; }else tmp='anonTeamPng';
     var uNew=uSite+"/lib/image/"+tmp+"/a"+id+".png";
@@ -507,40 +518,42 @@ app.reqImage=function*() {
  * reqLoginBack
  ******************************************************************************/
 app.reqLoginBack=function*(){
-  var req=this.req;
+  var req=this.req, res=this.res;
   var wwwLoginScopeTmp=null; if('wwwLoginScope' in req.site) wwwLoginScopeTmp=req.site.wwwLoginScope;
   var uSite=req.strSchemeLong+req.wwwSite;
-
+  
   var Str=[];
-  Str.push("\n\
-<html><head><meta name='robots' content='noindex'>\n\
-<link rel='canonical' href='"+uSite+"'/>\n\
-</head>\n\
-<body>\n\
-<script>\n\
-var wwwLoginScope="+JSON.stringify(wwwLoginScopeTmp)+";\n\
-if(wwwLoginScope) document.domain = wwwLoginScope;\n\
-var strQS=location.search;\n\
-var strHash=location.hash;\n\
-debugger\n\
-//alert('strHash: '+strHash);\n\
-window.opener.loginReturn(strQS,strHash);\n\
-window.close();\n\
-</script>\n\
-</body>\n\
-</html>\n\
-");
-  var str=Str.join('\n');  this.res.end(str);
+  Str.push(`<!DOCTYPE html>
+<html><head><meta name='robots' content='noindex'>
+<link rel='canonical' href='`+uSite+`'/>
+</head>
+<body>
+<script>
+var wwwLoginScope=`+JSON.stringify(wwwLoginScopeTmp)+`;
+if(wwwLoginScope) document.domain = wwwLoginScope;
+var strQS=location.search;
+var strHash=location.hash;
+debugger
+//alert('strHash: '+strHash);
+window.opener.loginReturn(strQS,strHash);
+window.close();
+</script>
+</body>
+</html>
+`);
+  res.setHeader('Content-Type', MimeType.html);
+  var str=Str.join('\n');  res.end(str);
 }
 
 
 app.reqVerifyEmailReturn=function*() {
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var userTab=site.TableName.userTab;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
-  var redisVar=codeIn+'_verifyEmail', idUser=yield* getRedis(flow, redisVar);
+  //var idUser=yield* getRedis(flow, codeIn+'_verifyEmail');
+  var [err,idUser]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyEmail']); 
   
   if(idUser===null) { res.out200('No such code'); return;}
 
@@ -549,7 +562,7 @@ app.reqVerifyEmailReturn=function*() {
   Val.push(idUser);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
 
   var c=results.affectedRows, mestmp; 
   if(c==1) { mestmp="Email verified"; } else {mestmp="Error (Nothing done)"; }
@@ -557,32 +570,34 @@ app.reqVerifyEmailReturn=function*() {
 }
 
 app.reqVerifyPWResetReturn=function*() {
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var userTab=site.TableName.userTab;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
-  var redisVar=codeIn+'_verifyPWReset', email=yield* getRedis(flow, redisVar);
+  //var email=yield* getRedis(flow, codeIn+'_verifyPWReset');
+  var [err,email]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyPWReset']); 
   
   if(email===null) { res.out200('No such code'); return;}
 
   var password=randomHash();
-  var passwordHash=SHA1(password+strSalt);
+  //var passwordHash=SHA1(password+strSalt);
+  var hashPW=password+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
 
   var Sql=[], Val=[];
   Sql.push("UPDATE "+userTab+" SET hashPW=? WHERE email=?;");
-  Val.push(passwordHash, email);
+  Val.push(hashPW, email);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
 
   var c=results.affectedRows, mestmp; 
   if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
 
 
   var wwwSite=req.wwwSite;
-  var strTxt='<h3>New password on '+wwwSite+'</h3> \n\
-<p>Your new password on '+wwwSite+' is '+password+'</p>';
+  var strTxt=`<h3>New password on `+wwwSite+`</h3>
+<p>Your new password on `+wwwSite+` is `+password+`</p>`;
   
   if(boDbg) wwwSite="closeby.market";
   const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Password reset', html: strTxt }; sgMail.send(msg);
@@ -590,14 +605,16 @@ app.reqVerifyPWResetReturn=function*() {
 }
 
 app.reqVerifyEmailNCreateUserReturn=function*() {
-  var req=this.req, flow=req.flow, res=this.res, site=req.site, sessionID=req.sessionID; this.pool=DB[site.db].pool;
+  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var {userTab, sellerTab, customerTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
   
-  var redisVar=codeIn+'_verifyEmailNCreateUser', objT=yield* getRedis(flow, redisVar, true);   if(!objT) { res.out200('No such code'); return;}
+  //var objT=yield* getRedis(flow, codeIn+'_verifyEmailNCreateUser', true); if(!objT) { res.out200('No such code'); return;}
+  var [err,value]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyEmailNCreateUser']),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
   var {name, email, password}=objT;
+  name=myJSEscape(name); email=myJSEscape(email); //password=myJSEscape(password);
 
   
   var Sql=[], Val=[];
@@ -611,16 +628,16 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   
   var sql=Sql.join('\n');
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err) {  res.out500(err); return; }
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
   var c=results[0].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
   var boIns=site.boGotNewSellers=Number(results[3][0].boInserted);
   site.nUser=Number(results[4][0].n);
   var tmp=boIns?'created':'updated';
-  var Str=["<!DOCTYPE html><html><head>\n\
-<meta name='viewport' id='viewportMy' content='initial-scale=1'/>\n\
-</head><body>"];
+  var Str=[`<!DOCTYPE html><html><head>
+<meta name='viewport' id='viewportMy' content='initial-scale=1'/>
+</head><body>`];
   var uSite=req.strSchemeLong+req.wwwSite
   //if(boIns) Str.push("An account has been created. Go back to <a href=\""+uSite+"\">"+req.wwwSite+"</a>."); else Str.push("Your account was updated."); //and you can login with the email / password you 
   if(boIns) Str.push("Account created! Please return to your previous browser / tab and hit reload to continue."); else Str.push("Your account was updated."); //and you can login with the email / password you selected
@@ -638,7 +655,7 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
  * reqStatic (request for static files)
  ******************************************************************************/
 app.reqStatic=function*() {
-  var req=this.req, res=this.res, flow=req.flow, site=req.site; this.pool=DB[site.db].pool;
+  var req=this.req, res=this.res, flow=req.flow, site=req.site; //this.pool=DB[site.db].pool;
   var site=req.site, objQS=req.objQS, siteName=site.siteName, pathName=req.pathName;
 
   var eTagIn=getETag(req.headers);
@@ -671,26 +688,29 @@ app.reqStatic=function*() {
  * reqMonitor
  ******************************************************************************/
 app.reqMonitor=function*(){
-  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
-  var timeCur=unixNow(); boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+  var timeCur=unixNow(), boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
   var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
   var flow=req.flow;
+  
+  //if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
 
   if(boRefresh){ 
     var Sql=[];
     Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBeforeHiding+";");
-    Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
+    //Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
+    Sql.push("SELECT count(*) AS n FROM "+userTab+";");
 
     var sql=Sql.join('\n'), Val=[];
-    var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return; }
+    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return; }
     site.nVis=results[0][0].n;
     site.nUser=results[1][0].n;
   }
 
   var nVis=site.nVis, nUser=site.nUser;
   var Str=[];
-  Str.push('<!DOCTYPE html> \n\
-<html><head><meta name="robots" content="noindex"></head>');
+  Str.push(`<!DOCTYPE html>
+<html><head><meta name="robots" content="noindex"></head>`);
   var strColor='';
   if('admin' in objQS && objQS.admin){
     if(boRefresh) strColor='lightgreen';
@@ -699,9 +719,10 @@ app.reqMonitor=function*(){
   var strUser=nUser;  if(strColor) strUser="<span style=\"background-color:"+strColor+"\">"+nUser+"</span>";
   Str.push("<body style=\"margin: 0px\">"+nVis+" / "+strUser+"</body>");
   Str.push("</html>");
-
-  var str=Str.join('\n');  res.end(str);
-
+  
+  res.removeHeader("Content-Security-Policy");
+  res.setHeader('Content-Type', MimeType.html);
+  var str=Str.join('\n'); res.end(str);
 }
 
 
@@ -731,8 +752,10 @@ var makeTable=function(K,M){
 }
 
 app.reqStat=function*(){
-  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var flow=req.flow;
+  
+  if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
 
   var siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
   
@@ -747,20 +770,20 @@ app.reqStat=function*(){
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return;  }
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
   var nUser=results[0][0].n;
   if('code' in objQS && objQS.code=='amfoen') {site.boGotNewSellers=0; site.nUser=nUser;}
   var matA=results[1];
   var matB=results[2];
   
   var Str=[];
-  Str.push('<!DOCTYPE html> \n\
-<html><head> \n\
-<meta name="robots" content="noindex"> \n\
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> \n\
-<style> table,td,tr {border: solid 1px;border-collapse:collapse}</style> \n\
-</head> \n\
-<body>');
+  Str.push(`<!DOCTYPE html>
+<html><head>
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style> table,td,tr {border: solid 1px;border-collapse:collapse}</style>
+</head>
+<body>`);
   var nA=matA.length;
   Str.push("user OUTER JOIN seller ("+nA+")");
   if(nA>0){
@@ -776,13 +799,19 @@ app.reqStat=function*(){
   }
   
   Str.push("</body></html>");
-  var str=Str.join('\n');  res.end(str);
+  var str=Str.join('\n');
+  //res.end(str);
+  res.setHeader("Content-Encoding", 'gzip'); 
+  res.setHeader('Content-Type', MimeType.html);  
+  Streamify(str).pipe(zlib.createGzip()).pipe(res); 
 }
 
 
 app.reqStatBoth=function*(){
-  var req=this.req, res=this.res, site=req.site; this.pool=DB[site.db].pool;
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var flow=req.flow;
+  
+  if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
 
   var siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
   
@@ -812,7 +841,7 @@ app.reqStatBoth=function*(){
   Sql.push("SELECT "+strColsU+", "+strColsC+" FROM "+userTab+" u RIGHT JOIN "+customerTab+" c ON u.idUser=c.idUser WHERE u.idUser IS NULL;");
   Sql.push("SELECT "+strColsU+", "+strColsS+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* myQueryGen(flow, sql, Val, this.pool); if(err){ res.out500(err); return;  }
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
   var nUser=results[0][0].n;
   if('code' in objQS && objQS.code=='amfoen') {site.boGotNewSellers=0; site.nUser=nUser;}
   var matA=results[1];
@@ -820,44 +849,63 @@ app.reqStatBoth=function*(){
   var matC=results[3];
   
   var Str=[];
-  Str.push('<!DOCTYPE html> \n\
-<html><head> \n\
-<meta name="robots" content="noindex"> \n\
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> \n\
-<style> table,td,tr {border: solid 1px;border-collapse:collapse}</style> \n\
-</head> \n\
-<body>');
+  Str.push(`<!DOCTYPE html>
+<html><head>
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style> table,td,tr {border: solid 1px;border-collapse:collapse}
+td:nth-child(n+6):nth-child(-n+13){background:pink}
+td:nth-child(n+14){background:lightblue}
+</style>
+</head>
+<body>`);
   var nA=matA.length;
   Str.push("user OUTER JOIN seller ("+nA+")");
   if(nA>0){
     var Keys=Object.keys(matA[0]);
-    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].tAccumulated); matA[i].tAccumulated=Math.round(ttmp)+u; }
+    for(var i=0;i<matA.length;i++){
+      var row=matA[i];
+      for(var j=0;j<Keys.length;j++){
+        var key=Keys[j], t=row[key];
+          // Format t
+        if(/^[cs]_(tAccumulated|hideTimer)/.test(key)) {
+          var [ttmp,u]=getSuitableTimeUnit(t); row[key]=Math.round(ttmp)+u;
+        }else if(t instanceof Date){
+          var unixT=t.valueOf()/1000;
+          var [ttmp,u]=getSuitableTimeUnit(unixNow()-unixT); row[key]=Math.round(ttmp)+u;
+        }
+      }
+    }
     Str.push(makeTable(Keys,matA));
   }
   var nB=matB.length;
-  Str.push("<hr>seller.idUser with no user.idUser ("+nB+")");
+  Str.push("<hr>customers with no user ("+nB+")");
   if(nB>0){
     var Keys=Object.keys(matB[0]);
     Str.push(makeTable(Keys,matB));
   }
   var nC=matC.length;
-  Str.push("<hr>seller.idUser with no user.idUser ("+nC+")");
+  Str.push("<hr>sellers with no user ("+nC+")");
   if(nC>0){
     var Keys=Object.keys(matC[0]);
     Str.push(makeTable(Keys,matC));
   }
   
   Str.push("</body></html>");
-  var str=Str.join('\n');  res.end(str);
+  var str=Str.join('\n');
+  //res.end(str);
+  res.setHeader("Content-Encoding", 'gzip'); 
+  res.setHeader('Content-Type', MimeType.html);  
+  Streamify(str).pipe(zlib.createGzip()).pipe(res); 
 }
  
 
 /******************************************************************************
- * SetupSql
+ * SetupSqlT
  ******************************************************************************/
-app.SetupSql=function(){
+app.SetupSqlT=function(){
 }
-app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
+app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
   if(typeof SiteName=='string') SiteName=[SiteName];
   
   var SqlTabDrop=[], SqlTab=[];
@@ -889,36 +937,35 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
 
 
     // Create users
-  SqlTab.push("CREATE TABLE "+userTab+" ( \n\
-  idUser int(4) NOT NULL auto_increment, \n\
-  tCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP, \n\
-  idFB varchar(128) CHARSET utf8 NULL, \n\
-  idIdPlace varchar(128) CHARSET utf8 NULL, \n\
-  idOpenId varchar(128) CHARSET utf8 NULL, \n\
-  email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  nameIP varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  image varchar(256) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  hashPW char(40) NOT NULL DEFAULT '', \n\
-  imTag int(4) NOT NULL DEFAULT 0, \n\
-  boImgOwn tinyint(1) NOT NULL DEFAULT 0, \n\
-  displayName VARCHAR(32) NOT NULL DEFAULT '', \n\
-  donatedAmount DOUBLE NOT NULL DEFAULT 0, \n\
-  pubKey VARCHAR(256) NOT NULL DEFAULT '', \n\
-  iSeq int(4) NOT NULL DEFAULT 0, \n\
-  nComplaint int(4) NOT NULL DEFAULT 0, \n\
-  nComplaintCum int(4) NOT NULL DEFAULT 0, \n\
-  nComplaintGiven int(4) NOT NULL DEFAULT 0, \n\
-  nComplaintGivenCum int(4) NOT NULL DEFAULT 0, \n\
-  PRIMARY KEY (idUser), \n\
-  UNIQUE KEY (idFB), \n\
-  UNIQUE KEY (idIdPlace), \n\
-  UNIQUE KEY (idOpenId), \n\
-  UNIQUE KEY (email) \n\
-  ) AUTO_INCREMENT = "+auto_increment+", ENGINE="+engine+" COLLATE "+collate+""); 
+  SqlTab.push(`CREATE TABLE `+userTab+` ( 
+  idUser int(4) NOT NULL auto_increment, 
+  tCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+  idFB varchar(128) CHARSET utf8 NULL, 
+  idIdPlace varchar(128) CHARSET utf8 NULL, 
+  idOpenId varchar(128) CHARSET utf8 NULL, 
+  email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', 
+  nameIP varchar(128) CHARSET utf8 NOT NULL DEFAULT '', 
+  image varchar(256) CHARSET utf8 NOT NULL DEFAULT '', 
+  hashPW char(40) NOT NULL DEFAULT '', 
+  imTag int(4) NOT NULL DEFAULT 0, 
+  boImgOwn tinyint(1) NOT NULL DEFAULT 0, 
+  displayName VARCHAR(32) NOT NULL DEFAULT '', 
+  donatedAmount DOUBLE NOT NULL DEFAULT 0, 
+  pubKey VARCHAR(256) NOT NULL DEFAULT '', 
+  iSeq int(4) NOT NULL DEFAULT 0, 
+  nComplaint int(4) NOT NULL DEFAULT 0, 
+  nComplaintCum int(4) NOT NULL DEFAULT 0, 
+  nComplaintGiven int(4) NOT NULL DEFAULT 0, 
+  nComplaintGivenCum int(4) NOT NULL DEFAULT 0, 
+  PRIMARY KEY (idUser), 
+  UNIQUE KEY (idFB), 
+  UNIQUE KEY (idIdPlace), 
+  UNIQUE KEY (idOpenId), 
+  UNIQUE KEY (email) 
+  ) AUTO_INCREMENT = `+auto_increment+`, ENGINE=`+engine+` COLLATE `+collate); 
  
 
 
-  //IP "+strIPEnum+" CHARSET utf8 NOT NULL DEFAULT '"+strIPDefault+"', \n\
 
     // Create sellerTab
   //var StrProp=Object.keys(oS.Prop);
@@ -949,11 +996,11 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   }
   var strSql=arrCols.join(",\n");
 
-  SqlTab.push("CREATE TABLE "+sellerTab+" (\
-  "+strSql+",\
-  PRIMARY KEY (idUser),\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE\
-  ) ENGINE="+engine+" COLLATE "+collate+""); 
+  SqlTab.push(`CREATE TABLE `+sellerTab+` (
+  `+strSql+`,
+  PRIMARY KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate+``); 
 
 
     // Create SellerTab indexes
@@ -995,11 +1042,11 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   }
   var strSql=arrCols.join(",\n");
 
-  SqlTab.push("CREATE TABLE "+customerTab+" (\
-  "+strSql+",\
-  PRIMARY KEY (idUser),\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE\
-  ) ENGINE="+engine+" COLLATE "+collate+""); 
+  SqlTab.push(`CREATE TABLE `+customerTab+` (
+  `+strSql+`,
+  PRIMARY KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate+``); 
 
 
     // Create CustomerTab indexes
@@ -1015,27 +1062,27 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
     // Image tables
     //
     
-  SqlTab.push("CREATE TABLE "+userImageTab+" ( \
-  idUser int(4) NOT NULL, \
-  data BLOB NOT NULL, \
-  UNIQUE KEY (idUser), \
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \
-  ) ENGINE="+engine+" COLLATE "+collate+""); 
+  SqlTab.push(`CREATE TABLE `+userImageTab+` (
+  idUser int(4) NOT NULL,
+  data BLOB NOT NULL,
+  UNIQUE KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate); 
 
 
-  SqlTab.push("CREATE TABLE "+customerTeamImageTab+" ( \
-  idUser int(4) NOT NULL, \
-  data BLOB NOT NULL, \
-  UNIQUE KEY (idUser), \
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \
-  ) ENGINE="+engine+" COLLATE "+collate+""); 
+  SqlTab.push(`CREATE TABLE `+customerTeamImageTab+` (
+  idUser int(4) NOT NULL,
+  data BLOB NOT NULL,
+  UNIQUE KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate); 
   
-  SqlTab.push("CREATE TABLE "+sellerTeamImageTab+" ( \
-  idUser int(4) NOT NULL, \
-  data BLOB NOT NULL, \
-  UNIQUE KEY (idUser), \
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \
-  ) ENGINE="+engine+" COLLATE "+collate+"");
+  SqlTab.push(`CREATE TABLE `+sellerTeamImageTab+` (
+  idUser int(4) NOT NULL,
+  data BLOB NOT NULL,
+  UNIQUE KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate);
   
   
 
@@ -1043,61 +1090,61 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
 
 
 
-  SqlTab.push("CREATE TABLE "+settingTab+" ( \n\
-  name varchar(65) CHARSET utf8 NOT NULL, \n\
-  value varchar(65) CHARSET utf8 NOT NULL, \n\
-  UNIQUE KEY (name) \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
+  SqlTab.push(`CREATE TABLE `+settingTab+` (
+  name varchar(65) CHARSET utf8 NOT NULL,
+  value varchar(65) CHARSET utf8 NOT NULL,
+  UNIQUE KEY (name)
+  ) ENGINE=`+engine+` COLLATE `+collate);
 
 
     // Create admin
-  SqlTab.push("CREATE TABLE "+adminTab+" ( \n\
-  idUser int(4) NOT NULL, \n\
-  boApproved tinyint(1) NOT NULL DEFAULT 0, \n\
-  tCreated TIMESTAMP default CURRENT_TIMESTAMP, \n\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  UNIQUE KEY (idUser) \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
+  SqlTab.push(`CREATE TABLE `+adminTab+` (
+  idUser int(4) NOT NULL,
+  boApproved tinyint(1) NOT NULL DEFAULT 0,
+  tCreated TIMESTAMP default CURRENT_TIMESTAMP,
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
+  UNIQUE KEY (idUser)
+  ) ENGINE=`+engine+` COLLATE `+collate);
 
 
 
     // Create complaintTab
-  SqlTab.push("CREATE TABLE "+complaintTab+" ( \n\
-  idComplainee  int(4) NOT NULL, \n\
-  idComplainer int(4) NOT NULL, \n\
-  comment TEXT CHARSET utf8, \n\
-  answer TEXT CHARSET utf8, \n\
-  tCreated TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
-  tCommentModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
-  tAnswerModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP, \n\
-  UNIQUE KEY (idComplainee,idComplainer), \n\
-  FOREIGN KEY (idComplainee) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  FOREIGN KEY (idComplainer) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
+  SqlTab.push(`CREATE TABLE `+complaintTab+` (
+  idComplainee  int(4) NOT NULL,
+  idComplainer int(4) NOT NULL,
+  comment TEXT CHARSET utf8,
+  answer TEXT CHARSET utf8,
+  tCreated TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+  tCommentModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+  tAnswerModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+  UNIQUE KEY (idComplainee,idComplainer),
+  FOREIGN KEY (idComplainee) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
+  FOREIGN KEY (idComplainer) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate);
 
 
 
     // Create customerTeamTab
-  SqlTab.push("CREATE TABLE "+customerTeamTab+" ( \n\
-  idUser int(4) NOT NULL, \n\
-  link varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  imTag int(4) NOT NULL default 0, \n\
-  boApproved tinyint(1) NOT NULL default 0, \n\
-  tCreated TIMESTAMP default CURRENT_TIMESTAMP, \n\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  UNIQUE KEY (idUser) \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
+  SqlTab.push(`CREATE TABLE `+customerTeamTab+` (
+  idUser int(4) NOT NULL,
+  link varchar(128) CHARSET utf8 NOT NULL DEFAULT '',
+  imTag int(4) NOT NULL default 0,
+  boApproved tinyint(1) NOT NULL default 0,
+  tCreated TIMESTAMP default CURRENT_TIMESTAMP,
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
+  UNIQUE KEY (idUser)
+  ) ENGINE=`+engine+` COLLATE `+collate);
   
     // Create sellerTeamTab
-  SqlTab.push("CREATE TABLE "+sellerTeamTab+" ( \n\
-  idUser int(4) NOT NULL, \n\
-  link varchar(128) CHARSET utf8 NOT NULL DEFAULT '', \n\
-  imTag int(4) NOT NULL default 0, \n\
-  boApproved tinyint(1) NOT NULL default 0, \n\
-  tCreated TIMESTAMP default CURRENT_TIMESTAMP, \n\
-  FOREIGN KEY (idUser) REFERENCES "+userTab+"(idUser) ON DELETE CASCADE, \n\
-  UNIQUE KEY (idUser) \n\
-  ) ENGINE="+engine+" COLLATE "+collate+"");
+  SqlTab.push(`CREATE TABLE `+sellerTeamTab+` (
+  idUser int(4) NOT NULL,
+  link varchar(128) CHARSET utf8 NOT NULL DEFAULT '',
+  imTag int(4) NOT NULL default 0,
+  boApproved tinyint(1) NOT NULL default 0,
+  tCreated TIMESTAMP default CURRENT_TIMESTAMP,
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
+  UNIQUE KEY (idUser)
+  ) ENGINE=`+engine+` COLLATE `+collate);
 
   //name varchar(64) CHARSET utf8 NOT NULL,
   //boFB tinyint(1) NOT NULL,
@@ -1105,24 +1152,14 @@ app.SetupSql.prototype.createTable=function(SiteName,boDropOnly){
   addBinTableSql(SqlTabDrop, SqlTab, siteName, oS.Prop, engine, collate);
   addBinTableSql(SqlTabDrop, SqlTab, siteName, oC.Prop, engine, collate);
 
-
-
-  //SqlTab.push("TRUNCATE "+settingTab+"");
-  SqlTab.push("INSERT INTO "+settingTab+" VALUES \
-  ('boShowTeam', '0'), \
-  ('tLastWriteOfHA', floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )), \
-  ('tLastWriteOfBoShow', 0), \
-  ('boGotNewSellers', '0'), \
-  ('nUser', '0'), \
-  ('boAllowEmailAccountCreation', '0')"); 
-
   }
   if(boDropOnly) return SqlTabDrop;
   else return array_merge(SqlTabDrop, SqlTab);
 }
 
 
-app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
+  
+app.SetupSqlT.prototype.createFunction=function(SiteName,boDropOnly){
   if(typeof SiteName=='string') SiteName=[SiteName];
   
   var SqlFunctionDrop=[], SqlFunction=[];
@@ -1149,29 +1186,29 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
   var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)";
   var sqlTRemaining="GREATEST(hideTimer-("+sqlTWritten+"),0)";
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdOne");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"TimeAccumulatedUpdOne(IN IidUser INT) \
-      BEGIN \
-        UPDATE "+customerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser; \
-        UPDATE "+sellerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser; \
-      END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdOne(IN IidUser INT)
+      BEGIN
+        UPDATE `+customerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser;
+        UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser;
+      END`);
   //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"AutoHideOne");
-  //SqlFunction.push("CREATE PROCEDURE "+siteName+"AutoHideOne (IN id INT) BEGIN      UPDATE "+sellerTab+" SET boShow=IF(now()>hideTime,0,boShow) WHERE idUser=id;    END");
+  //SqlFunction.push(`CREATE PROCEDURE `+siteName+`AutoHideOne (IN id INT) BEGIN      UPDATE `+sellerTab+` SET boShow=IF(now()>hideTime,0,boShow) WHERE idUser=id;    END`);
 
     // IFunPoll
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"IFunPoll");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"IFunPoll() BEGIN      CALL "+siteName+"TimeAccumulatedUpdMult;   CALL "+siteName+"HistActiveUpdMult;   END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`IFunPoll() BEGIN      CALL `+siteName+`TimeAccumulatedUpdMult;   CALL `+siteName+`HistActiveUpdMult;   END`);
   
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdMult");  // Update tAccumulated, tLastWriteOfTA and boShow
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"TimeAccumulatedUpdMult() \n\
-      BEGIN    \n\
-        DECLARE tLastWriteOfBoShow INT; \n\
-        SELECT value INTO tLastWriteOfBoShow FROM "+settingTab+" WHERE name='tLastWriteOfBoShow'; \n\
-        IF UNIX_TIMESTAMP(now())>tLastWriteOfBoShow+10 THEN \n\
-          UPDATE "+sellerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now(), boShow=IF("+sqlBeforeHiding+",boShow,0) WHERE boShow=1; \n\
-          UPDATE "+customerTab+" SET tAccumulated=tAccumulated+LEAST("+sqlTimeSinceWriteOfTA+","+sqlTRemaining+")*boShow, tLastWriteOfTA=now(), boShow=IF("+sqlBeforeHiding+",boShow,0) WHERE boShow=1; \n\
-          UPDATE "+settingTab+" SET value=UNIX_TIMESTAMP(now()) WHERE name='tLastWriteOfBoShow';      \n\
-        END IF; \n\
-      END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdMult()
+      BEGIN
+        DECLARE tLastWriteOfBoShow INT;
+        SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
+        IF UNIX_TIMESTAMP(now())>tLastWriteOfBoShow+10 THEN
+          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBeforeHiding+`,boShow,0) WHERE boShow=1;
+          UPDATE `+customerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBeforeHiding+`,boShow,0) WHERE boShow=1;
+          UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(now()) WHERE name='tLastWriteOfBoShow';
+        END IF;
+      END`);
       
 
   //sPerDay=10;
@@ -1179,19 +1216,19 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
   // tLastWriteOfHA lastHistActiveWrite
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"HistActiveUpdMult");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"HistActiveUpdMult() \n\
-    BEGIN \n\
-      DECLARE tLastWriteOfHA, recentDay, dayDiff INT; \n\
-      START TRANSACTION; \n\
-      SELECT value INTO tLastWriteOfHA FROM "+settingTab+" WHERE name='tLastWriteOfHA'; \n\
-      SET recentDay=floor( UNIX_TIMESTAMP(now())/"+sPerDay+" );   SET dayDiff=recentDay-tLastWriteOfHA; \n\
-      IF dayDiff>0 THEN \n\
-        UPDATE "+sellerTab+" SET histActive= (histActive<<dayDiff | boShow) "+sqlMaskHistActive+";    \n\
-        UPDATE "+customerTab+" SET histActive= (histActive<<dayDiff | boShow) "+sqlMaskHistActive+";    \n\
-        UPDATE "+settingTab+" SET value=recentDay WHERE name='tLastWriteOfHA';      \n\
-      END IF; \n\
-      COMMIT; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`HistActiveUpdMult()
+    BEGIN
+      DECLARE tLastWriteOfHA, recentDay, dayDiff INT;
+      START TRANSACTION;
+      SELECT value INTO tLastWriteOfHA FROM `+settingTab+` WHERE name='tLastWriteOfHA';
+      SET recentDay=floor( UNIX_TIMESTAMP(now())/`+sPerDay+` );   SET dayDiff=recentDay-tLastWriteOfHA;
+      IF dayDiff>0 THEN
+        UPDATE `+sellerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
+        UPDATE `+customerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
+        UPDATE `+settingTab+` SET value=recentDay WHERE name='tLastWriteOfHA';
+      END IF;
+      COMMIT;
+    END`);
 
 
       // Create an array from KeyCol/colsDBMask
@@ -1210,101 +1247,101 @@ app.SetupSql.prototype.createFunction=function(SiteName,boDropOnly){
   var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag";
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboCustomer INT, IboSeller INT, IboCustomerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT) \n\
-    proc_label:BEGIN \n\
-      START TRANSACTION; \n\
-      IF IidUser IS NOT NULL THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idUser=IidUser;\n\
-        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT 'idUserNotFound' AS mess; LEAVE proc_label; END IF; \n\
-      ELSEIF IidFB IS NOT NULL THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idFB=IidFB;\n\
-        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idFB not found: ', IidFB) AS mess; LEAVE proc_label; END IF; \n\
-        SET IidUser=@idUserTmp; \n\
-      ELSEIF IidIdPlace IS NOT NULL THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idIdPlace=IidIdPlace;\n\
-        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idIdPlace not found: ', IidIdPlace) AS mess; LEAVE proc_label; END IF; \n\
-        SET IidUser=@idUserTmp; \n\
-      ELSE \n\
-        SELECT SQL_CALC_FOUND_ROWS "+sqlColUTmp+" FROM "+userTab+" WHERE idOpenId=IidOpenId;\n\
-        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idOpenId not found: ', IidOpenId) AS mess; LEAVE proc_label; END IF; \n\
-        SET IidUser=@idUserTmp; \n\
-      END IF;\n\
-      IF IboCustomer THEN     SELECT "+SqlColOTmp[0]+" FROM ("+customerTab+" ro LEFT JOIN "+customerTeamTab+" tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
-      IF IboSeller THEN       SELECT "+SqlColOTmp[1]+" FROM ("+sellerTab+" ro LEFT JOIN "+sellerTeamTab+" tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
-      IF IboCustomerTeam THEN SELECT * FROM "+customerTeamTab+" WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
-      IF IboSellerTeam THEN   SELECT * FROM "+sellerTeamTab+" WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
-      IF IboAdmin THEN        SELECT * FROM "+adminTab+" WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
-      IF IboComplainer THEN   SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
-      IF IboComplainee THEN   SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainee=IidUser;     ELSE SELECT 1 FROM dual; END IF; \n\
-      COMMIT; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboCustomer INT, IboSeller INT, IboCustomerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
+    proc_label:BEGIN
+      START TRANSACTION;
+      IF IidUser IS NOT NULL THEN
+        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idUser=IidUser;
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT 'idUserNotFound' AS mess; LEAVE proc_label; END IF;
+      ELSEIF IidFB IS NOT NULL THEN
+        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idFB=IidFB;
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idFB not found: ', IidFB) AS mess; LEAVE proc_label; END IF;
+        SET IidUser=@idUserTmp;
+      ELSEIF IidIdPlace IS NOT NULL THEN
+        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idIdPlace=IidIdPlace;
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idIdPlace not found: ', IidIdPlace) AS mess; LEAVE proc_label; END IF;
+        SET IidUser=@idUserTmp;
+      ELSE
+        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idOpenId=IidOpenId;
+        IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idOpenId not found: ', IidOpenId) AS mess; LEAVE proc_label; END IF;
+        SET IidUser=@idUserTmp;
+      END IF;
+      IF IboCustomer THEN     SELECT `+SqlColOTmp[0]+` FROM (`+customerTab+` ro LEFT JOIN `+customerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboSeller THEN       SELECT `+SqlColOTmp[1]+` FROM (`+sellerTab+` ro LEFT JOIN `+sellerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboCustomerTeam THEN SELECT * FROM `+customerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboSellerTeam THEN   SELECT * FROM `+sellerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboAdmin THEN        SELECT * FROM `+adminTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboComplainer THEN   SELECT count(*) AS n FROM `+complaintTab+` WHERE idComplainer=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboComplainee THEN   SELECT count(*) AS n FROM `+complaintTab+` WHERE idComplainee=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      COMMIT;
+    END`);
 
   
   
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateComplaint");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"UpdateComplaint(IidComplainee INT, IidComplainer INT, Icomment TEXT) \n\
-    proc_label:BEGIN \n\
-      START TRANSACTION; \n\
-      IF Icomment IS NULL OR LENGTH(Icomment)=0 THEN \n\
-        UPDATE "+complaintTab+" SET comment=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer; \n\
-        DELETE FROM "+complaintTab+" WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND answer IS NULL; \n\
-        IF ROW_COUNT() THEN \n\
-          UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee; \n\
-          UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer; \n\
-        END IF; \n\
-        SELECT 'entry deleted' AS mess; \n\
-      ELSE \n\
-        INSERT INTO "+complaintTab+" (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,now(),now()) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=now(); \n\
-        IF ROW_COUNT()=1 THEN   # If inserted\n\
-          UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee; \n\
-          UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer; \n\
-          SELECT 'entry inserted' AS mess; \n\
-        ELSE \n\
-          SELECT 'entry updated' AS mess; \n\
-        END IF; \n\
-      END IF; \n\
-      #SELECT count(*) AS nComplaintFromComplainer FROM "+complaintTab+" WHERE idComplainer=IidComplainer; \n\
-      #SELECT count(*) AS nComplaintsOnComplainee FROM "+complaintTab+" WHERE idComplainee=IidComplainee; \n\
-      COMMIT; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`UpdateComplaint(IidComplainee INT, IidComplainer INT, Icomment TEXT)
+    proc_label:BEGIN
+      START TRANSACTION;
+      IF Icomment IS NULL OR LENGTH(Icomment)=0 THEN
+        UPDATE `+complaintTab+` SET comment=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
+        DELETE FROM `+complaintTab+` WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND answer IS NULL;
+        IF ROW_COUNT() THEN
+          UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+        END IF;
+        SELECT 'entry deleted' AS mess;
+      ELSE
+        INSERT INTO `+complaintTab+` (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,now(),now()) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=now();
+        IF ROW_COUNT()=1 THEN   # If inserted
+          UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          SELECT 'entry inserted' AS mess;
+        ELSE
+          SELECT 'entry updated' AS mess;
+        END IF;
+      END IF;
+      #SELECT count(*) AS nComplaintFromComplainer FROM `+complaintTab+` WHERE idComplainer=IidComplainer;
+      #SELECT count(*) AS nComplaintsOnComplainee FROM `+complaintTab+` WHERE idComplainee=IidComplainee;
+      COMMIT;
+    END`);
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateAnswer");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"UpdateAnswer(IidComplainee INT, IidComplainer INT, Ianswer TEXT) \n\
-    proc_label:BEGIN \n\
-      START TRANSACTION; \n\
-      IF Ianswer IS NULL OR LENGTH(Ianswer)=0 THEN \n\
-        UPDATE "+complaintTab+" SET answer=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer; \n\
-        DELETE FROM "+complaintTab+" WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND comment IS NULL; \n\
-        IF ROW_COUNT() THEN \n\
-          UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee; \n\
-          UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer; \n\
-        END IF; \n\
-        SELECT 'entry deleted' AS mess; \n\
-      ELSE \n\
-        #INSERT INTO "+complaintTab+" (idComplainee,idComplainer,answer,tCreated,tAnswerModified) VALUES (IidComplainee,IidComplainer,Ianswer,now(),now()) ON DUPLICATE KEY UPDATE answer=Ianswer, tAnswerModified=now(); \n\
-        #IF ROW_COUNT()=1 THEN   # If inserted\n\
-        #  UPDATE "+userTab+" SET nComplaint=GREATEST(0, nComplaint+1) WHERE idUser=IidComplainee; \n\
-        #  UPDATE "+userTab+" SET nComplaintGiven=GREATEST(0, nComplaintGiven+1) WHERE idUser=IidComplainer; \n\
-        #END IF; \n\
-        UPDATE "+complaintTab+" SET answer=Ianswer WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer; \n\
-        SELECT 'entry updated' AS mess; \n\
-      END IF; \n\
-      #SELECT count(*) AS nComplaintFromComplainer FROM "+complaintTab+" WHERE idComplainer=IidComplainer; \n\
-      #SELECT count(*) AS nComplaintsOnComplainee FROM "+complaintTab+" WHERE idComplainee=IidComplainee; \n\
-      COMMIT; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`UpdateAnswer(IidComplainee INT, IidComplainer INT, Ianswer TEXT)
+    proc_label:BEGIN
+      START TRANSACTION;
+      IF Ianswer IS NULL OR LENGTH(Ianswer)=0 THEN
+        UPDATE `+complaintTab+` SET answer=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
+        DELETE FROM `+complaintTab+` WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND comment IS NULL;
+        IF ROW_COUNT() THEN
+          UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+        END IF;
+        SELECT 'entry deleted' AS mess;
+      ELSE
+        #INSERT INTO `+complaintTab+` (idComplainee,idComplainer,answer,tCreated,tAnswerModified) VALUES (IidComplainee,IidComplainer,Ianswer,now(),now()) ON DUPLICATE KEY UPDATE answer=Ianswer, tAnswerModified=now();
+        #IF ROW_COUNT()=1 THEN   # If inserted
+        #  UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint+1) WHERE idUser=IidComplainee;
+        #  UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1) WHERE idUser=IidComplainer;
+        #END IF;
+        UPDATE `+complaintTab+` SET answer=Ianswer WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
+        SELECT 'entry updated' AS mess;
+      END IF;
+      #SELECT count(*) AS nComplaintFromComplainer FROM `+complaintTab+` WHERE idComplainer=IidComplainer;
+      #SELECT count(*) AS nComplaintsOnComplainee FROM `+complaintTab+` WHERE idComplainee=IidComplainee;
+      COMMIT;
+    END`);
 
 /*
-      SELECT idUser, count(*) INTO OidUser,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB; \n\
-      IF Vc=0 THEN \n\
-        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);  \n\
-        SELECT LAST_INSERT_ID() INTO OidUser; \n\
-      END IF; \n\
+      SELECT idUser, count(*) INTO OidUser,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB;
+      IF Vc=0 THEN
+        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);
+        SELECT LAST_INSERT_ID() INTO OidUser;
+      END IF;
 CLIENT_FOUND_ROWS
 */
 
 
   
-    //IF VcreatedA<VcreatedB THEN SET VidUserNew=VidUserA, VidUserOld=VidUserB; ELSE SET VidUserNew=VidUserB, VidUserOld=VidUserA; END IF; \n\
+    //IF VcreatedA<VcreatedB THEN SET VidUserNew=VidUserA, VidUserOld=VidUserB; ELSE SET VidUserNew=VidUserB, VidUserOld=VidUserA; END IF;
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"sellerSetup");
@@ -1314,162 +1351,162 @@ CLIENT_FOUND_ROWS
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MergeID");
 
 /*
-    SELECT idUser, count(*) INTO OidComplainer,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB; \n\
-      IF Vc=0 THEN \n\
-        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);  \n\
-        SELECT LAST_INSERT_ID() INTO OidComplainer; \n\
-      END IF; \n\
+    SELECT idUser, count(*) INTO OidComplainer,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB;
+      IF Vc=0 THEN
+        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);
+        SELECT LAST_INSERT_ID() INTO OidComplainer;
+      END IF;
 
-      SELECT LAST_INSERT_ID() INTO OidComplainer; \n\
+      SELECT LAST_INSERT_ID() INTO OidComplainer;
 */
   //SqlFunction.push("INSERT INTO "+userTab+" (IP,idFB) VALUES ('fb',$id)"); 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"setPassword");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"setPassword(IidUser int(4), IpwOld VARCHAR(40), IpwNew VARCHAR(40)) \n\
-    proc_label:BEGIN \n\
-      DECLARE VpwOld VARCHAR(40); \n\
-      SELECT hashPW INTO VpwOld FROM "+userTab+" WHERE idUser=IidUser; \n\
-      IF FOUND_ROWS()!=1 THEN SELECT CONCAT('Found ', FOUND_ROWS(), ' users') AS mess; LEAVE proc_label; END IF; \n\
-      IF VpwOld!=IpwOld THEN SELECT 'Old password does not match' AS mess; LEAVE proc_label; END IF; \n\
-      UPDATE "+userTab+" SET hashPW=IpwNew WHERE idUser=IidUser; \n\
-      SELECT 'Password changed' AS mess; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`setPassword(IidUser int(4), IpwOld VARCHAR(40), IpwNew VARCHAR(40))
+    proc_label:BEGIN
+      DECLARE VpwOld VARCHAR(40);
+      SELECT hashPW INTO VpwOld FROM `+userTab+` WHERE idUser=IidUser;
+      IF FOUND_ROWS()!=1 THEN SELECT CONCAT('Found ', FOUND_ROWS(), ' users') AS mess; LEAVE proc_label; END IF;
+      IF VpwOld!=IpwOld THEN SELECT 'Old password does not match' AS mess; LEAVE proc_label; END IF;
+      UPDATE `+userTab+` SET hashPW=IpwNew WHERE idUser=IidUser;
+      SELECT 'Password changed' AS mess;
+    END`);
 
 
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetIdUserNSetISeq");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetIdUserNSetISeq(Ikey varchar(256), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
-    proc_label:BEGIN \n\
-      DECLARE Vc, Vn, ViSeq INT; \n\
-      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM "+userTab+" WHERE pubKey=Ikey; \n\
-      SET Vc=FOUND_ROWS(); \n\
-      IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('pubKey exist multiple times Vc=',Vc); LEAVE proc_label; END IF; \n\
-      IF Vc=0 THEN SET OboOK=0, Omess='No such pubKey stored!'; LEAVE proc_label; END IF; \n\
-  \n\
-      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the keys'; LEAVE proc_label; END IF; \n\
-      UPDATE "+userTab+" SET iSeq=iSeqN WHERE idUser=OidUser; \n\
-      SET OboOK=1, Omess=''; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(256), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+    proc_label:BEGIN
+      DECLARE Vc, Vn, ViSeq INT;
+      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM `+userTab+` WHERE pubKey=Ikey;
+      SET Vc=FOUND_ROWS();
+      IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('pubKey exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
+      IF Vc=0 THEN SET OboOK=0, Omess='No such pubKey stored!'; LEAVE proc_label; END IF;
+
+      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the keys'; LEAVE proc_label; END IF;
+      UPDATE `+userTab+` SET iSeq=iSeqN WHERE idUser=OidUser;
+      SET OboOK=1, Omess='';
+    END`);
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"GetValuesToController(IiRole INT, Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128)) \n\
-    proc_label:BEGIN \n\
-      DECLARE Vc, Vn, VidUser, ViSeq, intMax INT; \n\
-      CALL "+siteName+"GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess); \n\
-      IF OboOK=0 THEN LEAVE proc_label; END IF; \n\
-      CALL "+siteName+"TimeAccumulatedUpdOne(VidUser); \n\
-  \n\
-      IF IiRole=0 THEN \n\
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM "+customerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
-      ELSE \n\
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM "+sellerTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE r.idUser=VidUser;\n\
-      END IF; \n\
-      SET Vc=FOUND_ROWS(); \n\
-      IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF; \n\
-      IF OtDiff<0 THEN SET OboShow=0; END IF; \n\
-      SET OboOK=1, Omess=''; \n\
-  \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(IiRole INT, Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128))
+    proc_label:BEGIN
+      DECLARE Vc, Vn, VidUser, ViSeq, intMax INT;
+      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess);
+      IF OboOK=0 THEN LEAVE proc_label; END IF;
+      CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
+
+      IF IiRole=0 THEN
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+customerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+      ELSE
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+      END IF;
+      SET Vc=FOUND_ROWS();
+      IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF;
+      IF OtDiff<0 THEN SET OboShow=0; END IF;
+      SET OboOK=1, Omess='';
+
+    END`);
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"SetValuesFromController(IiRole INT, Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, OUT OboOK TINYINT, OUT Omess varchar(128)) \n\
-    proc_label:BEGIN \n\
-      DECLARE Vc, Vn, VidUser, ViSeq, VresM INT; \n\
-      START TRANSACTION; \n\
-      CALL "+siteName+"GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess); \n\
-      IF OboOK=0 THEN ROLLBACK; LEAVE proc_label; END IF; \n\
-      CALL "+siteName+"TimeAccumulatedUpdOne(VidUser); \n\
-      \n\
-      IF IboShow=0 THEN  \n\
-        IF IiRole=0 THEN \n\
-          UPDATE "+customerTab+" SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser; \n\
-        ELSE \n\
-          UPDATE "+sellerTab+" SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser; \n\
-        END IF; \n\
-        SET OboOK=1, Omess='';\n\
-      ELSE \n\
-        IF IiRole=0 THEN \n\
-          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM "+customerTab+" WHERE idUser=VidUser; \n\
-        ELSE \n\
-          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM "+sellerTab+" WHERE idUser=VidUser; \n\
-        END IF; \n\
-        SET Vc=FOUND_ROWS(); \n\
-        IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF; \n\
-        IF VresM<1 THEN SET VresM=1; END IF; \n\
-        CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy); \n\
-        \n\
-        IF IiRole=0 THEN \n\
-          UPDATE "+customerTab+" SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser; \n\
-          UPDATE "+sellerTab+" SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser; \n\
-        ELSE \n\
-          UPDATE "+customerTab+" SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser; \n\
-          UPDATE "+sellerTab+" SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser; \n\
-        END IF; \n\
-        SET OboOK=1, Omess='';\n\
-      END IF; \n\
-      COMMIT; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(IiRole INT, Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+    proc_label:BEGIN
+      DECLARE Vc, Vn, VidUser, ViSeq, VresM INT;
+      START TRANSACTION;
+      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess);
+      IF OboOK=0 THEN ROLLBACK; LEAVE proc_label; END IF;
+      CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
+
+      IF IboShow=0 THEN
+        IF IiRole=0 THEN
+          UPDATE `+customerTab+` SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser;
+        ELSE
+          UPDATE `+sellerTab+` SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser;
+        END IF;
+        SET OboOK=1, Omess='';
+      ELSE
+        IF IiRole=0 THEN
+          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+customerTab+` WHERE idUser=VidUser;
+        ELSE
+          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+sellerTab+` WHERE idUser=VidUser;
+        END IF;
+        SET Vc=FOUND_ROWS();
+        IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF;
+        IF VresM<1 THEN SET VresM=1; END IF;
+        CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy);
+
+        IF IiRole=0 THEN
+          UPDATE `+customerTab+` SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser;
+        ELSE
+          UPDATE `+customerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser;
+        END IF;
+        SET OboOK=1, Omess='';
+      END IF;
+      COMMIT;
+    END`);
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupMake");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"dupMake() \n\
-      BEGIN \n\
-        CALL copyTable('"+userTab+"_dup','"+userTab+"'); \n\
-        CALL copyTable('"+sellerTab+"_dup','"+sellerTab+"'); \n\
-        CALL copyTable('"+sellerTeamTab+"_dup','"+sellerTeamTab+"'); \n\
-        CALL copyTable('"+sellerTeamImageTab+"_dup','"+sellerTeamImageTab+"'); \n\
-        CALL copyTable('"+customerTab+"_dup','"+customerTab+"'); \n\
-        CALL copyTable('"+customerTeamTab+"_dup','"+customerTeamTab+"'); \n\
-        CALL copyTable('"+customerTeamImageTab+"_dup','"+customerTeamImageTab+"'); \n\
-        CALL copyTable('"+userImageTab+"_dup','"+userImageTab+"'); \n\
-        CALL copyTable('"+complaintTab+"_dup','"+complaintTab+"'); \n\
-        CALL copyTable('"+adminTab+"_dup','"+adminTab+"'); \n\
-      END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupMake()
+      BEGIN
+        CALL copyTable('`+userTab+`_dup','`+userTab+`');
+        CALL copyTable('`+sellerTab+`_dup','`+sellerTab+`');
+        CALL copyTable('`+sellerTeamTab+`_dup','`+sellerTeamTab+`');
+        CALL copyTable('`+sellerTeamImageTab+`_dup','`+sellerTeamImageTab+`');
+        CALL copyTable('`+customerTab+`_dup','`+customerTab+`');
+        CALL copyTable('`+customerTeamTab+`_dup','`+customerTeamTab+`');
+        CALL copyTable('`+customerTeamImageTab+`_dup','`+customerTeamImageTab+`');
+        CALL copyTable('`+userImageTab+`_dup','`+userImageTab+`');
+        CALL copyTable('`+complaintTab+`_dup','`+complaintTab+`');
+        CALL copyTable('`+adminTab+`_dup','`+adminTab+`');
+      END`);
 
 
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupTrunkOrgNCopyBack");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"dupTrunkOrgNCopyBack() \n\
-      BEGIN \n\
-        DELETE FROM "+sellerTab+" WHERE 1; \n\
-        DELETE FROM "+sellerTeamTab+" WHERE 1; \n\
-        DELETE FROM "+sellerTeamImageTab+" WHERE 1; \n\
-        DELETE FROM "+customerTab+" WHERE 1; \n\
-        DELETE FROM "+customerTeamTab+" WHERE 1; \n\
-        DELETE FROM "+customerTeamImageTab+" WHERE 1; \n\
-        DELETE FROM "+userImageTab+" WHERE 1; \n\
-        DELETE FROM "+complaintTab+" WHERE 1; \n\
-        DELETE FROM "+adminTab+" WHERE 1; \n\
-        DELETE FROM "+userTab+" WHERE 1; \n\
-         \n\
-        INSERT INTO "+userTab+" SELECT * FROM "+userTab+"_dup; \n\
-        INSERT INTO "+sellerTab+" SELECT * FROM "+sellerTab+"_dup; \n\
-        INSERT INTO "+sellerTeamTab+" SELECT * FROM "+sellerTeamTab+"_dup; \n\
-        INSERT INTO "+sellerTeamImageTab+" SELECT * FROM "+sellerTeamImageTab+"_dup; \n\
-        INSERT INTO "+customerTab+" SELECT * FROM "+customerTab+"_dup; \n\
-        INSERT INTO "+customerTeamTab+" SELECT * FROM "+customerTeamTab+"_dup; \n\
-        INSERT INTO "+customerTeamImageTab+" SELECT * FROM "+customerTeamImageTab+"_dup; \n\
-        INSERT INTO "+userImageTab+" SELECT * FROM "+userImageTab+"_dup; \n\
-        INSERT INTO "+complaintTab+" SELECT * FROM "+complaintTab+"_dup; \n\
-        INSERT INTO "+adminTab+" SELECT * FROM "+adminTab+"_dup; \n\
-      END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupTrunkOrgNCopyBack()
+      BEGIN
+        DELETE FROM `+sellerTab+` WHERE 1;
+        DELETE FROM `+sellerTeamTab+` WHERE 1;
+        DELETE FROM `+sellerTeamImageTab+` WHERE 1;
+        DELETE FROM `+customerTab+` WHERE 1;
+        DELETE FROM `+customerTeamTab+` WHERE 1;
+        DELETE FROM `+customerTeamImageTab+` WHERE 1;
+        DELETE FROM `+userImageTab+` WHERE 1;
+        DELETE FROM `+complaintTab+` WHERE 1;
+        DELETE FROM `+adminTab+` WHERE 1;
+        DELETE FROM `+userTab+` WHERE 1;
+
+        INSERT INTO `+userTab+` SELECT * FROM `+userTab+`_dup;
+        INSERT INTO `+sellerTab+` SELECT * FROM `+sellerTab+`_dup;
+        INSERT INTO `+sellerTeamTab+` SELECT * FROM `+sellerTeamTab+`_dup;
+        INSERT INTO `+sellerTeamImageTab+` SELECT * FROM `+sellerTeamImageTab+`_dup;
+        INSERT INTO `+customerTab+` SELECT * FROM `+customerTab+`_dup;
+        INSERT INTO `+customerTeamTab+` SELECT * FROM `+customerTeamTab+`_dup;
+        INSERT INTO `+customerTeamImageTab+` SELECT * FROM `+customerTeamImageTab+`_dup;
+        INSERT INTO `+userImageTab+` SELECT * FROM `+userImageTab+`_dup;
+        INSERT INTO `+complaintTab+` SELECT * FROM `+complaintTab+`_dup;
+        INSERT INTO `+adminTab+` SELECT * FROM `+adminTab+`_dup;
+      END`);
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupDrop");
-  SqlFunction.push("CREATE PROCEDURE "+siteName+"dupDrop() \n\
-      BEGIN \n\
-        DROP TABLE IF EXISTS "+sellerTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+sellerTeamTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+sellerTeamImageTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+customerTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+customerTeamTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+customerTeamImageTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+userImageTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+complaintTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+adminTab+"_dup; \n\
-        DROP TABLE IF EXISTS "+userTab+"_dup; \n\
-      END");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupDrop()
+      BEGIN
+        DROP TABLE IF EXISTS `+sellerTab+`_dup;
+        DROP TABLE IF EXISTS `+sellerTeamTab+`_dup;
+        DROP TABLE IF EXISTS `+sellerTeamImageTab+`_dup;
+        DROP TABLE IF EXISTS `+customerTab+`_dup;
+        DROP TABLE IF EXISTS `+customerTeamTab+`_dup;
+        DROP TABLE IF EXISTS `+customerTeamImageTab+`_dup;
+        DROP TABLE IF EXISTS `+userImageTab+`_dup;
+        DROP TABLE IF EXISTS `+complaintTab+`_dup;
+        DROP TABLE IF EXISTS `+adminTab+`_dup;
+        DROP TABLE IF EXISTS `+userTab+`_dup;
+      END`);
 
   }
   var SqlA=this.funcGen(boDropOnly);
@@ -1478,46 +1515,45 @@ CLIENT_FOUND_ROWS
   return array_merge(SqlA, SqlB);
 }
 
-
-app.SetupSql.prototype.funcGen=function(boDropOnly){
+app.SetupSqlT.prototype.funcGen=function(boDropOnly){
   var SqlFunction=[], SqlFunctionDrop=[];
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS copyTable");
-  SqlFunction.push("CREATE PROCEDURE copyTable(INameN varchar(128),IName varchar(128)) \n\
-    BEGIN \n\
-      SET @q=CONCAT('DROP TABLE IF EXISTS ', INameN,';');     PREPARE stmt1 FROM @q;  EXECUTE stmt1;  DEALLOCATE PREPARE stmt1; \n\
-      SET @q=CONCAT('CREATE TABLE ',INameN,' LIKE ',IName,';');   PREPARE stmt1 FROM @q;  EXECUTE stmt1; DEALLOCATE PREPARE stmt1; \n\
-      SET @q=CONCAT('INSERT INTO ',INameN, ' SELECT * FROM ',IName,';');    PREPARE stmt1 FROM @q;  EXECUTE stmt1;  DEALLOCATE PREPARE stmt1; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE copyTable(INameN varchar(128),IName varchar(128))
+    BEGIN
+      SET @q=CONCAT('DROP TABLE IF EXISTS ', INameN,';');     PREPARE stmt1 FROM @q;  EXECUTE stmt1;  DEALLOCATE PREPARE stmt1;
+      SET @q=CONCAT('CREATE TABLE ',INameN,' LIKE ',IName,';');   PREPARE stmt1 FROM @q;  EXECUTE stmt1; DEALLOCATE PREPARE stmt1;
+      SET @q=CONCAT('INSERT INTO ',INameN, ' SELECT * FROM ',IName,';');    PREPARE stmt1 FROM @q;  EXECUTE stmt1;  DEALLOCATE PREPARE stmt1;
+    END`);
 
 
   //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS roundXY");
-  //SqlFunction.push("CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE) \n\
-    //proc_label:BEGIN \n\
-      //DECLARE resT DOUBLE; \n\
-      //DECLARE resP DOUBLE; \n\
-      //SET resT=resM; \n\
-      //IF ABS(y-128)>53.66 THEN SET resT=ROUND(resT/2); END IF; \n\
-      //IF ABS(y-128)>84.08 THEN SET resT=ROUND(resT/2); END IF;\n\
-      //SET resP=resT*"+m2wc+", Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP; \n\
-    //END");
+  //SqlFunction.push(`CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE)
+    //proc_label:BEGIN
+      //DECLARE resT DOUBLE;
+      //DECLARE resP DOUBLE;
+      //SET resT=resM;
+      //IF ABS(y-128)>53.66 THEN SET resT=ROUND(resT/2); END IF;
+      //IF ABS(y-128)>84.08 THEN SET resT=ROUND(resT/2); END IF;
+      //SET resP=resT*`+m2wc+`, Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
+    //END`);
 
 
   SqlFunctionDrop.push("DROP FUNCTION IF EXISTS resM2resP");
   SqlFunctionDrop.push("DROP FUNCTION IF EXISTS resM2resWC");
-  SqlFunction.push("CREATE FUNCTION resM2resWC(resM DOUBLE, lat DOUBLE) RETURNS DOUBLE DETERMINISTIC\n\
-    BEGIN \n\
-      DECLARE resT, fac DOUBLE; \n\
-      SET fac=COS("+deg2r+"*lat); \n\
-      SET resT=fac*resM; \n\
-      IF resT<1 THEN SET resT=1; END IF; \n\
-      RETURN resT*"+m2wc+"; \n\
-    END");
+  SqlFunction.push(`CREATE FUNCTION resM2resWC(resM DOUBLE, lat DOUBLE) RETURNS DOUBLE DETERMINISTIC
+    BEGIN
+      DECLARE resT, fac DOUBLE;
+      SET fac=COS(`+deg2r+`*lat);
+      SET resT=fac*resM;
+      IF resT<1 THEN SET resT=1; END IF;
+      RETURN resT*`+m2wc+`;
+    END`);
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS roundXY");
-  SqlFunction.push("CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, lat DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE) \n\
-    proc_label:BEGIN \n\
-      DECLARE resP DOUBLE; \n\
-      SET resP=resM2resWC(resM,lat), Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP; \n\
-    END");
+  SqlFunction.push(`CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, lat DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE)
+    proc_label:BEGIN
+      DECLARE resP DOUBLE;
+      SET resP=resM2resWC(resM,lat), Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
+    END`);
     
   if(boDropOnly) return SqlFunctionDrop;
   else return array_merge(SqlFunctionDrop, SqlFunction);
@@ -1527,9 +1563,9 @@ app.SetupSql.prototype.funcGen=function(boDropOnly){
 
 
 
-app.SetupSql.prototype.createDummies=function(SiteName){
+app.SetupSqlT.prototype.createDummies=function(SiteName){
   if(typeof SiteName=='string') SiteName=[SiteName];
-  var nData=5;
+  var nData=10;
   var SqlDummies=[];
   
 
@@ -1574,18 +1610,20 @@ app.SetupSql.prototype.createDummies=function(SiteName){
     arrAddress.push({country:'Finland', homeTown:'Helsinki', currency:'EUR', x:145.73099340101697, y:74.05775005653538, n:7, std:0.3});
     */
 
-    arrAddress.push({country:'UK', homeTown:'London', currency:'GBP', x:127.92629919892141, y:85.11312706193192, n:10, std:0.5});
-    //arrAddress.push({country:'France', homeTown:'Paris', currency:'EUR', x:129.6294241989214, y:88.07406456193192, n:10, std:0.5});
-    //arrAddress.push({country:'Italy', homeTown:'Rom', currency:'EUR', x:136.8811346138079, y:95.13470489701334, n:10, std:0.5});
-    //arrAddress.push({country:'Spain', homeTown:'Madrid', currency:'EUR', x:125.37955748049507, y:96.54275866022407, n:10, std:0.5});
-    arrAddress.push({country:'USA', homeTown:'NY', currency:'USD', x:75.39355286293579, y:96.21422827476029, n:10, std:0.5});
-    //arrAddress.push({country:'USA', homeTown:'Chicago', currency:'USD', x:65.67872790747845, y:95.16096079575951, n:10, std:0.5});
-    arrAddress.push({country:'USA', homeTown:'LA', currency:'USD', x:43.95576759128889, y:102.2555423122189, n:10, std:0.5});
-    arrAddress.push({country:'Japan', homeTown:'Tokyo', currency:'JPY', x:227.3887757633159, y:100.80702770236107, n:10, std:0.5});
-    arrAddress.push({country:'China', homeTown:'Beijing', currency:'CNY', x:210.7708451431501, y:96.99141526807438, n:10, std:0.5});
-    arrAddress.push({country:'India', homeTown:'Mumbai', currency:'INR', x:179.7837377942387, y:114.25584433021675, n:10, std:0.5});
+    //arrAddress.push({country:'UK', homeTown:'London', currency:'GBP', x:127.92629919892141, y:85.11312706193192, n:10, std:0.5});
+    ////arrAddress.push({country:'France', homeTown:'Paris', currency:'EUR', x:129.6294241989214, y:88.07406456193192, n:10, std:0.5});
+    ////arrAddress.push({country:'Italy', homeTown:'Rom', currency:'EUR', x:136.8811346138079, y:95.13470489701334, n:10, std:0.5});
+    ////arrAddress.push({country:'Spain', homeTown:'Madrid', currency:'EUR', x:125.37955748049507, y:96.54275866022407, n:10, std:0.5});
+    //arrAddress.push({country:'USA', homeTown:'NY', currency:'USD', x:75.39355286293579, y:96.21422827476029, n:10, std:0.5});
+    ////arrAddress.push({country:'USA', homeTown:'Chicago', currency:'USD', x:65.67872790747845, y:95.16096079575951, n:10, std:0.5});
+    //arrAddress.push({country:'USA', homeTown:'LA', currency:'USD', x:43.95576759128889, y:102.2555423122189, n:10, std:0.5});
+    //arrAddress.push({country:'Japan', homeTown:'Tokyo', currency:'JPY', x:227.3887757633159, y:100.80702770236107, n:10, std:0.5});
+    //arrAddress.push({country:'China', homeTown:'Beijing', currency:'CNY', x:210.7708451431501, y:96.99141526807438, n:10, std:0.5});
+    //arrAddress.push({country:'India', homeTown:'Mumbai', currency:'INR', x:179.7837377942387, y:114.25584433021675, n:10, std:0.5});
+    arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 135.5377777777778, y: 81.46571534506883, n:10, std:20});
 
   }
+  //merProj.fromLatLngToPoint({lat:54.6, lng:10.6})
   
   var arrBucket=[]; // To make users from big cities more likely to appear than users from small cities
   for(var i=0;i<arrAddress.length;i++){
@@ -1602,14 +1640,14 @@ app.SetupSql.prototype.createDummies=function(SiteName){
 
   
   var makeEnumRandF=function(name){  var enumT=PropBucket[name].Enum; return enumT[randomInt(0, enumT.length-1)];  };
-  var getRandomDate=function(diff){ var now=unixNow(), v0, v1; if(diff>0){t0=now; t1=now+diff;} else{t0=now+diff; t1=now;} return randomInt(t0, t1);}; // Random historic time in [now-diff,now]
+  var getRandomDate=function(diff){ var now=unixNow(), t0, t1; if(diff>0){t0=now; t1=now+diff;} else{t0=now+diff; t1=now;} return randomInt(t0, t1);}; // Random historic time in [now-diff,now]
   var makeDateRandF=function(name){ var dateSpan=PropBucket[name].dateSpan; return getRandomDate(dateSpan);};
   var makeRandSpanF=function(name){ var [tmpl,tmpu]=PropBucket[name].RandSpanData; return randomInt(tmpl,tmpu);};
   var makeRandSpanPriceF=function(name){ var [tmpl,tmpu]=PropBucket[name].RandSpanDataPrice,  tmp=randomInt(tmpl,tmpu), cur='SEK', fac=SEK2CUR[cur];  tmp=tmp*fac; return tmp;};
   var makeFixedF=function(name){ return PropBucket[name].FixedData; };
 
 
-  PropBucket={
+  var PropBucket={
     vehicleType:{Enum:['sedan']},
     
     brand:{Enum:['Volvo','Saab','VW','Toyota','Ford','Hyundai','Mercedes','Fiat','Dodge','Mazda','BMW','Audi','Lloyd','Opel','Skoda','Ferrari','Lamborgini','Seat','Chrysler','Chevrolet','Scania','Aston Martin','Bentley','Jaguar','Land Rover','Honda','Nissan','Rolls Royce']},
@@ -1638,7 +1676,7 @@ app.SetupSql.prototype.createDummies=function(SiteName){
     idDriverGovernment:{RandSpanData:[1000,2000]},
     
     hideTimer:{FixedData:3600*24*365},
-    boShow:{FixedData:1},
+    boShow:{Enum:[0,1]},
     histActive:{FixedData:1},
     coordinatePrecisionM:{FixedData:1},
     
@@ -1861,7 +1899,7 @@ app.SetupSql.prototype.createDummies=function(SiteName){
 
 
 
-app.SetupSql.prototype.truncate=function(SiteName){
+app.SetupSqlT.prototype.truncate=function(SiteName){
   if(typeof SiteName=='string') SiteName=[SiteName];
   
   var SqlTableTruncate=[];
@@ -1887,9 +1925,30 @@ app.SetupSql.prototype.truncate=function(SiteName){
 }
 
 
+app.SetupSqlT.prototype.populateSetting=function(SiteName){
+  if(typeof SiteName=='string') SiteName=[SiteName];
+  var SqlTab=[];
+  for(var iSite=0;iSite<SiteName.length;iSite++){
+  var siteName=SiteName[iSite];
+  var site=Site[siteName]; 
+  var {TableName}=site, {settingTab}=TableName;
+
+  SqlTab.push(`INSERT INTO `+settingTab+` VALUES
+  ('boShowTeam', '0'),
+  ('tLastWriteOfHA', floor( UNIX_TIMESTAMP(now())/`+sPerDay+` )),
+  ('tLastWriteOfBoShow', 0),
+  ('boGotNewSellers', '0'),
+  ('nUser', '0'),
+  ('boAllowEmailAccountCreation', '0')`); 
+
+  }
+  return SqlTab;
+}
+
+
   // Called when --sql command line option is used
-app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
-  //var StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'truncate', 'createDummies'];  // , 'createDummy'
+app.SetupSqlT.prototype.doQuery=function*(flow, strCreateSql){
+  //var StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'populateSetting', 'truncate', 'createDummies'];  // , 'createDummy'
   if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); console.log(tmp); return; }
   var Match=RegExp("^(drop|create)?(.*?)$").exec(strCreateSql);
   if(!Match) { debugger;  return; }
@@ -1898,16 +1957,16 @@ app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
   if(Match[1]=='drop') { boDropOnly=true; strMeth='create'+strMeth;}
   else if(Match[1]=='create')  { strMeth='create'+strMeth; }
   
+  if(!('default' in DB)) {console.log('no DB.default');}
+  this.myMySql=new MyMySql(DB.default.pool);
+  
   var SqlA=this[strMeth](SiteName, boDropOnly); 
   var strDelim=';', sql=SqlA.join(strDelim+'\n')+strDelim, Val=[];
-  //var keys=Object.keys(UriDB), poolTmp=DB[keys[0]].pool;
-  if(!('default' in DB)) {console.log('no DB.default');}
-  var poolTmp=DB.default.pool;
-  var [err, results]=yield* myQueryGen(flow, sql, Val, poolTmp);
-  var tmp=createMessTextOfMultQuery(SqlA, err, results);  console.log(tmp); 
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);
+  var tmp=createMessTextOfMultQuery(SqlA, err, results);  console.log(tmp);
+  this.myMySql.fin();
   if(err){ debugger;  return; }
 }
-
 
 
 var createMessTextOfMultQuery=function(Sql, err, results){
@@ -1922,49 +1981,6 @@ var createMessTextOfMultQuery=function(Sql, err, results){
   }
   return StrMess.join('\n');
 }
-
-
-/******************************************************************************
- * ReqSql
- ******************************************************************************/
-app.ReqSql=function(req, res){
-  this.req=req; this.res=res;
-  this.StrType=['table', 'fun', 'dropTable', 'dropFun', 'truncate', 'dummy', 'dummies']; 
-}
-app.ReqSql.prototype.createZip=function(objSetupSql){
-  var res=this.res, StrType=this.StrType;
-
-  var zipfile = new NodeZip();
-  for(var i=0;i<StrType.length;i++) {
-    var strType=StrType[i], SqlA;
-    var Match=RegExp("^(drop)?(.*)$").exec(strType), boDropOnly=Match[1]=='drop';
-    var SqlA=objSetupSql[Match[2].toLowerCase()](SiteName, boDropOnly);
-    var strDelim=';;', sql='-- DELIMITER '+strDelim+'\n'      +SqlA.join(strDelim+'\n')+strDelim      +'\n-- DELIMITER ;\n';
-    zipfile.file(strType+".sql", sql, {date:new Date(), compression:'DEFLATE'});
-  }
-
-  //var objArg={base64:false}; if(boCompress) objArg.compression='DEFLATE';
-  var objArg={type:'string'}; //if(boCompress) objArg.compression='DEFLATE';
-  var outdata = zipfile.generate(objArg);
-
-
-  var outFileName=strAppName+'Setup.zip';
-  var objHead={"Content-Type": 'application/zip', "Content-Length":outdata.length, 'Content-Disposition':'attachment; filename='+outFileName};
-  res.writeHead(200,objHead);
-  res.end(outdata,'binary');
-}
-ReqSql.prototype.toBrowser=function(objSetupSql){
-  var req=this.req, res=this.res, StrType=this.StrType;
-  var Match=RegExp("^(drop)?(.*?)(All)?$").exec(req.pathNameWOPrefix), boDropOnly=Match[1]=='drop', strMeth=Match[2].toLowerCase(), boAll=Match[3]=='All', SiteNameT=boAll?SiteName:[req.siteName];
-  var StrValidMeth=['table', 'fun', 'truncate',  'dummy', 'dummies'];
-  //var objTmp=Object.getPrototypeOf(objSetupSql);
-  if(StrValidMeth.indexOf(strMeth)!=-1){
-    var SqlA=objSetupSql[strMeth](SiteNameT, boDropOnly); 
-    var strDelim=';;', sql='-- DELIMITER '+strDelim+'\n'      +SqlA.join(strDelim+'\n')+strDelim      +'\n-- DELIMITER ;\n';
-    res.out200(sql);
-  }else{ var tmp=req.pathNameWOPrefix+' is not valid input, try: '+this.StrType+' (suffixed with "All" if you want to)'; console.log(tmp); res.out404(tmp); }
-}  
-
 
 
 
