@@ -60,7 +60,6 @@ var detectIE=function() {
 
 
 var msort=function(compare){
-"use strict"
   var length = this.length,  middle = Math.floor(length / 2);
   //if(length < 2) return this;
   if(length==0) return [];
@@ -71,7 +70,6 @@ var msort=function(compare){
 }
 
 var merge=function(left, right, compare){
-"use strict"
   var result = [];
 
   while (left.length > 0 || right.length > 0){
@@ -354,7 +352,6 @@ var popupHover=function(elArea,elBubble){
 
 
 var vippButtonExtend=function(el){
-"use strict"
   el.setStat=function(bo1){
     if(!bo1) {el.css(o0);} else {el.css(o1);}
     el.attr({boOn:bo1});
@@ -398,7 +395,6 @@ var cloneCanvas=function(oldCanvas){
 }
 
 var makeMarker=function(strText){
-"use strict"
   if(typeof strText !='string') strText=strText.toString();
   var strFont="8pt Arial", leading=10;
   var arrText=strText.split('\n');
@@ -427,7 +423,6 @@ var makeMarker=function(strText){
 
 
 var makeMarkerBubble=function(obj){
-"use strict"
   var strText=obj.text||'text';
   if(typeof strText !='string') strText=strText.toString();
   var strFont="8pt Arial", leading=10;

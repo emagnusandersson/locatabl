@@ -315,7 +315,6 @@ window.Filt=function(Prop, StrOrderFilt){
 }
 Filt.tmpPrototype={};
 Filt.tmpPrototype.filtAll=function(){
-"use strict"
   var el=this;
   for(var i=0;i<el.nFeat;i++){
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;

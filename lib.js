@@ -11,7 +11,7 @@ app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for
 }
 
 //
-// String
+// string
 //
 
 app.ucfirst=function(string){  return string.charAt(0).toUpperCase() + string.slice(1);  }
