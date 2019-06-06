@@ -1,7 +1,9 @@
 
 
-
-spanMessageTextCreate=function(){
+"use strict"
+var app=window;
+window.onload=function(){
+var spanMessageTextCreate=function(){
   var el=createElement('span'); //, txt=createTextNode('');  el.appendChild(txt);
   var spanInner=createElement('span');
   el.appendChild(spanInner, imgBusy)
@@ -34,7 +36,6 @@ spanMessageTextCreate=function(){
 }
 
 var loginInfoExtend=function(el){
-"use strict"
   el.setStat=function(){
     var arrKind=[];
     for(var key in userInfoFrDB){   if(userInfoFrDB[key] && key!='user') {  arrKind.push(langHtml.loginInfo[key]); }   }
@@ -52,7 +53,7 @@ var loginInfoExtend=function(el){
   var logoutButt=createElement('a').prop({href:''}).myText(langHtml.loginInfo.logoutButt).css({'float':'right'});
   logoutButt.on('click', function(){ 
     sessionLoginIdP={}; userInfoFrDB=extend({}, specialistDefault);
-    var vec=[['logout',1, function(data){yesDiv.setStat();}]];   majax(oAJAX,vec);
+    var vec=[['logout',{}, function(data){yesDiv.setStat();}]];   majax(oAJAX,vec);
     return false;
   });
   
@@ -88,7 +89,7 @@ var OAuthT=function(){
 }
 
 
-loginDivExtend=function(el){
+var loginDivExtend=function(el){
   var popupWin=function(IP) {
     var uPop=OAuth.createUrlNSetStatVar(IP, strSchemeLong+site.wwwLoginRet, strType+'Fun', caller, el.loginReturn);
 
@@ -133,7 +134,7 @@ loginDivExtend=function(el){
 }
 
 
-yesDivExtend=function(el){
+var yesDivExtend=function(el){
   el.setStat=function(){ 
     var boDb=Boolean(userInfoFrDB.user);//Boolean(userInfoFrDB);
     var boIp=isSet(sessionLoginIdP), boWannaBe=boIp && !boDb; loginDiv.toggle(!boDb);  buttStore.prop({disabled:!boDb}); spanErr.toggle(boWannaBe); 
@@ -142,8 +143,8 @@ yesDivExtend=function(el){
     var vec=[['pubKeyStore',{pubKey:pubKey},retF]];   majax(oAJAX,vec);
   }
   var retF=function(data){   
-    var tmp,strMess="";//boOK=false;
-    tmp=data.boOK;   if(typeof tmp!="undefined") boOK=tmp; if(boOK) setTimeout(function(){ divLeaveMess.toggle(Boolean(boOK)); }, 2000);
+    var tmp, strMess="";//boOK=false;
+    tmp=data.boOK;   if(typeof tmp!="undefined") var boOK=tmp; if(boOK) setTimeout(function(){ divLeaveMess.toggle(Boolean(boOK)); }, 2000);
     tmp=data.strMess;   if(typeof tmp!="undefined") strMess=tmp; divStrMess.myText(strMess); 
     
   }
@@ -161,8 +162,7 @@ yesDivExtend=function(el){
 
 
 
-'use strict';
-majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
+var majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
   var xhr = new XMLHttpRequest();
   xhr.open('POST', uBE, true);
   xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
@@ -204,13 +204,12 @@ majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSid
   //}
 //}
 var beRet=function(data){
-"use strict"
   for(var key in data){
     window[key].call(this,data[key]);
   }
 }
 
-GRet=function(data){
+app.GRet=function(data){
   var tmp;
   tmp=data.strMessageText;   if(typeof tmp!="undefined") setMess(tmp);
   tmp=data.CSRFCode;   if(typeof tmp!="undefined") CSRFCode=tmp;
@@ -221,91 +220,87 @@ GRet=function(data){
   yesDiv.setStat();
 }
 
+app.elHtml=document.documentElement;  app.elBody=document.body
+elBody.css({margin:0, padding:0});
 
-setUp=function(){
+app.boTouch = Number('ontouchstart' in document.documentElement);  //boTouch=1;
 
-  elHtml=document.documentElement;  elBody=document.body
-  elBody.css({margin:0, padding:0});
+var ua = navigator.userAgent.toLowerCase();
+app.boAndroid = ua.indexOf("android") > -1;
+app.boFennec = ua.indexOf("firefox") > -1; 
+app.boIE = ua.indexOf("msie") > -1; 
 
-  boTouch = Number('ontouchstart' in document.documentElement);  //boTouch=1;
+app.boChrome= /chrome/i.test(ua);
+app.boIOS= /iPhone|iPad|iPod/i.test(ua);
 
-  var ua = navigator.userAgent.toLowerCase();
-  boAndroid = ua.indexOf("android") > -1;
-  boFennec = ua.indexOf("firefox") > -1; 
-  boIE = ua.indexOf("msie") > -1; 
+var strScheme='http'+(boTLS?'s':''),    strSchemeLong=strScheme+'://',    uSite=strSchemeLong+wwwSite,     uCommon=strSchemeLong+wwwCommon,    uBE=uSite+"/"+leafBE;
 
-  boChrome= /chrome/i.test(ua);
-  boIOS= /iPhone|iPad|iPod/i.test(ua);
+var wseImageFolder='/'+flImageFolder+'/';
+var uImageFolder=uCommon+wseImageFolder;
 
-  strScheme='http'+(boTLS?'s':'');    strSchemeLong=strScheme+'://';    uSite=strSchemeLong+wwwSite;     uCommon=strSchemeLong+wwwCommon;    uBE=uSite+"/"+leafBE;
+var uHelpFile=uImageFolder+'help.png';
+app.uFb=uImageFolder+'fbLogin.png';
+app.uGoogle=uImageFolder+'googleWide.jpg';
+app.uIdplace=uImageFolder+'idPlace.png';
 
-  wseImageFolder='/'+flImageFolder+'/';
-  uImageFolder=uCommon+wseImageFolder;
-
-  uHelpFile=uImageFolder+'help.png';
-  uFb=uImageFolder+'fbLogin.png';
-  uGoogle=uImageFolder+'googleWide.jpg';
-  uIdplace=uImageFolder+'idPlace.png';
-  
-  uBusy=uImageFolder+'busy.gif';
+var uBusy=uImageFolder+'busy.gif';
 
 
-  imgBusy=createElement('img').attr({src:uBusy});
-  imgHelp=createElement('img').prop({src:uHelpFile}).css({'vertical-align':'-0.4em'});
+var imgBusy=createElement('img').attr({src:uBusy});
+var imgHelp=createElement('img').prop({src:uHelpFile}).css({'vertical-align':'-0.4em'});
 
 
-  sessionLoginIdP={};
-  userInfoFrDB=extend({}, specialistDefault);
+var sessionLoginIdP={};
+var userInfoFrDB=extend({}, specialistDefault);
 
-  oAJAX={};
-   //uPubKeyStoreBE
+var oAJAX={};
+ //uPubKeyStoreBE
 
-  assignSiteSpecific();
-  langClientFunc();
-
-
-  loginDiv=loginDivExtend(createElement('div')).hide();
-  loginInfo=loginInfoExtend(createElement('div'));  loginInfo.css({padding:'0em 0em 0em 0em','font-size':'75%'});
+assignSiteSpecific();
+langClientFunc();
 
 
-  tmpB=createElement('b').myAppend(wwwSite);
-  aTmp=createElement('a').attr({href:'https://wikipedia.org/wiki/Key_pair',target:"_blank"}).myText('key pair');
-  strShow='Show key'; strHide='Hide key';
-  buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).css({'margin-left':'1em'}).on('click', function(){
-    var b=this; b.boOn=!b.boOn;  b.myText(b.boOn?strHide:strShow); divKey.toggle(b.boOn);
-  });
-  divKey=createElement('div').myText(pubKey).hide().css({'font-weight':'bold'});
-  headA=createElement('div').myAppend('You are now on ',tmpB, ' with one part of a ',aTmp,'.',buttonShowKey,divKey).css({'margin-top':'0.5em'});
-
-  var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText("Storing the key will allow the sender (the owner of the other part of the key pair) to write certain data on this site: (position (lat/lang), visibility (on/off), hideTimer)");     popupHover(imgTmp,bub);  
-  headB=createElement('div').myAppend('Do you want to store this key?',imgTmp);
-  //<b>position</b>, <b>last activity</b> and <b>visibility</b>
-
-  //messageText=messExtend(createElement('span'));  window.setMess=messageText.setMess;  window.resetMess=messageText.resetMess;  messageText.css({font:'courier'});  
-  spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
+var loginDiv=loginDivExtend(createElement('div')).hide();
+var loginInfo=loginInfoExtend(createElement('div'));  loginInfo.css({padding:'0em 0em 0em 0em','font-size':'75%'});
 
 
-  buttCancel=createElement('button').myText('Cancel').on('click', function(){window.close();});
+var tmpB=createElement('b').myAppend(wwwSite);
+var aTmp=createElement('a').attr({href:'https://wikipedia.org/wiki/Key_pair',target:"_blank"}).myText('key pair');
+var strShow='Show key-half', strHide='Hide key-half';
+var buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).css({'margin-left':'1em'}).on('click', function(){
+  var b=this; b.boOn=!b.boOn;  b.myText(b.boOn?strHide:strShow); divKey.toggle(b.boOn);
+});
+var divKey=createElement('div').myText(pubKey).hide().css({'font-weight':'bold'});
+var headA=createElement('div').myAppend('You are now on ',tmpB, ' (verify with address bar) with one half of a ',aTmp,'.',buttonShowKey,divKey).css({'margin-top':'0.5em'});
 
-  strLeaveMess="(Click browser-back-button to leave.)";
-  cssAns={width:'50%',display:'inline-block','box-sizing': 'border-box','text-align':'center',padding:'1em',flex:1};
-  //cssAns={'text-align':'center',padding:'1em'};
-  yesDiv=yesDivExtend(createElement('div')).css(cssAns).css({'background':'lightgreen'});
-  noSpan=createElement('div').myText('No').css({'text-align':'center','margin-bottom':'1em'});
-  noDiv=createElement('div').css(cssAns).css({'border-left':'2px solid grey','vertical-align':'top','background':'pink'}).myAppend(noSpan,strLeaveMess);
-  answerDiv=createElement('div').myAppend(yesDiv,noDiv).css({display:'flex'}); //
-  //mainDivs=([]).push(loginInfo).push(headA).push(headB).push(answerDiv);
-  var MainDiv=[loginInfo, headA, headB, answerDiv];
+var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText("Storing the key-half will allow the sender (the owner of the other half) to write certain data on this site: (position (latitude/longitude), visibility (on/off), hideTimer)");     popupHover(imgTmp,bub);  
+var headB=createElement('div').myAppend('Do you want to store this key-half?',imgTmp);
+//<b>position</b>, <b>last activity</b> and <b>visibility</b>
+
+//messageText=messExtend(createElement('span'));  window.setMess=messageText.setMess;  window.resetMess=messageText.resetMess;  messageText.css({font:'courier'});  
+var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
 
 
-  elBody.append(...MainDiv,spanMessageText); 
+var buttCancel=createElement('button').myText('Cancel').on('click', function(){window.close();});
 
-  elBody.css({'text-align':'center'});
-  MainDiv.forEach(ele=>ele.css({'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff','max-width':'800px'}) )
+var strLeaveMess="(Click browser-back-button to leave.)";
+var cssAns={width:'50%',display:'inline-block','box-sizing': 'border-box','text-align':'center',padding:'1em',flex:1};
+//cssAns={'text-align':'center',padding:'1em'};
+var yesDiv=yesDivExtend(createElement('div')).css(cssAns).css({'background':'lightgreen'});
+var noSpan=createElement('div').myText('No').css({'text-align':'center','margin-bottom':'1em'});
+var noDiv=createElement('div').css(cssAns).css({'border-left':'2px solid grey','vertical-align':'top','background':'pink'}).myAppend(noSpan,strLeaveMess);
+var answerDiv=createElement('div').myAppend(yesDiv,noDiv).css({display:'flex'}); //
+//mainDivs=([]).push(loginInfo).push(headA).push(headB).push(answerDiv);
+var MainDiv=[loginInfo, headA, headB, answerDiv];
 
-  var vec=[['setupById']];   majax(oAJAX,vec);
+
+elBody.append(...MainDiv,spanMessageText); 
+
+elBody.css({'text-align':'center'});
+MainDiv.forEach(ele=>ele.css({'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff','max-width':'800px'}) )
+
+var vec=[['setupById', {}]];   majax(oAJAX,vec);
 }
 
-window.onload=function(){  setUp(); };
 
 

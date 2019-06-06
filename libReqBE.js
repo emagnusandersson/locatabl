@@ -319,7 +319,7 @@ ReqBE.prototype.go=function*(){
     var strFun=beArr[k][0];
     if(in_array(strFun,allowed)) {
       var inObj=beArr[k][1],     tmpf; if(strFun in this) tmpf=this[strFun]; else tmpf=global[strFun];
-      if(typeof inObj!='object') {this.mesO('typeof inObj!="object"'); return;}
+      if(typeof inObj=='undefined' || typeof inObj=='object') {} else {this.mesO('inObj should be of type object or undefined'); return;}
       var fT=[tmpf,inObj];   Func.push(fT);
     }
   }
@@ -621,6 +621,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   var buf=body;
  
   try{ var objT=JSON.parse(buf.toString()); }catch(e){ return [e]; }
+  if('error' in objT) { var m=objT.error.message; return [new Error(m)]; }
   var access_token=this.access_token=objT.access_token;
   //var access_token=this.access_token=inObj.access_token;
 
@@ -738,7 +739,6 @@ ReqBE.prototype.refetchFun=function*(){
 
 
 ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against the seller-table and return diverse data
-"use strict"
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, Ou={};
   
   var StrRole=null; if(inObj && typeof inObj=='object' && 'Role' in inObj) StrRole=inObj.Role;
@@ -1433,7 +1433,7 @@ ReqBE.prototype.pubKeyStore=function*(inObj){
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
   //if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
-  if(nUpd==1) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
+  if(nUpd==1) {boOK=1; mestmp="Key-half updated";} else {boOK=1; mestmp="Nothing changed (same key-half as before)";}
   Ou.boOK=boOK;    Ou.strMess=mestmp;
   return [null, [Ou]];
 }

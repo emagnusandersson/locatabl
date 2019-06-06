@@ -38,10 +38,6 @@ app.mesEOMakeJSON=function(glue){ return function(err){
 
 
 
-"use strict"
-
-
-
 /******************************************************************************
  * reqCurlEnd
  ******************************************************************************/
@@ -165,10 +161,9 @@ app.reqPubKeyStore=function*(){
   var objOut={CSRFCode:CSRFCode, caller:caller, specialistDefault:specialistDefault, pubKey:pubKey, maxList:maxList, wwwCommon:wwwCommon, leafBE:leafBE, flImageFolder:flImageFolder, UrlOAuth:UrlOAuth, response_type:response_type};
   copySome(objOut,req,['wwwSite', 'boTLS']);
 
-  Str.push(`function indexAssign(){
-  var tmp=`+serialize(objOut)+`;
-  extend(window, tmp);
-}`);
+  Str.push(`var tmp=`+serialize(objOut)+`;
+extend(window, tmp);
+`);
   Str.push("</script>");
   Str.push("</body></html>");
   //this.mesO();
@@ -409,7 +404,9 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
 
   Str.push("<title>"+strTitle+"</title>\n<h1>"+strH1+"</h1>\n"+strSummary);
 
-  Str.push(`<script type="text/javascript" language="JavaScript" charset="UTF-8">`);
+  Str.push(`<script type="text/javascript" language="JavaScript" charset="UTF-8">
+var app=window;
+var StrMainProt=[];`);
 
   var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash};
   copySome(objOut,req, ['boTLS']);
