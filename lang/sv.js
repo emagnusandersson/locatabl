@@ -283,6 +283,7 @@ boat:'Båt'
 
 standingByMethods:['I fordon','Hemma','5 min','10 min'],
 standingByMethodsLong:['I fordon','Hemma','Redo om 5 min','Redo om 10 min'],
+compassPoint:['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
 
 ShowNUpdate:'Synlig / Ny pos',
 visible:'synlig',
@@ -332,6 +333,7 @@ introHead:'Ny <span nom="seller">entreprenörer</span>, välkommen!',
 introBread:'En kontaktemail behövs om sajten byter ID-leverantör. (Kontaktemailen visas ej för kunder.)',
 Tel:'Tel',
 ContactEmail:'Kontakt email',
+Email:'Email',
 
 comparePrice:{head:'Jämförprisparametrar'},
 Distance:'Distans',

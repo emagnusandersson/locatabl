@@ -23,7 +23,7 @@
     "request": "^2.88.0",
     "serialize-javascript": "^1.7.0",
     "streamify-string": "^1.0.1",
-    "uglify-js": "^3.5.15",
+    "uglify-js": "^3.6.0",
     "validator": "^11.0.0"
   },
   "devDependencies": {},
@@ -33,7 +33,7 @@
     "url": "http://github.com/"
   },
   "engines": {
-    "node": "11.x",
+    "node": "12.x",
     "npm": ""
   }
 }

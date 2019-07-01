@@ -283,6 +283,7 @@ boat:'Boat'
 
 standingByMethods:['In vehicle','At home','5 min','10 min'],
 standingByMethodsLong:['In vehicle','At home','Ready in 5 min','Ready in 10 min'],
+compassPoint:['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
 
 ShowNUpdate:'Visible / New pos',
 visible:'visible',
@@ -333,6 +334,7 @@ introHeadS:'New <span nom="seller">seller</span>, welcome!',
 introBread:'A contact email is needed incase the site changes ID-provider. (The contact email will not be be shown to the public.)',
 Tel:'Tel',
 ContactEmail:'Contact email',
+Email:'Email',
 
 comparePrice:{head:'Parameters for comparative price'},
 Distance:'Distance',

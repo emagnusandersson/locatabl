@@ -226,8 +226,10 @@ PluginF.general=function(site){
   PropTmp.histActive.selF=function(){return sqlHistActiveColCount;};
   PropTmp.tPos.selF=PropTmp.tLastWriteOfTA.selF=PropTmp.tLastPriceChange.selF=selTimeF;  //=PropTmp.terminationDate.selF
 
-  PropTmp.tPos.histCondF=function(name){ return "floor(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tPos))";};
-  PropTmp.tCreated.histCondF=function(name){ return "floor(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tCreated))";};
+  //PropTmp.tPos.histCondF=function(name){ return "floor(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tPos))";};
+  //PropTmp.tCreated.histCondF=function(name){ return "floor(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tCreated))";};
+  PropTmp.tPos.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tPos)";};
+  PropTmp.tCreated.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tCreated)";};
   PropTmp.histActive.histCondF=function(name){return sqlHistActiveColCount;};
   //PropTmp.tAccumulated.histCondF=function(name){ return "floor(tAccumulated/"+sPerMonth+")";};
   PropTmp.tAccumulated.histCondF=function(name){ return "tAccumulated";};
@@ -317,6 +319,10 @@ PluginF.transportCustomer=function(site){
   };
   extend(Prop,PropTmp);
   Prop.compassPoint.Enum=tmpEnumCompassPoint;
+  
+  Prop.compassPoint.selF=selEnumF;
+  Prop.compassPoint.selOneF=selEnumF;
+  Prop.compassPoint.roleUpdF=updEnumBoundF;
   oC.StrTransportCustomer=['distStartToGoal','compassPoint','destination']; // ,'price'
   var StrTmp=Object.keys(PropTmp);
   array_mergeM(oC.StrFiltAccept, StrTmp);
@@ -359,7 +365,8 @@ PluginF.shiftEnd=function(site){
   Prop.shiftEnd.cond1F=function(name, val){   return "UNIX_TIMESTAMP("+name+")<GREATEST(UNIX_TIMESTAMP(now())+"+val+", 0)";   };
   Prop.shiftEnd.selOneF=selTimeF; Prop.shiftEnd.selF=selTimeF;
   //Prop.shiftEnd.histCondF=function(name){return "floor((UNIX_TIMESTAMP(ro.shiftEnd)-UNIX_TIMESTAMP(now()))/3600)";};
-  Prop.shiftEnd.histCondF=function(name){return "floor(UNIX_TIMESTAMP(ro.shiftEnd)-UNIX_TIMESTAMP(now()))";};
+  //Prop.shiftEnd.histCondF=function(name){return "floor(UNIX_TIMESTAMP(ro.shiftEnd)-UNIX_TIMESTAMP(now()))";};
+  Prop.shiftEnd.histCondF=function(name){return "UNIX_TIMESTAMP(ro.shiftEnd)-UNIX_TIMESTAMP(now())";};
   Prop.shiftEnd.roleUpdF=updTimeF;
 
   array_mergeM(oS.StrFiltAccept, 'shiftEnd');

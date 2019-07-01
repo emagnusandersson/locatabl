@@ -141,15 +141,19 @@ var flow=( function*(){
   //createPlugins();
   SiteExtend();
 
-
     // Do db-query if --sql XXXX was set in the argument
   if(typeof argv.sql!='undefined'){
     if(typeof argv.sql!='string') {console.log('sql argument is not a string'); process.exit(-1); return; }
     var tTmp=new Date().getTime();
-    var SetupSql=new SetupSqlT(); yield *SetupSql.doQuery(flow, argv.sql);
+    var setupSql=new SetupSql();
+    setupSql.myMySql=new MyMySql(DB.default.pool);
+    var [err]=yield* setupSql.doQuery(flow, argv.sql);
+    setupSql.myMySql.fin();
+    if(err) {  console.error(err);  return;}
     console.log('Time elapsed: '+(new Date().getTime()-tTmp)/1000+' s'); 
     process.exit(0);
   }
+
 
   CacheUri=new CacheUriT();
   StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientPubKeyStore.js', 'stylesheets/style.css']; //, 'clientMergeID.js'

@@ -208,9 +208,12 @@ ReqBE.prototype.mesEO=function(e){
 ReqBE.prototype.go=function*(){
   var req=this.req, flow=req.flow, res=this.res, site=req.site;
   
-  if('x-requested-with' in req.headers && req.headers['x-requested-with']=="XMLHttpRequest") ; else { this.mesEO("Ajax-request: req.headers['x-requested-with']!='XMLHttpRequest'");  return; }
-  var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length;
-  if('referer' in req.headers && req.headers.referer.slice(0,lTmp)==urlT) ; else { this.mesEO("Referer is wrong");  return; }
+  if('x-requested-with' in req.headers && req.headers['x-requested-with']=="XMLHttpRequest") ; else { this.mesEO(new Error("Ajax-request: req.headers['x-requested-with']!='XMLHttpRequest'"));  return; }
+
+  if('referer' in req.headers){
+    var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length, referer=req.headers.referer, lMin=Math.min(lTmp, referer.length);
+    if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(new Error("Referer is wrong"));  return; }
+  } else { this.mesEO(new Error("Referer not set"));  return; }
   
     // Extract input data either 'POST' or 'GET'
   var jsonInput;
@@ -241,7 +244,7 @@ ReqBE.prototype.go=function*(){
 
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
-  if(!req.boCookieStrictOK) {this.mesEO('Strict cookie not set');  return;   }
+  if(!req.boCookieStrictOK) {this.mesEO(new Error('Strict cookie not set'));  return;   }
   
   this.sessionUserInfoFrDB=yield *getRedis(flow, req.sessionID+'_UserInfoFrDB', true);
   //var [err,value]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
@@ -627,6 +630,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
 
 
     // Get Graph
+  var uGraph=UrlGraph[strIP];
   if(strIP=='fb') {
     var objForm={access_token:this.access_token, fields:"id,name,verified,picture,email"};
   }else if(strIP=='google') {
@@ -634,7 +638,6 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   }else if(strIP=='idplace') {
     var objForm={access_token:this.access_token};
   } 
-  var uGraph=UrlGraph[strIP];
   
   var arrT = Object.keys(objForm).map(function (key) { return key+'='+objForm[key]; }), strQuery=arrT.join('&'); 
   if(strQuery.length) uGraph+='?'+strQuery;
@@ -1046,13 +1049,17 @@ ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
 ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   var req=this.req, flow=req.flow, site=req.site, {userTab, customerTab, sellerTab}=site.TableName, [oC, oS]=site.ORole;
   var Ou={}; 
-  var objT=this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
-  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
+  if(isEmpty(this.sessionLoginIdP)) {this.mes('No session'); return [null, [Ou]]; }
+  var {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
 
   //if(inObj.email) email=inObj.email;
-  var {tel, displayName, currency, charRole, boIdIPImage}=inObj;
+  var {tel, displayName, currency, charRole, boIdIPImage, displayEmail}=inObj;
   tel=myJSEscape(tel); displayName=myJSEscape(displayName); currency=myJSEscape(currency);
   var boImgOwn=1-Number(boIdIPImage);
+  
+  if(displayEmail) {
+    var boOK=validator.isEmail(displayEmail); if(!boOK) return [new ErrorClient("displayEmail didn't pass validation test.")];
+  }
   
   
   var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
@@ -1065,8 +1072,8 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW, displayName, boImgOwn) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn,   email, nameIP, image);
-  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser;");
-  Val.push(tel, currency);
+  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency, displayEmail) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  Val.push(tel, currency, displayEmail);
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
@@ -1089,7 +1096,7 @@ ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
   var Ou={}; 
 
   var user=this.sessionUserInfoFrDB.user, objT;
-  if(user) objT=user;  else if(this.sessionLoginIdP) objT=this.sessionLoginIdP;  else {this.mes('No session'); return [null, [Ou]]; }
+  if(user) objT=user;  else if(isSet(this.sessionLoginIdP)) objT=this.sessionLoginIdP;  else {this.mes('No session'); return [null, [Ou]]; }
   var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objT; 
   if(typeof idUser=='undefined') {return [new Error('no idUser')];}
   
@@ -1209,7 +1216,7 @@ ReqBE.prototype.complaintUpdateComment=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
   var {userTab,complaintTab}=site.TableName;
   var Ou={};
-  var objT=this.sessionUserInfoFrDB.user||this.sessionLoginIdP;  if(!objT) {this.mes('No session'); return [null, [Ou]]; }
+  var objT=this.sessionUserInfoFrDB.user||this.sessionLoginIdP;  if(isEmpty(objT)) {this.mes('No session'); return [null, [Ou]]; }
   var {idFB, idIdPlace, idOpenId, email, nameIP, image}=objT;
 
 
