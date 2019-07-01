@@ -311,24 +311,50 @@ app.reqIndex=function*() {
   if(!boDbg) Str.push(tmp);
 
 
+  //var tmp=`
+//<script>
+  //window.fbAsyncInit = function() {
+    //FB.init({
+      //appId      : "`+fiIdTmp+`",
+      //xfbml      : true,
+      //version    : "v4.0"
+    //});
+  //};
+  //(function(d, s, id){
+     //var js, fjs = d.getElementsByTagName(s)[0];
+     //if (d.getElementById(id)) {return;}
+     //js = d.createElement(s); js.id = id;
+     //js.src = "//connect.facebook.net/en_US/sdk.js";
+     //fjs.parentNode.insertBefore(js, fjs);
+   //}(document, "script", "facebook-jssdk"));
+//</script>`;
+  //Str.push(tmp);
+
+
   var tmp=`
 <script>
   window.fbAsyncInit = function() {
     FB.init({
-      appId      : "`+fiIdTmp+`",
+      appId      : '`+fiIdTmp+`',
+      cookie     : true,
       xfbml      : true,
-      version    : "v3.2"
+      version    : 'v4.0'
     });
+      
+    FB.AppEvents.logPageView();   
+      
   };
+
   (function(d, s, id){
      var js, fjs = d.getElementsByTagName(s)[0];
      if (d.getElementById(id)) {return;}
      js = d.createElement(s); js.id = id;
-     js.src = "//connect.facebook.net/en_US/sdk.js";
+     js.src = "https://connect.facebook.net/en_US/sdk.js";
      fjs.parentNode.insertBefore(js, fjs);
-   }(document, "script", "facebook-jssdk"));
+   }(document, 'script', 'facebook-jssdk'));
 </script>`;
   Str.push(tmp);
+
 
 
   var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
@@ -406,7 +432,8 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
 
   Str.push(`<script type="text/javascript" language="JavaScript" charset="UTF-8">
 var app=window;
-var StrMainProt=[];`);
+var StrMainProt=[];
+var StrMainProtRole=[];`);
 
   var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash};
   copySome(objOut,req, ['boTLS']);
@@ -652,24 +679,25 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
  * reqStatic (request for static files)
  ******************************************************************************/
 app.reqStatic=function*() {
-  var req=this.req, res=this.res, flow=req.flow, site=req.site; //this.pool=DB[site.db].pool;
-  var site=req.site, objQS=req.objQS, siteName=site.siteName, pathName=req.pathName;
+  var req=this.req, res=this.res;
+  var site=req.site, siteName=site.siteName;
+  var pathName=req.pathName;
 
   var eTagIn=getETag(req.headers);
-  var keyCache=pathName; if(pathName==='/'+leafSiteSpecific) keyCache=siteName+keyCache; 
+  var keyCache=pathName; if(pathName==='/'+leafSiteSpecific) keyCache=siteName+keyCache;
   if(!(keyCache in CacheUri)){
     var filename=pathName.substr(1);
-    var [err]=yield *readFileToCache(flow, filename);
+    var [err]=yield* readFileToCache(req.flow, filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
       if('host' in req.headers) console.error('Faulty request from'+req.headers.host);
-      if('Referer' in req.headers) console.error(req.headers.Referer);
+      if('Referer' in req.headers) console.error('Referer:'+req.headers.Referer);
       res.out500(err); return;
     }
   }
   var {buf, type, eTag, boZip, boUglify}=CacheUri[keyCache];
   if(eTag===eTagIn){ res.out304(); return; }
-  var mimeType=MimeType[type]; 
+  var mimeType=MimeType[type];
   if(typeof mimeType!='string') console.log('type: '+type+', mimeType: ', mimeType);
   if(typeof buf!='object' || !('length' in buf)) console.log('typeof buf: '+typeof buf);
   if(typeof eTag!='string') console.log('typeof eTag: '+eTag);
@@ -898,17 +926,14 @@ td:nth-child(n+14){background:lightblue}
  
 
 /******************************************************************************
- * SetupSqlT
+ * SetupSql
  ******************************************************************************/
-app.SetupSqlT=function(){
+app.SetupSql=function(){
 }
-app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
-  if(typeof SiteName=='string') SiteName=[SiteName];
+app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
+  var site=Site[siteName]; 
   
   var SqlTabDrop=[], SqlTab=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite]
-  var site=Site[siteName]; 
   var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
   //eval(extractLoc(TableName,'TableName'));
   var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
@@ -1149,21 +1174,22 @@ app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
   addBinTableSql(SqlTabDrop, SqlTab, siteName, oS.Prop, engine, collate);
   addBinTableSql(SqlTabDrop, SqlTab, siteName, oC.Prop, engine, collate);
 
-  }
-  if(boDropOnly) return SqlTabDrop;
-  else return array_merge(SqlTabDrop, SqlTab);
+  
+  if(boDropOnly) var Sql=SqlTabDrop;
+  else var Sql=array_merge(SqlTabDrop, SqlTab);
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
 
   
-app.SetupSqlT.prototype.createFunction=function(SiteName,boDropOnly){
-  if(typeof SiteName=='string') SiteName=[SiteName];
-  
-  var SqlFunctionDrop=[], SqlFunction=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite];
-  
+app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   var site=Site[siteName]; 
+
+  var SqlFunctionDrop=[], SqlFunction=[];
+  
   var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
   var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
   //eval(extractLoc(ViewName,'ViewName'));
@@ -1505,14 +1531,17 @@ CLIENT_FOUND_ROWS
         DROP TABLE IF EXISTS `+userTab+`_dup;
       END`);
 
-  }
-  var SqlA=this.funcGen(boDropOnly);
-  if(boDropOnly) var SqlB=SqlFunctionDrop;
-  else var SqlB=array_merge(SqlFunctionDrop, SqlFunction);
-  return array_merge(SqlA, SqlB);
+  
+
+  if(boDropOnly) var Sql=SqlFunctionDrop;
+  else var Sql=array_merge(SqlFunctionDrop, SqlFunction);
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
-app.SetupSqlT.prototype.funcGen=function(boDropOnly){
+app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
   var SqlFunction=[], SqlFunctionDrop=[];
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS copyTable");
   SqlFunction.push(`CREATE PROCEDURE copyTable(INameN varchar(128),IName varchar(128))
@@ -1552,18 +1581,22 @@ app.SetupSqlT.prototype.funcGen=function(boDropOnly){
       SET resP=resM2resWC(resM,lat), Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
     END`);
     
-  if(boDropOnly) return SqlFunctionDrop;
-  else return array_merge(SqlFunctionDrop, SqlFunction);
+  if(boDropOnly) var Sql=SqlFunctionDrop;
+  else var Sql=array_merge(SqlFunctionDrop, SqlFunction);
+  
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
 
 
 
 
-app.SetupSqlT.prototype.createDummies=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
+app.SetupSql.prototype.createDummies=function*(flow, siteName){
   var nData=10;
-  var SqlDummies=[];
+  var Sql=[];
   
 
   var SEK2CUR={SEK:1,USD:0.14,GBP:0.1,EUR:0.12,CNY:0.72,JPY:14.37,INR:7.35,DKK:1,NOK:1}
@@ -1696,213 +1729,209 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
     //compassPoint:{Enum:['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']},
     //standingByMethod:{Enum:['inCar','atHome','5min','10min']}
   };
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-    var siteName=SiteName[iSite], {ORole}=Site[siteName];
-    for(var iRole=0;iRole<ORole.length;iRole++){
-      var Prop=ORole[iRole].Prop;
-      for(var name in Prop){
-        if(!(name in PropBucket)){
-          PropBucket[name]={};
-          if('Enum' in Prop[name]) PropBucket[name].Enum=Prop[name].Enum.concat([]);
-        }
+
+  var site=Site[siteName];
+  var {TableName, ViewName, ORole}=site;
+  for(var iRole=0;iRole<ORole.length;iRole++){
+    var Prop=ORole[iRole].Prop;
+    for(var name in Prop){
+      if(!(name in PropBucket)){
+        PropBucket[name]={};
+        if('Enum' in Prop[name]) PropBucket[name].Enum=Prop[name].Enum.concat([]);
       }
     }
   }
+  
   
 
   var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'strUnitDist', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang', 'compassPoint', 'destination', 'fixedPricePerUnitUnit', 'fruit', 'database', 'language'];
         
     
     
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-    var siteName=SiteName[iSite];
-    var site=Site[siteName];
-    var {TableName, ViewName, ORole}=site;
-    var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
-    var {histView}=site.ViewName;
-    
-      // Insert into userTab
-    var arrUser=Array(nData), SqlAllU=Array(nData);
-    for(var i=0;i<nData;i++){
-      let strName="dummy"+i, strNameUC=ucfirst(strName), email=strName+'@example.com', donatedAmount=makeRandSpanF('donatedAmount'); 
-      arrUser[i]={idFB:strName, email:email, displayName:strNameUC, tel:"07000000"+i};
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
+  var {histView}=site.ViewName;
+  
+    // Insert into userTab
+  var arrUser=Array(nData), SqlAllU=Array(nData);
+  for(var i=0;i<nData;i++){
+    let strName="dummy"+i, strNameUC=ucfirst(strName), email=strName+'@example.com', donatedAmount=makeRandSpanF('donatedAmount'); 
+    arrUser[i]={idFB:strName, email:email, displayName:strNameUC, tel:"07000000"+i};
 
-      var idTmp=i+1;  
-      //var SqlT=[idTmp, 'null', 'null', "'"+strNameUC+"'", "'"+email+"'", "'"+strNameUC+"'", "''", "'"+strNameUC+"'", donatedAmount];
-      //SqlAllU[i]="("+SqlT.join(', ')+")";
-      var SqlT=[idTmp, null, null, strNameUC, email, strNameUC, "", strNameUC, donatedAmount];
-      var SqlT=DB.default.pool.escape(SqlT);
-      SqlAllU[i]="("+SqlT+")";
+    var idTmp=i+1;  
+    //var SqlT=[idTmp, 'null', 'null', "'"+strNameUC+"'", "'"+email+"'", "'"+strNameUC+"'", "''", "'"+strNameUC+"'", donatedAmount];
+    //SqlAllU[i]="("+SqlT.join(', ')+")";
+    var SqlT=[idTmp, null, null, strNameUC, email, strNameUC, "", strNameUC, donatedAmount];
+    var SqlT=DB.default.pool.escape(SqlT);
+    SqlAllU[i]="("+SqlT+")";
 
-      arrUser[i]=extend(arrUser[i],getRandomPostAddress());
+    arrUser[i]=extend(arrUser[i],getRandomPostAddress());
+  }
+  var tmp=SqlAllU.join(",\n");
+  Sql.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, donatedAmount) VALUES \n"+tmp);
+  
+  
+    // Insert into complaintTab
+  var IdComplainer=[2, 3, 4];
+  var StrComplaint=['He never answered the phone', 'No good', 'Bad bad bad'];
+  var StrAns=['I was on the toilet', "Sorry, it was my first time.", ''];
+  var nComplainer=IdComplainer.length;
+  for(var j=0;j<10;j++){ //loop through drivers
+    for(var i=0;i<nComplainer;i++){
+      var idRep=IdComplainer[i], iRep=(i+j)%nComplainer, strRep=StrComplaint[iRep], iAns=(i+2*j)%nComplainer, strAns=StrAns[iAns];
+      Sql.push("INSERT INTO "+complaintTab+" (idComplainee, idComplainer, comment, answer, tCreated, tCommentModified, tAnswerModified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now(), now() FROM "+userTab+" WHERE idUser%10="+j);
     }
-    var tmp=SqlAllU.join(",\n");
-    SqlDummies.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, donatedAmount) VALUES \n"+tmp);
-    
-    
-      // Insert into complaintTab
-    var IdComplainer=[2, 3, 4];
-    var StrComplaint=['He never answered the phone', 'No good', 'Bad bad bad'];
-    var StrAns=['I was on the toilet', "Sorry, it was my first time.", ''];
-    var nComplainer=IdComplainer.length;
-    for(var j=0;j<10;j++){ //loop through drivers
-      for(var i=0;i<nComplainer;i++){
-        var idRep=IdComplainer[i], iRep=(i+j)%nComplainer, strRep=StrComplaint[iRep], iAns=(i+2*j)%nComplainer, strAns=StrAns[iAns];
-        SqlDummies.push("INSERT INTO "+complaintTab+" (idComplainee, idComplainer, comment, answer, tCreated, tCommentModified, tAnswerModified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now(), now() FROM "+userTab+" WHERE idUser%10="+j);
-      }
+  }
+  
+    // Update nComplaint and nComplaintGiven
+  Sql.push(`
+  UPDATE `+userTab+` u
+  JOIN
+    (SELECT idComplainee, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainee) tmp ON u.idUser=tmp.idComplainee
+  SET u.nComplaint = n, u.nComplaintCum = n`);
+
+  Sql.push(`
+  UPDATE `+userTab+` u
+  JOIN
+    (SELECT idComplainer, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainer) tmp ON u.idUser=tmp.idComplainer
+  SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
+  
+    // Insert into roleTabs
+  var StrPlugInNArg=site.StrPlugInNArg;
+  var StrPlugIn=[];
+  for(var i=0;i<StrPlugInNArg.length;i++){var strTmp=StrPlugInNArg[i], n=strTmp.length, charLast=strTmp[n-1]; if(charLast=='C' || charLast=='S') { strTmp=strTmp.substr(0,n-1); } StrPlugIn.push(strTmp); }
+  
+  for(var iRole=0;iRole<ORole.length;iRole++){
+    var oRole=ORole[iRole];
+    var Prop=oRole.Prop;
+    var {charRole, charRoleUC}=oRole;
+    var roleTab=charRole=='c'?customerTab:sellerTab;
+
+
+
+    var arrAssign=[]; // arrAssign: as in draw a random number from a bucket
+    if(in_array("general", StrPlugInNArg)){ 
+      arrAssign=['boShow', 'tCreated', 'tPos', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'hideTimer', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM'];
+      if(charRole=='s') arrAssign.push('experience');
     }
-    
-      // Update nComplaint and nComplaintGiven
-    SqlDummies.push(`
-    UPDATE `+userTab+` u
-    JOIN
-      (SELECT idComplainee, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainee) tmp ON u.idUser=tmp.idComplainee
-    SET u.nComplaint = n, u.nComplaintCum = n`);
 
-    SqlDummies.push(`
-    UPDATE `+userTab+` u
-    JOIN
-      (SELECT idComplainer, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainer) tmp ON u.idUser=tmp.idComplainer
-    SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
-    
-      // Insert into roleTabs
-    var StrPlugInNArg=site.StrPlugInNArg;
-    var StrPlugIn=[];
-    for(var i=0;i<StrPlugInNArg.length;i++){var strTmp=StrPlugInNArg[i], n=strTmp.length, charLast=strTmp[n-1]; if(charLast=='C' || charLast=='S') { strTmp=strTmp.substr(0,n-1); } StrPlugIn.push(strTmp); }
-    
-    for(var iRole=0;iRole<ORole.length;iRole++){
-      var oRole=ORole[iRole];
-      var Prop=oRole.Prop;
-      var {charRole, charRoleUC}=oRole;
-      var roleTab=charRole=='c'?customerTab:sellerTab;
+    if(in_array("vehicleType", StrPlugInNArg) && charRole=='s'){ arrAssign.push('vehicleType');  }
+    if(in_array("distNTimePrice", StrPlugInNArg) && charRole=='s'){ arrAssign.push('priceStart', 'strUnitDist', 'pricePerDist', 'pricePerHour');  }
+    if(in_array("transportCustomer", StrPlugInNArg) && charRole=='c'){ arrAssign.push('distStartToGoal', 'compassPoint', 'destination'); }
+    if(in_array("standingByMethod", StrPlugInNArg) && charRole=='s'){  arrAssign.push('standingByMethod');   }
+    if(in_array("shiftEnd", StrPlugInNArg) && charRole=='s'){ arrAssign.push('shiftEnd');  }
+    if(in_array("hourlyPrice"+charRoleUC, StrPlugInNArg)){   arrAssign.push('pricePerHour');    }
+    if(in_array("price"+charRoleUC, StrPlugInNArg)){   arrAssign.push('price');    }
 
+    if(in_array("fixedPricePerUnit", StrPlugInNArg) && charRole=='c'){  arrAssign.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');}
 
-
-      var arrAssign=[]; // arrAssign: as in draw a random number from a bucket
-      if(in_array("general", StrPlugInNArg)){ 
-        arrAssign=['boShow', 'tCreated', 'tPos', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'hideTimer', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM'];
-        if(charRole=='s') arrAssign.push('experience');
-      }
-
-      if(in_array("vehicleType", StrPlugInNArg) && charRole=='s'){ arrAssign.push('vehicleType');  }
-      if(in_array("distNTimePrice", StrPlugInNArg) && charRole=='s'){ arrAssign.push('priceStart', 'strUnitDist', 'pricePerDist', 'pricePerHour');  }
-      if(in_array("transportCustomer", StrPlugInNArg) && charRole=='c'){ arrAssign.push('distStartToGoal', 'compassPoint', 'destination'); }
-      if(in_array("standingByMethod", StrPlugInNArg) && charRole=='s'){  arrAssign.push('standingByMethod');   }
-      if(in_array("shiftEnd", StrPlugInNArg) && charRole=='s'){ arrAssign.push('shiftEnd');  }
-      if(in_array("hourlyPrice"+charRoleUC, StrPlugInNArg)){   arrAssign.push('pricePerHour');    }
-      if(in_array("price"+charRoleUC, StrPlugInNArg)){   arrAssign.push('price');    }
-
-      if(in_array("fixedPricePerUnit", StrPlugInNArg) && charRole=='c'){  arrAssign.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');}
-
-      if(in_array("taxi", StrPlugInNArg)){
-        array_mergeM(arrAssign, site.StrPropE);
-        if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
-      }
-      if(in_array("transport", StrPlugInNArg)){
-        var StrTmp=site.StrTransportBool;
+    if(in_array("taxi", StrPlugInNArg)){
+      array_mergeM(arrAssign, site.StrPropE);
+      if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
+    }
+    if(in_array("transport", StrPlugInNArg)){
+      var StrTmp=site.StrTransportBool;
+      for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+      array_mergeM(arrAssign, ['payload'], StrTmp);
+      if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
+    }
+    if(intersectBool(["cleaner"], StrPlugInNArg)){ 
+      if(charRole=='c') { 
+        var StrTmp=oRole.StrPropE;
         for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
-        array_mergeM(arrAssign, ['payload'], StrTmp);
-        if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
+        array_mergeM(arrAssign, StrTmp);
       }
-      if(intersectBool(["cleaner"], StrPlugInNArg)){ 
-        if(charRole=='c') { 
-          var StrTmp=oRole.StrPropE;
-          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
-          array_mergeM(arrAssign, StrTmp);
-        }
+    }
+    if(intersectBool(["windowcleaner"], StrPlugInNArg)){ 
+      if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE); // 'nWindows', 'boCustomerHasEquipment'
+      if(charRole=='s') { 
+        var StrTmp=oRole.StrPropE;
+        for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+        array_mergeM(arrAssign, StrTmp);
       }
-      if(intersectBool(["windowcleaner"], StrPlugInNArg)){ 
-        if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE); // 'nWindows', 'boCustomerHasEquipment'
-        if(charRole=='s') { 
-          var StrTmp=oRole.StrPropE;
-          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
-          array_mergeM(arrAssign, StrTmp);
-        }
+    }
+    if(in_array("lawnmower", StrPlugInNArg)){ 
+      if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE);   // 'area', 'boCustomerHasEquipment'
+      if(charRole=='s') { 
+        var StrTmp=oRole.StrBool;
+        for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+        array_mergeM(arrAssign, StrTmp, ['cuttingWidth']);
       }
-      if(in_array("lawnmower", StrPlugInNArg)){ 
-        if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE);   // 'area', 'boCustomerHasEquipment'
-        if(charRole=='s') { 
-          var StrTmp=oRole.StrBool;
-          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
-          array_mergeM(arrAssign, StrTmp, ['cuttingWidth']);
-        }
+    }
+    if(in_array("snowremoval", StrPlugInNArg)){
+      if(charRole=='c') {
+        var StrTmp=oRole.StrBool;  //
+        for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+        array_mergeM(arrAssign, StrTmp, ['area']);
       }
-      if(in_array("snowremoval", StrPlugInNArg)){
-        if(charRole=='c') {
-          var StrTmp=oRole.StrBool;  //
-          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
-          array_mergeM(arrAssign, StrTmp, ['area']);
-        }
-        if(charRole=='s') { 
-          var StrTmp=oRole.StrBool;
-          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
-          array_mergeM(arrAssign, StrTmp);
-        }
+      if(charRole=='s') { 
+        var StrTmp=oRole.StrBool;
+        for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+        array_mergeM(arrAssign, StrTmp);
       }
-      if(in_array("fruitpicker", StrPlugInNArg)){ 
-        if(charRole=='c') arrAssign.push('fruit');
+    }
+    if(in_array("fruitpicker", StrPlugInNArg)){ 
+      if(charRole=='c') arrAssign.push('fruit');
+    }
+    if(in_array("programmer", StrPlugInNArg)){ 
+      if(charRole=='c') arrAssign.push('database', 'language');
+      if(charRole=='s') { 
+        var StrTmp=oRole.StrProgrammerLang;
+        for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1,2,3,4,5]; }
+        array_mergeM(arrAssign, StrTmp, ['otherLang']);
+        arrValRemove(arrAssign, 'experience');
       }
-      if(in_array("programmer", StrPlugInNArg)){ 
-        if(charRole=='c') arrAssign.push('database', 'language');
-        if(charRole=='s') { 
-          var StrTmp=oRole.StrProgrammerLang;
-          for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1,2,3,4,5]; }
-          array_mergeM(arrAssign, StrTmp, ['otherLang']);
-          arrValRemove(arrAssign, 'experience');
-        }
-      }
+    }
 
 
-      var SqlAllRole=Array(nData);
+    var SqlAllRole=Array(nData);
 
-      for(var i=0;i<nData;i++){
+    for(var i=0;i<nData;i++){
 
-        var StrName=[];
-        var StrIns=[];
-        for(var j=0;j<arrAssign.length;j++){
-          var name=arrAssign[j], QMark="?", value=0;
-          if(name in arrUser[i]) value=arrUser[i][name]; 
-          //if(name in person) value=person[name]; 
-          //else if(name in AddressT) value=AddressT[name];
-          else if('Enum' in PropBucket[name]){ value=makeEnumRandF(name);  }
-          else if('dateSpan' in PropBucket[name]){ value=makeDateRandF(name);  }
-          else if('RandSpanData' in PropBucket[name]){ value=makeRandSpanF(name);  }
-          else if('RandSpanDataPrice' in PropBucket[name]){ value=makeRandSpanPriceF(name);  }
-          else if('FixedData' in PropBucket[name]){ value=makeFixedF(name);  }
-          if(name in Prop && 'roleUpdF' in Prop[name]){ [QMark]=Prop[name].roleUpdF.call(Prop,name,value);  }
-          var valT=QMark.replace(/\?/,value);     
-          if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
-          
-          StrName.push("`"+name+"`");
-          StrIns.push(valT);
-        }
-        var strName=StrName.join(', ');
-        var strIns=StrIns.join(', ');  
-
-        var idTmp=i+1, sqlCurRole="("+idTmp+", "+strIns+")";
-
-        SqlAllRole[i]=sqlCurRole;
+      var StrName=[];
+      var StrIns=[];
+      for(var j=0;j<arrAssign.length;j++){
+        var name=arrAssign[j], QMark="?", value=0;
+        if(name in arrUser[i]) value=arrUser[i][name]; 
+        //if(name in person) value=person[name]; 
+        //else if(name in AddressT) value=AddressT[name];
+        else if('Enum' in PropBucket[name]){ value=makeEnumRandF(name);  }
+        else if('dateSpan' in PropBucket[name]){ value=makeDateRandF(name);  }
+        else if('RandSpanData' in PropBucket[name]){ value=makeRandSpanF(name);  }
+        else if('RandSpanDataPrice' in PropBucket[name]){ value=makeRandSpanPriceF(name);  }
+        else if('FixedData' in PropBucket[name]){ value=makeFixedF(name);  }
+        if(name in Prop && 'roleUpdF' in Prop[name]){ [QMark]=Prop[name].roleUpdF.call(Prop,name,value);  }
+        var valT=QMark.replace(/\?/,value);     
+        if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
         
+        StrName.push("`"+name+"`");
+        StrIns.push(valT);
       }
+      var strName=StrName.join(', ');
+      var strIns=StrIns.join(', ');  
 
-      var tmp=SqlAllRole.join(",\n");
-      SqlDummies.push("INSERT INTO "+roleTab+" (idUser, "+strName+") VALUES \n"+tmp);
+      var idTmp=i+1, sqlCurRole="("+idTmp+", "+strIns+")";
+
+      SqlAllRole[i]=sqlCurRole;
+      
+    }
+
+    var tmp=SqlAllRole.join(",\n");
+    Sql.push("INSERT INTO "+roleTab+" (idUser, "+strName+") VALUES \n"+tmp);
 
 
-    } // end of loop through ORole
-  } // end of loop through SiteName
-  return SqlDummies;
+  } // end of loop through ORole
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
 
 
-app.SetupSqlT.prototype.truncate=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
+app.SetupSql.prototype.truncate=function*(flow, siteName){
+  var site=Site[siteName];
   
-  var SqlTableTruncate=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite]
-  var site=Site[siteName]; 
+  var Sql=[];
 
   var StrTabName=object_values(site.TableName);
 
@@ -1910,27 +1939,28 @@ app.SetupSqlT.prototype.truncate=function(SiteName){
   for(var i=0;i<StrTabName.length;i++){
     SqlTmp.push(StrTabName[i]+" WRITE");
   }
+  Sql.push('SET FOREIGN_KEY_CHECKS=0');
   var tmp="LOCK TABLES "+SqlTmp.join(', ');
-  SqlTableTruncate.push(tmp);
+  Sql.push(tmp);
   for(var i=0;i<StrTabName.length;i++){
-    SqlTableTruncate.push("DELETE FROM "+StrTabName[i]);
-    SqlTableTruncate.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
+    Sql.push("DELETE FROM "+StrTabName[i]);
+    Sql.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
   }
-  SqlTableTruncate.push('UNLOCK TABLES');
-  }
-  return SqlTableTruncate;
+  Sql.push('UNLOCK TABLES');
+  Sql.push('SET FOREIGN_KEY_CHECKS=1');
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
 
-app.SetupSqlT.prototype.populateSetting=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
-  var SqlTab=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite];
+app.SetupSql.prototype.populateSetting=function*(flow, siteName){
   var site=Site[siteName]; 
+  var Sql=[];
   var {TableName}=site, {settingTab}=TableName;
 
-  SqlTab.push(`INSERT INTO `+settingTab+` VALUES
+  Sql.push(`INSERT INTO `+settingTab+` VALUES
   ('boShowTeam', '0'),
   ('tLastWriteOfHA', floor( UNIX_TIMESTAMP(now())/`+sPerDay+` )),
   ('tLastWriteOfBoShow', 0),
@@ -1938,48 +1968,47 @@ app.SetupSqlT.prototype.populateSetting=function(SiteName){
   ('nUser', '0'),
   ('boAllowEmailAccountCreation', '0')`); 
 
-  }
-  return SqlTab;
+
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
 
   // Called when --sql command line option is used
-app.SetupSqlT.prototype.doQuery=function*(flow, strCreateSql){
-  //var StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'populateSetting', 'truncate', 'createDummies'];  // , 'createDummy'
-  if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); console.log(tmp); return; }
+app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
+  if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); return [new Error(tmp)]; }
   var Match=RegExp("^(drop|create)?(.*?)$").exec(strCreateSql);
-  if(!Match) { debugger;  return; }
-
+  if(!Match) { debugger;  return [new Error("!Match")]; }
+  
   var boDropOnly=false, strMeth=Match[2];
   if(Match[1]=='drop') { boDropOnly=true; strMeth='create'+strMeth;}
   else if(Match[1]=='create')  { strMeth='create'+strMeth; }
   
-  if(!('default' in DB)) {console.log('no DB.default');}
-  this.myMySql=new MyMySql(DB.default.pool);
-  
-  var SqlA=this[strMeth](SiteName, boDropOnly); 
-  var strDelim=';', sql=SqlA.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);
-  var tmp=createMessTextOfMultQuery(SqlA, err, results);  console.log(tmp);
-  this.myMySql.fin();
-  if(err){ debugger;  return; }
+  if(strMeth=='createFunction'){ 
+    var [err]=yield* this.funcGen(flow, boDropOnly); if(err){  return [err]; }  // Create common functions
+  }
+  for(var iSite=0;iSite<SiteName.length;iSite++){
+    var siteName=SiteName[iSite];
+    console.log(siteName);
+    var [err]=yield* this[strMeth](flow, siteName, boDropOnly);  if(err){  return [err]; }
+  }
+  return [null];
 }
 
-
-var createMessTextOfMultQuery=function(Sql, err, results){
-  var nSql=Sql.length, nResults='na'; if(results instanceof Array) nResults=results.length;
-  var StrMess=[];   StrMess.push('nSql='+nSql+', nResults='+nResults);
+var writeMessTextOfMultQuery=function(Sql, err, results){
+  var nSql=Sql.length, nResults='(single query)'; if(results instanceof Array) nResults=results.length;
+  console.log('nSql='+nSql+', nResults='+nResults);
+  var StrMess=[];
   if(err){
     StrMess.push('err.index: '+err.index+', err: '+err);
     if(nSql==nResults){
       var tmp=Sql.slice(bound(err.index-1,0,nSql), bound(err.index+2,0,nSql)),  sql=tmp.join('\n');
-      StrMess.push('Since "Sql" and "results" seem correctly aligned (has the same size), then here, in the middle, is printed the query with the corresponding index (surounded by the preceding and following query to get a context):\n'+sql); 
+      StrMess.push('Since "Sql" and "results" seem correctly aligned (has the same size), then 3 queries are printed (the preceding, the indexed, and following query (to get a context)):\n'+sql); 
     }
+    console.log(StrMess.join('\n'));
   }
-  return StrMess.join('\n');
 }
-
-
 
 app.createDumpCommand=function(){ 
   var strCommand='', StrTabType=['seller','sellerTeam','sellerTeamImage','customer','customerTeam','customerTeamImage','userImage','complaint','admin','setting','user'];
