@@ -283,7 +283,7 @@ boat:'Boat'
 
 standingByMethods:['In vehicle','At home','5 min','10 min'],
 standingByMethodsLong:['In vehicle','At home','Ready in 5 min','Ready in 10 min'],
-compassPoint:['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+compassPoint:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
 
 ShowNUpdate:'Visible / New pos',
 visible:'visible',
@@ -390,6 +390,7 @@ tCreated:'Account age',
 displayName:'Name',
 tel:'Tel',
 displayEmail:'Email',
+boWebPushOK:'"Push Notifications" enabled',
 link:'Link',
 homeTown:'Home town',
 standingByMethod:'How is <span nom="theSeller">the seller</span> waiting',
@@ -465,7 +466,11 @@ experience:'Experience [years]',
 pushMower:'Push mower',
 ridingMower:'Riding mower',
 edger:'Edger',
-cuttingWidth:'Cutting width [cm]'
+cuttingWidth:'Cutting width [cm]',
+
+compassPoint:'Compass point',
+distStartToGoal:'Distance [km]',
+destination:'Destination'
 },
 
 
@@ -481,19 +486,20 @@ terminationDate:{label:'', boRot:1},
 donatedAmount:{label:'Don­ated amo­unt [USD]', boRot:0},
 tCreated:{label:'Acc­ount age', boRot:0},
 displayName:{label:'Name', boRot:0},
-tel:{label:'Tel', boRot:0},
-displayEmail:{label:'Email', boRot:0},
-link:{label:'Link', boRot:0},
+tel:{label:'☎', boRot:0}, //Tel
+displayEmail:{label:'Email', boRot:0}, //✉
+boWebPushOK:{label:'"Push Not­ifica­tions" enabled', boRot:0},
+link:{label:'Link', boRot:0}, //🔗
 homeTown:{label:'Home town', boRot:0},
 standingByMethod:{label:'How is <span nom="theSeller">the seller</span> waiting', boRot:0},
 //standingByMethod:{label:'How is the seller waiting', boRot:1},
 idDriverGovernment:{label:'Dri­ver-ID (gov)', boRot:0},
 vehicleType:{label:'Vehicle type', boRot:0},
 brand:{label:'Brand', boRot:0},
-nPassengers:{label:'Num­ber of pass­engers', boRot:0},
+nPassengers:{label:'Num­ber of pass­engers', boRot:0}, //💺
 nExtraSeat:{label:'Extra seats', boRot:0},
 nChildSeat:{label:'Child seats', boRot:0},
-nWheelChairPlaces:{label:'Wheel­chair places', boRot:0},
+nWheelChairPlaces:{label:'Wheel­chair places', boRot:0}, //♿
 currency:{label:'Cur­ren­cy', boRot:0},
 priceStart:{label:'Start price', boRot:0},
 strUnitDist:{label:'Dist­ance unit', boRot:0},
@@ -558,7 +564,11 @@ experience:{label:'Exper­ience [years]', boRot:0},
 pushMower:{label:'Push mower', boRot:0},
 ridingMower:{label:'Ri­ding mower', boRot:0},
 edger:{label:'Edger', boRot:0},
-cuttingWidth:{label:'Cut­ting width [cm]', boRot:0}
+cuttingWidth:{label:'Cut­ting width [cm]', boRot:0},
+
+compassPoint:{label:'Com­pass point', boRot:0},
+distStartToGoal:{label:'Dist­ance [km]', boRot:0},
+destination:{label:'Dest­ina­tion', boRot:0}
 },
 
 
@@ -576,6 +586,7 @@ tCreated:'How long since the account was created.',
 displayName:'',
 tel:'',
 displayEmail:'',
+boWebPushOK:'"push notifications". (Note! these messages aren\'t saved, use email or sms if you want the messages to be saved.)',
 link:'If the user has an own webpage.',
 homeTown:'',
 standingByMethod:'',

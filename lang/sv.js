@@ -283,7 +283,7 @@ boat:'Båt'
 
 standingByMethods:['I fordon','Hemma','5 min','10 min'],
 standingByMethodsLong:['I fordon','Hemma','Redo om 5 min','Redo om 10 min'],
-compassPoint:['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+compassPoint:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
 
 ShowNUpdate:'Synlig / Ny pos',
 visible:'synlig',
@@ -385,6 +385,7 @@ tCreated:'Kontoålder',
 displayName:'Namn',
 tel:'Tel',
 displayEmail:'Email',
+boWebPushOK:'"Push Notifications" påslaget',
 link:'Länk',
 homeTown:'Hemstad',
 standingByMethod:'Hur väntar <span nom="theSeller">entreprenören</span>',
@@ -460,7 +461,11 @@ experience:'Erfarenhet [år]',
 pushMower:'Vanlig gräsklippare',
 ridingMower:'Åkgräsklippare',
 edger:'Kantklippare',
-cuttingWidth:'Klippbredd [cm]'
+cuttingWidth:'Klippbredd [cm]',
+
+compassPoint:'Riktning',
+distStartToGoal:'Distans [km]',
+destination:'Destination'
 },
 
 
@@ -478,6 +483,7 @@ tCreated:'Hur länge sedan skapades kontot',
 displayName:'',
 tel:'',
 displayEmail:'Email',
+boWebPushOK:'Användaren tillåter "push-notifications" (popup-meddelanden). (Obs! dessa meddelande sparas inte, använd email eller sms om du vill att meddelandena ska sparas)',
 link:'Om användaren har en egen sida.',
 homeTown:'',
 standingByMethod:'',

@@ -30,7 +30,7 @@ if(boDbg) hideTimerDefault=30*60;
 hideTimerDefault=intMax;
 
    // DB- TableNameProt
-StrTableKey=["seller","sellerTeam","sellerTeamImage","customer","customerTeam","customerTeamImage","userImage","complaint","admin","setting","user"]; 
+StrTableKey=["seller","sellerTeam","sellerTeamImage","customer","customerTeam","customerTeamImage","userImage","complaint","admin","webPushSubscription","user","setting"]; 
 StrViewsKey=["hist"]; 
 TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
 ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
@@ -102,7 +102,7 @@ preDefault="ro.";
 //snoreLim=12*3600;
 snoreLim=20*24*3600;
 boShowTeam=0;
-version='364';
+version='366';
 auto_increment_increment=1;
 
 
@@ -111,7 +111,9 @@ auto_increment_increment=1;
  ***********************************************************************************/
 // Properties with "feat" are used in filterDiv
 // Properties with "type" are in roleTab (customer/seller) (also have b[6] == "1")
- 
+
+// Both in userTab and roleTab: tCreated, boWebPushOK, donatedAmount, nComplaintGivenCum, nComplaintGiven, nComplaintCum, nComplaint
+
 PluginF={};
 PluginF.general=function(site){
   var [oC,oS]=site.ORole;
@@ -127,11 +129,11 @@ PluginF.general=function(site){
   idFB:                {b:'000011000'},
   idIdPlace:           {b:'000011000'},
   idOpenId:            {b:'000011000'},
-  donatedAmount:       {b:'001111000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
+  donatedAmount:       {b:'011111110',type:'DOUBLE', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
   boShow:              {b:'110000110',type:'TINYINT', default:0},
   tCreated:            {b:'011111101',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP', feat:{kind:'S10',min:arrTCreatedMin, bucketLabel:arrTCreatedLabel}},
   tPos:                {b:'011011101',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP', feat:{kind:'S01',min:arrTPosMin, bucketLabel:arrTPosLabel}},
-  histActive:          {b:'001110111',type:'BIGINT UNSIGNED', default:0},  // feat:{kind:'S10',min:[0,1,2,4,6,10,15,20,24,26,28,29,30]}},
+  histActive:          {b:'011110111',type:'BIGINT UNSIGNED', default:0},  // feat:{kind:'S10',min:[0,1,2,4,6,10,15,20,24,26,28,29,30]}},
   tLastWriteOfTA:      {b:'000000110',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP'},  // tLastWriteOfTimeAccumulated 
   tAccumulated:        {b:'011110111',type:'INT(8) UNSIGNED', default:0, feat:{kind:'S10',min:arrTAccumulatedMin, bucketLabel:arrTAccumulatedLabel}},
   hideTimer:           {b:'110000110',type:'INT(8)', default:hideTimerDefault},  // Not UNSIGNED because mysql cant have uint in expressions that end up negative
@@ -153,21 +155,24 @@ PluginF.general=function(site){
   image:               {b:'001000010'},
   
   displayEmail:        {b:'111110110',type:'VARCHAR(65)', default:''},
+  boWebPushOK:         {b:'011001110',type:'BOOL', default:0, feat:{kind:'BN',span:1}},
 
 
   imTagTeam:           {b:'011000000'},
-  idTeam:              {b:'011000111',type:'INT(4)', default:0, feat:{kind:'BN'}},
-  idTeamWanted:        {b:'110000110',type:'INT(4)', default:0},
+  idTeam:              {b:'011000111',type:'INT(4) UNSIGNED', default:0, feat:{kind:'BN'}},
+  idTeamWanted:        {b:'110000110',type:'INT(4) UNSIGNED', default:0},
   boImgOwn:            {b:'001000000'},
   linkTeam:            {b:'101000000'},
-  nComplaint:          {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
-  nComplaintCum:       {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
-  nComplaintGiven:     {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
-  nComplaintGivenCum:  {b:'001110000', feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
+  nComplaint:          {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
+  nComplaintCum:       {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
+  nComplaintGiven:     {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
+  nComplaintGivenCum:  {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
   coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:1000},
   dist:                {b:'000010000'},
-  experience:          {b:'111011111',type:'INT(4)', default:0, feat:{kind:'BN'}}
+  experience:          {b:'111011111',type:'INT(4) UNSIGNED', default:0, feat:{kind:'BN'}}
   };
+  
+
   
     // StrOrder: Order of arguments in roleTab (Object.keys may give unpredictable order)
   var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'hideTimer', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'pubKey', 'iSeq'
@@ -178,18 +183,21 @@ PluginF.general=function(site){
         
   // Should be moved to userTab: tPos?, x, y
   
-  PropTmp.idUser.pre='u.';
+  //PropTmp.idUser.pre='u.';
   PropTmp.idFB.pre='u.';
   PropTmp.idIdPlace.pre='u.';
   PropTmp.idOpenId.pre='u.';
   PropTmp.image.pre='u.';
   PropTmp.boImgOwn.pre='u.';
   PropTmp.displayName.pre='u.';
-  PropTmp.donatedAmount.pre='u.';
-  PropTmp.nComplaint.pre='u.';
-  PropTmp.nComplaintCum.pre='u.';
-  PropTmp.nComplaintGiven.pre='u.';
-  PropTmp.nComplaintGivenCum.pre='u.';
+  PropTmp.imTag.pre='u.';
+  
+    // These "pre" are denormalized, so they occur in resp role tab
+  //PropTmp.donatedAmount.pre='u.';
+  //PropTmp.nComplaint.pre='u.';
+  //PropTmp.nComplaintCum.pre='u.';
+  //PropTmp.nComplaintGiven.pre='u.';
+  //PropTmp.nComplaintGivenCum.pre='u.';
 
   //PropTmp.tPos.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" HOUR)"; return name+"<="+val;};
   //PropTmp.tCreated.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+"<="+val;};
@@ -209,17 +217,17 @@ PluginF.general=function(site){
 
   PropTmp.tCreated.selOneF=function(){ return "UNIX_TIMESTAMP(ro.tCreated)";};
   //PropTmp.nPayment.selOneF=function(){ return '0';};
-  PropTmp.idUser.selOneF=function(){ return "ro.idUser";};
-  //PropTmp.idUser.selOneF=function(){ return "(@idUser:=u.idUser)";};
-  PropTmp.link.selOneF=function(){ return "ro.link";};
-  PropTmp.imTag.selOneF=function(){ return "u.imTag";};
+  //PropTmp.idUser.selOneF=function(){ return "ro.idUser";};
+  //PropTmp.link.selOneF=function(){ return "ro.link";}; // Because link is a column in tea too
+  //PropTmp.imTag.selOneF=function(){ return "u.imTag";};
   PropTmp.imTagTeam.selOneF=function(){ return "tea.imTag";};
+  PropTmp.linkTeam.selOneF=function(){return "tea.link";};
   PropTmp.tPos.selOneF=PropTmp.tLastWriteOfTA.selOneF=PropTmp.tLastPriceChange.selOneF=selTimeF;  //=PropTmp.terminationDate.selOneF
 
   PropTmp.tCreated.selF=function(){ return "UNIX_TIMESTAMP(ro.tCreated)";};
   //PropTmp.idUser.selF=function(){ return "u.idUser";};
-  PropTmp.link.selF=function(){ return "ro.link";};
-  PropTmp.imTag.selF=function(){ return "u.imTag";};
+  PropTmp.link.selF=function(){ return "ro.link";}; // Because link is a column in tea too
+  //PropTmp.imTag.selF=function(){ return "u.imTag";};
   PropTmp.imTagTeam.selF=function(){return "tea.imTag";};
   PropTmp.linkTeam.selF=function(){return "tea.link";};
   //PropTmp.nComplaint.selF=function(){return "sum(rb.tCreated IS NOT NULL)";};
@@ -308,12 +316,12 @@ PluginF.transportCustomer=function(site){
   
     // oC ////////////////////
   var Prop=oC.Prop;
-  var tmpEnumCompassPoint=['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  var tmpEnumCompassPoint=["-", 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   //var tmpEnumCompassPoint=['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
   //                         012345678
   var PropTmp={
-    distStartToGoal:     {b:'111010111',type:'SMALLINT(2)',default:4, feat:{kind:'S11',min:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40],span:1}},
     compassPoint:        {b:'111000110',type:'ENUM', default:tmpEnumCompassPoint[0], feat:{kind:'BF',bucket:tmpEnumCompassPoint}},
+    distStartToGoal:     {b:'111010111',type:'SMALLINT(2)',default:4, feat:{kind:'S11',min:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40],span:1}},
     destination:         {b:'111110110',type:'VARCHAR(65)', default:'', feat:{kind:'B'}},
     //price:               {b:'111011111',type:'DECIMAL(10,2)', default:0}
   };
@@ -323,7 +331,7 @@ PluginF.transportCustomer=function(site){
   Prop.compassPoint.selF=selEnumF;
   Prop.compassPoint.selOneF=selEnumF;
   Prop.compassPoint.roleUpdF=updEnumBoundF;
-  oC.StrTransportCustomer=['distStartToGoal','compassPoint','destination']; // ,'price'
+  oC.StrTransportCustomer=['compassPoint','distStartToGoal','destination']; // ,'price'
   var StrTmp=Object.keys(PropTmp);
   array_mergeM(oC.StrFiltAccept, StrTmp);
   array_mergeM(oC.StrOrder, StrTmp);
@@ -714,16 +722,23 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
   for(var i=0;i<ORole.length;i++){
     var oRole=ORole[i], Prop=oRole.Prop;
     oRole.KeyCol=Object.keys(Prop);   oRole.nCol=oRole.KeyCol.length;   oRole.colsFlip=array_flip(oRole.KeyCol);
-    oRole.KeySel=filterPropKeyByB(Prop, oRole.bFlip.DBSel); // KeySel: the data (columns) of MTab that is transfered from server to client
+    var KeySel=oRole.KeySel=filterPropKeyByB(Prop, oRole.bFlip.DBSel); // KeySel: the data (columns) of MTab that is transfered from server to client
 
     featCalcValExtend(oRole.Prop);
     var arrAllowed=[];for(var name in Prop ){ var arr=Prop[name]; if(Number(arr.b[oRole.bFlip.input])) arrAllowed.push(name);} oRole.arrAllowed=arrAllowed;
       
       // Completeing oRole.StrOrder (The key order of an object varies, so StrOrder is assigned separatly to make the order more predictable.)
-	for(var j=0;j<oRole.KeyCol.length;j++) {
+    for(var j=0;j<oRole.KeyCol.length;j++) {
       var strKey=oRole.KeyCol[j]; if(oRole.StrOrder.indexOf(strKey)==-1) oRole.StrOrder.push(strKey);
-	}
+    }
 
+    var arrCol=[];
+    for(var j=0;j<KeySel.length;j++) {
+      var key=KeySel[j], b=Prop[key].b, pre=Prop[key].pre||preDefault;
+      var tmp; if('selF' in Prop[key]) { tmp=Prop[key].selF(pre+key);  }   else tmp=pre+"`"+key+"`";
+      arrCol.push(tmp+" AS "+"`"+key+"`");
+    }
+    oRole.strCol=arrCol.join(', ');
   }
   
   site.TableName={};   for(var name in TableNameProt){  site.TableName[name+"Tab"]=siteName+'_'+name; }
@@ -734,6 +749,7 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
   //site.db=siteName in DB?siteName:'default';
   //var db=siteName in DB?DB[siteName]:DB.default;  site.pool=db.pool;
 }
+
 
 
 SiteExtend=function(){
@@ -761,9 +777,9 @@ SiteExtend=function(){
     else StrPlugInNArg=['general'];
     
     for(var j=0;j<StrPlugInNArg.length;j++){
-	  var nameT=StrPlugInNArg[j], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
-	  PluginF[nameT](site, charRoleUC);
-	}
+      var nameT=StrPlugInNArg[j], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+      PluginF[nameT](site, charRoleUC);
+    }
     siteCalcValExtend(site,siteName);
     site.StrPlugInNArg=StrPlugInNArg;
 

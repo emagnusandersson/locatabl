@@ -1,4 +1,6 @@
 
+
+
 http = require("http");
 https = require('https');
 url = require("url");
@@ -29,6 +31,7 @@ ip = require('ip');
 Streamify = require('streamify-string');
 validator = require('validator');
 serialize = require('serialize-javascript');
+webPush = require('web-push');
 var argv = require('minimist')(process.argv.slice(2));
 app=(typeof window==='undefined')?global:window;
 
@@ -40,7 +43,7 @@ require('./libMysql.js');
 require('./libServer.js');
 require('./lib/foundOnTheInternet/sha1.js');
 
-//require('./store.js');
+
 
 strAppName='tracker';
 extend=util._extend;
@@ -77,11 +80,14 @@ if(  (urlRedis=process.env.REDISTOGO_URL)  || (urlRedis=process.env.REDISCLOUD_U
 }
 
 
+  // WebPush subscription (for testing)
+var globSubscription=null;
+
 //strCookieProp="; SameSite=Lax; HttpOnly";
 
 var StrCookiePropProt=["HttpOnly", "Path=/","max-age="+3600*24*30];
 //if(boDO) { StrCookiePropProt.push("secure"); }
-var StrCookiePropStrict=StrCookiePropProt.concat("SameSite=Strict"),   StrCookiePropLax=StrCookiePropProt.concat("SameSite=Lax"),   StrCookiePropNormal=StrCookiePropProt.concat();
+var StrCookiePropStrict=StrCookiePropProt.concat("SameSite=Strict"),   StrCookiePropLax=StrCookiePropProt.concat("SameSite=Lax"),   StrCookiePropNormal=StrCookiePropProt.concat(); //"SameSite=None"
 strCookiePropStrict=";"+StrCookiePropStrict.join(';');  strCookiePropLax=";"+StrCookiePropLax.join(';');  strCookiePropNormal=";"+StrCookiePropNormal.join(';');
 
 var flow=( function*(){
@@ -126,8 +132,13 @@ var flow=( function*(){
   if('levelMaintenance' in process.env) levelMaintenance=process.env.levelMaintenance;
   SiteName=Object.keys(Site);
 
+    // Set up mail
   sgMail.setApiKey(apiKeySendGrid);
   //objSendgrid  = sendgrid(sendgridName, sendgridPassword);
+  
+  
+    // Set up webPush
+  webPush.setVapidDetails('https://closeby.market', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
   require('./filterServer.js'); 
   require('./variablesCommon.js');
@@ -156,7 +167,7 @@ var flow=( function*(){
 
 
   CacheUri=new CacheUriT();
-  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientPubKeyStore.js', 'stylesheets/style.css']; //, 'clientMergeID.js'
+  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientPubKeyStore.js', 'stylesheets/style.css', 'serviceworker.js']; //, 'clientMergeID.js'
   splitterPlugIn=new SplitterPlugIn();
   for(var i=0;i<StrFilePreCache.length;i++) {
     var [err]=yield *readFileToCache(flow, StrFilePreCache[i]); if(err) {  console.error(err);  return;}
@@ -171,7 +182,7 @@ var flow=( function*(){
         var [err]=yield* splitterPlugIn.readFileToCacheClientJs(flow); if(err) console.error(err);
       })(); flow.next();
     });
-    fs.watch('.', makeWatchCB('.', ['filter.js', 'clientPubKeyStore.js', 'libClient.js']) );
+    fs.watch('.', makeWatchCB('.', ['filter.js', 'clientPubKeyStore.js', 'libClient.js', 'lib.js', 'serviceworker.js']) );
     fs.watch('stylesheets', makeWatchCB('stylesheets', ['style.css']) );
     fs.watch('lang', makeWatchCB('lang', ['en.js', 'sv.js']) );
   }
@@ -182,7 +193,7 @@ var flow=( function*(){
   ETagImage={};
 
   regexpLib=RegExp('^/(stylesheets|lib|pluginLib|Site|lang)/');
-  regexpLooseJS=RegExp('^/(lib|libClient|client|clientProt|clientPubKeyStore|filter|siteSpecific)\\.js'); //|clientMergeID
+  regexpLooseJS=RegExp('^/(lib|libClient|client|clientProt|clientPubKeyStore|filter|siteSpecific|serviceworker)\\.js'); //|clientMergeID
   regexpPlugin=RegExp('^/plugin(\\w+)\\.js');
 
   regexpHerokuDomain=RegExp("\\.herokuapp\\.com$");
@@ -314,6 +325,35 @@ var flow=( function*(){
       else if(pathName=='/debug'){    debugger  }
       else if(pathName=='/prev.html'){        yield* reqPrev.call(objReqRes);        }
       else if(pathName=='/'+googleSiteVerification) res.end('google-site-verification: '+googleSiteVerification);
+      //else if(pathName=='/vapidPublicKey'){    res.end(VAPID_PUBLIC_KEY);   }
+      else if(pathName=='/register'){
+        var jsonInput=yield* app.getPost(req.flow,req);
+        try{ var objT=JSON.parse(jsonInput); }catch(e){ res.out500(e);  return; }
+        req.body=objT;
+        globSubscription = req.body.subscription;
+        res.outCode(201);
+      }
+      else if(pathName=='/sendNotification'){
+        var jsonInput=yield* app.getPost(req.flow,req);
+        try{ var objT=JSON.parse(jsonInput); }catch(e){ res.out500(e);  return; }
+        req.body=objT;
+        const subscription = req.body.subscription||globSubscription;
+        const payload = null;
+        const options = {
+          TTL: req.body.ttl
+        };
+
+        setTimeout(function() {
+          webPush.sendNotification(subscription, payload, options)
+          .then(function() {
+            res.outCode(201);
+          })
+          .catch(function(error) {
+            res.outCode(500);
+            console.log(error);
+          });
+        }, req.body.delay * 1000);
+      }
       else {res.out404("404 Not Found\n"); return; }
       objReqRes.myMySql.fin();
       

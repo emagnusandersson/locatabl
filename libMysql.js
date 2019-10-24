@@ -117,21 +117,18 @@ app.accountMerge=function*(objArg){
     var sql=`
       -- Create a table tmpA with only the involved idMerge's
     DROP TABLE IF EXISTS tmpA;
-    CREATE TEMPORARY TABLE tmpA ( idMerge int(4) NOT NULL, idAlt int(4) NOT NULL ) ENGINE=INNODB;
-    INSERT INTO tmpA SELECT $strColToMerge, $strColAlt FROM $strTab WHERE $strColToMerge IN($strToMergeAll);
-
+    CREATE TEMPORARY TABLE tmpA AS SELECT $strColToMerge AS idMerge, $strColAlt AS idAlt FROM $strTab WHERE $strColToMerge IN($strToMergeAll);
 
       -- Create a table tmpB with the idAlts that have multiple entries in tmpA
     DROP TABLE IF EXISTS tmpB;
-    CREATE TEMPORARY TABLE tmpB ( idAlt int(4) NOT NULL ) ENGINE=INNODB;
-    INSERT INTO tmpB SELECT idAlt
+    CREATE TEMPORARY TABLE tmpB AS SELECT idAlt
         FROM 
         (SELECT idAlt, COUNT(*) AS Counter 
          FROM tmpA 
          GROUP BY idAlt) AS tbl WHERE Counter>1;
 
     DELETE t FROM $strTab t JOIN tmpB tB ON t.$strColAlt=tB.idAlt WHERE $strColToMerge IN ($strToMergeObs);`;
-      
+    
     var ValUObs=ValU.concat();  ValUObs.splice(iBestU,1);
     var sql=myParser(sql, {strTab:complaintTab, strColToMerge:'idComplainer', strColAlt:'idComplainee', strToMergeAll:ValU.join(','), strToMergeObs:ValUObs.join(',')});
     var [err, results]=yield* this.myMySql.query(flow, sql, ValU); if(err) return [err];
@@ -143,7 +140,9 @@ app.accountMerge=function*(objArg){
     Sql.push('SELECT @n:=COUNT(*) FROM '+complaintTab+' WHERE idComplainee=?;');
     Sql.push('SELECT @nW:=COUNT(*) FROM '+complaintTab+' WHERE idComplainer=?;');
     Sql.push('UPDATE '+userTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
-    var sql=Sql.join('\n'), Val=[idUserUBest, idUserUBest, idUserUBest];
+    Sql.push('UPDATE '+customerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
+    Sql.push('UPDATE '+sellerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
+    var sql=Sql.join('\n'), Val=Array(5).fill(idUserUBest);
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
     
       
@@ -154,10 +153,14 @@ app.accountMerge=function*(objArg){
     var [err, results]=yield* this.myMySql.query(flow, sql, ValUObs); if(err) return [err];
     var c=results.affectedRows; StrMes.push(c+" rows from userTab deleted.");
     
-    var sql="UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=?, donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;"; // , nComplaint=?, nComplaintGiven=?
+    var Sql=[];
+    Sql.push("UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=?, donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;"); // , nComplaint=?, nComplaintGiven=?
     var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image, donatedAmount, nComplaintCum, nComplaintGivenCum, idUserUBest];  // , nComplaint, nComplaintGiven
+    Sql.push("UPDATE "+customerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
+    Sql.push("UPDATE "+sellerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
+    var sql=Sql.join('\n'), arrT=[donatedAmount, nComplaintCum, nComplaintGivenCum, idUserUBest];  Val.push(...arrT,...arrT);
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-    var c=results.affectedRows; StrMes.push(c+" rows from userTab updated.");
+    var c=results[0].affectedRows; StrMes.push(c+" rows from userTab updated.");
     Ou.idUser=idUserUBest;
   }
   return [null,Ou];

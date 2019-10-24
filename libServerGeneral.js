@@ -253,3 +253,25 @@ app.myAttrEscape=function(str){return str.replace(/&/g,"&amp;").replace(/</g,"&l
 app.myLinkEscape=function(str){ str=myAttrEscape(str); if(str.startsWith('javascript:')) str='javascript&#58;'+str.substr(11); return str; }
 
 
+app.getPost=function*(flow, req){
+  var jsonInput;
+  if('x-type' in req.headers ){ //&& req.headers['x-type']=='single'
+    var form = new formidable.IncomingForm();
+    form.multiples = true;  
+    //form.uploadDir='tmp';
+    
+    var err, fields, files;
+    var semY=0, semCB=0;  form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
+    if(err){this.mesEO(err);  return; } 
+    
+    this.File=files['fileToUpload[]'];
+    if('kind' in fields) this.kind=fields.kind; else this.kind='s';
+    if(!(this.File instanceof Array)) this.File=[this.File];
+    jsonInput=fields.vec;
+
+  }else{
+    var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
+    jsonInput=buf.toString();
+  }
+  return jsonInput;
+}

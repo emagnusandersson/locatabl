@@ -150,7 +150,7 @@ EventTarget.prototype.off=function(){ this.removeEventListener.apply(this, [...a
 //if(!Node.prototype.append) Node.prototype.append=Node.prototype.appendChild;
 if(!Node.prototype.prepend) Node.prototype.prepend=function(el){ this.insertBefore(el, this.firstChild);  }
 Node.prototype.myAppend=function(){ this.append.apply(this, [...arguments]); return this; }
-Node.prototype.myAppendB=function(){
+Node.prototype.myAppendHtml=function(){
   var arg=[...arguments], elTmp=null, argB=[];
   arg.forEach(ele=>{
     if(typeof ele=='string') {
@@ -490,4 +490,129 @@ var makeTextCanvas=function(strText,rot){
   //var uri=canvas.toDataURL();  return $('<img>').attr(src,uri);
 }
 
+//
+// Other
+//
 
+app.urlBase64ToUint8Array=function(base64String){
+  const padding='='.repeat((4-base64String.length%4) % 4);
+  const base64=(base64String+padding).replace(/\-/g, '+').replace(/_/g, '/');
+
+  const rawData=window.atob(base64);
+  const outputArray=new Uint8Array(rawData.length);
+
+  for(let i=0; i<rawData.length; ++i){ outputArray[i]=rawData.charCodeAt(i); }
+  return outputArray;
+}
+
+
+        
+var MyWebPush=function(){
+  var self=this;
+  var subscription=self.subscription=null;
+  self.swRegistration=null;
+  
+  self.registerSW=function(){
+    navigator.serviceWorker.register('serviceworker.js').then(function(swReg){
+      self.swRegistration=swReg;
+      //navigator.serviceWorker.controller.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+      //swReg.active.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+      //navigator.serviceWorker.onmessage=function(e){
+        //console.log('Message received from worker: '+JSON.stringify(e.data));
+        //if('cbOnMessage' in self) self.cbOnMessage(e.data);
+      //}
+      //navigator.serviceWorker.on('message', function(e){ console.log('Message received from worker: '+JSON.stringify(e.data)); })//addEventListener
+    }, (err)=>console.log(err));
+    navigator.serviceWorker.ready.then(function(swReg) { 
+      swReg.active.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+      navigator.serviceWorker.onmessage=function(e){
+        console.log('Message received from worker: '+JSON.stringify(e.data));
+        if('cbOnMessage' in self) self.cbOnMessage(e.data);
+      }
+    });
+  }
+
+  self.subscribeUser=function(){
+    var flow=(function*(){
+      const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
+        // Use the PushManager to get the user’s subscription to the push service.
+      var semY=0, semCB=0, err=null;  self.swRegistration.pushManager.getSubscription()
+      .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
+      if(err){ cbFunW(err); return;}
+      
+      if(!subscription) {
+        const convertedVapidKey=urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+          // Subscribe the user (userVisibleOnly allows to specify that we don’t plan to send notifications that don’t have a visible effect for the user).
+        var semY=0, semCB=0, err=null;  self.swRegistration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedVapidKey })
+        .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
+        if(err){ cbFunW(err); return;}
+      }
+      self.boSubscribed=true;  cbFunW(null);
+    })(); flow.next();
+  }
+  self.unsubscribeUser=function(){
+    var flow=(function*(){
+      const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
+        // Use the PushManager to get the user’s subscription to the push service.
+      var semY=0, semCB=0, err=null;  self.swRegistration.pushManager.getSubscription()
+      .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
+      if(err){ cbFunW(err); return;}
+      
+      if(subscription) {
+        var semY=0, semCB=0, err=null;  subscription.unsubscribe()
+        .then(function() { self.subscription=subscription=null;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
+        if(err){cbFunW(err); return;}
+      }
+      
+      self.boSubscribed=false; cbFunW(null);
+    })(); flow.next();
+  }
+  const cbFunW=function(err){ if('cbFun' in self) self.cbFun(err, self.elSpan);}
+  
+
+  self.togglePushNotifications=function(elSpan){
+    //if(typeof self.boSubscribed=='undefined') {console.log("typeof self.boSubscribed=='undefined'");return;}
+    self.elSpan=elSpan;
+    if(self.boSubscribed) self.unsubscribeUser(); else self.subscribeUser();
+  }
+  
+  self.checkSupport=function(){
+      // Check if PushManager is supported.
+    if(!('PushManager' in window)){ const tmp="!('PushManager' in window)"; return [tmp, false];}
+
+      // Check if serviceWorker is supported.
+    if(!('serviceWorker' in navigator)){const tmp="!('serviceWorker' in navigator)"; return [tmp, false];}
+    
+      // Check if 'Notification' in window.
+    if(!('Notification' in window)){ const tmp="!('Notification' in window)"; return [tmp, false];}
+      // Check if 'permission' in Notification.
+    if(!('permission' in Notification)){ const tmp="!('permission' in Notification)";  return [tmp, false];}
+    return [null, true];
+  }
+  self.boPushSupported=true; const [err]=self.checkSupport(); if(err){console.log(err); self.boPushSupported=false; }
+}
+
+
+
+class SpanInpWebPushToggle{
+  constructor(myCB, myCBOne){
+    var span=createElement('span');
+    span.myCB=myCB; span.myCBOne=myCBOne;
+    const cbClick=function(){ this.disabled=true; this.blur(); myWebPush.togglePushNotifications(this.parentNode);}
+    span.mySet=function(){
+      if(!('Notification' in window)) {checkbox.hide(); spanBlocked.hide(); spanNotSupported.show(); return;}
+      const boSubscribed=myWebPush.boSubscribed;
+      const boDenied=Notification.permission==='denied', boGranted=Notification.permission==='granted', boDefault=Notification.permission==='default';
+      spanBlocked.toggle(boDenied); checkbox.toggle(!boDenied);
+      var boOn=boGranted&&boSubscribed;   checkbox.checked=boOn;
+      checkbox.disabled=false;
+    }
+    var checkbox=createElement('input').prop({type:'checkbox', disabled:true}).on('click', cbClick);
+    var spanBlocked=createElement('span').myText('Blocked').css({'background-color':'lightgrey', padding:'0.4em'}).hide();
+    var spanNotSupported=createElement('span').myText('Not supported by this browser').css({'background-color':'lightgrey', padding:'0.2em'}).hide();
+    span.append(createFragment(checkbox, spanBlocked, spanNotSupported));
+    SpanInpWebPushToggle.Span.push(span);
+    return span;
+  }
+}
+SpanInpWebPushToggle.Span=[];
