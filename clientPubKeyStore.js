@@ -167,7 +167,8 @@ var majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serve
   xhr.open('POST', uBE, true);
   xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
   var arrRet=[]; vecIn.forEach(function(el,i){var f=null; if(el.length==3) f=el.pop(); arrRet[i]=f;}); // Put return functions in a separate array
-  vecIn.push(['CSRFCode',CSRFCode]);
+  //vecIn.push(['CSRFCode',CSRFCode]);
+  vecIn.push(['CSRFCode',getItem('CSRFCode')]);
   vecIn.push(['caller',caller]);
   if(vecIn.length==2 && vecIn[0][1] instanceof FormData){
     var formData=vecIn[0][1]; vecIn[0][1]=0; // First element in vecIn contains the formData object. Rearrange it as "root object" and add the remainder to a property 'vec'
@@ -212,7 +213,8 @@ var beRet=function(data){
 app.GRet=function(data){
   var tmp;
   tmp=data.strMessageText;   if(typeof tmp!="undefined") setMess(tmp);
-  tmp=data.CSRFCode;   if(typeof tmp!="undefined") CSRFCode=tmp;
+  //tmp=data.CSRFCode;   if(typeof tmp!="undefined") CSRFCode=tmp;
+  if('CSRFCode' in data) setItem('CSRFCode',data.CSRFCode);
   tmp=data.sessionLoginIdP; if(typeof tmp!="undefined") {sessionLoginIdP=tmp;}
   tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }   }
   

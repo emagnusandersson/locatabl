@@ -218,26 +218,27 @@ ReqBE.prototype.go=function*(){
     // Extract input data either 'POST' or 'GET'
   var jsonInput;
   if(req.method=='POST'){ 
-    if('x-type' in req.headers ){ //&& req.headers['x-type']=='single'
-      var form = new formidable.IncomingForm();
-      form.multiples = true;  
-      //form.uploadDir='tmp';
+    jsonInput=yield* app.getPost(req.flow, req);
+    //if('x-type' in req.headers ){ //&& req.headers['x-type']=='single'
+      //var form = new formidable.IncomingForm();
+      //form.multiples = true;  
+      ////form.uploadDir='tmp';
       
-      var err, fields, files;
-      var semY=0, semCB=0;  form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
-      //form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; flow.next();  });  yield;
+      //var err, fields, files;
+      //var semY=0, semCB=0;  form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
+      ////form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; flow.next();  });  yield;
   
-      if(err){this.mesEO(err);  return; } 
+      //if(err){this.mesEO(err);  return; } 
       
-      this.File=files['fileToUpload[]'];
-      if('kind' in fields) this.kind=fields.kind; else this.kind='s';
-      if(!(this.File instanceof Array)) this.File=[this.File];
-      jsonInput=fields.vec;
+      //this.File=files['fileToUpload[]'];
+      //if('kind' in fields) this.kind=fields.kind; else this.kind='s';
+      //if(!(this.File instanceof Array)) this.File=[this.File];
+      //jsonInput=fields.vec;
 
-    }else{
-      var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
-      jsonInput=buf.toString();
-    }
+    //}else{
+      //var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
+      //jsonInput=buf.toString();
+    //}
   }
   else if(1){ this.mesO('send me a POST'); return; }
   //else if(req.method=='GET'){ var objUrl=url.parse(req.url), qs=objUrl.query||''; jsonInput=urldecode(qs); }
@@ -261,7 +262,7 @@ ReqBE.prototype.go=function*(){
   
   var luaCountFunc=`local c=redis.call('GET',KEYS[1]); if(c) then redis.call('EXPIRE',KEYS[1], ARGV[1]); end; return c`;
   var [err, value]=yield* cmdRedis(flow, 'EVAL',[luaCountFunc, 1, req.sessionID+'_LoginIdP', maxLoginUnactivity]);   this.sessionLoginIdP=value?JSON.parse(value):{};
-  
+  //try{ var data = JSON.parse(value); }catch(e){ return [e]; }
   
   
   res.setHeader("Content-type", MimeType.json);
@@ -281,8 +282,8 @@ ReqBE.prototype.go=function*(){
   if(caller=='index'){
       // Arrays of functions
     arrCSRF=['UUpdate','RIntroCB','VSetPosCond','RUpdate','RShow','RHide','UDelete','teamLoad','teamSaveName','teamSave',
-    'complaintUpdateComment','complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
-    arrNoCSRF=['setupById','setUpCond','setUp','getList','getGroupList','getHist','complaintOneGet','getComplaintsOnComplainee','getComplaintsFromComplainer','logout','getSetting'];  // ,'testA','testB'
+    'complaintUpdateComment','complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage', 'setWebPushSubcription', 'sendNotification'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
+    arrNoCSRF=['setupById','setUpCond','setUp','getList','getSingleUser','getGroupList','getHist','complaintOneGet','getComplaintsOnComplainee','getComplaintsFromComplainer','logout','getSetting'];  // ,'testA','testB'
     allowed=arrCSRF.concat(arrNoCSRF);
 
       // Assign boCheckCSRF and boSetNewCSRF
@@ -832,7 +833,7 @@ ReqBE.prototype.setUpCond=function*(inObj){
   
   var Ou={};  this.OQueryPart=[];
   for(var i=0;i<this.CharRole.length;i++){
-    var oR=ORole[i],  arg={KeySel:oR.KeySel, Prop:oR.Prop, Filt:inObj.OFilt[i]};
+    var oR=ORole[i],  arg={Prop:oR.Prop, Filt:inObj.OFilt[i]}; //KeySel:oR.KeySel, 
     this.OQueryPart[i]=setUpCond(arg);
   }
   return [null, [Ou]];
@@ -853,8 +854,10 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
   Sql.push("CALL "+siteName+"IFunPoll;"); 
 
   if(boCalcZoom){  
-    Sql.push("SELECT count(u.idUser) AS nCustomerReal FROM "+userTab+" u JOIN "+customerTab+" ro ON u.idUser=ro.idUser;");
-    Sql.push("SELECT count(u.idUser) AS nSellerReal FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
+    //Sql.push("SELECT count(u.idUser) AS nCustomerReal FROM "+userTab+" u JOIN "+customerTab+" ro ON u.idUser=ro.idUser;");
+    //Sql.push("SELECT count(u.idUser) AS nSellerReal FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
+    Sql.push("SELECT count(*) AS nCustomerReal FROM "+customerTab+";");
+    Sql.push("SELECT count(*) AS nSellerReal FROM "+sellerTab+";");
  
     var WhereTmpC=this.OQueryPart[0].Where.concat("boShow=1", sqlBeforeHiding),  strCondC=array_filter(WhereTmpC).join(' AND ');
     var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", sqlBeforeHiding),  strCondS=array_filter(WhereTmpS).join(' AND ');
@@ -902,14 +905,18 @@ ReqBE.prototype.getList=function*(inObj){
   [xl]=normalizeAng(xl,128,256);   [xh]=normalizeAng(xh,128,256);
   this.whereMap="y>"+yl+" AND y<"+yh+" AND "; if(xl<xh) this.whereMap+="x>"+xl+" AND x<"+xh; else this.whereMap+="(x>"+xl+" OR x<"+xh+")";
   
+  var CharRole=this.CharRole, len=this.CharRole.length;
   var Sql=[];
-  for(var i=0;i<this.CharRole.length;i++){
-    var charRole=this.CharRole[i];
-    var roleTab=charRole=='c'?customerTab:sellerTab;
-    var roleTeamTab=charRole=='c'?customerTeamTab:sellerTeamTab;
+  for(var i=0;i<len;i++){
+    var charRole=CharRole[i];
+    var iRole=Number(charRole=='s');
+    var oRole=site.ORole[iRole];
+    var roleTab=iRole?sellerTab:customerTab;
+    var roleTeamTab=iRole?sellerTeamTab:customerTeamTab;
     
     var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", sqlBeforeHiding),  strCond=array_filter(WhereTmp).join(' AND ');
-    var strColT=this.OQueryPart[i].strCol;
+    //var strColT=this.OQueryPart[i].strCol;
+    var strColT=oRole.strCol;
 //Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM (("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idComplainee=ro.idUser WHERE "+strCond+" GROUP BY ro.idUser ORDER BY tPos DESC LIMIT 0, "+maxList+";");
     Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM ("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam  WHERE "+strCond+" LIMIT 0, "+maxList+";"); // ORDER BY tPos DESC GROUP BY ro.idUser
     Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
@@ -923,14 +930,42 @@ ReqBE.prototype.getList=function*(inObj){
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
   Ou.NTotNFilt=[]; Ou.arrList=[]; this.BoUseList=[];
-  for(var i=0;i<this.CharRole.length;i++){
+  for(var i=0;i<len;i++){
     var nFound=results[3*i+1][0].n;
     this.BoUseList[i]=nFound<=maxList;
     var tmp=[]; if(this.BoUseList[i]){ tmp=results[3*i]; } Ou.arrList[i]=arrObj2TabNStrCol(tmp);
-    //var tmp=this.CharRole[i]=='c'?'Customers':'Sellers';  this.mes(tmp+": "+nFound);
+    //var tmp=CharRole[i]=='c'?'Customers':'Sellers';  this.mes(tmp+": "+nFound);
     Ou.NTotNFilt[i]=[nFound, results[3*i+2][0].n];
   }
+  
   //copySome(Ou, this, ['arrGroup']);
+  return [null, [Ou]];
+} 
+ReqBE.prototype.getSingleUser=function*(inObj){
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, customerTab, customerTeamTab, complaintTab}=site.TableName;
+
+  var Ou={};
+  var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var {idUser, IRole}=inObj, len=IRole.length;   if(len==0) return [new ErrorClient('this.IRole.length==0')];
+  
+  var Sql=[], Val=[];
+  for(var i=0;i<len;i++){
+    var iRole=IRole[i];
+    var oRole=site.ORole[iRole];
+    var roleTab=iRole?sellerTab:customerTab;
+    var roleTeamTab=iRole?sellerTeamTab:customerTeamTab;
+    
+    //var strColT=this.OQueryPart[i].strCol;
+    var strColT=oRole.strCol;
+    Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM ("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam  WHERE u.idUser=? ;"); Val.push(idUser);
+  }
+  
+  var sql=Sql.join('\n');
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  if(len==1){ Ou[IRole[0]]=results[0]; }
+  else{    for(var i=0;i<len;i++){   Ou[IRole[i]]=results[i][0];   }    }
+
+
   return [null, [Ou]];
 } 
 
@@ -948,8 +983,8 @@ ReqBE.prototype.getGroupList=function*(inObj){
       var charRole=this.CharRole[i];
       var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", sqlBeforeHiding]),  strCond=array_filter(WhereTmp).join(' AND ');
       var roleTab=charRole=='c'?customerTab:sellerTab;
-      //var strTableRef=roleTab+' ro';
-      var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
+      //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
+      var strTableRef=roleTab+' ro';
       Sql.push("SELECT round(x*"+zoomFac+")/"+zoomFac+" AS roundX, round(y*"+zoomFac+")/"+zoomFac+" AS roundY, count(*) AS n FROM "+strTableRef+" WHERE "+strCond+" GROUP BY roundX, roundY;");
     } else Sql.push("SELECT 1 FROM DUAL;");
   }
@@ -976,8 +1011,8 @@ ReqBE.prototype.getHist=function*(inObj){
     var roleTab=charRole=='c'?customerTab:sellerTab;
     
     
+    //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
     var strTableRef=roleTab+' ro';
-    var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
     
     var arg={strTableRef:strTableRef, WhereExtra:[this.whereMap, "boShow=1", sqlBeforeHiding], myMySql:this.myMySql};  //, Ou:Ou
     arg.Filt=this.OFilt[i];
@@ -1047,19 +1082,21 @@ ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
  *********************************************************************************************/
 
 ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, {userTab, customerTab, sellerTab}=site.TableName, [oC, oS]=site.ORole;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, customerTab, sellerTab, webPushSubscriptionTab}=site.TableName, [oC, oS]=site.ORole;
   var Ou={}; 
   if(isEmpty(this.sessionLoginIdP)) {this.mes('No session'); return [null, [Ou]]; }
   var {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
 
   //if(inObj.email) email=inObj.email;
-  var {tel, displayName, currency, charRole, boIdIPImage, displayEmail}=inObj;
+  var {tel, displayName, currency, charRole, boIdIPImage, displayEmail, strSubscription}=inObj;
   tel=myJSEscape(tel); displayName=myJSEscape(displayName); currency=myJSEscape(currency);
   var boImgOwn=1-Number(boIdIPImage);
   
   if(displayEmail) {
     var boOK=validator.isEmail(displayEmail); if(!boOK) return [new ErrorClient("displayEmail didn't pass validation test.")];
   }
+  //var boWebPushOK=false;
+  const boWebPushOK=strSubscription!='null';
   
   
   var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
@@ -1069,15 +1106,23 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   
     // An entry in userTab may exist (if the user is a complainer). However an entry in roleTab is something one can assume does not exist.
   var Sql=[], Val=[];
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW, displayName, boImgOwn) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK=?, nameIP, image, hashPW, displayName, boImgOwn) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, boWebPushOK=?, nameIP=?, image=?;");
+  //Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
+  //Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boImgOwn,   email, boWebPushOK, nameIP, image);
+  
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, hashPW, displayName, boImgOwn) VALUES (?, ?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=email, boWebPushOK=boWebPushOK, nameIP=nameIP, image=image;");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
-  Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn,   email, nameIP, image);
-  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency, displayEmail) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser;");
-  Val.push(tel, currency, displayEmail);
+  Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boImgOwn);
+  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency, displayEmail, boWebPushOK) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser, boWebPushOK=boWebPushOK;");
+  Val.push(tel, currency, displayEmail, boWebPushOK);
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+  
+  if(boWebPushOK){
+    Sql.push("REPLACE INTO "+webPushSubscriptionTab+" VALUES (@idUser, ?);");  Val.push(strSubscription);
+  } else { Sql.push("DELETE FROM "+webPushSubscriptionTab+" WHERE idUser=@idUser;");   }
   
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
@@ -1296,7 +1341,8 @@ ReqBE.prototype.complaintOneGet=function*(inObj){
   if('idComplainer' in inObj) idComplainer=inObj.idComplainer;  else if(user) idComplainer=user.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   if('idComplainee' in inObj) idComplainee=inObj.idComplainee; else if(user) idComplainee=user.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   
-  var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainee=? AND idComplainer=? "; 
+  //var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainee=? AND idComplainer=? "; 
+  var sql="SELECT comment, answer FROM "+complaintTab+" WHERE idComplainee=? AND idComplainer=? "; 
   var Val=[idComplainee,idComplainer];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var c=results.length; 
@@ -1538,5 +1584,76 @@ ReqBE.prototype.uploadImage=function*(inObj){
   return [null, [Ou]];
 }
 
+
+
+ReqBE.prototype.setWebPushSubcription=function*(inObj){
+  var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
+  var {userTab, sellerTab, customerTab, webPushSubscriptionTab}=site.TableName;
+  var Ou={};
+
+  var strSubscription=inObj.strSubscription;
+
+  var {user, customer, seller, customerTeam, sellerTeam}=this.sessionUserInfoFrDB;
+  
+  var idUser=user.idUser;
+  //const boWebPushOK=Boolean(strSubscription);
+  const boWebPushOK=strSubscription!='null';
+  
+  var hashSubScription=''; if(boWebPushOK) hashSubScription=md5(strSubscription);
+
+  var Sql=[], Val=[];
+  //Sql.push("REPLACE INTO "+tab+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data)
+  Sql.push("UPDATE "+userTab+" SET boWebPushOK=? WHERE idUser=?;");
+  Sql.push("UPDATE "+customerTab+" SET boWebPushOK=? WHERE idUser=?;");
+  Sql.push("UPDATE "+sellerTab+" SET boWebPushOK=? WHERE idUser=?;");
+  var arrT=[boWebPushOK, idUser]; Val.push(...arrT,...arrT,...arrT);
+  if(boWebPushOK){
+    Sql.push("REPLACE INTO "+webPushSubscriptionTab+" VALUES (?, ?);");  Val.push(idUser, strSubscription);
+  } else { Sql.push("DELETE FROM "+webPushSubscriptionTab+" WHERE idUser=?;");  Val.push(idUser); }
+  //else if(kind=='c'){     Sql.push("UPDATE "+customerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
+  //else if(kind=='s'){     Sql.push("UPDATE "+sellerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
+  
+  var sql=Sql.join('\n');
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+
+  Ou.strMessage="Done";
+  return [null, [Ou]];
+}
+
+ReqBE.prototype.sendNotification=function*(inObj){
+  var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
+  var {userTab, sellerTab, customerTab, webPushSubscriptionTab}=site.TableName;
+  var Ou={};
+  var {idReceiver, iRole, message, latlngSender}=inObj;
+  var {user, customer, seller, customerTeam, sellerTeam}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var idUser=user.idUser;
+  
+  
+  var Sql=[], Val=[];
+  Sql.push("SELECT strSubscription FROM "+webPushSubscriptionTab+" WHERE idUser=?;"); Val.push(idReceiver);
+  Sql.push("SELECT * FROM "+userTab+" WHERE idUser=?;"); Val.push(idUser);
+  
+  var sql=Sql.join('\n');
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  if(results[0].length==0) return [new ErrorClient("No subscription for that idReceiver")];
+  const subscription = JSON.parse(results[0][0].strSubscription);
+  var objSender=copySome({}, results[1][0], ["idUser", 'displayName', 'boImgOwn', 'image', 'imTag']);
+  if(objSender.boImgOwn) objSender.image='';
+  
+  const payload = JSON.stringify({ objSender, iRole, message, tSent:unixNow(), latlngSender });
+  const options = {TTL: 0};
+
+  if(boDbg) { setTimeout(function(){ flow.next(); }, 5000);  yield; }
+  
+  var semY=0, semCB=0, err=null; webPush.sendNotification(subscription, payload, options)
+  .then(function() { if(semY)flow.next(); semCB=1;  })
+  .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });
+  if(!semCB){semY=1; yield;}
+  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  
+
+  Ou.strMessage="OK";
+  return [null, [Ou]];
+}
 
 

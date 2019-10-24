@@ -1,7 +1,7 @@
 "use strict"
 
 app.setUpCond=function(arg){
-  var {KeySel, Prop, Filt}=arg;
+  var {Prop, Filt}=arg; //KeySel, 
   var StrProp=Object.keys(Filt);
   var Where=[];
 
@@ -12,8 +12,8 @@ app.setUpCond=function(arg){
   for(var i=0;i<StrProp.length;i++){
     var name=StrProp[i];
     if(Filt[name].length==0) continue;
-    var pre; if('pre' in Prop[name]) pre=Prop[name].pre; else pre=preDefault;
-    var feat=Prop[name].feat;
+    var prop=Prop[name], pre; if('pre' in prop) pre=prop.pre; else pre=preDefault;
+    var feat=prop.feat;
     var arrCondInFeat=[];
     var filt=Filt[name];
     if(feat.kind[0]=='B'){
@@ -27,8 +27,8 @@ app.setUpCond=function(arg){
          
       if(arrSpec.length==0){   if(boWhite==1) arrCondInFeat.push('FALSE'); }  // "FALSE" to prevent all matches 
       else {
-        var boAddExtraNull=Prop[name].boIncludeNull && !boWhite,    arrCondOuter=[];
-        var tmpName; if('condBNameF' in Prop[name]) tmpName=Prop[name].condBNameF(name,arrSpec); else tmpName="`"+name+"`";
+        var boAddExtraNull=prop.boIncludeNull && !boWhite,    arrCondOuter=[];
+        var tmpName; if('condBNameF' in prop) tmpName=prop.condBNameF(name,arrSpec); else tmpName="`"+name+"`";
         var arrCondInner=[];
         var ind=arrSpec.indexOf(null);
         if(ind!=-1) {arrCondInner.push(pre+tmpName+" IS "+strNot+" NULL"); mySplice1(arrSpec,ind);  boAddExtraNull=0;}
@@ -51,22 +51,23 @@ app.setUpCond=function(arg){
       var val0=feat.min[filt[0]]; if(filt[0]==feat.n) val0=feat.max[feat.n-1];
       var val1=feat.max[filt[1]-1]; if(filt[1]==0) val1=feat.min[0];
       if(filt[0]>0) {
-        var tmp; if('cond0F' in Prop[name]) tmp=Prop[name].cond0F(pre+"`"+name+"`",val0);  else tmp=pre+"`"+name+"`>="+val0;       arrCondInFeat.push(tmp);
+        var tmp; if('cond0F' in prop) tmp=prop.cond0F(pre+"`"+name+"`",val0);  else tmp=pre+"`"+name+"`>="+val0;       arrCondInFeat.push(tmp);
       }
       if(filt[1]<feat.n) {
-        var tmp; if('cond1F' in Prop[name]) tmp=Prop[name].cond1F(pre+"`"+name+"`",val1);  else tmp=pre+"`"+name+"`<"+val1;       arrCondInFeat.push(tmp);
+        var tmp; if('cond1F' in prop) tmp=prop.cond1F(pre+"`"+name+"`",val1);  else tmp=pre+"`"+name+"`<"+val1;       arrCondInFeat.push(tmp);
       }
     }
     Where.push(arrCondInFeat.join(' AND '));
   }
-  var arrCol=[],ii=0;
-  for(var i=0;i<KeySel.length;i++) {
-    var key=KeySel[i], b=Prop[key].b, pre=Prop[key].pre||preDefault;
-    var tmp; if('selF' in Prop[key]) { tmp=Prop[key].selF(pre+key);  }   else tmp=pre+"`"+key+"`";
-    arrCol.push(tmp+" AS "+"`"+key+"`"); ii++;
-  }
-  var strCol=arrCol.join(', ');
-  return {strCol:strCol, Where:Where}; //, nColTrans:ii
+  //var arrCol=[],ii=0;
+  //for(var i=0;i<KeySel.length;i++) {
+    //var key=KeySel[i], b=Prop[key].b, pre=Prop[key].pre||preDefault;
+    //var tmp; if('selF' in Prop[key]) { tmp=Prop[key].selF(pre+key);  }   else tmp=pre+"`"+key+"`";
+    //arrCol.push(tmp+" AS "+"`"+key+"`"); ii++;
+  //}
+  //var strCol=arrCol.join(', ');
+  //return {strCol:strCol, Where:Where}; //, nColTrans:ii
+  return {Where:Where}; //, nColTrans:ii
 
 }
 
@@ -82,9 +83,9 @@ app.getHist=function*(flow, arg){
   var StrProp=Object.keys(arg.Filt), nFilt=StrProp.length;
   var WhereWExtra=array_merge(arg.Where,arg.WhereExtra);
   for(var i=0;i<nFilt;i++){
-    var name=StrProp[i];
-    var pre; if('pre' in Prop[name]) pre=Prop[name].pre; else pre=preDefault;
-    var feat=Prop[name].feat;
+    var name=StrProp[i], prop=Prop[name];
+    var pre; if('pre' in prop) pre=prop.pre; else pre=preDefault;
+    var feat=prop.feat;
     var kind=feat.kind;
     
     var WhereTmp=[].concat(WhereWExtra); WhereTmp.splice(i,1);
@@ -95,14 +96,14 @@ app.getHist=function*(flow, arg){
       var strOrder; if(kind=='BF') strOrder='bin ASC'; else strOrder="groupCount DESC, bin ASC";
       var WhereTmp=array_filter(WhereTmp), strCond=''; if(WhereTmp.length) strCond='WHERE '+WhereTmp.join(' AND ');
 
-      var relaxCountExp; if('relaxCountExp' in Prop[name]) { relaxCountExp=Prop[name].relaxCountExp(name);  }  else relaxCountExp='count(*)';
+      var relaxCountExp; if('relaxCountExp' in prop) { relaxCountExp=prop.relaxCountExp(name);  }  else relaxCountExp='count(*)';
       Sql.push("SELECT "+relaxCountExp+" AS n FROM \n"+arg.strTableRef+" "+strCond+";");
 
       var sqlHist;
-      if('histF' in Prop[name]) { sqlHist=Prop[name].histF(name, arg.strTableRef, strCond, strOrder);  }
+      if('histF' in prop) { sqlHist=prop.histF(name, arg.strTableRef, strCond, strOrder);  }
       else{
-        var colExp;  if('binKeyF' in Prop[name]) { colExp=Prop[name].binKeyF(name);  }  else if(kind=='BF') colExp=pre+"`"+name+"`-1";   else colExp=pre+"`"+name+"`";
-        var countExp;  if('binValueF' in Prop[name]) { countExp=Prop[name].binValueF(name);  }   else countExp="COUNT("+pre+"`"+name+"`)";
+        var colExp;  if('binKeyF' in prop) { colExp=prop.binKeyF(name);  }  else if(kind=='BF') colExp=pre+"`"+name+"`-1";   else colExp=pre+"`"+name+"`";
+        var countExp;  if('binValueF' in prop) { countExp=prop.binValueF(name);  }   else countExp="COUNT("+pre+"`"+name+"`)";
         //Sql.push("SELECT "+colExp+" AS bin, "+countExp+" AS groupCount FROM \n"+arg.strTableRef+" \n"+strCond+"\nGROUP BY bin ORDER BY "+strOrder+";");
         sqlHist="SELECT "+colExp+" AS bin, "+countExp+" AS groupCount FROM \n"+arg.strTableRef+" \n"+strCond+"\nGROUP BY bin ORDER BY "+strOrder+";";
       }
@@ -110,8 +111,8 @@ app.getHist=function*(flow, arg){
 
       TypeNInd.push(['c',i]); TypeNInd.push([kind,i]);
     }else{
-      var countExp;  if('binValueF' in Prop[name]) { countExp=Prop[name].binValueF(name);  } else countExp="SUM("+pre+"`"+name+"` IS NOT NULL)";
-      var colExpCond;  if('histCondF' in Prop[name]) { colExpCond=Prop[name].histCondF(name);  }    else colExpCond=pre+"`"+name+"`";
+      var countExp;  if('binValueF' in prop) { countExp=prop.binValueF(name);  } else countExp="SUM("+pre+"`"+name+"` IS NOT NULL)";
+      var colExpCond;  if('histCondF' in prop) { colExpCond=prop.histCondF(name);  }    else colExpCond=pre+"`"+name+"`";
       
       var strOrder='bin ASC';
 

@@ -192,12 +192,13 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
   
   el.createCont=function(){
     var len=prop.feat.n; if(typeof len=='undefined') len=maxGroupsInFeat+1;
-    setRowButtF=('setRowButtF' in prop)?prop.setRowButtF:null; crRowButtF=('crRowButtF' in prop)?prop.crRowButtF:null;
+    //setFilterButtF=('setFilterButtF' in prop)?prop.setFilterButtF:null; crFilterButtF=('crFilterButtF' in prop)?prop.crFilterButtF:null;
     var fragButts=createFragment();
     for(var i=0;i<len;i++){
       var staple=createElement('span').css({width:'10px', display:'inline-block', position:'relative', bottom:'-1px'}); 
       var span;
-      if(crRowButtF) {var span=crRowButtF(i);}
+      //if('crFilterButtF' in prop) {var span=prop.crFilterButtF.call({strName:strName, iRole:this.oRole.indRole}, i);}
+      if('crFilterButtF' in prop) {var span=prop.crFilterButtF(i);}
       else span=createElement('span').css({'margin':'0 0.25em 0 0.1em'}).myText('...');
       var butt=createElement('button').css({margin:'0.6em 0.2em'}).myAppend(span,staple); //,'vertical-align':'bottom', padding:'0.1em 0.2em',
 
@@ -235,7 +236,7 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
       
       if(boThisIsRem) span.myText('('+langHtml.histsRem+')');
       else {
-        if(setRowButtF) {setRowButtF(span,vAll[i],boOn);}
+        if('setFilterButtF' in prop) {prop.setFilterButtF(span,vAll[i],boOn);}
         else{  // Text-data
           var data;
           if(prop.feat.kind=='BF') {
@@ -259,7 +260,7 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
   var strName=StrOrderFilt[iFeat];
   if(strName in Prop) var prop=Prop[strName]; else return 'err';
   var filt=Filt[iFeat], hist=Hist[iFeat];
-  var setRowButtF, crRowButtF;
+  //var setFilterButtF, crFilterButtF;
   
   //var colButtOnClass='filterSingleOn', colButtAllOnClass='filterAllOn';
 

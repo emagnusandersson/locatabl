@@ -163,6 +163,7 @@ app.reqPubKeyStore=function*(){
 
   Str.push(`var tmp=`+serialize(objOut)+`;
 extend(window, tmp);
+setItem('CSRFCode',CSRFCode);
 `);
   Str.push("</script>");
   Str.push("</body></html>");
@@ -260,6 +261,7 @@ app.reqIndex=function*() {
       xmlns:og="http://ogp.me/ns#"
       xmlns:fb="http://www.facebook.com/2008/fbml">`);
   Str.push('<head>\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>');
+  
 
 
   //<meta name="apple-mobile-web-app-capable" content="yes" /> 
@@ -380,6 +382,9 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
   //Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
   //var uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.js";  Str.push('<script src="'+uJQuery+'"></script>');
 
+
+  //Str.push('<base href="'+uCommon+'">');
+
   Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
   
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
@@ -435,7 +440,7 @@ var app=window;
 var StrMainProt=[];
 var StrMainProtRole=[];`);
 
-  var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash};
+  var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash, VAPID_PUBLIC_KEY:VAPID_PUBLIC_KEY};
   copySome(objOut,req, ['boTLS']);
 
   Str.push(`var tmp=`+serialize(objOut)+`;\n extend(window, tmp);`);
@@ -722,7 +727,8 @@ app.reqMonitor=function*(){
 
   if(boRefresh){ 
     var Sql=[];
-    Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBeforeHiding+";");
+    //Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBeforeHiding+";");
+    Sql.push("SELECT count(*) AS n FROM "+sellerTab+" WHERE boShow=1 AND "+ sqlBeforeHiding+";");
     //Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
     Sql.push("SELECT count(*) AS n FROM "+userTab+";");
 
@@ -789,7 +795,7 @@ app.reqStat=function*(){
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   
-  var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer";
+  var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
 
@@ -845,7 +851,7 @@ app.reqStatBoth=function*(){
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   
-  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, displayName";
+  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, displayName, boWebPushOK";
   //var strColsC="c.homeTown, c.currency, c.boShow, c.tPos, CONVERT(BIN(c.histActive),CHAR(30)) AS c_histActive, c.tLastWriteOfTA, c.tAccumulated, c.hideTimer";
   //var strColsS="s.homeTown, s.currency, s.boShow, s.tPos, CONVERT(BIN(s.histActive),CHAR(30)) AS s_histActive, s.tLastWriteOfTA, s.tAccumulated, s.hideTimer";
 
@@ -936,13 +942,13 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   var SqlTabDrop=[], SqlTab=[];
   var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
   //eval(extractLoc(TableName,'TableName'));
-  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab, webPushSubscriptionTab}=TableName;
   //eval(extractLoc(ViewName,'ViewName'));
-  var {histView}=site.ViewName;
+  //var {histView}=site.ViewName;
 
   var StrTabName=object_values(TableName);
   var tmp=StrTabName.join(', ');
-  SqlTabDrop.push("DROP TABLE IF EXISTS "+siteName+"_teamImage, "+siteName+"_sellerImage, "+siteName+"_team,"+siteName+"_marketer,"+siteName+"_payment,"+siteName+"_rebateCode");  // temporary thing
+  SqlTabDrop.push("DROP TABLE IF EXISTS "+siteName+"_teamImage, "+siteName+"_sellerImage, "+siteName+"_team,"+siteName+"_marketer,"+siteName+"_payment,"+siteName+"_rebateCode,"+siteName+"_webPushSubscription");  // temporary thing
   SqlTabDrop.push("DROP TABLE IF EXISTS "+siteName+"_binsCreated, "+siteName+"_binsPosTime, "+siteName+"_binsTimeAccumulated");  // temporary thing
   SqlTabDrop.push("DROP TABLE IF EXISTS "+tmp);     
   SqlTabDrop.push('DROP TABLE IF EXISTS '+userTab);     
@@ -975,10 +981,11 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   donatedAmount DOUBLE NOT NULL DEFAULT 0, 
   pubKey VARCHAR(256) NOT NULL DEFAULT '', 
   iSeq int(4) NOT NULL DEFAULT 0, 
-  nComplaint int(4) NOT NULL DEFAULT 0, 
-  nComplaintCum int(4) NOT NULL DEFAULT 0, 
-  nComplaintGiven int(4) NOT NULL DEFAULT 0, 
-  nComplaintGivenCum int(4) NOT NULL DEFAULT 0, 
+  nComplaint int(4) UNSIGNED NOT NULL DEFAULT 0, 
+  nComplaintCum int(4) UNSIGNED NOT NULL DEFAULT 0, 
+  nComplaintGiven int(4) UNSIGNED NOT NULL DEFAULT 0, 
+  nComplaintGivenCum int(4) UNSIGNED NOT NULL DEFAULT 0, 
+  boWebPushOK BOOL NOT NULL DEFAULT 0,
   PRIMARY KEY (idUser), 
   UNIQUE KEY (idFB), 
   UNIQUE KEY (idIdPlace), 
@@ -988,6 +995,13 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
  
 
 
+    // Create webPushSubscription
+  SqlTab.push(`CREATE TABLE `+webPushSubscriptionTab+` ( 
+  idUser int(4) NOT NULL auto_increment, 
+  strSubscription varchar(512) CHARSET utf8 NULL, 
+  PRIMARY KEY (idUser), 
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate); 
 
     // Create sellerTab
   //var StrProp=Object.keys(oS.Prop);
@@ -1107,8 +1121,8 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   ) ENGINE=`+engine+` COLLATE `+collate);
   
   
-
-  SqlTab.push("CREATE VIEW "+histView+" (idUser, histActive, tPos) AS SELECT idUser, BIN(histActive), tPos FROM "+sellerTab+"");
+  
+  //SqlTab.push("CREATE VIEW "+histView+" (idUser, histActive, tPos) AS SELECT idUser, BIN(histActive), tPos FROM "+sellerTab+"");
 
 
 
@@ -1193,7 +1207,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
   var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
   //eval(extractLoc(ViewName,'ViewName'));
-  var {histView}=site.ViewName;
+  //var {histView}=site.ViewName;
 
 
   //var strIPEnum="ENUM('"+Prop.IP.Enum.join("', '")+"')";
@@ -1259,15 +1273,17 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   for(var i=0;i<ORole.length;i++) {
     var oR=ORole[i], arrCol=[];
     for(var j=0;j<oR.nCol;j++) {
-      var name=oR.KeyCol[j], b=oR.Prop[name].b;
+      var name=oR.KeyCol[j], prop=oR.Prop[name], b=prop.b;
       if(Number(b[oR.bFlip.DBSelOne]))  {   
-        var tmp;   if('selOneF' in oR.Prop[name]){tmp=oR.Prop[name].selOneF(name)+" AS `"+name+"`";}    else tmp="`"+name+"`";
+        var tmp;
+        if('selOneF' in prop){tmp=prop.selOneF(name)+" AS `"+name+"`";}
+        else {const pre=prop.pre||preDefault; tmp=pre+"`"+name+"`"; }
         arrCol.push(tmp);
       }
     }
     SqlColOTmp[i]=arrCol.join(', ');
   }
-  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag";
+  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag, boWebPushOK";
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboCustomer INT, IboSeller INT, IboCustomerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
@@ -1309,15 +1325,23 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         UPDATE `+complaintTab+` SET comment=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
         DELETE FROM `+complaintTab+` WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND answer IS NULL;
         IF ROW_COUNT() THEN
-          UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+customerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+customerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
         END IF;
         SELECT 'entry deleted' AS mess;
       ELSE
         INSERT INTO `+complaintTab+` (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,now(),now()) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=now();
         IF ROW_COUNT()=1 THEN   # If inserted
-          UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
-          UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          UPDATE `+customerTab+` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE `+customerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
           SELECT 'entry inserted' AS mess;
         ELSE
           SELECT 'entry updated' AS mess;
@@ -1335,16 +1359,15 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         UPDATE `+complaintTab+` SET answer=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
         DELETE FROM `+complaintTab+` WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND comment IS NULL;
         IF ROW_COUNT() THEN
-          UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+customerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+customerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
         END IF;
         SELECT 'entry deleted' AS mess;
       ELSE
-        #INSERT INTO `+complaintTab+` (idComplainee,idComplainer,answer,tCreated,tAnswerModified) VALUES (IidComplainee,IidComplainer,Ianswer,now(),now()) ON DUPLICATE KEY UPDATE answer=Ianswer, tAnswerModified=now();
-        #IF ROW_COUNT()=1 THEN   # If inserted
-        #  UPDATE `+userTab+` SET nComplaint=GREATEST(0, nComplaint+1) WHERE idUser=IidComplainee;
-        #  UPDATE `+userTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1) WHERE idUser=IidComplainer;
-        #END IF;
         UPDATE `+complaintTab+` SET answer=Ianswer WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
         SELECT 'entry updated' AS mess;
       END IF;
@@ -1421,9 +1444,11 @@ CLIENT_FOUND_ROWS
       CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
 
       IF IiRole=0 THEN
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+customerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+customerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+customerTab+` WHERE idUser=VidUser;
       ELSE
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
       END IF;
       SET Vc=FOUND_ROWS();
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF;
@@ -1726,7 +1751,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     destination:{Enum:['Göteborg', 'Umeå', 'Oslo']},
     fixedPricePerUnit:{RandSpanDataPrice:[100,200]},
     fixedPricePerUnitUnit:{Enum:["apple","kg"]},
-    //compassPoint:{Enum:['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']},
+    //compassPoint:{Enum:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']},
     //standingByMethod:{Enum:['inCar','atHome','5min','10min']}
   };
 
@@ -1749,7 +1774,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     
     
   var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
-  var {histView}=site.ViewName;
+  //var {histView}=site.ViewName;
   
     // Insert into userTab
   var arrUser=Array(nData), SqlAllU=Array(nData);
@@ -1782,18 +1807,14 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     }
   }
   
-    // Update nComplaint and nComplaintGiven
-  Sql.push(`
-  UPDATE `+userTab+` u
-  JOIN
-    (SELECT idComplainee, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainee) tmp ON u.idUser=tmp.idComplainee
-  SET u.nComplaint = n, u.nComplaintCum = n`);
-
-  Sql.push(`
-  UPDATE `+userTab+` u
-  JOIN
-    (SELECT idComplainer, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainer) tmp ON u.idUser=tmp.idComplainer
-  SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
+    // Update nComplaint, nComplaintCum, nComplaintGiven and nComplaintGivenCum
+  Sql.push(`DROP TABLE IF EXISTS tmp`);
+  Sql.push(`CREATE TEMPORARY TABLE tmp AS SELECT idComplainee, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainee`);
+  Sql.push(`UPDATE `+userTab+` u JOIN tmp ON u.idUser=tmp.idComplainee SET u.nComplaint = n, u.nComplaintCum = n`);
+  
+  Sql.push(`DROP TABLE IF EXISTS tmp`);
+  Sql.push(`CREATE TEMPORARY TABLE tmp AS SELECT idComplainer, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainer`);
+  Sql.push(`UPDATE `+userTab+` u JOIN tmp ON u.idUser=tmp.idComplainer SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
   
     // Insert into roleTabs
   var StrPlugInNArg=site.StrPlugInNArg;
@@ -1890,7 +1911,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
       var StrName=[];
       var StrIns=[];
       for(var j=0;j<arrAssign.length;j++){
-        var name=arrAssign[j], QMark="?", value=0;
+        var name=arrAssign[j], prop=Prop[name], QMark="?", value=0;
         if(name in arrUser[i]) value=arrUser[i][name]; 
         //if(name in person) value=person[name]; 
         //else if(name in AddressT) value=AddressT[name];
@@ -1899,7 +1920,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
         else if('RandSpanData' in PropBucket[name]){ value=makeRandSpanF(name);  }
         else if('RandSpanDataPrice' in PropBucket[name]){ value=makeRandSpanPriceF(name);  }
         else if('FixedData' in PropBucket[name]){ value=makeFixedF(name);  }
-        if(name in Prop && 'roleUpdF' in Prop[name]){ [QMark]=Prop[name].roleUpdF.call(Prop,name,value);  }
+        if(name in Prop && 'roleUpdF' in prop){ [QMark]=prop.roleUpdF.call(Prop,name,value);  }
         var valT=QMark.replace(/\?/,value);     
         if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
         
@@ -1920,6 +1941,9 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
 
 
   } // end of loop through ORole
+  
+  Sql.push(`UPDATE `+customerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount`);
+  Sql.push(`UPDATE `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount`);
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }

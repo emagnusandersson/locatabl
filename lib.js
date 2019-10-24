@@ -1,6 +1,7 @@
 "use strict"
 
-var app=(typeof window==='undefined')?global:window;
+//var app=(typeof window==='undefined')?global:window;
+var app=(typeof window!=='undefined')?window:((typeof global!=='undefined')?global:self);
 
 
 
@@ -282,12 +283,14 @@ app.tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['a
   return arrObj;
 }
 
+app.deserialize=function(serializedJavascript){
+  return eval('(' + serializedJavascript + ')');
+}
+
 app.print_r=function(o,boHTML){
   var tmp=JSON.stringify(o,null,'\t');
   if(typeof(boHTML) !='undefined' && boHTML) tmp=tmp.replace(/\n/g,'<br>').replace(/\t/g,'&nbsp;&nbsp;&nbsp;'); return tmp;
 }
-
-
 
 
 
@@ -319,13 +322,12 @@ app.getSuitableTimeUnit=function(t){ // t in seconds
   return [tsign*tabs,'y'];
 }
 
-
-app.UTC2ReadableDiff=function(tdiff,boLong=0,boArr=0){
+app.getSuitableTimeUnitStr=function(tdiff,boLong=0,boArr=0){
   //var tmp;  tmp=approxTimeDuration(tdiff,boLong,boArr);
   var [ttmp,indA]=getSuitableTimeUnit(tdiff), n=Math.round(ttmp);
   if(indA=='m') indA='min';
-  var j1=0, j2=1; if(boLong==1){j1=2; j2=3;}
-  var unit=langHtml.timeUnit, units=unit[indA][j1]; if(n!=1) units=unit[indA][j2];
+  var jSingular=0, jPlural=1; if(boLong==1){jSingular=2; jPlural=3;}
+  var unit=langHtml.timeUnit, units=unit[indA][jSingular]; if(n!=1) units=unit[indA][jPlural];
 
   if(boArr==1){  return [n,units];  }
   else{
@@ -449,8 +451,8 @@ app.MercatorProjection=function(){
   this.pixelsPerLonDegree_ = TILE_SIZE/360;
   this.pixelsPerLonRadian_ = TILE_SIZE/(2*Math.PI);
 }
-MercatorProjection.prototype.fromLatLngToPointV=function(latLng){
-  var lat, lng;    if(latLng instanceof Array) {lat=latLng[0]; lng=latLng[1]; } else if(typeof latLng.lat=='function') {lat=latLng.lat(); lng=latLng.lng();} else { lat=latLng.lat; lng=latLng.lng;}
+MercatorProjection.prototype.fromLatLngToPointV=function(latlng){
+  var lat, lng;    if(latlng instanceof Array) {lat=latlng[0]; lng=latlng[1]; } else if(typeof latlng.lat=='function') {lat=latlng.lat(); lng=latlng.lng();} else { lat=latlng.lat; lng=latlng.lng;}
   var xOrg=this.pOrg.x, yOrg=this.pOrg.y;
   var xOut=xOrg+lng*this.pixelsPerLonDegree_;
 
@@ -458,7 +460,7 @@ MercatorProjection.prototype.fromLatLngToPointV=function(latLng){
   var yOut=yOrg + 0.5*Math.log((1+siny)/(1-siny)) * -this.pixelsPerLonRadian_;
   return [xOut,yOut];
 }
-MercatorProjection.prototype.fromLatLngToPoint = function(latLng){  var [x,y]=this.fromLatLngToPointV(latLng);  return {x:x,y:y};   };
+MercatorProjection.prototype.fromLatLngToPoint = function(latlng){  var [x,y]=this.fromLatLngToPointV(latlng);  return {x:x,y:y};   };
 MercatorProjection.prototype.fromPointToLatLngV = function(point,noWrap=1){
   var x, y;    if(point instanceof Array) {x=point[0]; y=point[1]; } else { x=point.x; y=point.y;}
   var xOrg=this.pOrg.x, yOrg=this.pOrg.y;

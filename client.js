@@ -26,7 +26,28 @@
 // test viewTeam
 // delete me as customer resp delete me as driver
 // Ability to see and select image in introPop
+// 👋
 
+
+/**********************************************************************
+ * Methods of properties (provided by the plugins)
+crInp: no arg, no this, creates and returns el
+crInfo: no arg, uses this, nothing returned
+crTabF: no arg, uses this, nothing returned
+
+setInp: no arg, uses this, nothing returned
+saveInp: no arg, uses this, returns [err val]
+
+setInfo: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+setTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+sortTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+setMapF, setMapMF: rowMTab as arg, uses this, if something is returned...:
+  ...and is a string, (it is displayed as a string (see more in mapDiv))
+  ...and is an object, (it is used as seen in mapDiv)
+
+crFilterButtF: button index as arg, no this, creates and returns el
+setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
+***********************************************************************/
 
 //0123456789abcdef pluginGeneral.js
 "use strict"
@@ -36,7 +57,9 @@ app.CreatorPlugin.general=function(){
   app.strUnitTime='h';
     // Some conveniently grouped properties
   app.StrPropPerson=['image', 'idTeam', 'displayName'];
-  app.StrPropContact=['tel', 'displayEmail', 'homeTown', 'link'];
+  app.StrPropContact=['boWebPushOK', 'homeTown', 'link', 'tel', 'displayEmail'];
+  app.StrPropContactMinusBoWebPushOK=AMinusB(StrPropContact, ['boWebPushOK']);
+  app.StrPropContactMinusBoWebPushOKNHomeTown=AMinusB(StrPropContact, ['boWebPushOK', 'homeTown']);
   app.StrPropPos=['dist', 'tPos', 'coordinatePrecisionM'];
   app.StrPropRep=['tCreated', 'tAccumulated', 'donatedAmount', 'nComplaint']; //, 'histActive'
 
@@ -114,119 +137,93 @@ app.CreatorPlugin.general=function(){
       var optT=c.querySelector("option[value='USD']");    optT.prop('selected', 'selected');
       return c;
     }
-    for(let i=0;i<ORole.length;i++){
-      extend(ORole[i].Prop.currency, {strType:'select', crInp:tmpf });
-    }
+    var tmpPropProt={strType:'select', crInp:tmpf };
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.currency, tmpPropProt); }
 
       // tCreated, tLastPriceChange, tPos
-    app.makeTimeF=function(iRole,strN,dir){return function(iMTab){
-      var data=ORole[iRole].MTab[iMTab][strN];
-      if(ORole[iRole].Prop[strN].boUseTimeDiff) data=UTC2ReadableDiff(dir*(data-curTime)); else data=UTC2Readable(data); return data;
-    }; };
-    for(let i=0;i<ORole.length;i++){
-      var tmpF=makeTimeF(i,'tCreated',-1);    extend(ORole[i].Prop.tCreated, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-      var tmpF=makeTimeF(i,'tLastPriceChange',-1);   extend(ORole[i].Prop.tLastPriceChange, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-      var tmpF=makeTimeF(i,'tPos',-1);   extend(ORole[i].Prop.tPos, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-      var tmpF=makeTimeF(i,'tPos',-1);   extend(ORole[i].Prop.tPos, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-    }
+    var tmpF=propTimeAgo, tmpPropProt={ setInfo:tmpF, setTabF:tmpF, sortTabF:tmpF, setMapF:tmpF, setMapMF:tmpF };
+    for(let i=0;i<ORole.length;i++){   extend(ORole[i].Prop.tCreated, tmpPropProt);   extend(ORole[i].Prop.tLastPriceChange, tmpPropProt);   extend(ORole[i].Prop.tPos, tmpPropProt);   }
 
       // tAccumulated, IP
-    for(let i=0;i<ORole.length;i++){
-      var tmpF=function(iMTab,c){ return UTC2ReadableDiff(ORole[i].MTab[iMTab].tAccumulated); };
-      extend(ORole[i].Prop.tAccumulated, { setInfo:tmpF, sortTabF:tmpF, setTabF:tmpF, setMapF:tmpF, setMapMF:tmpF });
-    }
+    var tmpF=function(rowMTab){ return getSuitableTimeUnitStr(rowMTab.tAccumulated); };
+    var tmpPropProt={ setInfo:tmpF, setTabF:tmpF, sortTabF:tmpF, setMapF:tmpF, setMapMF:tmpF };
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.tAccumulated, tmpPropProt); }
 
       // nComplaint
-    var tmpSetNComplaint=function(iMTab,c){   c.querySelector('button').mySet(iMTab);   };
-    for(let i=0;i<ORole.length;i++){
-      var tmpCrNComplaint=function(c){  c.append(  complaintButtonCreator(ORole[i])  ); };
-      extend(ORole[i].Prop.nComplaint, { setInfo:tmpSetNComplaint, crInfo:tmpCrNComplaint, setTabF:tmpSetNComplaint, crTabF:tmpCrNComplaint});
-    }
+    const tmpCrNComplaint=function(){  this.append(  complaintButtonCreator(ORole[this.iRole])  ); };
+    const tmpSetNComplaint=function(rowMTab){   this.querySelector('button').mySet(rowMTab);   };
+    var tmpPropProt={crInfo:tmpCrNComplaint, setInfo:tmpSetNComplaint, crTabF:tmpCrNComplaint, setTabF:tmpSetNComplaint};
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.nComplaint, tmpPropProt); }
 
       // idTeam
-    var tmpSetIdTeam=function(iMTab,c){   c.querySelector('a').mySet(iMTab);   };
-    var tmpSetRowButtF=function(span,val,boOn){ span.mySet(val,boOn); }
+    const tmpCrIdTeam=function(){  this.append(  thumbTeamCreator(ORole[this.iRole])  );   };
+    const tmpSetIdTeam=function(rowMTab){   this.querySelector('a').mySet(rowMTab);   };
+    const tmpSetFilterButtF=function(span,val,boOn){ span.mySet(val,boOn); }
+    const tmpSetMapF=function(rowMTab){
+      var data=rowMTab.idTeam, tag=rowMTab.imTagTeam, tmp;
+      if(data && data.length>0 && data!==0) {
+        var strTmp=uSellerTeamImage+data+'?v='+tag;
+        tmp = {url:strTmp, boUseFrame:true};
+      } else tmp=langHtml.IndependentSeller.replace("<br>","\n");
+      return tmp;
+    }
     for(let i=0;i<ORole.length;i++){
-      var tmpCrIdTeam=function(c){  c.append(  thumbTeamCreator(ORole[i])  );   };
-      extend(ORole[i].Prop.idTeam, { setInfo:tmpSetIdTeam, crInfo:tmpCrIdTeam, setTabF:tmpSetIdTeam, crTabF:tmpCrIdTeam,
-        setMapF:function(iMTab){
-          var rT=ORole[i].MTab[iMTab], data=rT.idTeam, tag=rT.imTagTeam, tmp;
-          if(data && data.length>0 && data!==0) {
-            var strTmp=uSellerTeamImage+data+'?v='+tag;
-            tmp = {url:strTmp, boUseFrame:true};
-          } else tmp=langHtml.IndependentSeller.replace("<br>","\n");
-          return tmp;
-        },
-        setRowButtF:tmpSetRowButtF,
-        crRowButtF:function(i){ return butTeamImgCreator(ORole[i]).css({'margin-right':'0.25em'}); }
+      extend(ORole[i].Prop.idTeam, { crInfo:tmpCrIdTeam, setInfo:tmpSetIdTeam, crTabF:tmpCrIdTeam, setTabF:tmpSetIdTeam,
+        setMapF:tmpSetMapF,
+        crFilterButtF:function(iInit){ return butTeamImgCreator(ORole[i]).css({'margin-right':'0.25em'}); },
+        setFilterButtF:tmpSetFilterButtF
       });
     }
 
 
       // dist
-    for(let i=0;i<ORole.length;i++){
-      let tmpSetDist=function(iMTab){
-        var rT=ORole[i].MTab[iMTab],  tmpPoint = [rT.x, rT.y],   latLngT=merProj.fromPointToLatLng(tmpPoint);
-        
-        var pC=mapDiv.getPWCC(), latLngMe=merProj.fromPointToLatLng(pC);
-        var dist=distCalc(latLngT.lng,latLngT.lat,latLngMe.lng,latLngMe.lat);  if(strUnitDist=='mile') dist=dist/1.609;
-        return Number(dist.toFixed(1));
-      };
-      var tmpSetDistOther=function(iMTab,c){return tmpSetDist(iMTab)+' '+strUnitDist;};
-      extend(ORole[i].Prop.dist, {
-        setInfo:tmpSetDistOther,
-        setTabF:tmpSetDist,sortTabF:tmpSetDist,
-        setMapF:tmpSetDistOther,setMapMF:tmpSetDistOther
-      });
-    }
+    let tmpSetDist=function(rowMTab){
+      var tmpPoint = [rowMTab.x, rowMTab.y],   latlngT=merProj.fromPointToLatLng(tmpPoint);
+      var pC=mapDiv.getPWCC(), latlngMe=merProj.fromPointToLatLng(pC);
+      var dist=distCalc(latlngT.lng,latlngT.lat,latlngMe.lng,latlngMe.lat);  if(strUnitDist=='mile') dist=dist/1.609;
+      return Number(dist.toFixed(1));
+    };
+    var tmpSetDistOther=function(rowMTab){return tmpSetDist(rowMTab)+' '+strUnitDist;}
+    var tmpPropProt={ setInfo:tmpSetDistOther, setTabF:tmpSetDist,sortTabF:tmpSetDist, setMapF:tmpSetDistOther,setMapMF:tmpSetDistOther };
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.dist, tmpPropProt); }
 
 
       // displayName
-    for(let i=0;i<ORole.length;i++){
-      extend(ORole[i].Prop.displayName, {strType:'text', inpW:16});
-    }
+    var tmpPropProt={strType:'text', inpW:16}; for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.displayName, tmpPropProt); }
 
       // tel
-    var tmpCrTel=function(c){  var a=createElement('a').myText(' '); c.append(a);  };
-    for(let i=0;i<ORole.length;i++){
-      var tmpSetTel=function(iMTab,c){  var tmp=ORole[i].MTab[iMTab].tel.trim(), a=c.querySelector('a'), boL=tmp.length>0;  a.prop({href:'tel:'+tmp}).toggle(boL);   a.firstChild.nodeValue=boL?tmp:' '; }
-      extend(ORole[i].Prop.tel, {  strType:'tel', inpW:16,  setInfo:tmpSetTel, crInfo:tmpCrTel, setTabF:tmpSetTel, crTabF:tmpCrTel });
-    }
+    var tmpCrTel=function(){  var a=createElement('a').myText(' '); this.append(a);  };
+    var tmpSetTel=function(rowMTab){  var tmp=rowMTab.tel.trim(), a=this.querySelector('a'), boL=tmp.length>0;  a.prop({href:'tel:'+tmp}).toggle(boL);   a.firstChild.nodeValue=boL?tmp:' '; }
+    for(let i=0;i<ORole.length;i++){  extend(ORole[i].Prop.tel, {  strType:'tel', inpW:16, crInfo:tmpCrTel, setInfo:tmpSetTel, crTabF:tmpCrTel, setTabF:tmpSetTel });  }
     
       // displayEmail
-    var tmpCr=function(c){  var a=createElement('a').myText(' '); c.append(a);  };
-    for(let i=0;i<ORole.length;i++){
-      var tmpSet=function(iMTab,c){var tmp=ORole[i].MTab[iMTab].displayEmail.trim(), a=c.querySelector('a'), boL=tmp.length>0;  a.prop({href:'mailto:'+tmp}).toggle(boL);  a.firstChild.nodeValue=boL?tmp:' ';  }
-      extend(ORole[i].Prop.displayEmail, {  strType:'email', inpW:16, setInfo:tmpSet, crInfo:tmpCr, setTabF:tmpSet, crTabF:tmpCr });
-    }
+    var tmpCr=function(){  var a=createElement('a').myText(' '); this.append(a);  };
+    var tmpSet=function(rowMTab){var tmp=rowMTab.displayEmail.trim(), a=this.querySelector('a'), boL=tmp.length>0;  a.prop({href:'mailto:'+tmp}).toggle(boL);  a.firstChild.nodeValue=boL?tmp:' ';  }
+    var tmpPropProt={  strType:'email', inpW:16, crInfo:tmpCr, setInfo:tmpSet, crTabF:tmpCr, setTabF:tmpSet };
+    for(let i=0;i<ORole.length;i++){  extend(ORole[i].Prop.displayEmail, tmpPropProt);  }
 
       // link
-    var makeMapF=function(iRole,strName,n){return function(iMTab){var str=ORole[iRole].MTab[iMTab][strName],n=40; return str.length>n?str.substr(0,n)+'…':str;}  };
-    var makeMapMF=function(iRole,strName,n){return function(iMTab){var str=ORole[iRole].MTab[iMTab][strName]; return str.length>n?str.substr(0,n)+'…':str;}  };
-    var makeInfoF=function(iRole){return function(iMTab,c){
-      var url=ORole[iRole].MTab[iMTab].link; if(url && !RegExp("^https?:\\/\\/").test(url)) { url='http://'+url; }
-      var a=c.querySelector('a'), boL=url.length>0; a.prop({href:url}).toggle(boL);  a.firstChild.nodeValue=boL?url:' ';
-    }};
-    var tmpCrInfo=function(c){  var a=createElement('a').myText(' ').prop({target:"_blank"}); c.append(a);   }
-    for(let i=0;i<ORole.length;i++){
-      extend(ORole[i].Prop.link, { strType:'url', inpW:16, setInfo:makeInfoF(i), crInfo:tmpCrInfo, setMapF:makeMapF(i, 'link'), setMapMF:makeMapMF(i, 'link', 40-langHtml.prop.link.label.length)  });
-    }
+    var tmpSetInfo=function(rowMTab){
+      var url=rowMTab.link; if(url && !RegExp("^https?:\\/\\/").test(url)) { url='http://'+url; }
+      var a=this.querySelector('a'), boL=url.length>0; a.prop({href:url}).toggle(boL);  a.firstChild.nodeValue=boL?url:' ';
+    };
+    var tmpCrInfo=function(){  var a=createElement('a').myText(' ').prop({target:"_blank"}); this.append(a);   }
+    var tmpPropProt={ strType:'url', inpW:16, crInfo:tmpCrInfo, setInfo:tmpSetInfo, setMapF:propSetCrop, setMapMF:propSetCropLabel  };
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.link, tmpPropProt); }
 
       // idFB, idIdPlace, idOpenId
-    for(let i=0;i<ORole.length;i++){
-      extend(ORole[i].Prop.idFB, {setMapF:makeMapF(i, 'idFB'), setMapMF:makeMapMF(i, 'idFB', 40-langHtml.prop.idFB.label.length)});
-      extend(ORole[i].Prop.idIdPlace, {setMapF:makeMapF(i, 'idIdPlace'), setMapMF:makeMapMF(i, 'idIdPlace', 40-langHtml.prop.idIdPlace.label.length)});
-      extend(ORole[i].Prop.idOpenId, {setMapF:makeMapF(i, 'idOpenId'), setMapMF:makeMapMF(i, 'idOpenId', 40-langHtml.prop.idOpenId.label.length)});
-    }
+    var tmpPropProtFB={setMapF:propSetCrop, setMapMF:propSetCropLabel};
+    var tmpPropProtIdPlace={setMapF:propSetCrop, setMapMF:propSetCropLabel};
+    var tmpPropProtOpenId={setMapF:propSetCrop, setMapMF:propSetCropLabel};
+    for(let i=0;i<ORole.length;i++){   extend(ORole[i].Prop.idFB, tmpPropProtFB);   extend(ORole[i].Prop.idIdPlace, tmpPropProtIdPlace);   extend(ORole[i].Prop.idOpenId, tmpPropProtOpenId);  }
     
       // homeTown
-    for(let i=0;i<ORole.length;i++){
-      extend(ORole[i].Prop.homeTown, {strType:'text', inpW:10});
-    }
+    var tmpPropProt={strType:'text', inpW:10};
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.homeTown, tmpPropProt); }
 
       // idTeamWanted
-    var tmpSet=function(c){ c.setStat(); }
-    var tmpSave=function(c){return [null, c.inp.value.trim()];}
+    var tmpSet=function(){ this.setStat(); }
+    var tmpSave=function(){return [null, this.inp.value.trim()];}
     for(let i=0;i<ORole.length;i++){
       var tmpCr=function(){ var c=spanIdTeamWantedCreator(ORole[i]); return c;  }
       extend(ORole[i].Prop.idTeamWanted, {strType:'span', inpW:3, crInp:tmpCr, setInp:tmpSet, saveInp:tmpSave });
@@ -236,10 +233,9 @@ app.CreatorPlugin.general=function(){
     var tmpCr=function(){
       var c=createElement('select'); for(var i=0;i<arrCoordinatePrecisionM.length;i++){ var v=arrCoordinatePrecisionM[i], op=createElement('option').prop('value',v).myText(approxDist(v)); c.append(op); }   return c;
     }
-    for(let i=0;i<ORole.length;i++){
-      var tmpSet=function(c){  var [bestVal, iBest]=closest2Val(arrCoordinatePrecisionM, userInfoFrDB[ORole[i].strRole].coordinatePrecisionM); c.value=bestVal;  }
-      extend(ORole[i].Prop.coordinatePrecisionM, {strType:'select', crInp:tmpCr, setInp:tmpSet});
-    }
+    var tmpSet=function(){  var [bestVal, iBest]=closest2Val(arrCoordinatePrecisionM, userInfoFrDB[ORole[this.iRole].strRole].coordinatePrecisionM); this.value=bestVal;  }
+    var tmpPropProt={strType:'select', crInp:tmpCr, setInp:tmpSet};
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.coordinatePrecisionM, tmpPropProt);  }
     
       // experience
     extend(oS.Prop.experience, {strType:'number', inpW:4});
@@ -269,24 +265,47 @@ app.CreatorPlugin.general=function(){
       c.append(c.thumb, c.butDeleteImg, buttUploadImage);  //langHtml.YourImage+': ',
       return c;
     };
-    var tmpSetInp=function(c){
+    var tmpSetInp=function(){
       var tmp=calcImageUrlUser();
-      c.butDeleteImg.toggle(tmp.boImgOwn);
-      c.thumb.prop({src:tmp.str});
+      this.butDeleteImg.toggle(tmp.boImgOwn);
+      this.thumb.prop({src:tmp.str});
     };
     var tmpSaveInp=function(){return [null,null];}
-    var tmpCrImage=function(c){ c.append(createElement('img'));  };
-    for(let i=0;i<ORole.length;i++){
-      var tmpSetImage=function(iMTab,c){ c.querySelector('img').prop({src:calcImageUrl(ORole[i].MTab[iMTab])});  };
-      extend(ORole[i].Prop.image, {  strType:'span',  crInp:tmpCrInp, setInp:tmpSetInp, saveInp:tmpSaveInp, setInfo:tmpSetImage, crInfo:tmpCrImage,
-        sortTabF:function(iMTab){return ORole[i].MTab[iMTab].idUser;},
-        setTabF:tmpSetImage,
-        crTabF:tmpCrImage,
-        setMapF:function(iMTab){     return {url:calcImageUrl(ORole[i].MTab[iMTab]), boUseFrame:true};  },
-        setMapMF:function(iMTab){return false;}
-      });
+    var tmpCrImage=function(){ this.append(createElement('img'));  };
+    var tmpSetImage=function(rowMTab){ this.querySelector('img').prop({src:calcImageUrl(rowMTab)});  };
+    var tmpPropProt={  strType:'span',  crInp:tmpCrInp, setInp:tmpSetInp, saveInp:tmpSaveInp, crInfo:tmpCrImage, setInfo:tmpSetImage,
+      crTabF:tmpCrImage,
+      setTabF:tmpSetImage,
+      sortTabF:function(rowMTab){return rowMTab.idUser;},
+      setMapF:function(rowMTab){     return {url:calcImageUrl(rowMTab), boUseFrame:true};  },
+      setMapMF:function(){return false;}
+    };
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.image, tmpPropProt); }
+    
+    
+      // boWebPushOK
+    //var cbToggle=function(){this.disabled=true; myWebPush.togglePushNotifications();}
+    var tmpCrInp=function(strType){
+      const tmpF=function(){ this.mySet(); }
+      const tmpFOne=function(err){ if(!err) myWebPush.uploadFun(); }
+      var spanInpToggle=new SpanInpWebPushToggle(tmpF,strType=='setting'?tmpFOne:undefined).css({display:'inline-block'});
+      //var butToggle=createElement('button').myText('boPushToggle').on('click', cbToggle );
+      //myWebPush.ButToggle.push(butToggle);
+      var c=createElement('span').myAppend(spanInpToggle); return c;
     }
-
+    var tmpSetInp=function(){ this.querySelector('span').mySet(); }
+    var tmpSaveInp=function(){ return [null, JSON.stringify(myWebPush.subscription)]; }
+    var tmpCrInfo=function(){
+      var butT=createElement('button').myText('Send mess­age').on('click', function(){  
+        if(!userInfoFrDB.user){ setMess('You need to be logged in to send a message.', 2); return; }
+        viewGreeting.setUp(this.idUser, this.iRole); viewGreeting.setVis();
+        doHistPush({view:viewGreeting});
+      });
+      this.append(butT);
+    }
+    var tmpSetInfo=function(rowMTab){  const b=this.querySelector('button'); b.disabled=!rowMTab.boWebPushOK;  b.idUser=rowMTab.idUser; b.iRole=this.iRole;};
+    var tmpPropProt={  strType:'span', crInp:tmpCrInp, setInp:tmpSetInp, saveInp:tmpSaveInp, crInfo:tmpCrInfo, setInfo:tmpSetInfo, crTabF:tmpCrInfo, setTabF:tmpSetInfo }
+    for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.boWebPushOK, tmpPropProt); }
   };
 };
 //0123456789abcdef
@@ -375,29 +394,28 @@ app.CreatorPlugin.vehicleType=function(){
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
       // vehicleType
-    var tmpSetVehicleType=function(iMTab,c){     c.querySelector('span').mySet(Number(  oS.MTab[iMTab].vehicleType  ));    };
-    var tmpSetVehicleTypeM=function(iMTab){
-      var MTab=oS.MTab;
-      var data=MTab[iMTab].vehicleType, strName=enumVehicleType[MTab[iMTab].vehicleType];
-      var tmp; if(MTab[iMTab].tPos<curTime-snoreLim) tmp=vehSpriteZ; else tmp=vehSpriteW;
-      //if(MTab[iMTab].idUser<=3) tmp=vehSpriteDummy;
-      //if(MTab[iMTab].displayName=='Dummy') tmp=vehSpriteDummy;
-      if(MTab[iMTab].displayName.match(/^Dummy/)) tmp=vehSpriteDummy;
+    var tmpSetVehicleType=function(rowMTab){     this.querySelector('span').mySet(Number(  rowMTab.vehicleType  ));    };
+    var tmpSetVehicleTypeM=function(rowMTab){
+      var data=rowMTab.vehicleType, strName=enumVehicleType[rowMTab.vehicleType];
+      var tmp; if(rowMTab.tPos<curTime-snoreLim) tmp=vehSpriteZ; else tmp=vehSpriteW;
+      //if(rowMTab.idUser<=3) tmp=vehSpriteDummy;
+      //if(rowMTab.displayName=='Dummy') tmp=vehSpriteDummy;
+      if(rowMTab.displayName.match(/^Dummy/)) tmp=vehSpriteDummy;
       var item=tmp.item[strName];
       var zT=tmp.zoom, wSc=Math.ceil(zT*item.w), hSc=Math.ceil(zT*item.h), wSSc=zT*tmp.sheetW, hSSc=zT*tmp.sheetH;
       return {url:tmp.url, size:{width:item.w, height:item.h}, origin:{x:item.x, y:item.y}, anchor:{x:item.w/2, y:item.h}, scaledSize:{width:wSSc, height:hSSc}, zoom:zT};
     };
-    var tmpSetVehicleTypeMM=function(iMTab){return langHtml.vehicleType[enumVehicleType[oS.MTab[iMTab].vehicleType]];};
-    var tmpCrVehicleType=function(c){   c.append(  spriteCreator(vehSprite)  );   };
+    var tmpSetVehicleTypeMM=function(rowMTab){return langHtml.vehicleType[enumVehicleType[rowMTab.vehicleType]];};
+    var tmpCrVehicleType=function(){   this.append(  spriteCreator(vehSprite)  );   };
     extend(oS.Prop.vehicleType, {
       crInp:function(){ var c=selSpriteCreator(vehSprite); return c; },
-      setInp:function(c){ c.mySet(userInfoFrDB.seller.vehicleType); },
-      saveInp:function(c){return [null, c.myGet()];},
-      setInfo:tmpSetVehicleType,crInfo:tmpCrVehicleType,
-      setTabF:tmpSetVehicleType,crTabF:tmpCrVehicleType,
+      setInp:function(){ this.mySet(userInfoFrDB.seller.vehicleType); },
+      saveInp:function(){return [null, this.myGet()];},
+      crInfo:tmpCrVehicleType,setInfo:tmpSetVehicleType,
+      crTabF:tmpCrVehicleType,setTabF:tmpSetVehicleType,
       setMapF:tmpSetVehicleTypeM, setMapMF:tmpSetVehicleTypeMM,
-      crRowButtF:function(i){ var span=spriteCreator(vehSprite);    span.mySet(i);  return span;},
-      setRowButtF:function(span,val,boOn){   span.mySet(val);  var opacity=boOn?1:0.4; span.querySelector('img').css({opacity: opacity});  }
+      crFilterButtF:function(iInit){ var span=spriteCreator(vehSprite);    span.mySet(iInit);  return span;},
+      setFilterButtF:function(span,val,boOn){   span.mySet(val);  var opacity=boOn?1:0.4; span.querySelector('img').css({opacity: opacity});  }
     });
   }
 }
@@ -546,10 +564,13 @@ app.CreatorPlugin.distNTimePrice=function(){
         var arrStr=['dist','comparePrice','pricePerDist'], iMTab=ListCtrlDiv[oS.ind].tr.iMTab;  //,'strUnitDist'
         for(var i=0;i<arrStr.length;i++){
           var ele=viewInfoS.divCont.querySelector('div>span[name='+arrStr[i]+']');
-          var strName=ele.attr('name'), tmpObj=(strName in oS.Prop)?oS.Prop[strName]:{};
-          var tmp=''; if('setInfo' in tmpObj) tmp=tmpObj.setInfo(iMTab,ele);  else tmp=oS.MTab[iMTab][strName];
+          var strName=ele.attr('name'), prop=(strName in oS.Prop)?oS.Prop[strName]:{};
+          const rowMTab=oS.MTab[iMTab];
+          extend(ele,{strName:strName, iRole:oS.ind});
+          var tmp=''; if('setInfo' in prop) tmp=prop.setInfo.call(ele,rowMTab);  else tmp=rowMTab[strName];
           removeChildren(ele);
-          ele.myText(tmp);
+          if(typeof tmp!='undefined') ele.myText(tmp);
+          //ele.myText(tmp);
         }
       };
       //var elComparePriceButSpan=new ComparePriceButSpan("({0} {1}, {2} {3})", setUpUnits);    elComparePriceButSpan.css({'font-size':'0.78em'});
@@ -574,8 +595,8 @@ app.CreatorPlugin.distNTimePrice=function(){
       // priceStart
     extend(oS.Prop.priceStart, {strType:'number',inpW:4});
       // pricePerDist
-    var tmpSetPricePerDist=function(iMTab){ var tmp=(strUnitDist=='mile'?1.609:1) * oS.MTab[iMTab].pricePerDist;  return Number(tmp.toFixed(2));};
-    var tmpSetPricePerDistStr=function(iMTab){return tmpSetPricePerDist(iMTab)+'/'+strUnitDist;};
+    var tmpSetPricePerDist=function(rowMTab){ var tmp=(strUnitDist=='mile'?1.609:1) * rowMTab.pricePerDist;  return Number(tmp.toFixed(2));};
+    var tmpSetPricePerDistStr=function(rowMTab){return tmpSetPricePerDist(rowMTab)+'/'+strUnitDist;};
     extend(oS.Prop.pricePerDist, {
       strType:'number',inpW:4,
       setInfo:tmpSetPricePerDistStr,
@@ -585,29 +606,25 @@ app.CreatorPlugin.distNTimePrice=function(){
       // pricePerHour
     extend(oS.Prop.pricePerHour, { strType:'number',inpW:4 });
       // strUnitDist
-    var tmpSetUnitDist=function(iMTab,c){c.querySelector('button').firstChild.nodeValue='('+Number(comparePrice.dist).toFixed(2)+' '+strUnitDist+', '+comparePrice.time+' '+langHtml.timeUnit.min[3]+')';};
+    var tmpSetUnitDist=function(rowMTab){this.querySelector('button').firstChild.nodeValue='('+Number(comparePrice.dist).toFixed(2)+' '+strUnitDist+', '+comparePrice.time+' '+langHtml.timeUnit.min[3]+')';};
     extend(oS.Prop.strUnitDist, {
       strType:'select',
       crInp:function(){  return createElement('select').myAppend(  createElement('option').myText('km').prop('value',0), createElement('option').myText('mile').prop('value',1)  );  },
       setInfo:tmpSetUnitDist
     });
       // comparePrice
-    var calcComparePrice=function(iMTab){
-      var divisor=strUnitTime=='min'?60:1, rT=oS.MTab[iMTab]; return Number(rT.priceStart)  +tmpSetPricePerDist(iMTab)*comparePrice.dist  +rT.pricePerHour/divisor*comparePrice.time;
+    var calcComparePrice=function(rowMTab){
+      var divisor=strUnitTime=='min'?60:1; return Number(rowMTab.priceStart)  +tmpSetPricePerDist(rowMTab)*comparePrice.dist  +rowMTab.pricePerHour/divisor*comparePrice.time;
     };
-    var tmpSetComparePriceOneLineWOCur=function(iMTab){ var tmp=calcComparePrice(iMTab); return Number(tmp.toFixed(2)); };
-    var tmpSetComparePriceOneLineWCur=function(iMTab){ var tmp=calcComparePrice(iMTab); return oS.MTab[iMTab].currency+' '+Number(tmp.toFixed(2)); };
-    //var tmpSetComparePrice=function(boTryTwoLine){ return function(iMTab){
-      //var rT=oS.MTab[iMTab], tmp=calcComparePrice(iMTab);
-      //var boTwoLine=(oS.ColsShow.indexOf('image')!=-1) && boTryTwoLine,  strSep=boTwoLine?'<br>':' ';
-      //return (boMultCurrency?rT.currency+strSep:'')+Number(tmp.toFixed(2));
-    //}};
-    var tmpSetComparePriceSort=function(iMTab){ var rT=oS.MTab[iMTab], tmp=calcComparePrice(iMTab); return rT.currency+' '+Number(tmp.toFixed(2)); };
-    var tmpCrComparePriceTwoLine=function(c){  var s=createElement('span').css({'margin-right':'0.4em'});  c.append(  s, s.cloneNode()  ); };
-    var tmpSetComparePriceTwoLine=function(iMTab,ele){
-      var rT=oS.MTab[iMTab], flPrice=calcComparePrice(iMTab);
+    var tmpSetComparePriceOneLineWOCur=function(rowMTab){ var tmp=calcComparePrice(rowMTab); return Number(tmp.toFixed(2)); };
+    var tmpSetComparePriceOneLineWCur=function(rowMTab){ var tmp=calcComparePrice(rowMTab); return rowMTab.currency+' '+Number(tmp.toFixed(2)); };
+    var tmpSetComparePriceSort=function(rowMTab){ var tmp=calcComparePrice(rowMTab); return rowMTab.currency+' '+Number(tmp.toFixed(2)); };
+    var tmpCrComparePriceTwoLine=function(){  var s=createElement('span').css({'margin-right':'0.4em'});  this.append(  s, s.cloneNode()  ); };
+    var tmpSetComparePriceTwoLine=function(rowMTab){
+      var ele=this;
+      var flPrice=calcComparePrice(rowMTab);
       var s0=ele.childNodes[0], s1=ele.childNodes[1]; 
-      s0.myText(rT.currency);  s1.myText(Number(flPrice.toFixed(2)));
+      s0.myText(rowMTab.currency);  s1.myText(Number(flPrice.toFixed(2)));
       var boTwoLine=(oS.ColsShow.indexOf('image')!=-1), strType=boTwoLine?'block':'inline';
       var strDisp=boMultCurrency?strType:'none'; s0.css({display:strDisp});
     };
@@ -669,15 +686,11 @@ app.CreatorPlugin.price=function(charRoleUC){
 "use strict"
 app.CreatorPlugin.transportCustomer=function(){
   this.rewriteObj=function(){
-    var tmpSet=function(iMTab,c){  const strCompass=langHtml.compassPoint[Number(  oC.MTab[iMTab].compassPoint  )]; return oC.MTab[iMTab].distStartToGoal+' km ('+strCompass+')'; }
-    extend(oC.Prop.distStartToGoal, {
-      inpW:4,
-      setInfo:tmpSet,
-      setTabF:tmpSet,
-      setMapF:tmpSet
-    });
+      // distStartToGoal
+    var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
+    extend(oC.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet });
       // compassPoint
-    var tmpSet=function(iMTab,c){  return langHtml.compassPoint[Number(  oC.MTab[iMTab].compassPoint  )]; }
+    var tmpSet=function(rowMTab){  return langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; }
     var crInpFunc=function(){
       var c=createElement('select'), arrTmp=langHtml.compassPoint;
       for(var i=0;i<arrTmp.length;i++){  var opt=createElement('option').myText(arrTmp[i]).prop('value',i);   c.append(opt);    }
@@ -689,9 +702,9 @@ app.CreatorPlugin.transportCustomer=function(){
       setInfo:tmpSet,
       setTabF:tmpSet,
       setMapF:tmpSet,
-      setRowButtF:function(span,val,boOn){ var tmp=langHtml.compassPoint[val]; span.firstChild.nodeValue=tmp;  }
+      setFilterButtF:function(span,val,boOn){ var tmp=langHtml.compassPoint[val]; span.firstChild.nodeValue=tmp;  }
     });
-    //extend(oC.Prop.compassPoint, {inpW:4});
+      // destination
     extend(oC.Prop.destination, {inpW:8});
     
   }
@@ -705,7 +718,7 @@ app.CreatorPlugin.standingByMethod=function(){
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
       // standingByMethod
-    var tmpSet=function(iMTab,c){  return langHtml.standingByMethodsLong[Number(  oS.MTab[iMTab].standingByMethod  )]; }
+    var tmpSet=function(rowMTab){  return langHtml.standingByMethodsLong[Number(  rowMTab.standingByMethod  )]; }
     var crInpFunc=function(){
       var c=createElement('select'), arrTmp=langHtml.standingByMethodsLong;
       for(var i=0;i<arrTmp.length;i++){  var opt=createElement('option').myText(arrTmp[i]).prop('value',i);   c.append(opt);    }
@@ -716,8 +729,8 @@ app.CreatorPlugin.standingByMethod=function(){
       crInp:crInpFunc,
       setInfo:tmpSet,
       setTabF:tmpSet,
-      setMapF:function(iMTab,c){  return langHtml.standingByMethodsLong[Number(  oS.MTab[iMTab].standingByMethod  )]; },
-      setRowButtF:function(span,val,boOn){ var tmp=langHtml.standingByMethodsLong[val]; span.firstChild.nodeValue=tmp;  }
+      setMapF:function(rowMTab){  return langHtml.standingByMethodsLong[Number(  rowMTab.standingByMethod  )]; },
+      setFilterButtF:function(span,val,boOn){ var tmp=langHtml.standingByMethodsLong[val]; span.firstChild.nodeValue=tmp;  }
     });
   };
 };
@@ -730,17 +743,17 @@ app.CreatorPlugin.shiftEnd=function(){
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
       // shiftEnd
-    var tmpSetShiftEnd=makeTimeF(oS.ind,'shiftEnd',1);
+    //var tmpSetShiftEnd=makeTimeF(oS.ind,'shiftEnd',1);
     oS.Prop.shiftEnd.boUseTimeDiff=1;
     var tmp = butTimeStampCreator(oS.ind, 'shiftEnd').css({padding:'0.3em 0.5em'});    viewTable.ElRole[1].tHeadLabel.querySelector('[name=shiftEnd]').append(tmp);
     viewFilter.ElRole[1].Unit.shiftEnd=langHtml.timeUnit.h[1];
 
     extend(oS.Prop.shiftEnd, {strType:'select',
       crInp:function(){  var c=createElement('select'); for(var i=0;i<225;i++){ var o=createElement('option').myText(' '); c.append(o); }   return c; },
-      setInp:function(c){
+      setInp:function(){
         var d=new Date(); d.setMilliseconds(0); d.setSeconds(0); var tmp= Math.round(d.getMinutes()/15);  d.setMinutes(tmp*15);
         var d=d.valueOf(); //alert(d);  alert(Date(d));
-        [...c.querySelectorAll('option')].forEach(function(ele, i){
+        [...this.querySelectorAll('option')].forEach(function(ele, i){
           var dv=d+i*15*60*1000, dt=new Date(dv);
           var str=dt.toLocaleTimeString(); str=str.replace(/(\d\d):00/,'$1');
           //ele.myText(str).prop('value',dv/1000);
@@ -749,13 +762,13 @@ app.CreatorPlugin.shiftEnd=function(){
         //if(typeof userInfoFrDB.seller=='array' && 'shiftEnd' in userInfoFrDB.seller) {   // If there is a saved value for 'shiftEnd' then try set it as selected
         if(userInfoFrDB.seller instanceof Array && 'shiftEnd' in userInfoFrDB.seller) {   // If there is a saved value for 'shiftEnd' then try set it as selected
           var tmp="option[value='"+userInfoFrDB.seller.shiftEnd+"']";
-          //var opttmp=c.querySelector(tmp);   if(opttmp.length==1) opttmp.prop('selected', 'selected');
-          c.querySelector(tmp).prop('selected', 'selected');
+          //var opttmp=this.querySelector(tmp);   if(opttmp.length==1) opttmp.prop('selected', 'selected');
+          this.querySelector(tmp).prop('selected', 'selected');
         }
       },
-      setInfo:tmpSetShiftEnd,
-      sortTabF:tmpSetShiftEnd, setTabF:tmpSetShiftEnd,
-      setMapF:tmpSetShiftEnd,setMapMF:tmpSetShiftEnd
+      setInfo:propTimeRemain,
+      setTabF:propTimeRemain, sortTabF:propTimeRemain,
+      setMapF:propTimeRemain, setMapMF:propTimeRemain
     });
 
     // oS.Prop.shiftEnd.feat.minName[0]='0';
@@ -772,16 +785,16 @@ app.CreatorPlugin.hourlyPrice=function(charRoleUC){
   
   this.rewriteObj=function(){
       // pricePerHour
-    var tmpSet=function(iMTab){ var rT=oRole.MTab[iMTab], tmp=Number(rT.pricePerHour); return rT.currency+' '+Number(tmp.toFixed(2)); };
-    //var tmpSetComparePriceTryTwoLine=function(iMTab){
-      //var rT=oRole.MTab[iMTab], tmp=Number(rT.pricePerHour);
-      //var boTwoLine=(oRole.ColsShow.indexOf('image')!=-1),  strSep=boTwoLine?'<br>':' ';      return rT.currency+strSep+Number(tmp.toFixed(2));
+    var tmpSet=function(rowMTab){ var tmp=Number(rowMTab.pricePerHour); return rowMTab.currency+' '+Number(tmp.toFixed(2)); };
+    //var tmpSetComparePriceTryTwoLine=function(rowMTab){
+      //var tmp=Number(rowMTab.pricePerHour);
+      //var boTwoLine=(oRole.ColsShow.indexOf('image')!=-1),  strSep=boTwoLine?'<br>':' ';      return rowMTab.currency+strSep+Number(tmp.toFixed(2));
     //}
-    var tmpCrComparePriceTwoLine=function(c){  var s=createElement('span').css({'margin-right':'0.4em'});  c.append(  s, s.cloneNode()  ); };
-    var tmpSetComparePriceTwoLine=function(iMTab,ele){
-      var rT=oRole.MTab[iMTab], flPrice=Number(rT.pricePerHour);
-      var s0=ele.childNodes[0], s1=ele.childNodes[1]; 
-      s0.myText(rT.currency);  s1.myText(Number(flPrice.toFixed(2)));
+    var tmpCrComparePriceTwoLine=function(){  var s=createElement('span').css({'margin-right':'0.4em'});  this.append(  s, s.cloneNode()  ); };
+    var tmpSetComparePriceTwoLine=function(rowMTab){
+      var flPrice=Number(rowMTab.pricePerHour);
+      var s0=this.childNodes[0], s1=this.childNodes[1]; 
+      s0.myText(rowMTab.currency);  s1.myText(Number(flPrice.toFixed(2)));
       var boTwoLine=(oRole.ColsShow.indexOf('image')!=-1), strType=boTwoLine?'block':'inline';
       var strDisp=boMultCurrency?strType:'none'; s0.css({display:strDisp});
     };
@@ -812,45 +825,45 @@ app.CreatorPlugin.taxi=function(){
   
     // oRole.Main: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson),
-  [].concat('Contact', 'tel', 'displayEmail', 'link'),
-  [].concat('Destination', 'distStartToGoal','destination', 'price', 'currency'),
-  [].concat('RequestedVehicle', StrPropE),
-  [].concat('Price', 'price', 'currency', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson],
+  ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
+  ['Destination', ...StrTransportCustomer, 'price', 'currency'],
+  ['RequestedVehicle', ...StrPropE],
+  ['Price', 'price', 'currency', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd', 'idDriverGovernment'),
-  [].concat('Vehicle', 'vehicleType', 'brand', StrPropE, 'nExtraSeat'),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd', 'idDriverGovernment'],
+  ['Vehicle', 'vehicleType', 'brand', ...StrPropE, 'nExtraSeat'],
+  ['Contact', ...StrPropContact],
+  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
     
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'),
-  [].concat('Destination', StrTransportCustomer),
-  [].concat('Vehicle', StrPropE),
-  [].concat('Price', 'currency', 'price')]);
+  ['Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Destination', ...StrTransportCustomer],
+  ['Vehicle', ...StrPropE],
+  ['Price', 'currency', 'price']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'),
-  [].concat('Vehicle', 'vehicleType', StrPropE, 'brand', 'nExtraSeat'),
-  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'],
+  ['Vehicle', 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat'],
+  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', StrPropE, 'tPos'),
-  [].concat('Destination', 'distStartToGoal', 'compassPoint', 'destination'),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', ...StrPropE, 'tPos'],
+  ['Destination', ...StrTransportCustomer],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'),
-  [].concat('Vehicle', 'vehicleType', StrPropE, 'brand', 'nExtraSeat'),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'],
+  ['Vehicle', 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat'],
+  ['Reputation', ...StrPropRep]]);
 
   
     // Default columns
-  oC.ColsShowDefault= ['image', 'distStartToGoal', 'compassPoint', 'destination', 'idTeam', 'price'];
+  oC.ColsShowDefault= ['image', ...StrTransportCustomer, 'idTeam', 'price'];  //'distStartToGoal', 'compassPoint', 'destination'
   oC.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
   oC.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
   oC.colOneMarkDefault='image';
@@ -915,47 +928,47 @@ app.CreatorPlugin.transport=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson),
-  [].concat('Contact', 'tel', 'displayEmail', 'link'),
-  [].concat('Destination', 'distStartToGoal','destination', 'price', 'currency'),
-  [].concat('RequestedVehicle', StrPropE),
-  [].concat('Price', 'price', 'currency', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson],
+  ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
+  ['Destination', ...StrTransportCustomer, 'price', 'currency'],
+  ['RequestedVehicle', ...StrPropE],
+  ['Price', 'price', 'currency', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd'),
-  [].concat('Vehicle', 'vehicleType', StrPropE),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd'],
+  ['Vehicle', 'vehicleType', ...StrPropE],
+  ['Contact', ...StrPropContact],
+  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'),
-  [].concat('Destination', StrTransportCustomer),
-  [].concat('Cargo', StrPropE),
-  [].concat('Price', 'currency', 'price')]);
+  ['Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Destination', ...StrTransportCustomer],
+  ['Cargo', ...StrPropE],
+  ['Price', 'currency', 'price']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'),
-  [].concat('Vehicle', 'vehicleType', StrPropE),
-  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'],
+  ['Vehicle', 'vehicleType', ...StrPropE],
+  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', 'tPos'),
-  [].concat('Cargo', StrPropE),
-  [].concat('Destination', 'distStartToGoal', 'compassPoint', 'destination'),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', 'tPos'],
+  ['Cargo', ...StrPropE],
+  ['Destination', ...StrTransportCustomer],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'),
-  [].concat('Vehicle', 'vehicleType', StrPropE),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'],
+  ['Vehicle', 'vehicleType', ...StrPropE],
+  ['Reputation', ...StrPropRep]]);
 
     // Default columns
-  oC.ColsShowDefault= ['image', 'distStartToGoal', 'compassPoint', 'destination', 'idTeam', 'price'];
-  oC.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
-  oC.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
+  oC.ColsShowDefault= ['image', ...StrTransportCustomer, 'idTeam', 'price'];
+  oC.ColsShowDefaultS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
+  oC.ColsShowDefaultRS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
   oC.colOneMarkDefault='image';
   
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
@@ -984,18 +997,9 @@ app.CreatorPlugin.transport=function(){
 
   this.rewriteObj=function(){
       // StrTransportBool
-    var tmpRowButtf=function(span,val,boOn){   span.firstChild.nodeValue=Number(val)?langHtml.Yes:langHtml.No;   };
-    for(let i=0;i<ORole.length;i++){
-      var tmpSetBool=function(iMTab,ele){
-        var data=ORole[i].MTab[iMTab][ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
-        ele.css({'background':colT});
-        return Number(data)?langHtml.Yes:'-';
-      }
-      for(var j=0;j<StrTransportBool.length;j++) {
-        var strName=StrTransportBool[j];
-        var tmpSetMap=function(iMTab){ return Number(ORole[i].MTab[iMTab][strName])?langHtml.Yes:langHtml.No; };
-        extend(ORole[i].Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBool, setTabF:tmpSetBool, setMapF:tmpSetMap,setMapMF:tmpSetMap, setRowButtF:tmpRowButtf });
-      }
+    for(var j=0;j<StrTransportBool.length;j++) {
+      var strName=StrTransportBool[j];
+      for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop[strName], propBoolProt); }
     }
       // brand
     extend(oS.Prop.brand, {strType:'text', inpW:6});
@@ -1004,6 +1008,7 @@ app.CreatorPlugin.transport=function(){
   }
 };
 //0123456789abcdef
+    
 
 
 //0123456789abcdef pluginCleaner.js
@@ -1014,42 +1019,42 @@ app.CreatorPlugin.cleaner=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson),
-  [].concat('Contact', StrPropContact),
-  [].concat('Type', StrC),
-  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson],
+  ['Contact', ...StrPropContact],
+  ['Type', ...StrC],
+  ['Price', 'pricePerHour', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType', 'shiftEnd'),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', 'shiftEnd'],
+  ['Contact', ...StrPropContact],
+  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
-  [].concat('Type', StrC),
-  [].concat('Price', 'currency', 'pricePerHour')]);
+  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Type', ...StrC],
+  ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType'),
-  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType'],
+  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', 'homeTown', 'currency', 'tPos'),
-  [].concat('Type', StrC),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', 'homeTown', 'currency', 'tPos'],
+  ['Type', ...StrC],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos'),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos'],
+  ['Reputation', ...StrPropRep]]);
   
   
     // Default columns
-  oC.ColsShowDefault=[].concat('image', 'displayName', StrC, 'tel', 'idTeam', 'pricePerHour');
-  oC.ColsShowDefaultS=[].concat('image', 'displayName', StrC, 'pricePerHour');
-  oC.ColsShowDefaultRS=[].concat('image', StrC, 'pricePerHour');
+  oC.ColsShowDefault=['image', 'displayName', ...StrC, 'tel', 'idTeam', 'pricePerHour'];
+  oC.ColsShowDefaultS=['image', 'displayName', ...StrC, 'pricePerHour'];
+  oC.ColsShowDefaultRS=['image', ...StrC, 'pricePerHour'];
   oC.colOneMarkDefault='image';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
@@ -1076,22 +1081,11 @@ app.CreatorPlugin.cleaner=function(){
   };
   this.rewriteObj=function(){
       // StrC
-    var tmpSetBool=function(iMTab,ele){
-      var data=oC.MTab[iMTab][ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
-      ele.css({'background':colT});
-      return Number(data)?langHtml.Yes:'-';
-    }
-    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function(span,val,boOn){   span.firstChild.nodeValue=Number(val)?langHtml.Yes:langHtml.No;   };
-
-    for(var i=0;i<StrC.length;i++) {
-      var strName=StrC[i];
-      var tmpSetMap=makeSetMapF(oC, strName);
-      extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBool, setTabF:tmpSetBool, setMapF:tmpSetMap,setMapMF:tmpSetMap, setRowButtF:tmpRowButtf });
-    }
+    for(var i=0;i<StrC.length;i++) { var strName=StrC[i]; extend(oC.Prop[strName], propBoolProt); }
   };
 };
 //0123456789abcdef
+
 
 
 //0123456789abcdef pluginWindowcleaner.js
@@ -1102,47 +1096,47 @@ app.CreatorPlugin.windowcleaner=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson, StrC),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson, ...StrC],
+  ['Contact', ...StrPropContact],
+  ['Price', 'pricePerHour', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType'),
-  [].concat('Tools', StrS),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson, 'experience', 'vehicleType'],
+  ['Tools', ...StrS],
+  ['Contact', ...StrPropContact],
+  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
-  [].concat('Other', StrC),
-  [].concat('Price', 'currency', 'pricePerHour')]);
+  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Other', ...StrC],
+  ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'),
-  [].concat('Tools', StrS),
-  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
+  ['Tools', ...StrS],
+  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'currency', 'vehicleType', 'tPos'),
-  [].concat('Tools', StrS),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos'],
+  ['Tools', ...StrS],
+  ['Reputation', ...StrPropRep]]);
   
     // Default columns
-  oC.ColsShowDefault=[].concat('image', 'displayName', StrC, 'tel', 'idTeam', 'pricePerHour');
-  oC.ColsShowDefaultS=[].concat('image', 'displayName', StrC, 'pricePerHour');
-  oC.ColsShowDefaultRS=[].concat('image', StrC, 'pricePerHour');
+  oC.ColsShowDefault=['image', 'displayName', ...StrC, 'tel', 'idTeam', 'pricePerHour'];
+  oC.ColsShowDefaultS=['image', 'displayName', ...StrC, 'pricePerHour'];
+  oC.ColsShowDefaultRS=['image', ...StrC, 'pricePerHour'];
   oC.colOneMarkDefault='image';
 
-  oS.ColsShowDefault=[].concat('image', 'displayName', StrS, 'tel', 'vehicleType', 'idTeam', 'comparePrice');
-  oS.ColsShowDefaultS=[].concat('image', 'displayName', StrS, 'vehicleType', 'comparePrice');
-  oS.ColsShowDefaultRS=[].concat('image', StrS, 'vehicleType', 'comparePrice');
+  oS.ColsShowDefault=['image', 'displayName', ...StrS, 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS=['image', 'displayName', ...StrS, 'vehicleType', 'comparePrice'];
+  oS.ColsShowDefaultRS=['image', ...StrS, 'vehicleType', 'comparePrice'];
   oS.colOneMarkDefault='vehicleType';
 
 
@@ -1157,32 +1151,17 @@ app.CreatorPlugin.windowcleaner=function(){
   };
 
   this.rewriteObj=function(){
-
-      // For boolean properties
-    var makeSetBoolF=function(oRole){ return function(iMTab,ele){
-      var data=oRole.MTab[iMTab][ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
-      //var colT=''; if(data>0) colT='red';
-      ele.css({'background':colT});
-      return Number(data)?langHtml.Yes:'-';
-    }};
-    var tmpSetBoolC=makeSetBoolF(oC), tmpSetBoolS=makeSetBoolF(oS);
-    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function(span,val,boOn){   span.firstChild.nodeValue=Number(val)?langHtml.Yes:langHtml.No;   };
-
       // customerHasEquipment
-    var strName='customerHasEquipment', tmpSetMap=makeSetMapF(oC, strName);
-    extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolC, setTabF:tmpSetBoolC, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
+    var strName='customerHasEquipment';  extend(oC.Prop[strName], propBoolProt);
       // nWindow
     extend(oC.Prop.nWindow, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
     
       // StrS
-    for(var i=0;i<StrS.length;i++) {
-      var strName=StrS[i], tmpSetMap=makeSetMapF(oS, strName);
-      extend(oS.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolS, setTabF:tmpSetBoolS, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
-    }
+    for(var i=0;i<StrS.length;i++) { var strName=StrS[i]; extend(oS.Prop[strName], propBoolProt); }
   };
 };
 //0123456789abcdef
+
 
 //0123456789abcdef pluginLawnmower.js
 "use strict"
@@ -1192,43 +1171,43 @@ app.CreatorPlugin.lawnmower=function(){
   
       // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson, StrC),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson, ...StrC],
+  ['Contact', ...StrPropContact],
+  ['Price', 'pricePerHour', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType', StrS),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', ...StrS],
+  ['Contact', ...StrPropContact],
+  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM', StrC),
-  [].concat('Price', 'currency', 'pricePerHour')]);
+  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrC],
+  ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', StrS),
-  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', ...StrS],
+  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', StrS),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS],
+  ['Reputation', ...StrPropRep]]);
 
     // Default columns
-  oC.ColsShowDefault=[].concat('image', 'displayName', StrC, 'tel', 'idTeam', 'pricePerHour');
-  oC.ColsShowDefaultS=[].concat('image', 'displayName', StrC, 'pricePerHour');
-  oC.ColsShowDefaultRS=[].concat('image', StrC, 'pricePerHour');
+  oC.ColsShowDefault=['image', 'displayName', ...StrC, 'tel', 'idTeam', 'pricePerHour'];
+  oC.ColsShowDefaultS=['image', 'displayName', ...StrC, 'pricePerHour'];
+  oC.ColsShowDefaultRS=['image', ...StrC, 'pricePerHour'];
   oC.colOneMarkDefault='image';
 
-  oS.ColsShowDefault=[].concat('image', 'displayName', 'tel', 'vehicleType', StrS, 'idTeam', 'comparePrice');
-  oS.ColsShowDefaultS=[].concat('image', 'displayName', 'vehicleType', StrS, 'comparePrice');
-  oS.ColsShowDefaultRS=[].concat('image', 'displayName', 'vehicleType', oS.StrBool, 'comparePrice');
+  oS.ColsShowDefault=['image', 'displayName', 'tel', 'vehicleType', ...StrS, 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS=['image', 'displayName', 'vehicleType', ...StrS, 'comparePrice'];
+  oS.ColsShowDefaultRS=['image', 'displayName', 'vehicleType', ...oS.StrBool, 'comparePrice'];
   oS.colOneMarkDefault='vehicleType';
 
   viewComparePriceDataPop.setDefault(10,1); // Arg: dist, time
@@ -1243,29 +1222,13 @@ app.CreatorPlugin.lawnmower=function(){
   };
 
   this.rewriteObj=function(){
-
-      // For boolean properties
-    var makeSetBoolF=function(oRole){ return function(iMTab,ele){
-      var data=oRole.MTab[iMTab][ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
-      //var colT=''; if(data>0) colT='red';
-      ele.css({'background':colT});
-      return Number(data)?langHtml.Yes:'-';
-    }};
-    var tmpSetBoolC=makeSetBoolF(oC), tmpSetBoolS=makeSetBoolF(oS);
-    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function(span,val,boOn){   span.firstChild.nodeValue=Number(val)?langHtml.Yes:langHtml.No;   };
-
       // customerHasEquipment
-    var strName='customerHasEquipment', tmpSetMap=makeSetMapF(oC, strName);
-    extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolC, setTabF:tmpSetBoolC, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
+    var strName='customerHasEquipment';  extend(oC.Prop[strName], propBoolProt);
       // area
     extend(oC.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
     
       // oS.StrBool
-    for(var i=0;i<oS.StrBool.length;i++) {
-      var strName=oS.StrBool[i], tmpSetMap=makeSetMapF(oS, strName);
-      extend(oS.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolS, setTabF:tmpSetBoolS, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
-    }
+    for(var i=0;i<oS.StrBool.length;i++) { var strName=oS.StrBool[i]; extend(oS.Prop[strName], propBoolProt); }
       // cuttingWidth
     extend(oS.Prop.cuttingWidth, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
     
@@ -1282,44 +1245,44 @@ app.CreatorPlugin.snowremoval=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson, oC.StrBool, 'area'),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson, ...oC.StrBool, 'area'],
+  ['Contact', ...StrPropContact],
+  ['Price', 'pricePerHour', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType', oS.StrBool),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', ...oS.StrBool],
+  ['Contact', ...StrPropContact],
+  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM', oC.StrBool, 'area'),
-  [].concat('Price', 'currency', 'pricePerHour')]);
+  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...oC.StrBool, 'area'],
+  ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', oS.StrBool, 'vehicleType'),
-  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', ...oS.StrBool, 'vehicleType'],
+  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'currency', 'tPos'),
-  [].concat('Tools', 'vehicleType', StrS),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'currency', 'tPos'],
+  ['Tools', 'vehicleType', ...StrS],
+  ['Reputation', ...StrPropRep]]);
   
     // Default columns
-  oC.ColsShowDefault=[].concat('image', 'displayName', oC.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour');
-  oC.ColsShowDefaultS=[].concat('image', 'displayName', oC.StrBool, 'area', 'pricePerHour');
-  oC.ColsShowDefaultRS=[].concat('image', oC.StrBool, 'area', 'pricePerHour');
+  oC.ColsShowDefault=['image', 'displayName', ...oC.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour'];
+  oC.ColsShowDefaultS=['image', 'displayName', ...oC.StrBool, 'area', 'pricePerHour'];
+  oC.ColsShowDefaultRS=['image', ...oC.StrBool, 'area', 'pricePerHour'];
   oC.colOneMarkDefault='image';
 
-  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', oS.StrBool, 'idTeam', 'comparePrice'];
-  oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', oS.StrBool, 'comparePrice'];
-  oS.ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', oS.StrBool, 'comparePrice'];
+  oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', ...oS.StrBool, 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', ...oS.StrBool, 'comparePrice'];
+  oS.ColsShowDefaultRS= ['image', 'displayName', 'vehicleType', ...oS.StrBool, 'comparePrice'];
   oS.colOneMarkDefault='vehicleType';
 
   viewComparePriceDataPop.setDefault(10,1); // Arg: dist, time
@@ -1342,26 +1305,8 @@ app.CreatorPlugin.snowremoval=function(){
   };
 
   this.rewriteObj=function(){
-    
-      // oC.StrBool, oS.StrBool
-    var makeSetBoolF=function(oRole){ return function(iMTab,ele){
-      var data=oRole.MTab[iMTab][ele.attr('name')]; data=bound(data,0,1); var ColT=['','lightgreen'], colT=ColT[data];
-      //var colT=''; if(data>0) colT='red';
-      ele.css({'background':colT});
-      return Number(data)?langHtml.Yes:'-';
-    }};
-    var tmpSetBoolC=makeSetBoolF(oC), tmpSetBoolS=makeSetBoolF(oS);
-    var makeSetMapF=function(oRole, strN){return function(iMTab){ return Number(oRole.MTab[iMTab][strN])?langHtml.Yes:langHtml.No; }; };
-    var tmpRowButtf=function(span,val,boOn){   span.firstChild.nodeValue=Number(val)?langHtml.Yes:langHtml.No;   };
-
-    for(var i=0;i<oC.StrBool.length;i++) {
-      var strName=oC.StrBool[i], tmpSetMap=makeSetMapF(oC, strName);
-      extend(oC.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolC, setTabF:tmpSetBoolC, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
-    }
-    for(var i=0;i<oS.StrBool.length;i++) {
-      var strName=oS.StrBool[i], tmpSetMap=makeSetMapF(oS, strName);
-      extend(oS.Prop[strName], { strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSetBoolS, setTabF:tmpSetBoolS, setMapF:tmpSetMap, setMapMF:tmpSetMap, setRowButtF:tmpRowButtf});
-    }
+    for(var i=0;i<oC.StrBool.length;i++) { var strName=oC.StrBool[i]; extend(oC.Prop[strName], propBoolProt); }
+    for(var i=0;i<oS.StrBool.length;i++) { var strName=oS.StrBool[i]; extend(oS.Prop[strName], propBoolProt); }
       // area
     extend(oC.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
     
@@ -1378,38 +1323,38 @@ app.CreatorPlugin.fruitpicker=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson, StrC),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson, ...StrC],
+  ['Contact', ...StrPropContact],
+  ['Price', 'pricePerHour', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson, 'experience', 'vehicleType'),
-  [].concat('Contact', StrPropContact),
-  [].concat('Price', 'currency', StrDistTimePrice, 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson, 'experience', 'vehicleType'],
+  ['Contact', ...StrPropContact],
+  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM', StrC),
-  [].concat('Price', 'currency', 'pricePerHour')]);
+  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrC],
+  ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'),
-  [].concat('Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
+  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', 'homeTown', 'currency', 'tPos', StrC),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'currency', 'tPos', 'vehicleType'),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'currency', 'tPos', 'vehicleType'],
+  ['Reputation', ...StrPropRep]]);
   
     // Default columns
-  oC.ColsShowDefault=[].concat('image', 'displayName', 'fruit', 'tel', 'idTeam', 'pricePerHour');
-  oC.ColsShowDefaultS=[].concat('image', 'displayName', 'fruit', 'pricePerHour');
-  oC.ColsShowDefaultRS=[].concat('image', 'fruit', 'pricePerHour');
+  oC.ColsShowDefault=['image', 'displayName', 'fruit', 'tel', 'idTeam', 'pricePerHour'];
+  oC.ColsShowDefaultS=['image', 'displayName', 'fruit', 'pricePerHour'];
+  oC.ColsShowDefaultRS=['image', 'fruit', 'pricePerHour'];
   oC.colOneMarkDefault='fruit';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
@@ -1437,7 +1382,6 @@ app.CreatorPlugin.fruitpicker=function(){
   this.rewriteObj=function(){
       // fruit
     extend(oC.Prop.fruit, {strType:'text', inpW:8});
-
   }
 };
 //0123456789abcdef
@@ -1451,45 +1395,45 @@ app.CreatorPlugin.programmer=function(){
 
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oC.Main=separateGroupLabels([
-  [].concat('Customer', StrPropPerson),
-  [].concat('Contact', StrPropContact),
-  [].concat('RequestedSkills', StrC),
-  [].concat('Price', 'pricePerHour', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Customer', ...StrPropPerson],
+  ['Contact', ...StrPropContact],
+  ['RequestedSkills', ...StrC],
+  ['Price', 'pricePerHour', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   oS.Main=separateGroupLabels([
-  [].concat('Seller', StrPropPerson),
-  [].concat('Contact', StrPropContact),
-  [].concat('Languages', StrS),
-  [].concat('Price', 'currency', 'pricePerHour', 'tLastPriceChange'),
-  [].concat('Position', StrPropPos),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', ...StrPropPerson],
+  ['Contact', ...StrPropContact],
+  ['Languages', ...StrS],
+  ['Price', 'currency', 'pricePerHour', 'tLastPriceChange'],
+  ['Position', ...StrPropPos],
+  ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
   oC.roleSetting=separateGroupLabels([
-  [].concat('Customer', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
-  [].concat('RequestedSkills', StrC),
-  [].concat('Price', 'currency', 'pricePerHour')]);
+  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
+  ['RequestedSkills', ...StrC],
+  ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
-  [].concat('Seller', StrPropContact, 'idTeamWanted', 'coordinatePrecisionM'),
-  [].concat('Languages', StrS),
-  [].concat('Price', 'currency', 'pricePerHour')]);
+  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Languages', ...StrS],
+  ['Price', 'currency', 'pricePerHour']]);
   
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  [].concat('Customer', 'homeTown', 'currency', 'tPos'),
-  [].concat('RequestedSkills', StrC),
-  [].concat('Reputation', 'tCreated', 'donatedAmount', 'nComplaint')]);
+  ['Customer', 'homeTown', 'currency', 'tPos'],
+  ['RequestedSkills', ...StrC],
+  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  [].concat('Seller', 'homeTown', 'currency', 'tPos'),
-  [].concat('Languages', StrS),
-  [].concat('Reputation', StrPropRep)]);
+  ['Seller', 'homeTown', 'currency', 'tPos'],
+  ['Languages', ...StrS],
+  ['Reputation', ...StrPropRep]]);
 
     // Default columns
-  oC.ColsShowDefault=[].concat('image', 'displayName', 'language', 'database', 'tel', 'idTeam', 'pricePerHour');
-  oC.ColsShowDefaultS=[].concat('image', 'displayName', 'language', 'database', 'pricePerHour');
-  oC.ColsShowDefaultRS=[].concat('image', 'language', 'database', 'pricePerHour');
+  oC.ColsShowDefault=['image', 'displayName', 'language', 'database', 'tel', 'idTeam', 'pricePerHour'];
+  oC.ColsShowDefaultS=['image', 'displayName', 'language', 'database', 'pricePerHour'];
+  oC.ColsShowDefaultRS=['image', 'language', 'database', 'pricePerHour'];
   oC.colOneMarkDefault='image';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'idTeam', 'pricePerHour','c','java','php','javascript'];
@@ -1526,9 +1470,11 @@ app.CreatorPlugin.programmer=function(){
       for(var j=0;j<arrTmp.length;j++){  var opt=createElement('option').myText(arrTmp[j]).prop('value',j);   c.append(opt);    }
       return c;
     };
-    var tmpSetGrade=function(iMTab,ele){
-      var data=oS.MTab[iMTab][ele.attr('name')]; data=bound(data,0,5); var ColT=['','lightblue','lightgreen','yellow','orange','red'], colT=ColT[data];
-      ele.css({'background':colT});
+    var tmpSetGrade=function(rowMTab){
+      //var data=rowMTab[ele.attr('name')];
+      var data=rowMTab[this.strName];
+      data=bound(data,0,5); var ColT=['','lightblue','lightgreen','yellow','orange','red'], colT=ColT[data];
+      if(this instanceof Node) this.css({'background':colT});
       return data;
     }
     for(var i=0;i<StrProgrammerLang.length;i++) {
@@ -1550,6 +1496,102 @@ window.onload=function(){
 
 /*******************************************************************************************************************
  *******************************************************************************************************************
+ * Functions used in plugins
+ *   posNumF, mustBeSetF, posNumOrEmptyF, inpAsNum
+ *   butTimeStampCreator
+ *   thumbTeamCreator
+ *   complaintButtonCreator
+ *******************************************************************************************************************
+ *******************************************************************************************************************/
+app.posNumF=function(){var val=this.value.trim(), strName=this.attr('name'); if(isNumber(val) && val>=0) return [null,val]; else return [strName+' must be nummeric and positive']; }
+app.mustBeSetF=function(){var val=this.value.trim(), strName=this.attr('name'); if(val.length) return [null,val]; else return [strName+' can not be empty'];  }
+app.posNumOrEmptyF=function(){
+  var val=this.value.trim(), strName=this.attr('name'); if(val.length==0 || (isNumber(val) && val>=0) ) return [null,val]; else return [strName+' must be nummeric and positive'];
+}
+app.inpAsNum=function(){return [null, Number(this.prop('checked'))]; }
+
+app.butTimeStampCreator=function(iRole, colName){ // Used in plugins (in viewTable.ElRole[1].tHeadLabel)
+  var el=createElement("button");
+  el.setStat=function(){  var boTmp=ORole[iRole].Prop[colName].boUseTimeDiff;  el.myText(boTmp?'+':'-');  }
+  el.on('click', function(e) {
+    e.stopPropagation();
+    ORole[iRole].Prop[colName].boUseTimeDiff=1-ORole[iRole].Prop[colName].boUseTimeDiff;
+    el.setStat();
+    for(var i=0;i<ORole.length;i++) {
+      viewTable.ElRole[i].setCell();
+      if(ORole[i].MTab.length){    mapDiv.ArrMarker[i].setMarkers();  mapDiv.ArrMarker[i].drawMarkers();   }
+    }
+  });
+  el.prop('title',langHtml.tsPopup);
+  el.addClass('smallButt');
+  el.setStat();
+  return el;
+}
+
+app.thumbTeamCreator=function(oRole){
+  var el=createElement('a');
+  var uRoleTeamImage=oRole==oC?uCustomerTeamImage:uSellerTeamImage;
+  el.mySet=function(rT){
+    //var rT=oRole.MTab[iMTab];
+    var data=rT.idTeam, tag=rT.imTagTeam;
+    if(data!=0) {
+      el.show();
+      var strTmp=uRoleTeamImage+data+'?v='+tag;
+      img.prop({src:strTmp});
+      var url=rT.linkTeam;  if(url && url.length && !RegExp("^https?:\/\/","i").test(url)) { url='http://'+url; }      el.prop({href:url});
+    }else el.hide();
+
+  }
+  var img=createElement('img');    el.prop({target:"_blank"}).append(img);    return el;
+}
+
+app.complaintButtonCreator=function(oRole){
+  var el=createElement('button');
+  //el.mySet=function(iMTab){    var rT=oRole.MTab[iMTab]; idUser=rT.idUser;   el.firstChild.nodeValue=rT.nComplaint;     }
+  //el.mySet=function(rT){     idUser=rT.idUser;   el.firstChild.nodeValue=rT.nComplaint;     }
+  el.mySet=function(rT){     row=rT;   el.firstChild.nodeValue=rT.nComplaint;     }
+  el.on('click', function(){
+    viewComplainee.setUp(oRole, row); viewComplainee.load();
+    viewComplainee.setVis();
+    doHistPush({view:viewComplainee});
+  });
+  el.innerHTML=' ';
+  var row; //idUser;
+  return el;
+}
+
+
+
+  // These function must not write to "this" unless "this instanceof Node". because setMapF and setMapMF uses them
+  // For time properties
+var makeTimeF=function(dir){return function(rowMTab){
+  var data=rowMTab[this.strName];
+  if(ORole[this.iRole].Prop[this.strName].boUseTimeDiff) data=getSuitableTimeUnitStr(dir*(data-curTime)); else data=UTC2Readable(data); return data;  // this.myText(data);
+}; };
+app.propTimeAgo=makeTimeF(-1); app.propTimeRemain=makeTimeF(1);
+    
+    
+  // For boolean properties
+var tmpSet=function(rowMTab){
+  const data=bound(rowMTab[this.strName],0,1), strText=Number(data)?langHtml.Yes:'-';
+  if(this instanceof Node) { const ColT=['','lightgreen'], colT=ColT[data]; this.css({'background':colT}); this.myText(strText); } else return strText;
+};
+var tmpSetMap=function(rowMTab){ return Number(rowMTab[this.strName])?langHtml.Yes:langHtml.No; };
+var tmpSetFilterButt=function(span,val){   span.firstChild.nodeValue=Number(val)?langHtml.Yes:langHtml.No;   };
+
+app.propBoolProt={ strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSetMap, setMapMF:tmpSetMap, setFilterButtF:tmpSetFilterButt}
+
+
+  // For string properties that might be too long.
+//var makeMapF=function(strName,n){return function(rowMTab){var str=rowMTab[strName],n=40; return str.length>n?str.substr(0,n)+'…':str;}  };
+//var makeMapMF=function(strName,n){return function(rowMTab){var str=rowMTab[strName]; return str.length>n?str.substr(0,n)+'…':str;}  };
+var NMAXMAPLABEL=40;
+app.propSetCrop=function(rowMTab){var str=rowMTab[this.strName], n=NMAXMAPLABEL; return str.length>n?str.substr(0,n)+'…':str;};
+app.propSetCropLabel=function(rowMTab){var str=rowMTab[this.strName], n=NMAXMAPLABEL-langHtml.prop[this.strName].label.length; return str.length>n?str.substr(0,n)+'…':str;};
+    
+
+/*******************************************************************************************************************
+ *******************************************************************************************************************
  * Some tools (could be placed in a library file)
  *   calcLabel
  *   spanMessageTextCreate
@@ -1567,7 +1609,7 @@ app.calcLabel=function(obj,strName){ var objA=obj[strName]; return (objA&&objA.l
 var spanMessageTextCreate=function(){
   var el=createElement('span');
   var spanInner=createElement('span');
-  el.appendChild(spanInner, imgBusy.hide());
+  el.append(spanInner, imgBusy.hide());
   el.resetMess=function(time){
     clearTimeout(messTimer);
     if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
@@ -1769,27 +1811,6 @@ var agreementStartCreator=function(){
 }
 
 
-app.butTimeStampCreator=function(iRole, colName){ // Used in plugins (in viewTable.ElRole[1].tHeadLabel)
-  var el=createElement("button");
-  el.setStat=function(){  var boTmp=ORole[iRole].Prop[colName].boUseTimeDiff;  el.myText(boTmp?'+':'-');  }
-  el.on('click', function(e) {
-    e.stopPropagation();
-    ORole[iRole].Prop[colName].boUseTimeDiff=1-ORole[iRole].Prop[colName].boUseTimeDiff;
-    el.setStat();
-    for(var i=0;i<ORole.length;i++) {
-      viewTable.ElRole[i].setCell();
-      if(ORole[i].MTab.length){    mapDiv.ArrMarker[i].setMarkers();  mapDiv.ArrMarker[i].drawMarkers();   }
-    }
-  });
-  el.prop('title',langHtml.tsPopup);
-  el.addClass('smallButt');
-  el.setStat();
-  return el;
-}
-
-  // Plugin class
-
-
 
 var trackConv=function(google_conversion_id,google_conversion_label) {
   var image = new Image(1,1);
@@ -1836,8 +1857,8 @@ app.doHistPush=function(obj){
   if((boChrome || boOpera) && !boTouch)  history.boFirstScroll=true;
 
   var indNew=history.state.ind+1;
-  stateTrans={hash:history.state.hash, ind:indNew};  // Should be called stateLast perhaps
-  history.pushState(stateTrans, strHistTitle, uCanonical);
+  stateMem={hash:history.state.hash, ind:indNew};
+  history.pushState(stateMem, strHistTitle, uCanonical);
   history.StateMy=history.StateMy.slice(0, indNew);
   history.StateMy[indNew]=obj;
 }
@@ -1902,6 +1923,16 @@ var toggleSpecialistButts=function(){
     viewFront.QuickDiv[i].butTogW.toggle(boBoth);
   }
 
+  var boSubscribed=boE?userInfoFrDB.user.boWebPushOK:false;
+  myWebPush.boSubscribed=boSubscribed;
+  if(boSubscribed && (Notification.permission!='granted')) {
+    myWebPush.subscription=null; myWebPush.boSubscribed=false;
+    //var vec=[['setWebPushSubcription',{ strSubscription: JSON.stringify(myWebPush.subscription)}]];   majax(oAJAX,vec);
+    myWebPush.cbFun(null);
+  }else{
+    SpanInpWebPushToggle.Span.forEach(ele=>ele.mySet());
+  }
+  
 
   /* if(userInfoFrDB.seller){
     var tmp=agreementStart.compareLocalDates(1); if(tmp.boNew) {agreementStart.setLocalDates(1); agreementStart.openFunc(); }
@@ -1920,7 +1951,8 @@ var createUPop=function(IP, uRedir, nonce){
 var getOAuthCode=function*(flow){
   var strQS, nonce=randomHash(), uPop=createUPop(strIPPrim, strSchemeLong+site.wwwLoginRet, nonce);
   window.loginReturn=function(strQST){ strQS=strQST; flow.next();}
-  if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
+  //if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
+  if(site.wwwLoginScope) document.domain = site.wwwLoginScope;
   window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
   yield;
 
@@ -2287,7 +2319,7 @@ var butTeamImgCreator=function(oRole){
       var strTmp=uRoleTeamImage+idTeam;
       im.prop({src:strTmp});
     }
-    if(boOn) opacity=1; else opacity=0.4; im.css({opacity: opacity});
+    let opacity=boOn?1:0.4; im.css({opacity: opacity});
   }
   var spanIndependent=createElement('span'); spanIndependent.myText(langHtml.Independent);
   var im=createElement('img');
@@ -2348,7 +2380,7 @@ var viewFilterCreator=function(){
 var filterInfoSpanCreator=function(){
   var el=createElement('span');
   el.setRatio=function(arr){ txt.nodeValue=arr[0]+'/'+arr[1];  }
-  var txt=createTextNode('/');  el.appendChild(txt);
+  var txt=createTextNode('/');  el.append(txt);
   return el;
 }
 
@@ -2385,7 +2417,6 @@ var filterButtonCreator=function(){
  *       viewUploadImageCreator
  *       viewDeleteAccountPopCreator
  *     viewSettingCreator
- *         posNumF, mustBeSetF, posNumOrEmptyF, inpAsNum
  *         spanIdTeamWantedCreator
  *     viewAdminCreator
  *     viewTeamCreator
@@ -2443,7 +2474,7 @@ var viewSettingWCreator=function(){
     viewComplainer.load();
     viewComplainer.setVis(); doHistPush({view:viewComplainer});
   });
-  var butts=createFragment().myAppend(userSettingButton, ...el.userDiv.SettingButton, createElement('br'), complainerButton).cssChildren({margin:'1em 0.1em'});
+  var butts=createFragment(userSettingButton, ...el.userDiv.SettingButton, createElement('br'), complainerButton).cssChildren({margin:'1em 0.1em'});
   var h=createElement('p').myText("Settings for logged in user").css({'font-weight':'bold'});
   el.userDiv.myAppend(h,butts);
   el.userDiv.css({'background':'#ccc', 'border':'solid 1px', 'padding':'0.2em 0', 'margin':'1em 0.6em 1em 0.6em'});
@@ -2451,13 +2482,16 @@ var viewSettingWCreator=function(){
   el.adminButton=createElement('button').myText('Admin').css({display:'block'}).on('click',function(){
     viewAdmin.setVis(); doHistPush({view:viewAdmin});
   });
+
   
-  var fragOpt=createFragment().myAppend(divMapMarker, el.userDiv, el.adminButton, ...el.TeamButton);
+  var fragOpt=createFragment(divMapMarker, el.userDiv, el.adminButton, ...el.TeamButton);
   fragOpt.cssChildren({display:'block','margin':'1em 0em 1em 0.6em'});
   
   [el.userDiv.SettingButton[0], el.TeamButton[0]].forEach((ele)=>{ele.css({background:oC.strColor}) });
   [el.userDiv.SettingButton[1], el.TeamButton[1]].forEach((ele)=>{ele.css({background:oS.strColor})});
+  
 
+  
   el.divCont=createElement('div').addClass('contDiv').myAppend(fragOpt);
 
       // divFoot
@@ -2465,6 +2499,7 @@ var viewSettingWCreator=function(){
   //var tmpImg=createElement('img').prop({src:uSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});//,'vertical-align':'middle'
   var span=createElement('span').myAppend('⚙ ', langHtml.Settings).addClass('footDivLabel');
   var divFoot=createElement('div').myAppend(buttonBack,span).addClass('footDiv');
+
   
   el.myAppend(el.divCont, divFoot);
 
@@ -2480,7 +2515,8 @@ var viewUserSettingCreator=function(){
   el.setUp=function(){
     var tmp=userInfoFrDB.user;
     inpDisplayName.value=tmp.displayName;  
-    oC.Prop.image.setInp(spanImg);
+    oC.Prop.image.setInp.call(spanImg);
+    oC.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     divIPSetting.setUp();
     return true;
   }
@@ -2495,20 +2531,25 @@ var viewUserSettingCreator=function(){
   el.createDivs=function(){
     spanImg=oC.Prop.image.crInp();
     divImage.myAppend('Display image: ', spanImg);
+    
+    spanBoWebPushOK=oC.Prop.boWebPushOK.crInp('setting');
+    divBoWebPushOK.myAppend("Enable Push Messages: ", spanBoWebPushOK);
   }
-  var spanImg;
-  var divImage=createElement('div');
+  var spanImg, divImage=createElement('div');
     // change PW
   var buttChangePW=createElement('button').myText('Change password').on('click', function(e){ viewChangePWPop.openFunc(); });
   var divPW=createElement('div').myAppend('Change password: ', buttChangePW);
 
+      // divBoWebPushOK
+  var spanBoWebPushOK, divBoWebPushOK=createElement('div');
+  
       // deleteDiv
   //var imgH=imgHelp.cloneNode(); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
 
-  var fragDiv=createFragment().myAppend(divIPSetting, divDisplayName, divImage, divPW, deleteDiv).cssChildren({'margin-top':'1em'});
+  var fragDiv=createFragment(divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, deleteDiv).cssChildren({'margin-top':'1em'});
   var divCont=createElement('div').myAppend(fragDiv).addClass('contDiv');
   
     // divFoot
@@ -2579,8 +2620,8 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   var deleteDiv=createElement('div').myAppend(butDelete);
 
 
-  var fragDiv=createFragment().myAppend(divHead, divRefresh, divIdIP, divImageName, divEmail).cssChildren({'margin-top':'1em'});
-  el.myAppend(fragDiv);
+  var fragDiv=createFragment(divHead, divRefresh, divIdIP, divImageName, divEmail).cssChildren({'margin-top':'1em'});
+  el.append(fragDiv);
   return el;
 }
 
@@ -2618,7 +2659,8 @@ var viewUploadImageCreator=function(){
 
 
 
-    var vecIn=[['uploadImage', {}], ['CSRFCode',CSRFCode]];
+    //var vecIn=[['uploadImage', {}], ['CSRFCode',CSRFCode]];
+    var vecIn=[['uploadImage', {}], ['CSRFCode',getItem('CSRFCode')]];
     var arrRet=[sendFunRet];
     formData.append('vec', JSON.stringify(vecIn));
     var xhr = new XMLHttpRequest();
@@ -2632,6 +2674,7 @@ var viewUploadImageCreator=function(){
     xhr.onload=function() {
       var dataFetched=this.response;
       var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
+      
       
       var dataArr=data.dataArr;  // Each argument of dataArr is an array, either [argument] or [altFuncArg,altFunc]
       delete data.dataArr;
@@ -2731,9 +2774,9 @@ var settingCreator=function(oRole){
     resetMess();
     var o={charRole:charRole},boErr=0;
     arrInp.forEach(function(ele,i){
-      var inp=ele,  strName=inp.attr('name'), tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{};
-      //if('saveInp' in tmpObj) {var tmp=tmpObj.saveInp(inp); if(tmp===false) boErr=1; else if(tmp===null); else o[strName]=tmp;} else o[strName]=inp.value.trim();
-      if('saveInp' in tmpObj) {var [err,val]=tmpObj.saveInp(inp); if(err) {setMess(err, 10); boErr=1; } else o[strName]=val;}
+      var inp=ele,  strName=inp.attr('name'), prop=(strName in oRole.Prop)?oRole.Prop[strName]:{};
+      //if('saveInp' in prop) {var tmp=prop.saveInp(inp); if(tmp===false) boErr=1; else if(tmp===null); else o[strName]=tmp;} else o[strName]=inp.value.trim();
+      if('saveInp' in prop) {var [err,val]=prop.saveInp.call(inp); if(err) {setMess(err, 10); boErr=1; } else o[strName]=val;}
       else {var tmp=inp.value; if(typeof tmp=='string') tmp=tmp.trim(); o[strName]=tmp; }
     });
     if(boErr) return;
@@ -2751,9 +2794,10 @@ var settingCreator=function(oRole){
       var label=createElement('label').myText(strLabel).css({flex:'0 1 auto', 'margin-right':'0.4em'}); //
       var spanSpace=createElement('span').css({flex:'2 2 auto'}); //
 
-      var inp='', tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in tmpObj)?tmpObj.strType:'';
-      if('crInp' in tmpObj) inp=tmpObj.crInp(); else inp=createElement('input').prop('type',strType);
-      if('inpW' in tmpObj)  inp.css({width:tmpObj.inpW+'em'});
+      var inp='', prop=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in prop)?prop.strType:'';
+      if('crInp' in prop) inp=prop.crInp.call(inp); else inp=createElement('input').prop('type',strType);
+      extend(inp, {strName:strName, iRole:oRole.ind});
+      if('inpW' in prop)  inp.css({width:prop.inpW+'em'});
       inp.css({flex:'0 1 auto'});
       inp.attr('name',strName);
       //var divLCH=createElement('div').myAppend(strLabel,imgH,inp).css({position:'relative', margin:'.8em 0','min-height':'2em'});
@@ -2779,8 +2823,8 @@ var settingCreator=function(oRole){
   }
   el.setUp=function(){
     arrInp.forEach(function(ele, i){
-      var inp=ele, strName=inp.attr('name'), tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in tmpObj)?tmpObj.strType:'';
-      if('setInp' in tmpObj) tmpObj.setInp(inp);
+      var inp=ele, strName=inp.attr('name'), prop=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in prop)?prop.strType:'';
+      if('setInp' in prop) prop.setInp.call(inp);
       else {
         var data=userInfoFrDB[strRole][strName];
         if(strType==='checkbox') inp.prop('checked',Number(data));   else inp.value=data;
@@ -2835,12 +2879,6 @@ var viewSettingCreator=function(){
 }
 
 
-app.posNumF=function(inp){var val=inp.value.trim(), strName=inp.attr('name'); if(isNumber(val) && val>=0) return [null,val]; else return [strName+' must be nummeric and positive']; }
-app.mustBeSetF=function(inp){var val=inp.value.trim(), strName=inp.attr('name'); if(val.length) return [null,val]; else return [strName+' can not be empty'];  }
-app.posNumOrEmptyF=function(inp){
-  var val=inp.value.trim(), strName=inp.attr('name'); if(val.length==0 || (isNumber(val) && val>=0) ) return [null,val]; else return [strName+' must be nummeric and positive'];
-}
-app.inpAsNum=function(inp){return [null, Number(inp.prop('checked'))]; }
 
 
 
@@ -3082,7 +3120,7 @@ var viewEntryCreator=function(oRole){
 
   
   el.teamApprovedMess=createElement('div').css({display:'block'}).myText('Team/brand not approved, Contact '+domainName+' to become approved.');
-  var fragRow=createFragment().myAppend(divOrdinal, divLoginSelector, pWiki, buttLoginTeam, el.teamApprovedMess).cssChildren({'margin':'1em 0em 1em 0.6em'});;
+  var fragRow=createFragment(divOrdinal, divLoginSelector, pWiki, buttLoginTeam, el.teamApprovedMess).cssChildren({'margin':'1em 0em 1em 0.6em'});;
   
     // , NoteYouCanDeleteYourAccount  FBToPreventMultipleAccounts, NothingIsWrittenToYourFBFlow, YouCanUseCustomImage, , langSpan, NoteYouCanDeleteYourAccount
     
@@ -3112,12 +3150,12 @@ var mainIntroPopCreator=function(oRole){
     resetMess();  
     var strTel=inpTel.value.trim(); inpTel.value=strTel;
     var strEmail=inpEmail.value.trim(); inpEmail.value=strEmail;
-    //if(strTel.length==0 && strEmail.length==0) {setMess('At least one of tel/email should be filled in.'); return; }
-    if(strTel.length==0) {setMess('tel is empty'); return; }
+    if(strTel.length==0 && strEmail.length==0 && !myWebPush.boSubscribed) {setMess('At least one of WebPush / tel / email must be enabled / supplied'); return; }
+    //if(strTel.length==0) {setMess('tel is empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
     var nameT=inpName.value.trim();  inpName.value=nameT;
     var boIdIPImage=Number(cbIdIPImage.prop('checked'));
-    var o1={tel:strTel, displayName:nameT, displayEmail:strEmail, currency:curT, charRole:charRole, boIdIPImage:boIdIPImage};
+    var o1={displayName:nameT, strSubscription:JSON.stringify(myWebPush.subscription), tel:strTel, displayEmail:strEmail, currency:curT, charRole:charRole, boIdIPImage:boIdIPImage};
     var vec=[['RIntroCB',o1,function(data){el.closePop();}], ['setupById', {}]];   majax(oAJAX,vec);
 
     var iframeConversion=createElement('iframe').prop({src:uConversion, scrolling:"no", frameborder:0,  allowTransparency:true}).css({border:'none', overflow:'hidden', width:'292px', height:'62px', display:'none'});
@@ -3130,10 +3168,15 @@ var mainIntroPopCreator=function(oRole){
     var nameT=isSet(sessionLoginIdP)?sessionLoginIdP.nameIP:'';
     inpName.value=nameT;
     cbIdIPImage.prop('checked', true);
+    oC.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     return true;
   }
   el.openFunc=function(){   el.openPop(); el.setUp(); }
  
+  el.createDivs=function(){
+    spanBoWebPushOK=oC.Prop.boWebPushOK.crInp('intro');
+    divBoWebPushOK.myAppend("Enable Push Messages*: ", spanBoWebPushOK);
+  }
   popUpExtend(el);  
   el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em', 'text-align':'left', 'width':'90%'}); 
 
@@ -3143,27 +3186,35 @@ var mainIntroPopCreator=function(oRole){
          
   var head=createElement('h3').myText(langHtml['introHead'+charRoleUC]);
   //var pBread=createElement('p').myText("These data are shown to everyone. You may want to use a separate phone if you use this service often.");
-  var pBread=createElement('p').myText("These data are shown to everyone.");
-  //var pBread2=createElement('p').myText("At least one of tel/email should be filled in.");
-  var pBread3=createElement('p').myText("You may want to use a separate phone if you use this service often.");
+  var pBread=createElement('h4').myText("Choose how you want to appear...");
+  var pBread2=createElement('h4').myText("...and how you want to be contacted.");  // You may want to use a separate phone if you use this service often.
   var inpName=createElement('input').prop('type','text').css({width:'70%', 'box-sizing':'border-box'});
-  var inpTel=createElement('input').prop('type','tel').css({width:'70%', 'box-sizing':'border-box'});
-  var inpEmail=createElement('input').prop('type','email').css({width:'70%', 'box-sizing':'border-box'});
-  var cbIdIPImage=createElement('input').prop({"type":"checkbox"});
   var divName=createElement('p'); divName.myAppend('Name', ': ',inpName);
-  var divTel=createElement('p'); divTel.myAppend(langHtml.Tel, ': ',inpTel);
-  var divEmail=createElement('p'); divEmail.myAppend(langHtml.Email, ': ',inpEmail);
+  
+  var cbIdIPImage=createElement('input').prop({"type":"checkbox"});
   var divIdIPImage=createElement('p'); divIdIPImage.myAppend('Use image from ID provider', ': ',cbIdIPImage);
+  
+  //var butToggle=createElement('button').myText('boPushToggle').on('click', function(){this.disabled=true; myWebPush.togglePushNotifications();} );
+  
+  var spanBoWebPushOK, divBoWebPushOK=createElement('div');
+  
+  var inpTel=createElement('input').prop('type','tel').css({width:'70%', 'box-sizing':'border-box'});
+  var divTel=createElement('p'); divTel.myAppend(langHtml.Tel, '*: ',inpTel);
+  
+  var inpEmail=createElement('input').prop('type','email').css({width:'70%', 'box-sizing':'border-box'});
+  var divEmail=createElement('p'); divEmail.myAppend(langHtml.Email, '*: ',inpEmail);
+  var pBread3=createElement('p').myText("*At least one of these must be enabled/supplied.").css({'font-size':'78%'});
   //divName.add(divTel).add(divIdIPImage).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
   //[divName, divTel, divIdIPImage].cssChildren({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
-  [divName, divTel, divEmail, divIdIPImage].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
+  [divName, divIdIPImage, divTel, divEmail].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
   //cssChildren([divName, divTel, divIdIPImage], {display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
 
-  var saveButton=createElement('button').myText(langHtml.Continue).on('click', save).css({display:'block', 'margin':'1em auto'});
-  el.myAppend(head, pBread, divName, pBread3, divTel, divIdIPImage, saveButton).css({padding:'0.5em'}); //, pBread2   , divEmail
+  var saveButton=createElement('button').myText(langHtml.Continue).on('click', save).css({display:'block', 'margin':'2em auto 1em'});
+  el.myAppend(head, pBread, divName, divIdIPImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton).css({padding:'0.5em'}); //   , divEmail
 
   return el;
 }
+
 
 
 
@@ -3222,7 +3273,7 @@ var viewComplaintCommentPopCreator=function(){
   var save=createElement('button').myText(langHtml.Save).on('click', function(){sendFunc();});
   var del=createElement('button').myText(langHtml.vote.deleteComplaint).on('click', function(){comment.value=''; sendFunc();});
   var cancel=createElement('button').myText(langHtml.Cancel).on('click', historyBack);
-  var butts=createFragment().myAppend(save, del, cancel).cssChildren({margin:'0.5em 0'});
+  var butts=createFragment(save, del, cancel).cssChildren({margin:'0.5em 0'});
   var answerHead=createElement('div').myText(langHtml.vote.answer+': ').css({margin:'0.5em 0em 0.2em','font-weight':'bold'}); answerHead.hide();
   var answer=createElement('div');
 
@@ -3278,7 +3329,7 @@ var viewComplaintAnswerPopCreator=function(){
   var save=createElement('button').myText(langHtml.Save).on('click', function(){sendFunc();});
   var del=createElement('button').myText(langHtml.vote.deleteAnswer).on('click', function(){answer.value=''; sendFunc();});
   var cancel=createElement('button').myText(langHtml.Cancel).on('click', historyBack);
-  var butts=createFragment().myAppend(save, del, cancel).cssChildren({margin:'0.5em 0'});
+  var butts=createFragment(save, del, cancel).cssChildren({margin:'0.5em 0'});
 
   el.css({'text-align':'left'});
 
@@ -3289,22 +3340,26 @@ var viewComplaintAnswerPopCreator=function(){
 
   return el;
 }
-
+// Note! your device does not support "push notifications", so make sure you have email / phone number provided.
+// Note! you don't have "push notifications" enabled, so make sure you have email / phone number provided.
 
 var viewComplaineeCreator=function(){    // Complaints on a certain complainee
   var el=createElement('div');
   el.toString=function(){return 'complainee';}
-  el.setUp=function(oRoleT, id){
+  el.setUp=function(oRoleT, rowComplainee){
+    //var id=rMTab.idUser;
     oRole=oRoleT; el.indRole=oRole.ind;
-    var iMTab=viewTable.ElRole[oRole.ind].getMTabInd(id);
-    rowComplainee=oRole.MTab[iMTab];
+    //var iMTab=viewTable.ElRole[oRole.ind].getMTabInd(id);
+    //rowComplainee=oRole.MTab[iMTab];
+    var iMTab=oRole.MTab.indexOf(rowComplainee), boMTab=iMTab!=-1;
     el.idComplainee=rowComplainee.idUser;
     nameSpan.myText(rowComplainee.displayName);
 
     var strTmp; //var IPTmp=enumIP[Number(rowComplainee.IP)];
     strTmp=calcImageUrl(rowComplainee);
     imgComplainee.prop({src:strTmp});
-    ListCtrlDiv[oRole.ind].mySet(iMTab);
+    if(boMTab) ListCtrlDiv[oRole.ind].mySet(iMTab);
+    el.listCtrlDivW.toggle(boMTab);
     spanRole.myText(langHtml[ucfirst(oRole.strRole)]);
     span.myText('Complaints on a user ('+langHtml[oRole.strRole]+')').css({background:oRole.strColor}); // divFoot label
   }
@@ -3384,7 +3439,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
   
   var offset=0,rowCount=20;
   el.boLoaded=0; //el.idComplainee;
-  var tab=[], rowComplainee, imgComplainee=createElement('img').css({'vertical-align':'middle'}), nameSpan=createElement('span'), spanRole=createElement('span');
+  var tab=[], imgComplainee=createElement('img').css({'vertical-align':'middle'}), nameSpan=createElement('span'), spanRole=createElement('span');
   var complaineeInfo=createElement('div').myAppend(spanRole,': ',imgComplainee,' ',nameSpan).css({'margin':'0.5em',display:'inline-block', 'float':'right'}); //,'float':'right'
   var bub=createElement('div').myText(langHtml.writeComplaintPopup);
   var imgH=imgHelp.cloneNode();  popupHover(imgH,bub);
@@ -3616,7 +3671,7 @@ var listCtrlCreator=function(oRole){ // The little map and up/down arrows
     var iTmp=trt.iMTab;
     ViewInfo[oRole.ind].setContainers(iTmp);
     //if(viewComplainee.is(':visible')){viewComplainee.setUp(oRole, oRole.MTab[iTmp].idUser); viewComplainee.load(); }
-    if(viewComplainee.style.display!='none'){viewComplainee.setUp(oRole, oRole.MTab[iTmp].idUser); viewComplainee.load(); }
+    if(viewComplainee.style.display!='none'){viewComplainee.setUp(oRole, oRole.MTab[iTmp]); viewComplainee.load(); }
   }
   var buttonPrev=createElement('button').myText('▲').css({display:'block','margin':'0em'}).on('click', function(){tmpf(-1);})
   var buttonNext=createElement('button').myText('▼').css({display:'block','margin':'1.5em 0em 0em'}).on('click', function(){tmpf(1);})
@@ -3632,26 +3687,30 @@ var viewInfoCreator=function(oRole){
   var {strRole, Prop, charRoleUC}=oRole, {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
   el.indRole=oRole.ind;
   el.toString=function(){return 'info'+charRoleUC;}
-  el.setContainers=function(iMTab){
+  el.setContainers=function(arg){ // arg is iMTab or rowMTab
+    var boMTab=typeof arg=='number';
+    if(boMTab) { var iMTab=arg, rowMTab=oRole.MTab[iMTab]; } else rowMTab=arg;
     containers.forEach(function(ele){
-      var strName=ele.attr('name'), tmpObj=(strName in Prop)?Prop[strName]:{};
-      var tmp=''; if('setInfo' in tmpObj) tmp=tmpObj.setInfo(iMTab,ele);  else tmp=oRole.MTab[iMTab][strName];
+      var strName=ele.attr('name'), prop=(strName in Prop)?Prop[strName]:{};
+      var objT={strName:strName, iRole:oRole.ind}; extend(ele,objT);
+      var tmp=''; if('setInfo' in prop) tmp=prop.setInfo.call(ele, rowMTab);  else tmp=rowMTab[strName];
       if(typeof tmp!='undefined') ele.myText(tmp);
     });
     el.boLoaded=1;
-    ListCtrlDiv[oRole.ind].mySet(iMTab);
+    if(boMTab) ListCtrlDiv[oRole.ind].mySet(iMTab);
+    menuDiv.toggle(boMTab);
   }
   el.createContainers=function(){
     for(var i=0;i<StrProp.length;i++){
-      var strName=StrProp[i], tmpObj=(strName in Prop)?Prop[strName]:{};
-      var imgH=''; if(strName in oRole.helpBub && Number(Prop[strName].b[oRole.bFlip.help])) { imgH=imgHelp.cloneNode();   popupHover(imgH,oRole.helpBub[strName]); }
+      var strName=StrProp[i], prop=(strName in Prop)?Prop[strName]:{};
+      var imgH=''; if(strName in oRole.helpBub && Number(Prop[strName].b[oRole.bFlip.help])) { imgH=imgHelp.cloneNode().css({margin:'0em 0.3em 0em 0.4em'});   popupHover(imgH,oRole.helpBub[strName]); }
 
       var strDisp,strMargRight,strWW; if(Number(Prop[strName].b[oRole.bFlip.block])) {strDisp='block'; strMargRight='0em'; strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
 
       var strLabel=''; if(Number(Prop[strName].b[oRole.bFlip.label])) { strLabel=calcLabel(langHtml.prop, strName)+': ';      }
 
-      var spanC=createElement('span').myText(' ').css({'font-weight':'bold',margin:'0 0.2em 0 0em'}); spanC.attr({name:strName});
-      if('crInfo' in tmpObj) tmpObj.crInfo(spanC);
+      var spanC=createElement('span').myText(' ').css({'font-weight':'bold',margin:'0 0.2em 0 0em'}).prop({strName:strName, iRole:oRole.ind}).attr({name:strName});
+      if('crInfo' in prop) prop.crInfo.call(spanC);
       var divLCH=createElement('div').css({display:strDisp,'margin-right':strMargRight,'white-space':strWW}).attr({name:strName}).myAppend(strLabel,spanC,imgH)
       el.divCont.myAppend(divLCH,' ');
     }
@@ -3680,6 +3739,7 @@ var viewInfoCreator=function(oRole){
   el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return el;
 }
+
 
 
 
@@ -4044,10 +4104,17 @@ var mapDivCreator=function(){
   }
 
 
-  el.setCentNMe=function(latLng){
-    if(window.boVideo) latLng=latLngDebug;
-    var tmp=el.pWCMe=merProj.fromLatLngToPoint(latLng);   pWCC={x:tmp.x, y:tmp.y};
+  el.setMe=function(latlng, boAndCenter=false){
+    if(window.boVideo) latlng=latlngDebug;
+    el.latlngMe=latlng;
+    el.pWCMe=merProj.fromLatLngToPoint(latlng);   if(boAndCenter) copySome(pWCC, el.pWCMe, ['x','y']);
   }
+  el.setOpponent=function(data, url){
+    var {objSender, iRole, message, tSent, latlngSender}=data;
+    el.latlngOpponent=latlngSender;
+    el.pWCOpponent=merProj.fromLatLngToPoint(latlngSender); el.elImgOpponent.prop({src:url, myData:data});
+  }
+  el.setCenter=function(latlng){ pWCC=merProj.fromLatLngToPoint(latlng); }
   el.getMapStatus=function(){
     //if(!el.storedPWCC || !el.storedZoom || !el.storedVPSize) el.storeVar();
     //return {pC:el.storedPWCC, zoom:el.storedZoom, VPSize:el.storedVPSize};
@@ -4063,9 +4130,9 @@ var mapDivCreator=function(){
     //el.storedZoom=zoomFacW;
     el.storedVPSize=[Number(String(el.clientWidth)), Number(String(el.clientHeight))];
   }
-  el.set1=function(zoomLevel, latLngFirst){
-    el.setCentNMe(latLngFirst);
-  }
+  //el.set1=function(zoomLevel, latlngFirst){
+    //el.setMe(latlngFirst, 1);
+  //}
   el.getVPSize=function(){
     //if(el.is(':visible')) el.storedVPSize=[Number(String(el.clientWidth)), Number(String(el.clientHeight))];
     if(isVisible(el)) el.storedVPSize=[Number(String(el.clientWidth)), Number(String(el.clientHeight))];
@@ -4162,9 +4229,9 @@ var mapDivCreator=function(){
     var objTmp;
     if(i>=this.oRole.nMTab) objTmp=makeMarkerBubble({text:'  ', color:this.oRole.strColor});
     else{
-      var strName=this.oRole.colOneMark;
-      var tmp=this.oRole.MTab[i][strName], tmpObj=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
-      if('setMapF' in tmpObj)  tmp=tmpObj.setMapF(i);
+      var strName=this.oRole.colOneMark, rowMTab=this.oRole.MTab[i];
+      var tmp=rowMTab[strName], prop=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
+      if('setMapF' in prop)  tmp=prop.setMapF.call({strName:strName, iRole:this.oRole.ind}, rowMTab);
       if(typeof tmp!='object'){
         if((typeof tmp=='string' && tmp.length==0) || tmp===null){tmp='  ';}
         objTmp=makeMarkerBubble({text:tmp, color:this.oRole.strColor});
@@ -4178,8 +4245,9 @@ var mapDivCreator=function(){
     var k=0;
     //for(var jSel in this.oRole.ColsShow){
     for(var j=0;j<this.oRole.ColsShow.length;j++){
-      var strName=this.oRole.ColsShow[j], tmp, tmpObj=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
-      if('setMapMF' in tmpObj) {  var tmp=tmpObj.setMapMF(i);  } else tmp=this.oRole.MTab[i][strName];
+      var strName=this.oRole.ColsShow[j], tmp, prop=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
+      var rowMTab=this.oRole.MTab[i];
+      if('setMapMF' in prop) {  var tmp=prop.setMapMF.call({strName:strName, iRole:this.oRole.ind}, rowMTab);  } else tmp=rowMTab[strName];
       if(typeof tmp=='string' || typeof tmp=='number') { this.arrFuncOverData[k]=calcLabel(langHtml.prop, strName)+': '+tmp; k++; }
     }
     this.arrFuncOverData.length=k;
@@ -4282,11 +4350,15 @@ var mapDivCreator=function(){
 
 
   el.drawMe=function(){
-    var left=el.pWCMe.x*zoomFacW-pixBoardX, top=el.pWCMe.y*zoomFacW-pixBoardY;    elImgCurLoc.css({left:left+'px', top:top+'px'});
+    var left=el.pWCMe.x*zoomFacW-pixBoardX, top=el.pWCMe.y*zoomFacW-pixBoardY;    elImgMe.css({left:left+'px', top:top+'px'});
+  }
+  el.drawOpponent=function(){
+    var left=el.pWCOpponent.x*zoomFacW-pixBoardX, top=el.pWCOpponent.y*zoomFacW-pixBoardY;    el.elImgOpponent.css({left:left+'px', top:top+'px'});
   }
   var zoomFacW;
   var maxZ=intMax;
   el.pWCMe={x:128,y:128};
+  el.pWCOpponent={x:128,y:128};
   var pWCC={x:128,y:128};
   var iTileFirstLast=-1, jTileFirstLast=-1, zoomLevLast=-20, drLevLast=-20;
   var TileStack=[];
@@ -4306,8 +4378,26 @@ var mapDivCreator=function(){
   if(boDbg) elGlas.css({border:'pink solid'});
   var elGlasBack=elGlas.cloneNode(true);
 
-  var elImgCurLoc=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}); elImgCurLoc.src=uMyMarker;
-  elGlas.appendChild(elImgCurLoc);
+  var elImgMe=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}); elImgMe.src=uMarkerMe;
+  el.elImgOpponent=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':2}).prop({'src':uMarkerOpponent}).on('click',function(){
+    var {objSender, iRole, message, tSent, latlngSender}=this.myData;
+    var {idUser, displayName, boImgOwn, image, imTag}=objSender;
+    //var iMTab=null; ORole[iRole].MTab.forEach(function(item,i){ if(item.idUser==idUser) iMTab=i;});
+    //if(iMTab==null){ return; }
+    var viewInfoT=ViewInfo[iRole];
+    //var data=extend({}, userInfoFrDB[ORole[iRole].strRole]);
+    //copySome(data, userInfoFrDB.user, ['boImgOwn', 'image', 'imTag', 'displayName']);
+    //viewInfoT.setContainers(data);
+    //viewInfoT.setVis();
+    //doHistPush({view:viewInfoT});
+    var retFunc=function(data){
+      viewInfoT.setContainers(data[iRole]);
+      viewInfoT.setVis();
+      doHistPush({view:viewInfoT});
+    }
+    var vec=[['getSingleUser',{IRole:[iRole], idUser:idUser}, retFunc]];  majax(oAJAX,vec); 
+  });
+  elGlas.append(elImgMe, el.elImgOpponent);
   
   el.ElImgGroupOverlay=[]; for(var i=0;i<ORole.length;i++) el.ElImgGroupOverlay[i]=new ElImgGroupOverlayT(ORole[i]);
   elGlas.append(...el.ElImgGroupOverlay);
@@ -4343,6 +4433,7 @@ var mapDivCreator=function(){
       el.ElImgGroupOverlay[i].hideGroupOverlay();
     }
     el.drawMe();
+    el.drawOpponent();
     if(window.loadTabStart) loadTabStart(1);
   });
 
@@ -4481,7 +4572,7 @@ var quickCreator=function(oRole){
     var boShow=Number(userInfoFrDB[strRole].boShow); 
     var hideTimer=Number(userInfoFrDB[strRole].hideTimer);
     var tHide=Number(userInfoFrDB[strRole].tPos)+hideTimer, tDiff=tHide-curTime;
-    var tDiffForm=UTC2ReadableDiff(tDiff);
+    var tDiffForm=getSuitableTimeUnitStr(tDiff);
     var tmpShow,tmpHide,str; if(boShow) { str=hideTimer==intMax?'∞':tDiffForm; tmpShow='#0f0'; tmpHide=colGray;}else { str=langHtml.On; tmpShow=colGray; tmpHide='#f00'; }
     butShowWPos.css('background-color', tmpShow); butShowWPos.firstChild.nodeValue=str; buthide.css('background-color', tmpHide);
     spanDragMess.toggle(Boolean(1-boShow));
@@ -4496,8 +4587,9 @@ var quickCreator=function(oRole){
   var divButts=createElement('span').myAppend(butShowWPos,buthide);
 
   var myShow=function(pos){
-    var latLng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latLng=latLngDebug;
-    uploadPosNLoadTabStart(latLng, Number(selHideTimer.value), oRole);
+    var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
+    mapDiv.setMe(latlng, 1);
+    uploadPosNLoadTabStart(Number(selHideTimer.value), oRole);
   }
 
   butShowWPos.on('click', function(){
@@ -4515,7 +4607,7 @@ var quickCreator=function(oRole){
   //var arrHideTime=[0.25,1,2, 5,10,15,20,30,40,60,90,2*60,3*60,4*60,5*60,6*60,8*60,10*60,12*60,18*60,24*60,36*60,2*24*60,3*24*60,4*24*60,5*24*60,6*24*60,7*24*60,14*24*60,30*24*60,365*24*60]; // Minutes
   //for(var i=0;i<arrHideTime.length;i++) arrHideTime[i]*=60;
   var arrHideTime=[15,60,120, 300,600,15*60,20*60,30*60,40*60,3600,1.5*3600,2*3600,3*3600,4*3600,5*3600,6*3600,8*3600,10*3600,12*3600,18*3600,86400,1.5*86400,2*86400,3*86400,4*86400,5*86400,6*86400,7*86400,14*86400,30*86400,intMax], len=arrHideTime.length;
-  for(var i=0;i<len;i++){  var str=UTC2ReadableDiff(arrHideTime[i]); if(i==len-1) str='∞'; var opt=createElement('option').myText(str).prop('value',arrHideTime[i]);   selHideTimer.append(opt);    }
+  for(var i=0;i<len;i++){  var str=getSuitableTimeUnitStr(arrHideTime[i]); if(i==len-1) str='∞'; var opt=createElement('option').myText(str).prop('value',arrHideTime[i]);   selHideTimer.append(opt);    }
 
   var spanDragMess=createElement('span').myText(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();
   
@@ -4938,34 +5030,6 @@ var tHeadLabelCreator=function(oRole){
 }
 
 
-app.thumbTeamCreator=function(oRole){  // Used in plugin
-  var el=createElement('a');
-  var uRoleTeamImage=oRole==oC?uCustomerTeamImage:uSellerTeamImage;
-  el.mySet=function(iMTab){
-    var rT=oRole.MTab[iMTab], data=rT.idTeam, tag=rT.imTagTeam;
-    if(data!=0) {
-      el.show();
-      var strTmp=uRoleTeamImage+data+'?v='+tag;
-      img.prop({src:strTmp});
-      var url=rT.linkTeam;  if(url && url.length && !RegExp("^https?:\/\/","i").test(url)) { url='http://'+url; }      el.prop({href:url});
-    }else el.hide();
-
-  }
-  var img=createElement('img');    el.prop({target:"_blank"}).append(img);    return el;
-}
-
-app.complaintButtonCreator=function(oRole){
-  var el=createElement('button');
-  el.mySet=function(iMTab){    var rT=oRole.MTab[iMTab]; idUser=rT.idUser;   el.firstChild.nodeValue=rT.nComplaint;     }
-  el.on('click', function(){
-    viewComplainee.setUp(oRole, idUser); viewComplainee.load();
-    viewComplainee.setVis();
-    doHistPush({view:viewComplainee});
-  });
-  el.innerHTML=' ';
-  var idUser;      return el;
-}
-
 
 var tableCreator=function(oRole){
   var el=createElement('div');
@@ -5027,9 +5091,11 @@ var tableCreator=function(oRole){
     for(var i=0;i<oRole.nMTab;i++){
       var r=tr[i]; 
       r.querySelectorAll('td').forEach(function(ele){
-        var strName=ele.attr('name'), tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{};
-        var tmp=''; if('sortTabF' in tmpObj) tmp=tmpObj.sortTabF(i,ele);  else tmp=oRole.MTab[i][strName];     ele.valSort=tmp;
-        var tmp=''; if('setTabF' in tmpObj) tmp=tmpObj.setTabF(i,ele);  else tmp=oRole.MTab[i][strName];
+        var strName=ele.attr('name'), prop=(strName in oRole.Prop)?oRole.Prop[strName]:{};
+        var rowMTab=oRole.MTab[i];
+        var objT={strName:strName, iRole:oRole.ind}; extend(ele,objT);
+        var tmp=''; if('sortTabF' in prop) tmp=prop.sortTabF.call(objT, rowMTab);  else tmp=rowMTab[strName];     ele.valSort=tmp;
+        var tmp=''; if('setTabF' in prop) tmp=prop.setTabF.call(ele, rowMTab);  else tmp=rowMTab[strName];
         if(typeof tmp!='undefined') ele.myHtml(tmp);
       });
     }
@@ -5045,9 +5111,9 @@ var tableCreator=function(oRole){
       var row=createElement('tr'); row.iMTab=i;
       if(!boTouch) row.on('mouseover',function(){this.css({background:'yellow'});}); row.on('mouseout',function(){this.css({background:''});});
       for(var j=0;j<ColsTmp.length;j++){
-        var strName=ColsTmp[j], tmpObj=(strName in oRole.Prop)?oRole.Prop[strName]:{};
-        var td=createElement('td').css({'max-width':'200px','max-height':'40px',overflow:'hidden'}).attr({'name':strName});
-        if('crTabF' in tmpObj) tmpObj.crTabF(td);
+        var strName=ColsTmp[j], prop=(strName in oRole.Prop)?oRole.Prop[strName]:{};
+        var td=createElement('td').css({'max-width':'200px','max-height':'40px',overflow:'hidden'}).attr({'name':strName}).prop({strName:strName, iRole:oRole.ind});
+        if('crTabF' in prop) prop.crTabF.call(td);
         if(j>=oRole.ColsShow.length) td.hide();
         row.append(td);  //,'word-break':'break-all'
       }
@@ -5060,7 +5126,7 @@ var tableCreator=function(oRole){
       //if(ele.nodeName!='TD') return true;
       var strName=elC.attr('name');
       var iMTab=elC.parentNode.iMTab, val=oRole.MTab[iMTab][strName];
-      if(strName=='tel' && val.length || strName=='displayEmail' && val.length || strName=='link' && val.length || strName=='nComplaint') return;
+      if(strName=='tel' && val.length || strName=='displayEmail' && val.length || strName=='link' && val.length || strName=='nComplaint' || strName=='boWebPushOK') return;
       var viewroleInfo=strRole=='customer'?viewInfoC:viewInfoS;
       viewroleInfo.setContainers(iMTab);
       viewroleInfo.setVis();
@@ -5134,6 +5200,111 @@ var viewTableCreator=function(){
 }
 
 
+
+
+/*******************************************************************************************************************
+ *******************************************************************************************************************
+ *
+ * Greeting
+ *
+ *******************************************************************************************************************
+ *******************************************************************************************************************/
+
+
+var viewGreetingCreator=function(){
+  var el=createElement('div');
+  el.toString=function(){return 'chat';}
+  el.initMyWebPush=function(){ 
+    
+    app.myWebPush=new MyWebPush();
+
+    myWebPush.uploadFun=function(){ 
+      var vec=[['setWebPushSubcription',{strSubscription: JSON.stringify(myWebPush.subscription)}], ['setupById', {Role:['customer', 'seller']}]];   majax(oAJAX,vec);
+    }
+    myWebPush.cbFun=function(err, elSpan){
+      if(err) console.log(err);
+      SpanInpWebPushToggle.Span.forEach(ele=>ele.myCB(err));
+      if(typeof elSpan!='undefined' && typeof elSpan.myCBOne!='undefined') elSpan.myCBOne();
+    }
+    var setOpponentNLoadTabStart=function(){ // Called with postMessage from serviceWorker
+      var {objSender, iRole, message, tSent, latlngSender}=data;
+      var {displayName}=objSender;
+      //mapDiv.setOpponent(latlngSender, 1);
+      var o1=mapDiv.getMapStatus(), {pC}=o1;
+      var boRefresh=mapDiv.setTile(o1.zoom);
+      
+      var objTmp=makeMarkerBubble({text:displayName+' says:\n'+message, color:ORole[iRole].strColor});
+      mapDiv.setOpponent(data, objTmp.url); 
+      mapDiv.elImgOpponent.toggle(1);
+      
+      var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
+      var vec=[['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+      
+      var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+      if(arrRole.length) vec.unshift(['setupById', {Role:arrRole}]);
+      
+      //var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+      //var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
+      //var vec=[['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+      
+      majax(oAJAX,vec);
+      setMess('',null,true);
+    }
+
+    myWebPush.cbOnMessage=function(dataT){
+      data=dataT;
+      history.funOverRule=setOpponentNLoadTabStart;
+      history.fastBack(viewFront,1);
+    }
+    if(myWebPush.boPushSupported) myWebPush.registerSW();
+
+  }
+  el.setUp=function(idUserT, iRoleT){ // Called when pushing button leading to this view
+    idUser=idUserT; iRole=iRoleT;
+    butSendMess.prop({disabled:Boolean(strGeoErrCode)});
+    var strMess='';
+    if(strGeoErrCode) strMess='Geolocation must be enabled and work. ('+strGeoErrCode+', '+strGeoErrMessage+')';
+    divDisabledMess.toggle(Boolean(strGeoErrCode)).myText(strMess);
+  }
+  el.setUpB=function(){ // Called in setVis
+    butSendMess.disabled=true;  elText.value='';
+    //clearTimeout(timerButSendDelay); timerButSendDelay=setTimeout(function(){butSendMess.disabled=false; imgSendMessTimer.hide();},5000);
+    clearTimeout(timerButSendDelay); countButSendDelay=boDbg?2:3; spanSendMessTimer.myText(countButSendDelay.toString()).show();
+    timerButSendDelay=setInterval(function(){
+      countButSendDelay--; spanSendMessTimer.myText(countButSendDelay.toString()); if(countButSendDelay==0){butSendMess.disabled=false; spanSendMessTimer.hide(); clearTimeout(timerButSendDelay);}
+    },1000);
+  }
+  
+  var timerButSendDelay=null, countButSendDelay;
+  var data;
+  var idUser=null, iRole=null;
+
+  var elText=createElement('textarea');
+  //var imgSendMessTimer=createElement('img').prop('src',uBusy).css({'margin-left':'.4em', zoom:0.9});
+  var spanSendMessTimer=createElement('span').css({'margin-left':'.4em', zoom:0.9});
+  var butSendMess=createElement('button').myAppend('sendMess', spanSendMessTimer).prop({disabled:false}).on('click', function(){
+    if(!elText.value) {setMess('empty text',5); return;}
+    var vec=[['sendNotification',{idReceiver: idUser, iRole:iRole, message:elText.value, latlngSender:mapDiv.latlngMe}]];   majax(oAJAX,vec);
+    history.back();
+  }).css({display:'block'});
+  var divDisabledMess=createElement('div').css({'background':'lightgrey'});
+
+  //.cssChildren({'margin':'1em 0em 1em 0.6em'});;
+   
+
+  var divCont=createElement('div').addClass('contDiv').myAppend(elText, butSendMess, divDisabledMess);
+
+      // divFoot
+  var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').on('click', historyBack).css({'margin-left':'0.8em','margin-right':'1em'});
+  var divFoot=createElement('div').myAppend(buttonBack).addClass('footDiv');
+  
+  el.myAppend(divCont, divFoot);
+
+  el.css({'text-align':'left', display:"flex","flex-direction":"column"});
+  return el;
+}
+
+
 /*******************************************************************************************************************
  *******************************************************************************************************************
  *
@@ -5141,28 +5312,43 @@ var viewTableCreator=function(){
  *
  *******************************************************************************************************************
  *******************************************************************************************************************/
+var objHash={}; if(window.location.hash) {
+  var jsonHash=decodeURIComponent(window.location.hash.substr(1));
+  objHash=JSON.parse(jsonHash);
+  console.log(jsonHash);
+}
 
-var firstAJAXCall=function(latLngFirst){
+var firstAJAXCall=function(latlngFirst){ // Called after first geosuccess
   var setUpRet=function(data){
     var zoomLevel;  if('zoom' in data) zoomLevel=data.zoom;
-    mapDiv.set1(zoomLevel, latLngFirstTmp);
     var boRefresh=mapDiv.setTile(zoomLevel);
   }
-  clearTimeout(startPopTimer);  startPop.closeFunc();
-  if(boVideo) latLngFirst=latLngDebug;
-  window.latLngFirstTmp=latLngFirst;
-  var pC=merProj.fromLatLngToPoint(latLngFirst);
-
+  mapDiv.setMe(latlngFirst, 1);
+  
+    // If opponent exist then focus on him
+  var boOpponent='latlngSender' in objHash;
+  if(boOpponent) {
+    var {objSender, iRole, message, tSent, latlngSender}=objHash;
+    var {displayName}=objSender;
+    latlngFirst=latlngSender;
+    var objTmp=makeMarkerBubble({text:displayName+' says:\n'+message, color:ORole[iRole].strColor});
+    //mapDiv.setOpponent(latlngFirst, objTmp.url);
+    mapDiv.setOpponent(objHash, objTmp.url);
+  }
+  mapDiv.elImgOpponent.toggle(boOpponent);
+  
+  var pC=merProj.fromLatLngToPoint(latlngFirst);
   var rect=mapDiv.getBoundingClientRect(), VPSizeT=[rect.width,rect.height];
 
-  var o1={pC:pC, VPSize:VPSizeT}, OFilt=[];
-  for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
+  var o1={pC:pC, VPSize:VPSizeT};
+  var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
   var vec=[['getSetting',{Var:['boShowTeam']},viewAdmin.setUp], ['setupById', {}], ['VSetPosCond',pC],
-    ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];   majax(oAJAX,vec);
+    ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+  majax(oAJAX,vec);
   setMess('',null,true);
 }
 
-app.loadTabStart=function(boSetupById=0){
+app.loadTabStart=function(boSetupById=0){ // Called when mapDiv becomes idle(boSetupById=1), when filter changes, and when pink/blue buttons are clicked on viewFront
   ga('send', 'event', 'tab', 'loadTab');
   var o1=mapDiv.getMapStatus(); // pC, zoom, VPSize
 
@@ -5173,25 +5359,18 @@ app.loadTabStart=function(boSetupById=0){
     if(arrRole.length) vec.unshift(['setupById', {Role:arrRole}]);
   }
   majax(oAJAX,vec);
-
   setMess('',null,true);
 }
 
-var uploadPosNLoadTabStart=function(latLng, hideTimer, oRole){
-  var setUpRet=function(data){
-    var zoomLevel;  if('zoom' in data) zoomLevel=data.zoom;
-    //mapDiv.set1(zoomLevel, latLngFirstTmp);
-    //mapDiv.setCentNMe(latLng);
-    var boRefresh=mapDiv.setTile(zoomLevel);
-  }
-  mapDiv.setCentNMe(latLng);
+var uploadPosNLoadTabStart=function(hideTimer, oRole){ // Called when butShow is clicked
   var o1=mapDiv.getMapStatus(), {pC}=o1;
+  var boRefresh=mapDiv.setTile(o1.zoom);
   
   var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
   
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
   var vec=[['RUpdate',{hideTimer: hideTimer, charRole:oRole.charRole}], ['RShow', {x:pC.x, y:pC.y, charRole:oRole.charRole}],  // copySome(o1, oRole, ['charRole'])],
-    ['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+    ['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
   
   majax(oAJAX,vec);
   setMess('',null,true);
@@ -5204,7 +5383,8 @@ var majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serve
   xhr.open('POST', uBE, true);
   xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
   var arrRet=[]; vecIn.forEach(function(el,i){var f=null; if(el.length==3) f=el.pop(); arrRet[i]=f;}); // Put return functions in a separate array
-  vecIn.push(['CSRFCode',CSRFCode]);
+  //vecIn.push(['CSRFCode',CSRFCode]);
+  vecIn.push(['CSRFCode',getItem('CSRFCode')]);
   if(vecIn.length==2 && vecIn[0][1] instanceof FormData){
     var formData=vecIn[0][1]; vecIn[0][1]=0; // First element in vecIn contains the formData object. Rearrange it as "root object" and add the remainder to a property 'vec'
     formData.append('vec', JSON.stringify(vecIn));
@@ -5214,7 +5394,8 @@ var majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serve
   
   xhr.onload=function () {
     var dataFetched=this.response;
-    var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
+    //var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
+    var data=deserialize(this.response);
     
     var dataArr=data.dataArr;  // Each argument of dataArr is an array, either [argument] or [altFuncArg,altFunc]
     delete data.dataArr;
@@ -5244,7 +5425,8 @@ var beRet=function(data){
 window.GRet=function(data){
   if('curTime' in data) curTime=data.curTime;
   if('strMessageText' in data) {var strMess=data.strMessageText, tmp=strMess.length?'Server: ':''; setMess(tmp+strMess,10); if(/error/i.test(strMess)) navigator.vibrate(100);}
-  if('CSRFCode' in data) CSRFCode=data.CSRFCode;
+  //if('CSRFCode' in data) CSRFCode=data.CSRFCode;
+  if('CSRFCode' in data) setItem('CSRFCode',data.CSRFCode);
   if('sessionLoginIdP' in data) sessionLoginIdP=data.sessionLoginIdP;
   //var WBD=[]; tmp=data.boSpecialistWannaBe; if(typeof tmp!="undefined") {
   //    for(var key in tmp){   if(boSpecialistWannaBe[key]==tmp[key]) {delete tmp[key];} else {boSpecialistWannaBe[key]=tmp[key]; }  } mainLoginInfo.setStat(); WBD=tmp; }
@@ -5252,6 +5434,7 @@ window.GRet=function(data){
   if('nCustomerReal' in data) window.nCustomerReal=data.nCustomerReal;
   if('nSellerReal' in data) window.nSellerReal=data.nSellerReal;
 
+  //var err=myWebPush.init(boSubscribed); if(err) { console.log(err); setMess(err); throw err; }
 
   toggleSpecialistButts();
   mainLoginInfo.setStat();
@@ -5304,6 +5487,7 @@ var getGroupListRet=function(data){
   viewFront.tableButton.prop({disabled:boGroupBoth, title:langHtml.ComparisonTable+tmp});  viewFront.tableButton.querySelector('img').css({opacity:boGroupBoth?0.4:1});
   
   mapDiv.drawMe();
+  mapDiv.drawOpponent();
   boFirstLoadTab=0;
 }
 
@@ -5315,41 +5499,43 @@ var getHistRet=function(data){
 };
 
 
-
+app.strGeoErrCode='';
+app.strGeoErrMessage='';
 var geoError=function(errObj) {
   var str='';
-  var type='str';
+  var strCode='';
   if(typeof errObj == 'string') str=errObj;
   else {
     if(errObj.code==errObj.PERMISSION_DENIED){
-      type='PERMISSION_DENIED';
+      strCode='PERMISSION_DENIED';
       str="geoLocation: PERMISSION_DENIED";
     }else if(errObj.code==errObj.POSITION_UNAVAILABLE){
-      type='POSITION_UNAVAILABLE';
-      str="getCurrentPosition failed: "+type+', '+errObj.message;
+      strCode='POSITION_UNAVAILABLE';
+      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
     }else if(errObj.code==errObj.TIMEOUT){
-      type='TIMEOUT';
-      str="getCurrentPosition failed: "+type+', '+errObj.message;
+      strCode='TIMEOUT';
+      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
     }
     boGeoOK=false; setItem('boGeoOK',boGeoOK);
 
   }
   var strB='';
-  if(browser.brand=='mozilla' && type!='PERMISSION_DENIED') strB=', Firefox might need Wifi to be on'; //langHtml.worksBetterWithWifi;
-  if(browser.brand=='opera' && type!='PERMISSION_DENIED') strB=', Opera might need Wifi to be on';
-  if(type=='POSITION_UNAVAILABLE') {
+  if(browser.brand=='mozilla' && strCode!='PERMISSION_DENIED') strB=', Firefox might need Wifi to be on'; //langHtml.worksBetterWithWifi;
+  if(browser.brand=='opera' && strCode!='PERMISSION_DENIED') strB=', Opera might need Wifi to be on';
+  if(strCode=='POSITION_UNAVAILABLE') {
     if(boTouch)      strB=', Android: check that sharing of wifi-positioning / gps is enabled on your device.';
     else strB=', Wifi might need to be on.';
   }
-  //if(boTouch && type=='TIMEOUT' && !boAndroid) strB=', Android: Geolocation stops working every once in a while (A bug). Try reboot the device.';
-  //if(boTouch && type=='TIMEOUT' && boAndroid) {strB='Android: To use your exact location, you have to reboot your device. Read more in the FAQ.'; }
-  //if(boTouch && type=='TIMEOUT' && boAndroid) {str=''; strB='Android user: GeoLocation is not working! Reboot your device might solve the problem. Read more in the FAQ.'; } //speciale
+  //if(boTouch && strCode=='TIMEOUT' && !boAndroid) strB=', Android: Geolocation stops working every once in a while (A bug). Try reboot the device.';
+  //if(boTouch && strCode=='TIMEOUT' && boAndroid) {strB='Android: To use your exact location, you have to reboot your device. Read more in the FAQ.'; }
+  //if(boTouch && strCode=='TIMEOUT' && boAndroid) {str=''; strB='Android user: GeoLocation is not working! Reboot your device might solve the problem. Read more in the FAQ.'; } //speciale
 
   var strB='';
   setMess(str+' '+strB);
   mapDiv.boGeoStatSucc=0;
+  app.strGeoErrCode=strCode;
+  app.strGeoErrMessage=errObj.message;
 }
-
 
 /********************************************************************************************************************
  ********************************************************************************************************************/
@@ -5476,7 +5662,8 @@ app.uEqualizer=uImageFolder+'equalizer.png';
 app.uMapm1=uImageFolder+'mapm1.png';
 app.uMapm2=uImageFolder+'mapm2.png';
 app.uColumn16=uImageFolder+'column16.png';
-app.uMyMarker=uImageFolder+'myMarker.gif';
+app.uMarkerMe=uImageFolder+'markerMe.gif';
+app.uMarkerOpponent=uImageFolder+'markerOpponent.gif';
 app.uOnePixTransparent=uImageFolder+'dummy.png';
 //uTogButPinkBlue=uImageFolder+'toggleButtonVerticalPinkBlueBlack.png';
 app.uTogVertical=uImageFolder+'toggleButtonVerticalBlack.png';
@@ -5580,6 +5767,8 @@ replaceNom(langHtml,'labOrdinalS');
 replaceNom(langHtml,'ChangeMapMarkersC');
 replaceNom(langHtml,'ChangeMapMarkersS');
 
+langHtml.RoleRewritten=[langHtml.customerRewritten||langHtml.customer, langHtml.sellerRewritten||langHtml.seller];
+
 langHtml.DidYouUseAltIPBefore=langHtml.DidYouUseAltIPBefore.replace(regNom,strIPAltLong);
 
 
@@ -5606,7 +5795,7 @@ app.boMultCurrency=0;
 var sessionLoginIdP={};
 app.userInfoFrDB=extend({}, specialistDefault);
 
-var CSRFCode='';
+//var CSRFCode='';
 
 app.curTime=0;
 
@@ -5659,15 +5848,14 @@ var strHistTitle=site.wwwSite;
 
 var histList=[];
 var stateLoaded=history.state;
-var tmpi=stateLoaded?stateLoaded.ind:0,    stateLoadedNew={hash:randomHash(), ind:tmpi};
-history.replaceState(stateLoadedNew, '', uCanonical);
-var stateTrans=stateLoadedNew;
+var tmpi=stateLoaded?stateLoaded.ind:0,    stateMem={hash:randomHash(), ind:tmpi};
+history.replaceState(stateMem, '', uCanonical);
 history.StateMy=[];
 
 window.on('popstate', function(event) {
-  var dir=history.state.ind-stateTrans.ind;
+  var dir=history.state.ind-stateMem.ind;
   //if(Math.abs(dir)>1) {debugger; alert('dir=',dir); }
-  var boSameHash=history.state.hash==stateTrans.hash;
+  var boSameHash=history.state.hash==stateMem.hash;
   if(boSameHash){
     var tmpObj=history.state;
     if('boResetHashCurrent' in history && history.boResetHashCurrent) {
@@ -5697,9 +5885,9 @@ window.on('popstate', function(event) {
       if('fun' in stateMy && stateMy.fun) {var fun=stateMy.fun(stateMy); }
     }
 
-    stateTrans=extend({}, tmpObj);
+    stateMem=extend({}, tmpObj);
   }else{
-    stateTrans=history.state; extend(stateTrans, {hash:randomHash()}); history.replaceState(stateTrans, '', uCanonical);
+    stateMem=history.state; extend(stateMem, {hash:randomHash()}); history.replaceState(stateMem, '', uCanonical);
     history.go(sign(dir));
   }
 });
@@ -5807,6 +5995,8 @@ for(var i=0;i<ORole.length;i++){
 [app.viewEntryC, app.viewEntryS]=ViewEntry;
 [app.viewInfoC, app.viewInfoS]=ViewInfo;  // [viewMarkSelectorC, viewMarkSelectorS]=ViewMarkSelector;
 
+app.viewGreeting=viewGreetingCreator().addClass('mainDiv');
+viewGreeting.initMyWebPush();
 
    // Let plugins rewrite objects
 for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteObj; if(tmp) tmp();   }
@@ -5827,10 +6017,11 @@ for(var i=0;i<ORole.length;i++){
   //ViewColumnSelector[i].createTable();
   viewColumnSelector.ElRole[i].createTable();
   viewMarkSelector.ElRole[i].createTable();
+  MainIntroPop[i].createDivs();
 }
 
 //if(typeof StrMainProt=='undefined') var StrMainProt=[];
-StrMainProt.push('front', 'userSetting', 'admin', 'complainee', 'complainer', 'formLogin', 'createUser', 'convertID', 'settingW', 'deleteAccountPop', 'complaintCommentPop', 'complaintAnswerPop', 'uploadImage', 'changePWPop', 'forgottPWPop', 'columnSorter', 'columnSelector', 'table', 'markSelector', 'filter', 'setting');
+StrMainProt.push('front', 'userSetting', 'admin', 'complainee', 'complainer', 'formLogin', 'createUser', 'convertID', 'settingW', 'deleteAccountPop', 'complaintCommentPop', 'complaintAnswerPop', 'uploadImage', 'changePWPop', 'forgottPWPop', 'columnSorter', 'columnSelector', 'table', 'markSelector', 'filter', 'setting', 'greeting');
 
 //if(typeof StrMainProtRole=='undefined') var StrMainProtRole=[];
 StrMainProtRole.push( 'info', 'entry', 'team');
@@ -6000,7 +6191,12 @@ viewTeamS.setVis=function(){
   scalableTog(1);
   return true;
 }
-
+viewGreeting.setVis=function(){
+  MainDiv.forEach(ele=>ele.hide()); this.show();
+  scalableTog(1);
+  this.setUpB();
+  return true;
+}
 //viewLogin.setVis=function(){
   //MainDiv.forEach(ele=>ele.hide()); this.show();
   //scalableTog(1);
@@ -6008,13 +6204,14 @@ viewTeamS.setVis=function(){
 //}
 
 
+
 busyLarge.show();
 
 var boFirstLoadTab=1;
 
 if(boEmulator || boVideo) {
-  var latLngDebug={lat:59.330454370984235, lng:18.059076067697106};
-  var posDebug={coords:{latitude:latLngDebug.lat,longitude:latLngDebug.lng}};
+  var latlngDebug={lat:59.330454370984235, lng:18.059076067697106};
+  var posDebug={coords:{latitude:latlngDebug.lat,longitude:latlngDebug.lng}};
 }
 window.addEventListener("resize", function(){
   mapDiv.dispatchEvent(new Event('myResize'));
@@ -6030,20 +6227,20 @@ var tmpFGeoSuccess=function(pos){
   //clearTimeout(timerGeoNotOK);
   boFirstPosOK=1;
   boGeoOK=true; setItem('boGeoOK',boGeoOK);
-  var latLng={lat:pos.coords.latitude, lng:pos.coords.longitude};
-  if(typeof boApproxCalled!='undefined') { 
-    mapDiv.setCentNMe(latLng);
-  } else firstAJAXCall(latLng);
-  
+  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude};
+  if(boVideo) latlng=latlngDebug;
+  clearTimeout(startPopTimer);  startPop.closeFunc();
+  if(typeof boApproxCalled=='undefined') firstAJAXCall(latlng);
+  else mapDiv.setMe(latlng, 1);
 }
 
 if(boEmulator){ tmpFGeoSuccess(posDebug); }else{ navigator.geolocation.getCurrentPosition(function(pos){tmpFGeoSuccess(pos);}, geoError,{timeout:20000,maximumAge:60000});  }
 //, {maximumAge:Infinity, timeout:5000,enableHighAccuracy:false}
 //setMess('... getting position ... ',null,true);
 var tmpFUseApprox=function(){
-  var latLng={lat:coordApprox[0],lng:coordApprox[1]};  if(boVideo) latLng=latLngDebug;
+  var latlng={lat:coordApprox[0],lng:coordApprox[1]};  if(boVideo) latlng=latlngDebug;
   var boApproxCalled=true;
-  firstAJAXCall(latLng);
+  firstAJAXCall(latlng);
 }
 //var tmpFGeoNotOK=function(){ boGeoOK=false; setItem('boGeoOK',boGeoOK); }
 var boGeoOK=getItem('boGeoOK');  if(boGeoOK===null) boGeoOK=false;
