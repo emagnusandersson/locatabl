@@ -386,12 +386,12 @@ var toggleButtonExtend=function(el){
 //
 
 var cloneCanvas=function(oldCanvas){
-    //var newCanvas = new Canvas();
-    var newCanvas = document.createElement("canvas");
-    newCanvas.width=oldCanvas.width;   newCanvas.height=oldCanvas.height
-    var context = newCanvas.getContext('2d');
-    context.drawImage(oldCanvas, 0, 0);
-    return newCanvas;
+  //var newCanvas = new Canvas();
+  var newCanvas = document.createElement("canvas");
+  newCanvas.width=oldCanvas.width;   newCanvas.height=oldCanvas.height
+  var context = newCanvas.getContext('2d');
+  context.drawImage(oldCanvas, 0, 0);
+  return newCanvas;
 }
 
 var makeMarker=function(strText){
@@ -405,7 +405,9 @@ var makeMarker=function(strText){
   var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
   
     //Reseting canvas with new dimensions
-  canvas.width=widthBox;   canvas.height=heightImg;    ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
+  canvas.width=widthBox;   canvas.height=heightImg;
+  //ctx = canvas.getContext("2d");    ctx.font = strFont;
+  ctx.textBaseline  = "middle";
   
     // Draw bubble
   ctx.beginPath(); //so start going clockwise from upper left corner
@@ -434,7 +436,9 @@ var makeMarkerBubble=function(obj){
   var widthBox=widthText+4, heightBox=arrText.length*leading+3, heightImg=heightBox+3;
   
     //Reseting canvas with new dimensions
-  canvas.width=widthBox;   canvas.height=heightImg;    ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
+  canvas.width=widthBox;   canvas.height=heightImg;
+  //ctx = canvas.getContext("2d");    ctx.font = strFont;
+  ctx.textBaseline  = "middle";
   
     // Draw bubble
   var center=widthBox/2;
@@ -471,7 +475,9 @@ var makeTextCanvas=function(strText,rot){
   if(rot==1 || rot==-1){ var tmp=heightBox; heightBox=widthBox; widthBox=tmp; }
   
     //Reseting canvas with new dimensions
-  canvas.width=widthBox;   canvas.height=heightBox;   var ctx = canvas.getContext("2d");    ctx.font = strFont;   ctx.textBaseline  = "middle";
+  canvas.width=widthBox;   canvas.height=heightBox;
+  //var ctx = canvas.getContext("2d");    ctx.font = strFont;
+  ctx.textBaseline  = "middle";
   
     // Translate and rotate context
   //ctx.strokeStyle="#000000"; ctx.strokeRect(0,0,widthBox,heightBox);
@@ -489,6 +495,61 @@ var makeTextCanvas=function(strText,rot){
   //return canvas.toDataURL("image/png");
   //var uri=canvas.toDataURL();  return $('<img>').attr(src,uri);
 }
+
+var makeMapMultBubble=function(objIn){
+  var {arrObj,color}=objIn;
+  //var strText=obj.text||'text';
+  //if(typeof strText !='string') strText=strText.toString();
+  var strFont="8pt Arial", leading=10;
+  //var arrObj=strText.split('\n');
+  
+    //Calculate dimensions of the bubble
+  var canvas = document.createElement("canvas");    var ctx = canvas.getContext("2d");  ctx.font = strFont;     //Create temporary context
+  var widthText=0;
+  for(var i=0; i<arrObj.length; i++){
+    var obj=arrObj[i];
+    if(typeof obj!='string') continue;
+    var tmp=ctx.measureText(obj).width;   if(tmp > widthText) widthText=tmp;
+  }
+  var widthBox=widthText+4, heightBox=arrObj.length*leading+3, heightImg=heightBox+3;
+  
+    //Reseting canvas with new dimensions
+  canvas.width=widthBox;   canvas.height=heightImg;
+  //ctx = canvas.getContext("2d");    ctx.font = strFont;
+  ctx.textBaseline  = "middle";
+  
+    // Draw bubble
+  var center=widthBox/2;
+  ctx.beginPath(); //so start going clockwise from upper left corner
+  ctx.moveTo(0, 0);
+  ctx.lineTo(widthBox,0);
+  ctx.lineTo(widthBox, heightBox);
+  ctx.lineTo(center+3, heightBox);
+  ctx.lineTo(center, heightBox+3);  //tip of arrow
+  ctx.lineTo(center-3, heightBox);
+  ctx.lineTo(0, heightBox);
+  ctx.closePath();
+  ctx.fillStyle=objIn.color||'';    ctx.fill();    ctx.strokeStyle = "orange";   ctx.stroke();
+    
+  ctx.font = "Symbol";
+    // Write text
+  ctx.fillStyle = "black";
+  for(var i=0; i<arrObj.length; i++){
+    var obj=arrObj[i];
+    if(typeof obj=='string') ctx.fillText(obj, 2, 7+i*leading );
+    else {
+      var img = createElement("img").prop({src:obj.url});
+      img.addEventListener('load', e => { ctx.drawImage(img,2, 7+i*leading, 9, 9);});
+    }
+  }
+  //return canvas.toDataURL("image/png");
+  return {url:canvas.toDataURL("image/png"), anchor:{x:widthBox/2, y:heightImg}};
+}
+
+
+
+
+
 
 //
 // Other
@@ -523,12 +584,18 @@ var MyWebPush=function(){
       //}
       //navigator.serviceWorker.on('message', function(e){ console.log('Message received from worker: '+JSON.stringify(e.data)); })//addEventListener
     }, (err)=>console.log(err));
-    navigator.serviceWorker.ready.then(function(swReg) { 
-      swReg.active.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+    navigator.serviceWorker.ready.then(function(swReg) {
+      const myData={langHtml:langHtml, uUserImage:uUserImage};
+      swReg.active.postMessage(myData); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
       navigator.serviceWorker.onmessage=function(e){
+        if(e.data=='dataLacking') {swReg.active.postMessage(myData); return;}
         console.log('Message received from worker: '+JSON.stringify(e.data));
         if('cbOnMessage' in self) self.cbOnMessage(e.data);
       }
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const myData={langHtml:langHtml, uUserImage:uUserImage};
+      navigator.serviceWorker.controller.postMessage(myData);
     });
   }
 
@@ -595,9 +662,9 @@ var MyWebPush=function(){
 
 
 class SpanInpWebPushToggle{
-  constructor(myCB, myCBOne){
+  constructor(myCBAny, myCB){  // myCBAny: cb called when any button is clicked, myCB: cb called when this button is clicked
     var span=createElement('span');
-    span.myCB=myCB; span.myCBOne=myCBOne;
+    span.myCBAny=myCBAny; span.myCB=myCB;
     const cbClick=function(){ this.disabled=true; this.blur(); myWebPush.togglePushNotifications(this.parentNode);}
     span.mySet=function(){
       if(!('Notification' in window)) {checkbox.hide(); spanBlocked.hide(); spanNotSupported.show(); return;}

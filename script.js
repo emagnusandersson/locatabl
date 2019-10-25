@@ -316,6 +316,7 @@ var flow=( function*(){
       else if(pathName=='/monitor.html'){     yield* reqMonitor.call(objReqRes);     }
       else if(pathName=='/stat.html'){        yield* reqStat.call(objReqRes);        }
       else if(pathName=='/statBoth.html'){        yield* reqStatBoth.call(objReqRes);        }
+      else if(pathName=='/statTeam.html'){        yield* reqStatTeam.call(objReqRes);        }
       //else if(pathName=='/offer.html'){  reqOffer.outputData(req,res);    }
       else if(pathName=='/'+leafLoginWLink){  yield* reqLoginWLink.call(objReqRes);  }
       else if(pathName=='/'+leafVerifyPWResetReturn){  yield* reqVerifyPWResetReturn.call(objReqRes);  }

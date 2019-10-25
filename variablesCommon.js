@@ -101,8 +101,7 @@ maxGroupsInFeat=20;
 preDefault="ro.";
 //snoreLim=12*3600;
 snoreLim=20*24*3600;
-boShowTeam=0;
-version='366';
+version='367';
 auto_increment_increment=1;
 
 
@@ -557,7 +556,7 @@ PluginF.windowcleaner=function(site){
   array_mergeM(oS.StrOrder, oS.StrPropE);
 }
 
-PluginF.lawnmower=function(site){
+PluginF.lawnmowing=function(site){
   var [oC,oS]=site.ORole;
   
     // oC ////////////////////
@@ -744,7 +743,7 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
   site.TableName={};   for(var name in TableNameProt){  site.TableName[name+"Tab"]=siteName+'_'+name; }
   site.ViewName={}; for(var name in ViewNameProt){  site.ViewName[name+"View"]=siteName+'_'+name; }
 
-  extend(site, {boGotNewSellers:0, timerNUserLast:0, nVis:0, nUser:0}); 
+  extend(site, {boGotNewSellers:0, boGotNewCustomers:0, timerNUserLast:0, nVisC:0, nVisS:0, nTotC:0, nTotS:0, nUser:0}); 
   
   //site.db=siteName in DB?siteName:'default';
   //var db=siteName in DB?DB[siteName]:DB.default;  site.pool=db.pool;
@@ -771,7 +770,7 @@ SiteExtend=function(){
     else if(siteName=='cleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', 'shiftEnd', siteName];
     else if(siteName=='windowcleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', siteName];
     else if(siteName=='fruitpicker') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', 'fixedPricePerUnit', siteName];
-    else if(siteName=='lawnmower') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', siteName];
+    else if(siteName=='lawnmowing') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', siteName];
     else if(siteName=='snowremoval') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', siteName];
     else if(siteName=='programmer') StrPlugInNArg=['general', 'hourlyPriceC', 'hourlyPriceS', siteName];
     else StrPlugInNArg=['general'];

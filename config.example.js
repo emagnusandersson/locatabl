@@ -58,7 +58,7 @@ if(process.env.strInfrastructure=='heroku'){
     taxi:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"},
     transport:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"}  
   }
-  //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmower:0, snowremoval:0, programmer:0};
+  //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
   wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
   wwwLoginScope=Site.taxi.wwwSite;
@@ -78,7 +78,7 @@ if(process.env.strInfrastructure=='heroku'){
     taxi:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"},
     transport:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"}  
   }
-  //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmower:0, snowremoval:0, programmer:0};
+  //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
   wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
   wwwLoginScope=Site.taxi.wwwSite;
@@ -93,7 +93,7 @@ else {
     taxi:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"",db:"default"},
     transport:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"",db:"default"}  
   }
-  //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmower:0, snowremoval:0, programmer:0};
+  //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
   wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
   wwwLoginScope=Site.taxi.wwwSite;

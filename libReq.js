@@ -440,7 +440,8 @@ var app=window;
 var StrMainProt=[];
 var StrMainProtRole=[];`);
 
-  var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash, VAPID_PUBLIC_KEY:VAPID_PUBLIC_KEY};
+  //var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash, VAPID_PUBLIC_KEY:VAPID_PUBLIC_KEY};
+  var objOut={strLang, coordApprox, UrlOAuth, strReCaptchaSiteKey, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification};
   copySome(objOut,req, ['boTLS']);
 
   Str.push(`var tmp=`+serialize(objOut)+`;\n extend(window, tmp);`);
@@ -635,10 +636,15 @@ app.reqVerifyPWResetReturn=function*() {
 
 app.reqVerifyEmailNCreateUserReturn=function*() {
   var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var {userTab, sellerTab, customerTab}=site.TableName;
+  var {userTab, customerTab, sellerTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
+  
+  var iRole=Number(objQS.charRole=='s');
+  var oRole=site.ORole[iRole];
+  var {charRole, strRole}=oRole;
+  var roleTab=iRole?sellerTab:customerTab;
   
   //var objT=yield* getRedis(flow, codeIn+'_verifyEmailNCreateUser', true); if(!objT) { res.out200('No such code'); return;}
   var [err,value]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyEmailNCreateUser']),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
@@ -650,19 +656,23 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   Sql.push("INSERT INTO "+userTab+" (email, nameIP, hashPW, tCreated) VALUES (?, ?, ?, now()) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Val.push(email, name, password, name);
-  Sql.push("INSERT INTO "+sellerTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, now(), now(), now(), now(), 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, now(), now(), now(), now(), 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
   var c=results[0].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
-  var boIns=site.boGotNewSellers=Number(results[3][0].boInserted);
+  var boIns=Number(results[3][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewCustomers=boIns;
   site.nUser=Number(results[4][0].n);
+  site.nTotC=Number(results[5][0].n);
+  site.nTotS=Number(results[6][0].n);
   var tmp=boIns?'created':'updated';
   var Str=[`<!DOCTYPE html><html><head>
 <meta name='viewport' id='viewportMy' content='initial-scale=1'/>
@@ -675,7 +685,6 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   Str.push('</body></html>');
   res.end(Str.join('\n'));
 }
-
 
 
 
@@ -728,27 +737,43 @@ app.reqMonitor=function*(){
   if(boRefresh){ 
     var Sql=[];
     //Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBeforeHiding+";");
+    Sql.push("SELECT count(*) AS n FROM "+customerTab+" WHERE boShow=1 AND "+ sqlBeforeHiding+";");
+    Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
     Sql.push("SELECT count(*) AS n FROM "+sellerTab+" WHERE boShow=1 AND "+ sqlBeforeHiding+";");
     //Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
-    Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+    Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
 
     var sql=Sql.join('\n'), Val=[];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return; }
-    site.nVis=results[0][0].n;
-    site.nUser=results[1][0].n;
+    site.nVisC=results[0][0].n;
+    site.nTotC=results[1][0].n;
+    site.nVisS=results[2][0].n;
+    site.nTotS=results[3][0].n;
   }
 
-  var nVis=site.nVis, nUser=site.nUser;
+  var {nVisC, nTotC, nVisS, nTotS}=site;
   var Str=[];
   Str.push(`<!DOCTYPE html>
 <html><head><meta name="robots" content="noindex"></head>`);
-  var strColor='';
+  //var strTotC=nTotC, strTotS=nTotS;
+  //var strColor='';
+  //if('admin' in objQS && objQS.admin){
+    //if(boRefresh) strColor=';background-color:lightgreen';
+    //if(site.boGotNewCustomers) strTotC='<span style="background-color:pink">'+nTotC+'</span>';
+    //if(site.boGotNewSellers) strTotS='<span style="background-color:lightblue">'+nTotS+'</span>';
+  //}
+  //Str.push('<body style="margin: 0px'+strColor+'">'+nVisC+"/"+strTotC+", "+nVisS+"/"+strTotS+"</body>");
+  
+  var strColor='', strColorC='pink', strColorS='lightblue';
   if('admin' in objQS && objQS.admin){
-    if(boRefresh) strColor='lightgreen';
-    if(site.boGotNewSellers) strColor='red';
+    if(boRefresh) strColor=';background-color:lightgreen';
+    if(site.boGotNewCustomers) strColorC='red';
+    if(site.boGotNewSellers) strColorS='blue';
   }
-  var strUser=nUser;  if(strColor) strUser="<span style=\"background-color:"+strColor+"\">"+nUser+"</span>";
-  Str.push("<body style=\"margin: 0px\">"+nVis+" / "+strUser+"</body>");
+  var strC='<span style="background-color:'+strColorC+'">'+nVisC+'/'+nTotC+'</span>';
+  var strS='<span style="background-color:'+strColorS+'">'+nVisS+'/'+nTotS+'</span>';
+  Str.push('<body style="margin: 0px'+strColor+'">'+strC+", "+strS+"</body>");
+  
   Str.push("</html>");
   
   res.removeHeader("Content-Security-Policy");
@@ -788,24 +813,34 @@ app.reqStat=function*(){
   
   if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
 
-  var siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
+  var siteName=site.siteName, objQS=req.objQS, {userTab, customerTab, sellerTab}=site.TableName;
   
-  var charRole=objQS.role||'s';
+  var iRole=Number(objQS.role=='s');
+  var oRole=site.ORole[iRole];
+  var {charRole, strRole}=oRole;
+  var roleTab=iRole?sellerTab:customerTab;
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
   var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
 
-  Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
+  Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+roleTab+" s ON u.idUser=s.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" s ON u.idUser=s.idUser;");
 
-  Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
+  Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
-  var nUser=results[0][0].n;
-  if('code' in objQS && objQS.code=='amfoen') {site.boGotNewSellers=0; site.nUser=nUser;}
-  var matA=results[1];
-  var matB=results[2];
+
+  if('code' in objQS && objQS.code=='amfoen') {
+    if(iRole) site.boGotNewSellers=0; else site.boGotNewCustomers=0;
+    site.nUser=Number(results[0][0].n);
+    site.nTotC=Number(results[1][0].n);
+    site.nTotS=Number(results[2][0].n);
+  }
+  var matA=results[3];
+  var matB=results[4];
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
@@ -816,14 +851,14 @@ app.reqStat=function*(){
 </head>
 <body>`);
   var nA=matA.length;
-  Str.push("user OUTER JOIN seller ("+nA+")");
+  Str.push("user OUTER JOIN "+strRole+" ("+nA+")");
   if(nA>0){
     var Keys=Object.keys(matA[0]);
     for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].tAccumulated); matA[i].tAccumulated=Math.round(ttmp)+u; }
     Str.push(makeTable(Keys,matA));
   }
   var nB=matB.length;
-  Str.push("<hr>seller.idUser with no user.idUser ("+nB+")");
+  Str.push("<hr>"+strRole+".idUser with no user.idUser ("+nB+")");
   if(nB>0){
     var Keys=Object.keys(matB[0]);
     Str.push(makeTable(Keys,matB));
@@ -838,20 +873,23 @@ app.reqStat=function*(){
 }
 
 
+
 app.reqStatBoth=function*(){
   var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var flow=req.flow;
   
   if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
 
-  var siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
+  var siteName=site.siteName, objQS=req.objQS, {userTab, customerTab, sellerTab}=site.TableName;
   
   var charRole=objQS.role||'s';
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
-  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, displayName, boWebPushOK";
+  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, displayName, u.boWebPushOK";
   //var strColsC="c.homeTown, c.currency, c.boShow, c.tPos, CONVERT(BIN(c.histActive),CHAR(30)) AS c_histActive, c.tLastWriteOfTA, c.tAccumulated, c.hideTimer";
   //var strColsS="s.homeTown, s.currency, s.boShow, s.tPos, CONVERT(BIN(s.histActive),CHAR(30)) AS s_histActive, s.tLastWriteOfTA, s.tAccumulated, s.hideTimer";
 
@@ -873,11 +911,15 @@ app.reqStatBoth=function*(){
   Sql.push("SELECT "+strColsU+", "+strColsS+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
-  var nUser=results[0][0].n;
-  if('code' in objQS && objQS.code=='amfoen') {site.boGotNewSellers=0; site.nUser=nUser;}
-  var matA=results[1];
-  var matB=results[2];
-  var matC=results[3];
+  if('code' in objQS && objQS.code=='amfoen') {
+    if(charRole=='s') site.boGotNewSellers=0; else site.boGotNewCustomers=0;
+    site.nUser=Number(results[0][0].n);
+    site.nTotC=Number(results[1][0].n);
+    site.nTotS=Number(results[2][0].n);
+  }
+  var matA=results[3];
+  var matB=results[4];
+  var matC=results[5];
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
@@ -929,8 +971,70 @@ td:nth-child(n+14){background:lightblue}
   res.setHeader('Content-Type', MimeType.html);  
   Streamify(str).pipe(zlib.createGzip()).pipe(res); 
 }
- 
 
+app.reqStatTeam=function*(){
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+  var flow=req.flow;
+  var siteName=site.siteName, objQS=req.objQS;
+  
+  if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
+  if('code' in objQS && objQS.code=='amfoen') {} else {res.outCode(401, "Not authorized");  return;  }
+  
+  var {userTab, userImageTab, customerTab, customerTeamTab, customerTeamImageTab, sellerTab, sellerTeamTab, sellerTeamImageTab}=site.TableName;
+  
+  var iRole=Number(objQS.role=='s');
+  var oRole=site.ORole[iRole];
+  var {charRole, strRole}=oRole;
+  var roleTab=iRole?sellerTab:customerTab;
+  var roleTeamTab=iRole?sellerTeamTab:customerTeamTab;
+
+  var Sql=[];
+  Sql.push("SELECT count(*) AS n FROM "+customerTeamTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+sellerTeamTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+customerTeamImageTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+sellerTeamImageTab+";");
+  
+  var strCols="u.idUser, u.nameIP";
+
+  //Sql.push("SELECT "+strCols+" FROM "+userTab+" u JOIN "+roleTeamTab+" s ON u.idUser=s.idUser;");
+  Sql.push("SELECT "+strCols+", COUNT(*) FROM "+userTab+" u JOIN "+roleTeamTab+" s ON u.idUser=s.idUser LEFT JOIN "+roleTab+" rMember ON u.idUser=rMember.idTeam GROUP BY u.idUser;");
+
+  var sql=Sql.join('\n'), Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
+
+  if(iRole) site.boGotNewSellers=0; else site.boGotNewCustomers=0;
+  var nTotC=Number(results[0][0].n);
+  var nTotS=Number(results[1][0].n);
+  var nTotCI=Number(results[2][0].n);
+  var nTotSI=Number(results[3][0].n);
+  
+  var matA=results[4];
+  
+  var Str=[];
+  Str.push(`<!DOCTYPE html>
+<html><head>
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style> table,td,tr {border: solid 1px;border-collapse:collapse}</style>
+</head>
+<body>`);
+  var nA=matA.length;
+  Str.push("user "+roleTeamTab+" ("+nA+")");
+  if(nA>0){
+    var Keys=Object.keys(matA[0]);
+    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].tAccumulated); matA[i].tAccumulated=Math.round(ttmp)+u; }
+    Str.push(makeTable(Keys,matA));
+  }
+
+  Str.push("</body></html>");
+  var str=Str.join('\n');
+  //res.end(str);
+  res.setHeader("Content-Encoding", 'gzip'); 
+  res.setHeader('Content-Type', MimeType.html);  
+  Streamify(str).pipe(zlib.createGzip()).pipe(res); 
+}
+
+  
 /******************************************************************************
  * SetupSql
  ******************************************************************************/
@@ -998,11 +1102,12 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
     // Create webPushSubscription
   SqlTab.push(`CREATE TABLE `+webPushSubscriptionTab+` ( 
   idUser int(4) NOT NULL auto_increment, 
-  strSubscription varchar(512) CHARSET utf8 NULL, 
+  strSubscription text CHARSET utf8 NULL, 
   PRIMARY KEY (idUser), 
   FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
   ) ENGINE=`+engine+` COLLATE `+collate); 
 
+  //strSubscription varchar(512) CHARSET utf8 NULL, 
     // Create sellerTab
   //var StrProp=Object.keys(oS.Prop);
   var arrCols=[];
@@ -1094,31 +1199,6 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
     }
   }
   
-    //
-    // Image tables
-    //
-    
-  SqlTab.push(`CREATE TABLE `+userImageTab+` (
-  idUser int(4) NOT NULL,
-  data BLOB NOT NULL,
-  UNIQUE KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate); 
-
-
-  SqlTab.push(`CREATE TABLE `+customerTeamImageTab+` (
-  idUser int(4) NOT NULL,
-  data BLOB NOT NULL,
-  UNIQUE KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate); 
-  
-  SqlTab.push(`CREATE TABLE `+sellerTeamImageTab+` (
-  idUser int(4) NOT NULL,
-  data BLOB NOT NULL,
-  UNIQUE KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate);
   
   
   
@@ -1182,6 +1262,33 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   UNIQUE KEY (idUser)
   ) ENGINE=`+engine+` COLLATE `+collate);
 
+    //
+    // Image tables
+    //
+    
+  SqlTab.push(`CREATE TABLE `+userImageTab+` (
+  idUser int(4) NOT NULL,
+  data BLOB NOT NULL,
+  UNIQUE KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate); 
+
+
+  SqlTab.push(`CREATE TABLE `+customerTeamImageTab+` (
+  idUser int(4) NOT NULL,
+  data BLOB NOT NULL,
+  UNIQUE KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+customerTeamTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate); 
+  
+  SqlTab.push(`CREATE TABLE `+sellerTeamImageTab+` (
+  idUser int(4) NOT NULL,
+  data BLOB NOT NULL,
+  UNIQUE KEY (idUser),
+  FOREIGN KEY (idUser) REFERENCES `+sellerTeamTab+`(idUser) ON DELETE CASCADE
+  ) ENGINE=`+engine+` COLLATE `+collate);
+  
+  
   //name varchar(64) CHARSET utf8 NOT NULL,
   //boFB tinyint(1) NOT NULL,
 
@@ -1315,6 +1422,20 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
       COMMIT;
     END`);
 
+  
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MakeUserTeamLeader");
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`MakeUserTeamLeader(IidUser INT, IRole INT)
+    proc_label:BEGIN
+      IF IRole THEN
+        INSERT INTO `+sellerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,now(),1);
+      ELSE
+        INSERT INTO `+customerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,now(),1);
+      END IF;
+    END`);
+  
+  // CALL MakeUserTeamLeader(16,1);
+  // UPDATE taxi_seller SET idTeam=0 WHERE idUser=16;
+  // DELETE FROM taxi_sellerTeam WHERE idUser=16;
   
   
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateComplaint");
@@ -1870,7 +1991,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
         array_mergeM(arrAssign, StrTmp);
       }
     }
-    if(in_array("lawnmower", StrPlugInNArg)){ 
+    if(in_array("lawnmowing", StrPlugInNArg)){ 
       if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE);   // 'area', 'boCustomerHasEquipment'
       if(charRole=='s') { 
         var StrTmp=oRole.StrBool;
@@ -1985,12 +2106,12 @@ app.SetupSql.prototype.populateSetting=function*(flow, siteName){
   var {TableName}=site, {settingTab}=TableName;
 
   Sql.push(`INSERT INTO `+settingTab+` VALUES
-  ('boShowTeam', '0'),
   ('tLastWriteOfHA', floor( UNIX_TIMESTAMP(now())/`+sPerDay+` )),
   ('tLastWriteOfBoShow', 0),
-  ('boGotNewSellers', '0'),
-  ('nUser', '0'),
   ('boAllowEmailAccountCreation', '0')`); 
+  //('boShowTeam', '0'),
+  //('nUser', '0'),
+  //('boGotNewSellers', '0'),
 
 
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];

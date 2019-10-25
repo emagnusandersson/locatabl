@@ -17,14 +17,19 @@ Brand:'Märke',
 Independent:'Oberoende',
 Cargo:'Last',
 
-customerRewritten:'kund',
-sellerRewritten:'entreprenör',
+//customerRewritten:'kund',
+//sellerRewritten:'entreprenör',
 
 
 seller:'entreprenör', sellers:'ent­re­pre­nör­er',
 theSeller:"entreprenören", theSellers:"entreprenörerna",
 theSellers0:"entreprenörerna",
 IndependentSeller:'Obunden',
+
+contractor:'entreprenör', contractors:'ent­re­pre­nör­er',
+theContractor:"entreprenören", theContractors:"entreprenörerna",
+theContractor0:"entreprenörerna",
+IndependentContractor:'Obunden',
 
 driver:'förare', drivers:'för­are',
 theDriver:'föraren', theDrivers:'förarna',
@@ -46,14 +51,15 @@ thePicker:"plockaren", thePickers:"plockarna",
 thePickers0:"plockarna",
 IndependentPicker:'Inget lag',
 
-snowShoveler:"snöskottare", snowShovelers:"snö­skott­are",
-theSnowShoveler:"snöskottaren", theSnowShovelers:"snöskottarna",
-theSnowShovelers0:"snöskottarna",
-IndependentSnowShoveler:'Inget lag',
+//snowShoveler:"snöskottare", snowShovelers:"snö­skott­are",
+//theSnowShoveler:"snöskottaren", theSnowShovelers:"snöskottarna",
+//theSnowShovelers0:"snöskottarna",
+//IndependentSnowShoveler:'Inget lag',
 
-windowcleaner:'window cleaner',
-lawnmower:'gräsklippare',
+windowcleaner:'fönster putsare',
 snowRemovalWorker:'snöskottare',
+
+lawnmowing:'gräsklippning',
 
 
 
@@ -99,8 +105,8 @@ None:'Ingen',
 All:'Alla',
 
 Settings:'Inställningar',
-//SellerSettings:'Inställningar för <span nom="Seller">Entreprenör</span>',
-SellerSettings:'Inställningar (säljare)',
+SellerSettings:'Inställningar (<span nom="seller">entreprenör</span>)',
+//SellerSettings:'Inställningar (säljare)',
 CustomerSettings:'Inställningar (kund)',
 SellerLogin:'Login (<span nom="sellers">säljare</span>)',
 AppearAsCustomer:'Logga in som <span nom="customer">kund</span>',
@@ -483,7 +489,7 @@ tCreated:'Hur länge sedan skapades kontot',
 displayName:'',
 tel:'',
 displayEmail:'Email',
-boWebPushOK:'Användaren tillåter "push-notifications" (popup-meddelanden). (Obs! dessa meddelande sparas inte, använd email eller sms om du vill att meddelandena ska sparas)',
+boWebPushOK:'"push-notifications" (popup-meddelanden). (Obs! dessa meddelande sparas inte, använd email eller sms om du vill att meddelandena ska sparas)',
 link:'Om användaren har en egen sida.',
 homeTown:'',
 standingByMethod:'',
@@ -605,9 +611,9 @@ if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
 </div>";
 }
 
-if('lawnmower' in Site) Site.lawnmower.langSetup=function(){
+if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Tracker av gräsklipparentreprenörer"; serv.strH1="lawnmower.closeby.market"; 
+  serv.strTitle="Tracker av gräsklipparentreprenörer"; serv.strH1="lawnmowing.closeby.market"; 
   serv.strDescription="Trackersajt av gräsklipparentreprenörer.";
   serv.strKeywords="tracker gräsklipparentreprenörer, jobb";
   serv.strSummary="<div>\n\
