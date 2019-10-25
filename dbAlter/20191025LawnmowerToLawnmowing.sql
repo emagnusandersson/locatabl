@@ -1,0 +1,54 @@
+
+RENAME TABLE lawnmower_admin TO lawnmowing_admin;
+RENAME TABLE lawnmower_complaint TO lawnmowing_complaint;
+RENAME TABLE lawnmower_customer TO lawnmowing_customer;
+RENAME TABLE lawnmower_customerTeam TO lawnmowing_customerTeam;
+RENAME TABLE lawnmower_customerTeamImage TO lawnmowing_customerTeamImage;
+RENAME TABLE lawnmower_seller TO lawnmowing_seller;
+RENAME TABLE lawnmower_sellerTeam TO lawnmowing_sellerTeam;
+RENAME TABLE lawnmower_sellerTeamImage TO lawnmowing_sellerTeamImage;
+RENAME TABLE lawnmower_setting TO lawnmowing_setting;
+RENAME TABLE lawnmower_user TO lawnmowing_user;
+RENAME TABLE lawnmower_userImage TO lawnmowing_userImage;
+RENAME TABLE lawnmower_webPushSubscription TO lawnmowing_webPushSubscription;
+
+RENAME TABLE lawnmower_binsArea TO lawnmowing_binsArea;
+RENAME TABLE lawnmower_binsCuttingWidth TO lawnmowing_binsCuttingWidth;
+RENAME TABLE lawnmower_binsDonatedAmount TO lawnmowing_binsDonatedAmount;
+RENAME TABLE lawnmower_binsHistActive TO lawnmowing_binsHistActive;
+RENAME TABLE lawnmower_binsNComplaint TO lawnmowing_binsNComplaint;
+RENAME TABLE lawnmower_binsNComplaintCum TO lawnmowing_binsNComplaintCum;
+RENAME TABLE lawnmower_binsNComplaintGiven TO lawnmowing_binsNComplaintGiven;
+RENAME TABLE lawnmower_binsNComplaintGivenCum TO lawnmowing_binsNComplaintGivenCum;
+RENAME TABLE lawnmower_binsTAccumulated TO lawnmowing_binsTAccumulated;
+RENAME TABLE lawnmower_binsTCreated TO lawnmowing_binsTCreated;
+RENAME TABLE lawnmower_binsTPos TO lawnmowing_binsTPos;
+
+
+-- Set Back
+
+RENAME TABLE lawnmowing_admin TO lawnmower_admin;
+RENAME TABLE lawnmowing_complaint TO lawnmower_complaint;
+RENAME TABLE lawnmowing_customer TO lawnmower_customer;
+RENAME TABLE lawnmowing_customerTeam TO lawnmower_customerTeam;
+RENAME TABLE lawnmowing_customerTeamImage TO lawnmower_customerTeamImage;
+RENAME TABLE lawnmowing_seller TO lawnmower_seller;
+RENAME TABLE lawnmowing_sellerTeam TO lawnmower_sellerTeam;
+RENAME TABLE lawnmowing_sellerTeamImage TO lawnmower_sellerTeamImage;
+RENAME TABLE lawnmowing_setting TO lawnmower_setting;
+RENAME TABLE lawnmowing_user TO lawnmower_user;
+RENAME TABLE lawnmowing_userImage TO lawnmower_userImage;
+RENAME TABLE lawnmowing_webPushSubscription TO lawnmower_webPushSubscription;
+
+
+RENAME TABLE lawnmowing_binsArea TO lawnmower_binsArea;
+RENAME TABLE lawnmowing_binsCuttingWidth TO lawnmower_binsCuttingWidth;
+RENAME TABLE lawnmowing_binsDonatedAmount TO lawnmower_binsDonatedAmount;
+RENAME TABLE lawnmowing_binsHistActive TO lawnmower_binsHistActive;
+RENAME TABLE lawnmowing_binsNComplaint TO lawnmower_binsNComplaint;
+RENAME TABLE lawnmowing_binsNComplaintCum TO lawnmower_binsNComplaintCum;
+RENAME TABLE lawnmowing_binsNComplaintGiven TO lawnmower_binsNComplaintGiven;
+RENAME TABLE lawnmowing_binsNComplaintGivenCum TO lawnmower_binsNComplaintGivenCum;
+RENAME TABLE lawnmowing_binsTAccumulated TO lawnmower_binsTAccumulated;
+RENAME TABLE lawnmowing_binsTCreated TO lawnmower_binsTCreated;
+RENAME TABLE lawnmowing_binsTPos TO lawnmower_binsTPos;

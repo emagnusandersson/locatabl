@@ -64,6 +64,11 @@ var loginInfoExtend=function(el){
 
 
 
+
+
+
+
+
 window.loginReturnC=function(data){
   yesDiv.setStat();
   loginInfo.setStat();
@@ -93,7 +98,7 @@ var loginDivExtend=function(el){
   var popupWin=function(IP) {
     var uPop=OAuth.createUrlNSetStatVar(IP, strSchemeLong+site.wwwLoginRet, strType+'Fun', caller, el.loginReturn);
 
-    if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
+    if(site.wwwLoginScope) document.domain = site.wwwLoginScope;
 
     el.winMy=window.open(uPop, '_blank', 'width=580,height=400');
 
@@ -179,7 +184,8 @@ var majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serve
   
   xhr.onload=function () {
     var dataFetched=this.response;
-    var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
+    //var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
+    var data=deserialize(this.response);
     
     var dataArr=data.dataArr;  // Each argument of dataArr is an array, either [argument] or [altFuncArg,altFunc]
     delete data.dataArr;
@@ -269,14 +275,16 @@ var loginInfo=loginInfoExtend(createElement('div'));  loginInfo.css({padding:'0e
 var tmpB=createElement('b').myAppend(wwwSite);
 var aTmp=createElement('a').attr({href:'https://wikipedia.org/wiki/Key_pair',target:"_blank"}).myText('key pair');
 var strShow='Show key-half', strHide='Hide key-half';
-var buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).css({'margin-left':'1em'}).on('click', function(){
+var buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).css({'margin':'0 0.4em'}).on('click', function(){
   var b=this; b.boOn=!b.boOn;  b.myText(b.boOn?strHide:strShow); divKey.toggle(b.boOn);
 });
 var divKey=createElement('div').myText(pubKey).hide().css({'font-weight':'bold'});
-var headA=createElement('div').myAppend('You are now on ',tmpB, ' (verify with address bar) with one half of a ',aTmp,'.',buttonShowKey,divKey).css({'margin-top':'0.5em'});
+var headA=createElement('div').myAppend('You are now on ',tmpB, ' with one half of a ',aTmp,'. (as seen in the address bar)').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
+
 
 var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText("Storing the key-half will allow the sender (the owner of the other half) to write certain data on this site: (position (latitude/longitude), visibility (on/off), hideTimer)");     popupHover(imgTmp,bub);  
-var headB=createElement('div').myAppend('Do you want to store this key-half?',imgTmp);
+var headB=createElement('div').myAppend('Those who created the link that brought you here (those who know the other key-half) will be able change certain data. (Your "visibility" (on/off), position and hideTimer.)');
+var headC=createElement('div').myAppend('Do you want to store this key-half?');
 //<b>position</b>, <b>last activity</b> and <b>visibility</b>
 
 //messageText=messExtend(createElement('span'));  window.setMess=messageText.setMess;  window.resetMess=messageText.resetMess;  messageText.css({font:'courier'});  
@@ -293,7 +301,7 @@ var noSpan=createElement('div').myText('No').css({'text-align':'center','margin-
 var noDiv=createElement('div').css(cssAns).css({'border-left':'2px solid grey','vertical-align':'top','background':'pink'}).myAppend(noSpan,strLeaveMess);
 var answerDiv=createElement('div').myAppend(yesDiv,noDiv).css({display:'flex'}); //
 //mainDivs=([]).push(loginInfo).push(headA).push(headB).push(answerDiv);
-var MainDiv=[loginInfo, headA, headB, answerDiv];
+var MainDiv=[loginInfo, headA, headB, headC, answerDiv];
 
 
 elBody.append(...MainDiv,spanMessageText); 

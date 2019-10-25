@@ -17,44 +17,49 @@ Brand:'Brand',  // Vehicle brand
 Independent:'Independent',
 Cargo:'Cargo',
 
-customerRewritten:'customer',
-sellerRewritten:'seller',
+//customerRewritten:'customer',
+//sellerRewritten:'seller',
 
 
 seller:'seller', sellers:'sell­ers',
 theSeller:"the seller", theSellers:"the sellers",
 theSellers0:"sellers",
-IndependentSeller:'Independent Seller',
+IndependentSeller:'Independent seller',
+
+contractor:'contractor', contractors:'con­trac­tors',
+theContractor:"the contractor", theContractors:"the contractors",
+theContractor0:"contractors",
+IndependentContractor:'Independent contractor',
 
 driver:'driver', drivers:'driv­ers',
 theDriver:'the driver', theDrivers:'the drivers',
 theDrivers0:'drivers',
-IndependentDriver:'Independent Driver',
+IndependentDriver:'Independent driver',
 
 cleaner:'cleaner', cleaners:'clean­ers',
 theCleaner:'the cleaner', theCleaners:'the cleaners',
 theCleaners0:'cleaners',
-IndependentCleaner:'No team',
+IndependentCleaner:'Independent cleaner',
 
 programmer:'programmer', programmers:'pro­gram­mers',
 theProgrammer:'the programmer', theProgrammers:'the programmers',
 theProgrammers0:'programmers',
-IndependentProgrammer:'Freelance',
+IndependentProgrammer:'Freelancer',
 
 picker:"picker", pickers:"pick­ers",
 thePicker:"the picker", thePickers:"the pickers",
 thePickers0:"pickers",
-IndependentPicker:'No team',
+IndependentPicker:'Independent picker',
 
-snowShoveler:"snow shoveler", snowShovelers:"snow shov­elers",
-theSnowShoveler:"the snow shoveler",  theSnowShovelers:"the snow shovelers",
-theSnowShovelers0:"snow shovelers",
-IndependentSnowShoveler:'No team',
+//snowShoveler:"snow shoveler", snowShovelers:"snow shov­elers",
+//theSnowShoveler:"the snow shoveler",  theSnowShovelers:"the snow shovelers",
+//theSnowShovelers0:"snow shovelers",
+//IndependentSnowShoveler:'No team',
 
 windowcleaner:'window cleaner',
-lawnmower:'lawnmower',
 snowRemovalWorker:'snow removal worker',
 
+lawnmowing:'lawnmowing',
 
 
 customer:'customer', customers:'cust­omers',
@@ -99,8 +104,8 @@ None:'None',
 All:'All',
 
 Settings:'Settings',
-//SellerSettings:'<span nom="Seller">Seller</span> settings',
-SellerSettings:'Seller settings',
+SellerSettings:'<span nom="Seller">Seller</span> settings',
+//SellerSettings:'Seller settings',
 CustomerSettings:'Customer settings',
 SellerLogin:'Login (<span nom="Sellers">Sellers</span>)',
 AppearAsCustomer:'Appear as <span nom="customer">customer</span>',
@@ -160,13 +165,13 @@ gettingStartedLink:'Getting started',
 SeeAlso:'See also',
 
 headOrdinalC:'New <span nom="customer">customer</span>?',
-headOrdinalDoubleC:'New customer (<span nom="customerRewritten">customer</span>)?',
+//headOrdinalDoubleC:'New customer (<span nom="customerRewritten">customer</span>)?',
 labOrdinalC:'Join now and be <span nom="customer">customer</span> number <span></span>.',
 labOrdinalBC:'You can delete your account at any time.',
 
 //labOrdinal:'Be the <span></span> <span nom="seller">seller</span> to join.',
 headOrdinalS:'New <span nom="seller">seller</span>?',
-headOrdinalDoubleS:'New seller (<span nom="sellerRewritten">seller</span>)?',
+//headOrdinalDoubleS:'New seller (<span nom="sellerRewritten">seller</span>)?',
 labOrdinalS:'Join now and be <span nom="seller">seller</span> number <span></span>.',
 labOrdinalBV:'You can delete your account at any time.',
 
@@ -368,110 +373,13 @@ shiftEnd:'Shiftend',
 idTeam:'Team-id'
 },
 
-NotYetApproved:'Not&nbsp;yet&nbsp;approved',
+NotYetApproved:'Not yet approved',
 
 
 //standingByMethods:['0','1','2','3','4','5','10'],
 //standingByMethodsLong:['0','1','2','3','4','5','10'],
 //setting.standingByMethod:'Standby (ready in ... [min])',
 objCompassPoint:{ N:'North', E:'East', S:'South', W:'West', NE:'Northeast', SE:'Southeast', SW:'Southwest', NW:'Northwest'},
-
-
-label:{
-index:'index',
-idUser:'idSeller',
-IP:'IP',
-idFB:'idFB',
-idIdPlace:'idIdPlace',
-idOpenId:'idOpenId',
-terminationDate:'',
-donatedAmount:'Donated amount [USD]',
-tCreated:'Account age',
-displayName:'Name',
-tel:'Tel',
-displayEmail:'Email',
-boWebPushOK:'"Push Notifications" enabled',
-link:'Link',
-homeTown:'Home town',
-standingByMethod:'How is <span nom="theSeller">the seller</span> waiting',
-//standingByMethod:'How is the seller waiting',
-idDriverGovernment:'Driver-ID (gov)',
-vehicleType:'Vehicle type',
-brand:'Brand',
-nPassengers:'Number of passengers',
-nExtraSeat:'Extra seats',
-nChildSeat:'Child seats',
-nWheelChairPlaces:'Wheelchair places',
-currency:'Currency',
-priceStart:'Start price',
-strUnitDist:'Distance unit',
-pricePerDist:'Price per dist',
-pricePerHour:'Price per hour',
-tLastPriceChange:'Price age',
-tPos:'Position age',
-shiftEnd:'Shift ends in',
-boShow:'',
-x:'',
-y:'',
-imTag:'',
-imTagTeam:'',
-idTeam:'Team',
-idTeamWanted:'idTeam',
-linkTeam:'',
-bla:'',
-nComplaint:'Complaints',
-histActive:'Active days per last-<span></span>-days',
-tAccumulated:'Accumulated time as visible',
-tLastWriteOfTA:'',
-hideTimer:'Hide timer',
-hideTime:'Automatically hide',
-comparePrice:'Compare price',
-coordinatePrecisionM:'Coordinate precision (±) [m]',
-dist:'Distance',
-image:'Picture',
-info:'Info',
-
-payload:'Payload [ton]',
-generalCargo:'General cargo',
-tailLift:'Tail lift',
-loaderCrane:'Loader crane',
-tipper:'Tipper',
-loadableFromTheSide:'Loadable from the side',
-iso20:"ISO 20'",
-iso40:"ISO 40'",
-tiltBed:'Tilt bed',
-sideLift:'Side lift',
-rollerContainer:'Hook lift',
-otherContainer:'Other container', //(Specify standard in the keyword field)
-tankTruck:'Tank truck',
-flatbed:'Flatbed',
-lowboy:'Lowboy',
-loggingTruck:'Logging truck',
-automobileTransport:'Automobile transport',
-livestock:'Livestock',
-vehicleTowing:'Vehicle towing',
-keyword:'Keyword',
-
-boHome:'Home cleaning',
-boOffice:'Office cleaning',
-boIndustrial:'Industrial cleaning',
-boGotEquipment:'Got own equipment',
-ladder:'Ladder',
-skyLift:'Skylift',
-nWindow:'Number of Windows',
-customerHasEquipment:'Customer has equipment',
-area:'Area [m²]',
-experience:'Experience [years]',
-
-pushMower:'Push mower',
-ridingMower:'Riding mower',
-edger:'Edger',
-cuttingWidth:'Cutting width [cm]',
-
-compassPoint:'Compass point',
-distStartToGoal:'Distance [km]',
-destination:'Destination'
-},
 
 
 
@@ -586,7 +494,7 @@ tCreated:'How long since the account was created.',
 displayName:'',
 tel:'',
 displayEmail:'',
-boWebPushOK:'"push notifications". (Note! these messages aren\'t saved, use email or sms if you want the messages to be saved.)',
+boWebPushOK:'Messages sent to "push notifications" (not supported by iOS) (Note! these messages aren\'t saved, use email or sms if you want the messages to be saved.)',
 link:'If the user has an own webpage.',
 homeTown:'',
 standingByMethod:'',
@@ -708,9 +616,9 @@ if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
 </div>";
 }
 
-if('lawnmower' in Site) Site.lawnmower.langSetup=function(){
+if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Lawn Mower Drivers, Jobs"; serv.strH1="lawnmower.closeby.market";
+  serv.strTitle="Lawn Mower Drivers, Jobs"; serv.strH1="lawnmowing.closeby.market";
   serv.strDescription="Positioning/tracking-tool for finding and comparing lawn mowing entrepreneurs / people ready mow lawns";
   serv.strKeywords="job, work, search tool, tracker, lawn mowing, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\

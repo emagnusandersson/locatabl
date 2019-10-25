@@ -26,14 +26,15 @@
 // test viewTeam
 // delete me as customer resp delete me as driver
 // Ability to see and select image in introPop
-// 👋
+// 👋🌍
+
 
 
 /**********************************************************************
  * Methods of properties (provided by the plugins)
 crInp: no arg, no this, creates and returns el
-crInfo: no arg, uses this, nothing returned
-crTabF: no arg, uses this, nothing returned
+crInfo: no arg, uses this (span), nothing returned
+crTabF: no arg, uses this (td), nothing returned
 
 setInp: no arg, uses this, nothing returned
 saveInp: no arg, uses this, returns [err val]
@@ -57,9 +58,9 @@ app.CreatorPlugin.general=function(){
   app.strUnitTime='h';
     // Some conveniently grouped properties
   app.StrPropPerson=['image', 'idTeam', 'displayName'];
-  app.StrPropContact=['boWebPushOK', 'homeTown', 'link', 'tel', 'displayEmail'];
-  app.StrPropContactMinusBoWebPushOK=AMinusB(StrPropContact, ['boWebPushOK']);
-  app.StrPropContactMinusBoWebPushOKNHomeTown=AMinusB(StrPropContact, ['boWebPushOK', 'homeTown']);
+  app.StrPropContact=['boWebPushOK', 'homeTown', 'link', 'tel', 'displayEmail']; if(!boEnablePushNotification) app.StrPropContact=AMinusB(StrPropContact, ['boWebPushOK']);
+  app.StrPropContactMinusBoWebPushOK=['homeTown', 'link', 'tel', 'displayEmail']; //AMinusB(StrPropContact, ['boWebPushOK']);
+  app.StrPropContactMinusBoWebPushOKNHomeTown=['link', 'tel', 'displayEmail'];  //AMinusB(StrPropContact, ['boWebPushOK', 'homeTown']);
   app.StrPropPos=['dist', 'tPos', 'coordinatePrecisionM'];
   app.StrPropRep=['tCreated', 'tAccumulated', 'donatedAmount', 'nComplaint']; //, 'histActive'
 
@@ -155,21 +156,51 @@ app.CreatorPlugin.general=function(){
     var tmpPropProt={crInfo:tmpCrNComplaint, setInfo:tmpSetNComplaint, crTabF:tmpCrNComplaint, setTabF:tmpSetNComplaint};
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.nComplaint, tmpPropProt); }
 
+
+/**********************************************************************
+ * Methods of properties (provided by the plugins)
+crInp: no arg, no this, creates and returns el
+crInfo: no arg, uses this (span), nothing returned
+crTabF: no arg, uses this (td), nothing returned
+
+setInp: no arg, uses this, nothing returned
+saveInp: no arg, uses this, returns [err val]
+
+setInfo: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+setTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+sortTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+setMapF, setMapMF: rowMTab as arg, uses this, if something is returned...:
+  ...and is a string, (it is displayed as a string (see more in mapDiv))
+  ...and is an object, (it is used as seen in mapDiv)
+
+crFilterButtF: button index as arg, no this, creates and returns el
+setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
+***********************************************************************/
+
       // idTeam
     const tmpCrIdTeam=function(){  this.append(  thumbTeamCreator(ORole[this.iRole])  );   };
     const tmpSetIdTeam=function(rowMTab){   this.querySelector('a').mySet(rowMTab);   };
     const tmpSetFilterButtF=function(span,val,boOn){ span.mySet(val,boOn); }
     const tmpSetMapF=function(rowMTab){
-      var data=rowMTab.idTeam, tag=rowMTab.imTagTeam, tmp;
-      if(data && data.length>0 && data!==0) {
-        var strTmp=uSellerTeamImage+data+'?v='+tag;
+      var {idTeam, imTagTeam}=rowMTab, tmp;
+      if(idTeam) { //&& idTeam.length>0 && idTeam!==0
+        var strTmp=URoleTeamImage[this.iRole]+idTeam+'?v='+imTagTeam;
         tmp = {url:strTmp, boUseFrame:true};
-      } else tmp=langHtml.IndependentSeller.replace("<br>","\n");
+      } else tmp=(this.iRole?langHtml.IndependentSeller:langHtml.IndependentCustomer).replace("<br>","\n");
       return tmp;
+    }
+    const tmpSetMapMF=function(rowMTab){
+      var {idTeam, imTagTeam, linkTeam}=rowMTab;
+      if(typeof linkTeam=='string') {
+        if(linkTeam.length==0) return null;
+        else if(linkTeam.substring(0,8)=='https://') linkTeam=linkTeam.substring(8);
+        else if(linkTeam.substring(0,7)=='http://') linkTeam=linkTeam.substring(7);
+        return propSetCropLabelI('idTeam',linkTeam);
+      }else return null;
     }
     for(let i=0;i<ORole.length;i++){
       extend(ORole[i].Prop.idTeam, { crInfo:tmpCrIdTeam, setInfo:tmpSetIdTeam, crTabF:tmpCrIdTeam, setTabF:tmpSetIdTeam,
-        setMapF:tmpSetMapF,
+        setMapF:tmpSetMapF, setMapMF:tmpSetMapMF, 
         crFilterButtF:function(iInit){ return butTeamImgCreator(ORole[i]).css({'margin-right':'0.25em'}); },
         setFilterButtF:tmpSetFilterButtF
       });
@@ -226,7 +257,7 @@ app.CreatorPlugin.general=function(){
     var tmpSave=function(){return [null, this.inp.value.trim()];}
     for(let i=0;i<ORole.length;i++){
       var tmpCr=function(){ var c=spanIdTeamWantedCreator(ORole[i]); return c;  }
-      extend(ORole[i].Prop.idTeamWanted, {strType:'span', inpW:3, crInp:tmpCr, setInp:tmpSet, saveInp:tmpSave });
+      extend(ORole[i].Prop.idTeamWanted, {strType:'span', crInp:tmpCr, setInp:tmpSet, saveInp:tmpSave }); //, inpW:3
     }
 
       // coordinatePrecisionM
@@ -244,7 +275,7 @@ app.CreatorPlugin.general=function(){
       // image
     app.calcImageUrl=function(rT){ // Keys of rT: ["idUser", "boImgOwn", "imTag", "image"]
       var tmp='',  boImgOwn=Number(rT.boImgOwn);
-      if(boImgOwn  || rT.image.length==0) tmp=uUserImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image;
+      if(boImgOwn  || rT.image.length==0)  tmp=uUserImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image;
       return tmp;
     };
     var calcImageUrlUser=function(){    return {str:calcImageUrl(userInfoFrDB.user),    boImgOwn:Boolean(Number(userInfoFrDB.user.boImgOwn))};     }
@@ -256,7 +287,7 @@ app.CreatorPlugin.general=function(){
           if(data.boOK) userInfoFrDB.user.boImgOwn=0;
           //for(var i=0;i<2;i++){viewSetting.ElRole[i].setUp();}
           viewUserSetting.setUp();
-        }]];   majax(oAJAX,vec);
+        }]];   majax(vec);
       });
       var uploadCallback=function(){
         userInfoFrDB.user.boImgOwn=1; userInfoFrDB.user.imTag=randomHash(); var tmp=calcImageUrlUser(); thumb.attr({src:tmp.str}); c.butDeleteImg.toggle(tmp.boImgOwn);
@@ -296,7 +327,7 @@ app.CreatorPlugin.general=function(){
     var tmpSetInp=function(){ this.querySelector('span').mySet(); }
     var tmpSaveInp=function(){ return [null, JSON.stringify(myWebPush.subscription)]; }
     var tmpCrInfo=function(){
-      var butT=createElement('button').myText('Send mess­age').on('click', function(){  
+      var butT=createElement('button').myText('Send push notification').on('click', function(){  
         if(!userInfoFrDB.user){ setMess('You need to be logged in to send a message.', 2); return; }
         viewGreeting.setUp(this.idUser, this.iRole); viewGreeting.setVis();
         doHistPush({view:viewGreeting});
@@ -379,7 +410,7 @@ app.CreatorPlugin.vehicleType=function(){
 
 
   app.rewriteLangDriver=function(){
-    langHtml.sellerRewritten=langHtml.driver;
+    //langHtml.sellerRewritten=langHtml.driver;
     langHtml.loginInfo.seller=langHtml.driver;
     langHtml.Seller=ucfirst(langHtml.driver);
     langHtml.Sellers=ucfirst(langHtml.drivers);
@@ -390,6 +421,16 @@ app.CreatorPlugin.vehicleType=function(){
     langHtml.theSellers0=langHtml.theDrivers0;
   };
 
+  app.rewriteLangContractor=function(){
+    langHtml.loginInfo.seller=langHtml.contractor;
+    langHtml.Seller=ucfirst(langHtml.contractor);
+    langHtml.Sellers=ucfirst(langHtml.contractors);
+    langHtml.IndependentSeller=langHtml.IndependentContractor;
+
+    langHtml.seller=langHtml.contractor;   langHtml.sellers=langHtml.contractors;
+    langHtml.theSeller=langHtml.theContractor;   langHtml.theSellers=langHtml.theContractors;
+    langHtml.theSellers0=langHtml.theContractors0;
+  };
 
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
@@ -588,8 +629,8 @@ app.CreatorPlugin.distNTimePrice=function(){
       var tmpU=viewSetting.ElRole[1].querySelector('[name=strUnitDist]').css({'float':'', flex:''});   tmpU.parentNode.remove();
       
       //var tmpPPD=viewSetting.ElRole[1].querySelector('[name=pricePerDist]'); tmpPPD.parentNode.empty().myAppend(langHtml.PricePer+' ',tmpU,tmpPPD);
-      var tmpPPD=viewSetting.ElRole[1].querySelector('[name=pricePerDist]'), label=tmpPPD.parentNode.childNodes[0];
-      label.myText(langHtml.PricePer).insertAdjacentElement('afterend', tmpU);
+      var tmpPPD=viewSetting.ElRole[1].querySelector('[name=pricePerDist]'), elLabelTmp=tmpPPD.parentNode.childNodes[0];
+      elLabelTmp.myText(langHtml.PricePer).insertAdjacentElement('afterend', tmpU);
     };
 
       // priceStart
@@ -853,11 +894,11 @@ app.CreatorPlugin.taxi=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', ...StrPropE, 'tPos'],
+  ['Customer', ...StrPropE, 'tPos', 'idTeam'],
   ['Destination', ...StrTransportCustomer],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'],
+  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
   ['Vehicle', 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat'],
   ['Reputation', ...StrPropRep]]);
 
@@ -956,12 +997,12 @@ app.CreatorPlugin.transport=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', 'tPos'],
+  ['Customer', 'tPos', 'idTeam'],
   ['Cargo', ...StrPropE],
   ['Destination', ...StrTransportCustomer],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd'],
+  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
   ['Vehicle', 'vehicleType', ...StrPropE],
   ['Reputation', ...StrPropRep]]);
 
@@ -1043,11 +1084,11 @@ app.CreatorPlugin.cleaner=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos'],
+  ['Customer', 'homeTown', 'currency', 'tPos', 'idTeam'],
   ['Type', ...StrC],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos'],
+  ['Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos', 'idTeam'],
   ['Reputation', ...StrPropRep]]);
   
   
@@ -1069,15 +1110,8 @@ app.CreatorPlugin.cleaner=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    langHtml.sellerRewritten=langHtml.cleaner;
-    //langHtml.loginInfo.seller=langHtml.cleaner;
-    //langHtml.Seller=ucfirst(langHtml.cleaner);
-    //langHtml.Sellers=ucfirst(langHtml.cleaners);
-    //langHtml.IndependentSeller=langHtml.IndependentCleaner;
-
-    //langHtml.seller=langHtml.cleaner;   langHtml.sellers=langHtml.cleaners;
-    //langHtml.theSeller=langHtml.theCleaner;   langHtml.theSellers=langHtml.theCleaners;
-    //langHtml.theSellers0=langHtml.theCleaners0;
+    //langHtml.sellerRewritten=langHtml.contractor;
+    rewriteLangContractor();
   };
   this.rewriteObj=function(){
       // StrC
@@ -1121,10 +1155,10 @@ app.CreatorPlugin.windowcleaner=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos'],
+  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', 'idTeam'],
   ['Tools', ...StrS],
   ['Reputation', ...StrPropRep]]);
   
@@ -1147,7 +1181,8 @@ app.CreatorPlugin.windowcleaner=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    langHtml.sellerRewritten=langHtml.windowcleaner;
+    //langHtml.sellerRewritten=langHtml.windowcleaner;
+    rewriteLangContractor();
   };
 
   this.rewriteObj=function(){
@@ -1163,9 +1198,9 @@ app.CreatorPlugin.windowcleaner=function(){
 //0123456789abcdef
 
 
-//0123456789abcdef pluginLawnmower.js
+//0123456789abcdef pluginLawnmowing.js
 "use strict"
-app.CreatorPlugin.lawnmower=function(){
+app.CreatorPlugin.lawnmowing=function(){
   var StrC=oC.StrPropE, StrS=oS.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice'],   ['pushMower','ridingMower', 'edger']
   
@@ -1193,10 +1228,10 @@ app.CreatorPlugin.lawnmower=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS],
+  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS, 'idTeam'],
   ['Reputation', ...StrPropRep]]);
 
     // Default columns
@@ -1213,12 +1248,14 @@ app.CreatorPlugin.lawnmower=function(){
   viewComparePriceDataPop.setDefault(10,1); // Arg: dist, time
 
     // images
-  var strPlugin='lawnmower';
+  var strPlugin='lawnmowing';
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
   app.uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    langHtml.sellerRewritten=langHtml.lawnmower;
+    //langHtml.sellerRewritten=langHtml.lawnmowing;
+    //langHtml.sellerRewritten=langHtml.contractor;
+    rewriteLangContractor();
   };
 
   this.rewriteObj=function(){
@@ -1267,10 +1304,10 @@ app.CreatorPlugin.snowremoval=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos'],
+  ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
   ['Tools', 'vehicleType', ...StrS],
   ['Reputation', ...StrPropRep]]);
   
@@ -1293,15 +1330,9 @@ app.CreatorPlugin.snowremoval=function(){
   app.uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    langHtml.sellerRewritten=langHtml.snowRemovalWorker;
-    //langHtml.loginInfo.seller=langHtml.snowShoveler;
-    //langHtml.Seller=ucfirst(langHtml.snowShoveler);
-    //langHtml.Sellers=ucfirst(langHtml.snowShovelers);
-    //langHtml.IndependentSeller=langHtml.IndependentSnowShoveler;
-
-    //langHtml.seller=langHtml.snowShoveler;   langHtml.sellers=langHtml.snowShovelers;
-    //langHtml.theSeller=langHtml.theSnowShoveler;  langHtml.theSellers=langHtml.theSnowShovelers;
-    //langHtml.theSellers0=langHtml.theSnowShoveler0;
+    //langHtml.sellerRewritten=langHtml.snowRemovalWorker;
+    //langHtml.sellerRewritten=langHtml.contractor;
+    rewriteLangContractor();
   };
 
   this.rewriteObj=function(){
@@ -1345,10 +1376,10 @@ app.CreatorPlugin.fruitpicker=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC],
+  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos', 'vehicleType'],
+  ['Seller', 'homeTown', 'currency', 'tPos', 'vehicleType', 'idTeam'],
   ['Reputation', ...StrPropRep]]);
   
     // Default columns
@@ -1369,7 +1400,7 @@ app.CreatorPlugin.fruitpicker=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    langHtml.sellerRewritten=langHtml.picker;
+    //langHtml.sellerRewritten=langHtml.picker;
     langHtml.loginInfo.seller=langHtml.picker;
     langHtml.Seller=ucfirst(langHtml.picker);
     langHtml.Sellers=ucfirst(langHtml.pickers);
@@ -1422,11 +1453,11 @@ app.CreatorPlugin.programmer=function(){
 
     // Properties in filterDiv
   oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos'],
+  ['Customer', 'homeTown', 'currency', 'tPos', 'idTeam'],
   ['RequestedSkills', ...StrC],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos'],
+  ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
   ['Languages', ...StrS],
   ['Reputation', ...StrPropRep]]);
 
@@ -1447,7 +1478,7 @@ app.CreatorPlugin.programmer=function(){
   //uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    langHtml.sellerRewritten=langHtml.programmer;
+    //langHtml.sellerRewritten=langHtml.programmer;
     langHtml.loginInfo.seller=langHtml.programmer;
     langHtml.Seller=ucfirst(langHtml.programmer);
     langHtml.Sellers=ucfirst(langHtml.programmers);
@@ -1530,13 +1561,13 @@ app.butTimeStampCreator=function(iRole, colName){ // Used in plugins (in viewTab
 
 app.thumbTeamCreator=function(oRole){
   var el=createElement('a');
-  var uRoleTeamImage=oRole==oC?uCustomerTeamImage:uSellerTeamImage;
+  //var uRoleTeamImage=oRole==oC?uCustomerTeamImage:uSellerTeamImage;
   el.mySet=function(rT){
     //var rT=oRole.MTab[iMTab];
     var data=rT.idTeam, tag=rT.imTagTeam;
     if(data!=0) {
       el.show();
-      var strTmp=uRoleTeamImage+data+'?v='+tag;
+      var strTmp=URoleTeamImage[oRole.ind]+data+'?v='+tag;
       img.prop({src:strTmp});
       var url=rT.linkTeam;  if(url && url.length && !RegExp("^https?:\/\/","i").test(url)) { url='http://'+url; }      el.prop({href:url});
     }else el.hide();
@@ -1585,16 +1616,17 @@ app.propBoolProt={ strType:'checkbox', saveInp:inpAsNum, setInfo:tmpSet, setTabF
   // For string properties that might be too long.
 //var makeMapF=function(strName,n){return function(rowMTab){var str=rowMTab[strName],n=40; return str.length>n?str.substr(0,n)+'…':str;}  };
 //var makeMapMF=function(strName,n){return function(rowMTab){var str=rowMTab[strName]; return str.length>n?str.substr(0,n)+'…':str;}  };
-var NMAXMAPLABEL=40;
+window.NMAXMAPLABEL=40;
 app.propSetCrop=function(rowMTab){var str=rowMTab[this.strName], n=NMAXMAPLABEL; return str.length>n?str.substr(0,n)+'…':str;};
-app.propSetCropLabel=function(rowMTab){var str=rowMTab[this.strName], n=NMAXMAPLABEL-langHtml.prop[this.strName].label.length; return str.length>n?str.substr(0,n)+'…':str;};
-    
+//app.propSetCropLabel=function(rowMTab){var str=rowMTab[this.strName], n=NMAXMAPLABEL-langHtml.prop[this.strName].label.length; return str.length>n?str.substr(0,n)+'…':str;};
+app.propSetCropLabelI=function(propName, strVal){var n=NMAXMAPLABEL-langHtml.prop[propName].label.length; return strVal.length>n?strVal.substr(0,n)+'…':strVal;};  
+app.propSetCropLabel=function(rowMTab){var propName=this.strName, str=rowMTab[propName]; return propSetCropLabelI(propName, str);};
 
 /*******************************************************************************************************************
  *******************************************************************************************************************
  * Some tools (could be placed in a library file)
  *   calcLabel
- *   spanMessageTextCreate
+ *   divMessageTextCreate
  *   popUpCreator
  *   toastCreator
  *   selSpriteCreator
@@ -1606,39 +1638,67 @@ app.propSetCropLabel=function(rowMTab){var str=rowMTab[this.strName], n=NMAXMAPL
 //calcLabel=function(Label,strName){ return Label[strName]||ucfirst(strName); }
 app.calcLabel=function(obj,strName){ var objA=obj[strName]; return (objA&&objA.label)?objA.label:ucfirst(strName); }
 
-var spanMessageTextCreate=function(){
-  var el=createElement('span');
+//var spanMessageTextCreate=function(){
+  //var el=createElement('span');
+  //var spanInner=createElement('span');
+  //el.append(spanInner, imgBusy.hide());
+  //el.resetMess=function(time){
+    //clearTimeout(messTimer);
+    //if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
+    //spanInner.myText(' ');
+    //imgBusy.hide();
+  //}
+  //el.setMess=function(str,time,boRot){
+    //spanInner.myText(str);
+    //clearTimeout(messTimer);
+    //if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
+    //imgBusy.toggle(Boolean(boRot));
+  //};
+  //el.setHtml=function(str,time,boRot){
+    //spanInner.myHtml(str);
+    //clearTimeout(messTimer);
+    //if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
+    //imgBusy.toggle(Boolean(boRot));
+  //};
+  //var messTimer;
+  //el.addClass('message');//.css({'z-index':8100,position:'fixed'});
+  //return el;
+//}
+
+var divMessageTextCreate=function(){
   var spanInner=createElement('span');
-  el.append(spanInner, imgBusy.hide());
+  var imgBusyLoc=imgBusy.cloneNode().css({zoom:'65%','margin-left':'0.4em'}).hide();
+  var span=createElement('span').myAppend(spanInner, imgBusyLoc);
+  var el=createElement('div').myAppend(span);
   el.resetMess=function(time){
     clearTimeout(messTimer);
-    if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
+    if(time) { messTimer=setTimeout('resetMess()',time*1000); return; }
     spanInner.myText(' ');
-    imgBusy.hide();
+    imgBusyLoc.hide();
   }
   el.setMess=function(str,time,boRot){
     spanInner.myText(str);
     clearTimeout(messTimer);
-    if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
-    imgBusy.toggle(Boolean(boRot));
+    if(time)     messTimer=setTimeout('resetMess()',time*1000);
+    imgBusyLoc.toggle(Boolean(boRot));
   };
   el.setHtml=function(str,time,boRot){
     spanInner.myHtml(str);
     clearTimeout(messTimer);
-    if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
-    imgBusy.toggle(Boolean(boRot));
+    if(time)     messTimer=setTimeout('resetMess()',time*1000);
+    imgBusyLoc.toggle(Boolean(boRot));
   };
   var messTimer;
-  el.addClass('message');//.css({'z-index':8100,position:'fixed'});
+  span.addClass('message');//.css({'z-index':8100,position:'fixed'});
   return el;
 }
 
 var popUpExtend=function(el){
   el.openPop=function() {
-    el.append(spanMessageText);
+    el.append(divMessageTextW);
     container.empty().append(el);  elBody.append(blanket);  elBody.append(container);
   }
-  el.closePop=function() {  el.remove();  container.remove();  blanket.remove();  elBody.append(spanMessageText);  }
+  el.closePop=function() {  el.remove();  container.remove();  blanket.remove();  elBody.append(divMessageTextW);  }
 
   el.addClass('Center');
   var blanket=createElement('div').addClass('blanket');
@@ -1925,14 +1985,13 @@ var toggleSpecialistButts=function(){
 
   var boSubscribed=boE?userInfoFrDB.user.boWebPushOK:false;
   myWebPush.boSubscribed=boSubscribed;
-  if(boSubscribed && (Notification.permission!='granted')) {
+  if(boSubscribed && ('Notification' in window) && (Notification.permission!='granted')) {
     myWebPush.subscription=null; myWebPush.boSubscribed=false;
-    //var vec=[['setWebPushSubcription',{ strSubscription: JSON.stringify(myWebPush.subscription)}]];   majax(oAJAX,vec);
+    //var vec=[['setWebPushSubcription',{ strSubscription: JSON.stringify(myWebPush.subscription)}]];   majax(vec);
     myWebPush.cbFun(null);
   }else{
     SpanInpWebPushToggle.Span.forEach(ele=>ele.mySet());
   }
-  
 
   /* if(userInfoFrDB.seller){
     var tmp=agreementStart.compareLocalDates(1); if(tmp.boNew) {agreementStart.setLocalDates(1); agreementStart.openFunc(); }
@@ -1985,14 +2044,14 @@ var viewFormLoginCreator=function(){
     var flow=(function*(){
       //var tmp=SHA1(inpPass.value+strSalt);
       var hashPW=inpPass.value+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
-      var vec=[['loginWEmail',{email:inpEmail.value, password:hashPW}], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      var vec=[['loginWEmail',{email:inpEmail.value, password:hashPW}], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
       history.fastBack(viewFront);
 
     })(); flow.next();
     return false;
   }
   var sendEmail=function(e){
-    var vec=[['sendLoginLink',{email:inpEmail.value}]];   majax(oAJAX,vec);  e.preventDefault();
+    var vec=[['sendLoginLink',{email:inpEmail.value}]];   majax(vec);  e.preventDefault();
   }
 
   var divHead=createElement('h3').myText('Sign in using email / password').css({'text-align':'center'});
@@ -2042,7 +2101,7 @@ var divLoginSelectorCreator=function(oRole){
       ga('send', 'event', 'button', 'click', 'idPClick');
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:strRole+'Fun', caller:'index', code:code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
 
       var boE=Boolean(userInfoFrDB[strRole]);
       var tmpIntroPop=strRole=='customer'?mainIntroPopC:mainIntroPopS;
@@ -2097,8 +2156,8 @@ var viewCreateUserCreator=function(){
     var hashPW=strPassword+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
     var o={name:strName, email:strEmail, password:hashPW,  'g-recaptcha-response': grecaptcha.getResponse()};
 
-    //var vec=[['createUser',o], ['setupById',{}, el.cb]];   majax(oAJAX,vec);
-    var vec=[['sendVerifyEmailNCreateUserMessage', o, saveRet]];   majax(oAJAX,vec);
+    //var vec=[['createUser',o], ['setupById',{}, el.cb]];   majax(vec);
+    var vec=[['sendVerifyEmailNCreateUserMessage', o, saveRet]];   majax(vec);
 
     inpPass.value=''; inpPassB.value='';
     setMess('',null,true);
@@ -2170,7 +2229,7 @@ var viewChangePWPopCreator=function(){
     var hashPWN=inpPass.value.trim()+strSalt; for(var i=0;i<nHash;i++) hashPWN=SHA1(hashPWN);
     var o={passwordOld:hashPWO, passwordNew:hashPWN};
 
-    var vec=[['changePW',o,changePWRet]];   majax(oAJAX,vec);
+    var vec=[['changePW',o,changePWRet]];   majax(vec);
     setMess('',null,true);
   }
 
@@ -2210,7 +2269,7 @@ var viewForgottPWPopCreator=function(){
   var el=createElement('div')
   el.toString=function(){return 'forgottPWPop';}
   var okF=function(){
-    var vec=[['verifyPWReset',{email:inpEmail.value.trim()}, okRet]];   majax(oAJAX,vec);
+    var vec=[['verifyPWReset',{email:inpEmail.value.trim()}, okRet]];   majax(vec);
 
   };
   el.openFunc=function(){
@@ -2270,7 +2329,7 @@ var viewConvertIDCreator=function(){
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'userFun', caller:'index', code:code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
     })(); flow.next();
   });
 
@@ -2280,7 +2339,7 @@ var viewConvertIDCreator=function(){
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPAlt, fun:'mergeIDFun', caller:'index', code:code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
 
     })(); flow.next();
   });
@@ -2308,15 +2367,13 @@ var viewConvertIDCreator=function(){
  *******************************************************************************************************************
  *******************************************************************************************************************/
 
-var butTeamImgCreator=function(oRole){
+app.butTeamImgCreator=function(oRole){
   var el=createElement('span');
-  var strRole=oRole.strRole;
-  var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
   el.mySet=function(idTeam,boOn){
     var boId=Number(idTeam)!=0;
     spanIndependent.toggle(!boId);   im.toggle(boId);
     if(boId){
-      var strTmp=uRoleTeamImage+idTeam;
+      var strTmp=URoleTeamImage[oRole.ind]+idTeam;
       im.prop({src:strTmp});
     }
     let opacity=boOn?1:0.4; im.css({opacity: opacity});
@@ -2455,13 +2512,14 @@ var viewSettingWCreator=function(){
       charRole=i?'s':'c';
       viewSetting.setVis(); doHistPush({view:viewSetting});
     });
-    el.TeamButton[i]=createElement('button').css({display:'block'}).myText(strTmp+' team settings').on('click', function(){
+    el.TeamButton[i]=createElement('button').myText(strTmp+' team settings').on('click', function(){
       ViewTeam[i].setUp(); ViewTeam[i].setVis(); doHistPush({view:ViewTeam[i]});
-    });
+    }); //.css({display:'block'})
   }
-  ButtShowMarkSelect[0].css({'margin-left':'0.4em'});
+  //ButtShowMarkSelect[0].css({'margin-left':'0.4em'});
   
-  var divMapMarker=createElement('div').prop('id','divMapMarker').myText(langHtml.MapMarkers+':').myAppend(...ButtShowMarkSelect);
+  var divMapMarkerI=createElement('div').myAppend(...ButtShowMarkSelect).css({display:'flex'});
+  var divMapMarker=createElement('div').prop('id','divMapMarker').myText(langHtml.ChangeMapMarkers+':').myAppend(divMapMarkerI);
 
   
   var userSettingButton=createElement('button').myText(langHtml.UserSettings).on('click',function(){
@@ -2474,18 +2532,20 @@ var viewSettingWCreator=function(){
     viewComplainer.load();
     viewComplainer.setVis(); doHistPush({view:viewComplainer});
   });
-  var butts=createFragment(userSettingButton, ...el.userDiv.SettingButton, createElement('br'), complainerButton).cssChildren({margin:'1em 0.1em'});
-  var h=createElement('p').myText("Settings for logged in user").css({'font-weight':'bold'});
-  el.userDiv.myAppend(h,butts);
-  el.userDiv.css({'background':'#ccc', 'border':'solid 1px', 'padding':'0.2em 0', 'margin':'1em 0.6em 1em 0.6em'});
+  //var butts=createFragment(userSettingButton, ...el.userDiv.SettingButton, createElement('br'), complainerButton).cssChildren({margin:'.5em 0.1em'});
+  var h=createElement('p').myText("Settings for logged in users").css({'font-weight':'bold'});
   
   el.adminButton=createElement('button').myText('Admin').css({display:'block'}).on('click',function(){
     viewAdmin.setVis(); doHistPush({view:viewAdmin});
   });
-
+  var divA=createElement('div').myAppend(userSettingButton, ...el.userDiv.SettingButton).css({display:'flex'}); //divA.cssChildren({});
+  var divTeam=createElement('div').myAppend(...el.TeamButton).css({display:'flex'});
+  el.userDiv.myAppend(h, divA, complainerButton, el.adminButton, divTeam);
+  el.userDiv.css({'background':'#ccc', 'border':'solid 1px', 'padding':'0.2em 0', 'margin':'1em 0.6em 1em 0.6em'});
+  el.userDiv.cssChildren({margin:'.5em 0.1em'});
   
-  var fragOpt=createFragment(divMapMarker, el.userDiv, el.adminButton, ...el.TeamButton);
-  fragOpt.cssChildren({display:'block','margin':'1em 0em 1em 0.6em'});
+  var fragOpt=createFragment(divMapMarker, el.userDiv);
+  fragOpt.cssChildren({'margin':'1em 0em 1em 0.6em'});
   
   [el.userDiv.SettingButton[0], el.TeamButton[0]].forEach((ele)=>{ele.css({background:oC.strColor}) });
   [el.userDiv.SettingButton[1], el.TeamButton[1]].forEach((ele)=>{ele.css({background:oS.strColor})});
@@ -2517,12 +2577,13 @@ var viewUserSettingCreator=function(){
     inpDisplayName.value=tmp.displayName;  
     oC.Prop.image.setInp.call(spanImg);
     oC.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
+    cbBoGeoWatch.checked=boGeoWatch;
     divIPSetting.setUp();
     return true;
   }
   var divIPSetting=divIPSettingCreator().css({background:'lightgrey', margin:'0.2em', border:'1px black solid'});
   
-  var saveDisplayName=function(){ var vec=[['UUpdate',{displayName:inpDisplayName.value.trim()}], ['setupById', {}]];   majax(oAJAX,vec); }
+  var saveDisplayName=function(){ var vec=[['UUpdate',{displayName:inpDisplayName.value.trim()}], ['setupById', {}]];   majax(vec); }
   var inpDisplayName=createElement('input').prop({type:'text'}).on('keypress', function(e){if(e.which==13) {saveDisplayName();return false;}} );
   var butDisplayName=createElement('button').myText('Change').on('click', saveDisplayName);
   var divDisplayName=createElement('div').myAppend('Display name: ', inpDisplayName, butDisplayName);
@@ -2542,14 +2603,21 @@ var viewUserSettingCreator=function(){
 
       // divBoWebPushOK
   var spanBoWebPushOK, divBoWebPushOK=createElement('div');
+  divBoWebPushOK.toggle(boEnablePushNotification);
+  
+    // boGeoWatch
+  var imgH=imgHelp.cloneNode(); popupHover(imgH,createElement('div').myText('For continues tracking to work on mobile devices, the device must be prevented from going to sleep, and the browser must be in the foreground.'));
+  var cbBoGeoWatch=createElement('input').prop({type:'checkbox'}).on('click',function(){
+    boGeoWatch=this.checked;
+  });
+  var divBoGeoWatch=createElement('div').myAppend('Continuous tracking: ', cbBoGeoWatch, imgH);
   
       // deleteDiv
   //var imgH=imgHelp.cloneNode(); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
-
-  var fragDiv=createFragment(divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, deleteDiv).cssChildren({'margin-top':'1em'});
+  var fragDiv=createFragment(divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, divBoGeoWatch, deleteDiv).cssChildren({'margin-top':'1em'});
   var divCont=createElement('div').myAppend(fragDiv).addClass('contDiv');
   
     // divFoot
@@ -2587,7 +2655,7 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'refetchFun', caller:'index', code:code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
       el.setUp();
     })(); flow.next();
     return false;
@@ -2600,7 +2668,7 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   [spanIdFB,spanIdIdPlace,spanIdOpenId].forEach( (ele)=>ele.css({margin:'0 0.2em 0 0', 'font-weight':'bold'}) );
 
   var divIdUser=createElement('div').myAppend(createTextNode('idUser (db): '), spanIdUser);
-  var divIdIP=createElement('div').myAppend('FB: ', spanIdFB, ', IdPlace: ', spanIdIdPlace, ', OpenID: ', spanIdOpenId);
+  var divIdIP=createElement('div').myAppend('FB: ', spanIdFB); //, ', IdPlace: ', spanIdIdPlace, ', OpenID: ', spanIdOpenId
   
   var imgImage=createElement('img').css({'vertical-align':'middle'}), spanNameIP=createElement('span');
   var divImageName=createElement('div').myAppend(imgImage, spanNameIP);
@@ -2746,11 +2814,11 @@ var viewDeleteAccountPopCreator=function(){
   var el=createElement('div');
   el.toString=function(){return 'deleteAccountPop';}
   var yes=createElement('button').myText(langHtml.Yes).on('click', function(){
-    //var vec=[['UDelete',1,function(data){historyBack();historyBack();}]];   majax(oAJAX,vec);
+    //var vec=[['UDelete',1,function(data){historyBack();historyBack();}]];   majax(vec);
     sessionLoginIdP={};  userInfoFrDB=extend({}, specialistDefault);
     var vec=[['UDelete',{}], ['logout',{}, function(data){
       history.fastBack(viewFront,true);
-    }]];   majax(oAJAX,vec);
+    }]];   majax(vec);
 
   });
   var cancel=createElement('button').myText(langHtml.Cancel).on('click', historyBack);
@@ -2780,7 +2848,7 @@ var settingCreator=function(oRole){
       else {var tmp=inp.value; if(typeof tmp=='string') tmp=tmp.trim(); o[strName]=tmp; }
     });
     if(boErr) return;
-    var vec=[['RUpdate', o, el.setUp], ['setupById',{Role:strRole}]];   majax(oAJAX,vec);
+    var vec=[['RUpdate', o, el.setUp], ['setupById',{Role:strRole}]];   majax(vec);
     setMess('',null,true);
   }
 
@@ -2791,7 +2859,7 @@ var settingCreator=function(oRole){
 
       //var strLabel=ucfirst(strName)+': '; if(strName in langHtml.prop) strLabel=langHtml.prop[strName].label+': ';
       var strLabel=calcLabel(langHtml.prop, strName);
-      var label=createElement('label').myText(strLabel).css({flex:'0 1 auto', 'margin-right':'0.4em'}); //
+      var elLabel=createElement('label').myText(strLabel).css({flex:'0 1 auto', 'margin-right':'0.4em'}); //
       var spanSpace=createElement('span').css({flex:'2 2 auto'}); //
 
       var inp='', prop=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in prop)?prop.strType:'';
@@ -2801,7 +2869,7 @@ var settingCreator=function(oRole){
       inp.css({flex:'0 1 auto'});
       inp.attr('name',strName);
       //var divLCH=createElement('div').myAppend(strLabel,imgH,inp).css({position:'relative', margin:'.8em 0','min-height':'2em'});
-      var divLCH=createElement('div').myAppend(label,imgH,spanSpace, inp).css({display:'flex', 'justify-content':'space-between', 'align-items':'center', margin:'.8em 0','min-height':'2em'});
+      var divLCH=createElement('div').myAppend(elLabel,imgH,spanSpace, inp).css({display:'flex', 'justify-content':'space-between', 'align-items':'center', margin:'.8em 0','min-height':'2em'});
       arrDiv[i]=divLCH;
       arrInp[i]=inp;
     }
@@ -2885,18 +2953,19 @@ var viewSettingCreator=function(){
 app.spanIdTeamWantedCreator=function(oRole){
   var el=createElement('span');
   var strRole=oRole.strRole;
-  var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
+  //var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
   el.setStat=function(){
     var idTmp=userInfoFrDB[strRole].idTeamWanted, tag=userInfoFrDB[strRole].imTagTeam;
-    if(idTmp!=0){ var strTmp=uRoleTeamImage+idTmp+'?v='+tag; thumbDis.prop({src:strTmp}); thumbDis.show(); spanDisNApproved.show(); inp.value=idTmp;}
+    if(idTmp!=0){ var strTmp=URoleTeamImage[oRole.ind]+idTmp+'?v='+tag; thumbDis.prop({src:strTmp}); thumbDis.show(); spanDisNApproved.show(); inp.value=idTmp;}
     else { thumbDis.hide(); spanDisNApproved.hide(); inp.value='';}
 
     var idTeam=userInfoFrDB[strRole].idTeam; spanDisNApproved.toggle(idTmp!=idTeam);
   }
   var inp=createElement('input').prop('type','text').css({width:'3em'});
-  var thumbDis=createElement('img').css({'vertical-align':'middle','margin-left':'0.5em'}); //'float':'right',clear:'both'
-  var spanDisNApproved=createElement('span').myText(langHtml.NotYetApproved).css({'vertical-align':'middle','margin-left':'0.5em'}); //'float':'right',clear:'both'
-  el.myAppend(inp, thumbDis,spanDisNApproved);
+  var thumbDis=createElement('img').css({'vertical-align':'middle','margin':'0 0.4em'}); //'float':'right',clear:'both'
+  var spanDisNApproved=createElement('span').myText(langHtml.NotYetApproved).css({'vertical-align':'middle','margin-right':'0.4em', 'white-space':'nowrap'}); //'float':'right',clear:'both'
+  el.myAppend(thumbDis, spanDisNApproved, inp);
+  el.css({display:'flex', 'align-items':'center'});
   el.inp=inp; return el;
 }
 
@@ -2906,30 +2975,29 @@ var viewAdminCreator=function(){
   var el=createElement('div');
   el.toString=function(){return 'admin';}
   el.setUp=function(data){
-    boShowTeam=Boolean(Number(data.boShowTeam)); inpBoShowTeam.prop({checked:boShowTeam});
-    for(var i=0;i<ORole.length;i++){
-      viewFilter.ElRole[i].querySelectorAll('[name=idTeam]').toggle(boShowTeam);
-      viewMarkSelector.ElRole[i].tBody.querySelector('[name=idTeam]').toggle(boShowTeam);
-      viewColumnSelector.ElRole[i].tBody.querySelector('[name=idTeam]').toggle(boShowTeam);
-      viewSetting.ElRole[i].querySelector('[name=idTeamWanted]').parentNode.toggle(boShowTeam);
-      if(!boShowTeam) {
-        arrValRemove(ORole[i].ColsShowDefault,'idTeam');
-        arrValRemove(ORole[i].ColsShow,'idTeam');  setItem('ColsShow'+ORole[i].charRoleUC, ORole[i].ColsShow);
-        if(ORole[i].colOneMark=='idTeam') ORole[i].colOneMark=ORole[i].colOneMarkDefault;
-      }
-    }   
+    //boShowTeam=Boolean(Number(data.boShowTeam)); inpBoShowTeam.prop({checked:boShowTeam});
+    //for(var i=0;i<ORole.length;i++){
+      //viewFilter.ElRole[i].querySelectorAll('[name=idTeam]').toggle(boShowTeam);
+      //viewMarkSelector.ElRole[i].tBody.querySelector('[name=idTeam]').toggle(boShowTeam);
+      //viewColumnSelector.ElRole[i].tBody.querySelector('[name=idTeam]').toggle(boShowTeam);
+      //viewSetting.ElRole[i].querySelector('[name=idTeamWanted]').parentNode.toggle(boShowTeam);
+      //if(!boShowTeam) {
+        //arrValRemove(ORole[i].ColsShowDefault,'idTeam');
+        //arrValRemove(ORole[i].ColsShow,'idTeam');  setItem('ColsShow'+ORole[i].charRoleUC, ORole[i].ColsShow);
+        //if(ORole[i].colOneMark=='idTeam') ORole[i].colOneMark=ORole[i].colOneMarkDefault;
+      //}
+    //}   
   }
 
     //set 
   el.saveFunc=function(){
-    var data={boShowTeam:Number(inpBoShowTeam.checked)}; el.setUp(data);
-    var vec=[['setSetting',data]];   majax(oAJAX,vec);
+    //var data={boShowTeam:Number(inpBoShowTeam.checked)}; el.setUp(data);
+    //var vec=[['setSetting',data]];   majax(vec);
   }
 
-  var inpBoShowTeam=createElement('input').prop({type:'checkbox'});
-  var pBoShowTeam=createElement('p').css({'margin-top':'1em'}).myAppend('boShowTeam:',inpBoShowTeam);
-  
-  var divCont=createElement('div').myAppend(pBoShowTeam).addClass('contDiv');
+  //var inpBoShowTeam=createElement('input').prop({type:'checkbox'});
+  //var pBoShowTeam=createElement('p').css({'margin-top':'1em'}).myAppend('boShowTeam:',inpBoShowTeam);
+  var divCont=createElement('div').addClass('contDiv');  //.myAppend(pBoShowTeam)
 
       // divFoot
   var buttonSave=createElement('button').on('click', el.saveFunc).myText(langHtml.Save).addClass('flexWidth').css({ 'margin-right':'.2em'});
@@ -2951,67 +3019,80 @@ var viewTeamCreator=function(oRole){
   el.toString=function(){return 'team'+charRoleUC;}
   el.setUp=function(boShow){
     elId.value='';  elLink.value='';
-    var vec=[['teamLoad',{strRole:strRole},disLoadRet]];   majax(oAJAX,vec);
+    var vec=[['teamLoad',{strRole:strRole},disLoadRet]];   majax(vec);
     el.boLoaded=1;
   }
   var disLoadRet=function(data){
-    var idUser='', imTag=''
-    var tmp=data.idUser;   if(typeof tmp==="undefined")  tmp=''; elId.myText(tmp); idUser=tmp;
-    var tmp=data.imTag;   if(typeof tmp==="undefined")  tmp=''; imTag=tmp; thumb.attr({src:uRoleTeamImage+idUser+'?v='+imTag});
-    var tmp=data.link;   if(typeof tmp==="undefined")  tmp=''; elLink.value=tmp;
-    var tmp=data.tab;  if(typeof tmp==='undefined') tmp=[]; el.tab=tmp;
+    var {idUser, link}=userInfoFrDB[strRole+'Team'];
+    elId.myText(idUser);
+    //thumb.attr({src:uRoleTeamImage+idUser+'?v='+imTag});
+    thumb.attr({src:calcTeamImageUrl()});
+    elLink.value=link;
+    //var tmp=data.link;   if(typeof tmp==="undefined")  tmp='';
+    //var tmp=data.tab;  if(typeof tmp==='undefined') tmp=[]; el.tab=tmp;
+    el.tab=[]; if('tabWannaBe' in data) el.tab=tabNStrCol2ArrObj(data.tabWannaBe);
     el.divList.empty();
     //if(el.tab.length==0) return;
     for(var i=0; i<el.tab.length; i++) {
-      var id=createElement('span').myAppend(el.tab[i][1],' ',el.tab[i][2],' ',el.tab[i][3]);
-      var cb=createElement('input').prop('type','checkbox').on('click', save);
-      //if(Number(el.tab[i][4])) cb.attr('checked','checked');
-      var boTmp=Boolean(Number(el.tab[i][4])); cb.attr('checked',boTmp);
-      var row=createElement('div').myAppend(cb,' ',id);
+      var rT=el.tab[i]
+      var {nameIP, idTeam}=el.tab[i];
+      //var id=createElement('span').myAppend(idFB);
+      //var boTmp=Boolean(Number(idTeam==idTeamWanted));
+      var boTmp=idTeam==idUser;
+      var cb=createElement('input').prop('type','checkbox').on('click', save).prop('checked',boTmp).css({'margin-right':'0.4em', 'vertical-align':'middle'});
+      var img=createElement('img').prop({src:calcImageUrl(rT)}).css({'margin-left':'0.4em', 'vertical-align':'middle'});
+      var row=createElement('div').myAppend(cb, nameIP, img);
       el.divList.append(row);
     }
 
     //resetMess(10);
   };
   var save=function(){
-    var cb=this, span=cb.parentNode, i=getNodeIndex(span), idUser=el.tab[i][0];
-    var vec=[['teamSave',{idUser:idUser,boOn:this.checked}]];   majax(oAJAX,vec);
+    var cb=this, span=cb.parentNode, i=getNodeIndex(span), idUserMember=el.tab[i].idUser;
+    var vec=[['teamSave',{idUser:idUserMember, strRole:strRole, boOn:this.checked}]];   majax(vec);
   }
   var saveName=function(){
     var link=elLink.value.trim();
-    var vec=[['teamSaveName',{link:link}]];   majax(oAJAX,vec);
+    var vec=[['teamSaveName', {link:link, strRole:strRole}]];   majax(vec);
   }
   var calcTeamImageUrl=function(){
-    var idUser=userInfoFrDB[strRole+'Team'].idUser, tag=userInfoFrDB[strRole+'Team'].imTag;  return uRoleTeamImage+idUser+'?v='+tag;
+    var {idUser, imTag}=userInfoFrDB[strRole+'Team'];  return URoleTeamImage[oRole.ind]+idUser+'?v='+imTag;
   }
-  var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
+  //var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
   el.boLoaded=0;
   var elId=createElement('span').css({'font-weight':'bold'});
   var elLink=createElement('input').attr({type:'text',size:10}).on('keypress', function(e){ if(e.which==13) {saveName();return false;}} );
   var thumb=createElement('img').css({'vertical-align':'middle'});
   var uploadCallback=function(){
     userInfoFrDB[strRole+'Team'].imTag=randomHash(); thumb.attr({src:calcTeamImageUrl()});
-    //var tmpF=function(){thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['setupById',{Role:'team'},tmpF]];   majax(oAJAX,vec);
+    //var tmpF=function(){thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['setupById',{Role:'team'},tmpF]];   majax(vec);
   }
-  var buttUploadImage=createElement('button').myText('Upload image').on('click', function(){viewUploadImage.openFunc(oRole.charRole, uploadCallback);});
-  var buttSaveName=createElement('button').myText('Save link').on('click', saveName);
+  var buttUploadImage=createElement('button').myText('Upload image').on('click', function(){viewUploadImage.openFunc(oRole.charRole, uploadCallback);}).css({'margin-right':'0.4em'});
+  var buttSaveName=createElement('button').myText('Save link').on('click', saveName).css({'margin-left':'0.4em'});
   el.divList=createElement('div');
 
-  var hId=createElement('div').myText('Inform the team members of this number, they should enter it in their repective settings tab.');
+  var strId='Inform the team members of this number, they should enter it in their repective settings tab.';
+  var hId=createElement('div').myText(strId);
   var hLink=createElement('div').myText('A link to any other site of yours.');
-  var hList=createElement('div').myText('A list of userss who wants to belong to your team. Mark those who you approve.');
+  var hList=createElement('div').myText('A list of users who wants to belong to your team. Mark those who you approve.');
 
   var hImg0=imgHelp.cloneNode().css({'margin-left':'1em'}), hImg1=imgHelp.cloneNode().css({'margin-left':'1em'}), hImg2=imgHelp.cloneNode().css({'margin-left':'1em'});
   popupHover(hImg0,hId);   popupHover(hImg1,hLink);   popupHover(hImg2,hList);
+  var divA=createElement('div').myAppend('Team-Id: ',elId,',',hImg0);
+  var divB=createElement('div').myAppend('Thumb image: ',thumb,' ',buttUploadImage,' (will be shrunk to fit a 50 x 50 pixel square)');
+  var divC=createElement('div').myAppend('Link: (optional)',elLink,buttSaveName,hImg1);
+  
+  var divHeadUserList=createElement('div').myAppend('List of users', hImg2).css({'font-weight':'bold'});
 
-
-  var divCont=createElement('div').addClass('contDiv').myAppend('Team-Id: ',elId,',',hImg0,'<br>',
-          'Thumb image: ',thumb,' ',buttUploadImage,' &nbsp;&nbsp;(will be shrunk to fit a 50 x 50 pixel square)<br>',
-          'Link: (optional)',elLink,' &nbsp;',buttSaveName,hImg1,'<hr>','<b>List of users</b>',hImg2,el.divList);
+  //var divCont=createElement('div').addClass('contDiv').myAppendB('Team-Id: ',elId,',',hImg0,'<br>',
+          //'Thumb image: ',thumb,' ',buttUploadImage,' &nbsp;&nbsp;(will be shrunk to fit a 50 x 50 pixel square)<br>',
+          //'Link: (optional)',elLink,' &nbsp;',buttSaveName,hImg1,'<hr>','<b>List of users</b>',hImg2,el.divList);
+          
+  var divCont=createElement('div').addClass('contDiv').myAppend(divA, divB, divC, createElement('hr'), divHeadUserList, el.divList);
 
       // divFoot
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').on('click', historyBack).css({'margin-left':'0.8em','margin-right':'1em'});
-  var span=createElement('span').myText('Team settings').addClass('footDivLabel');
+  var span=createElement('span').css({background:oRole.strColor}).addClass('footDivLabel').myText(ucfirst(langHtml[strRole])+' team settings');
   var divFoot=createElement('div').myAppend(buttonBack,span).addClass('footDiv');
   
   el.myAppend(divCont, divFoot);
@@ -3049,7 +3130,7 @@ var mainLoginInfoCreator=function(){
     var vec=[['logout', {}, function(data){
       history.fastBack(viewFront,true);
     }]];
-    majax(oAJAX,vec);
+    majax(vec);
     return false;
   });
 
@@ -3067,7 +3148,7 @@ var viewEntryCreator=function(oRole){
   el.toString=function(){return 'entry'+charRoleUC;}
   el.setUp=function(){
     var nTmp=strRole=='customer'?nCustomerReal:nSellerReal;
-    var nNext=nSellerReal+1; //if(nNext==13) nNext=14;
+    var nNext=nTmp+1; //if(nNext==13) nNext=14;
     var ending=makeOrdinalEndingEn(nNext);
     spanNNext.myText(nNext); //+ending
   }
@@ -3094,7 +3175,7 @@ var viewEntryCreator=function(oRole){
     var flow=(function*(){
       var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'teamFun', strRole:strRole, caller:'index', code:code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
 
       history.fastBack(viewFront);
 
@@ -3150,13 +3231,17 @@ var mainIntroPopCreator=function(oRole){
     resetMess();  
     var strTel=inpTel.value.trim(); inpTel.value=strTel;
     var strEmail=inpEmail.value.trim(); inpEmail.value=strEmail;
-    if(strTel.length==0 && strEmail.length==0 && !myWebPush.boSubscribed) {setMess('At least one of WebPush / tel / email must be enabled / supplied'); return; }
+    if(boEnablePushNotification){
+      if(strTel.length==0 && strEmail.length==0 && !myWebPush.boSubscribed) {setMess('At least one of WebPush / tel / email must be used.'); return; }
+    }else{
+      if(strTel.length==0 && strEmail.length==0) {setMess('At least one of tel / email must be supplied'); return; }
+    }
     //if(strTel.length==0) {setMess('tel is empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
     var nameT=inpName.value.trim();  inpName.value=nameT;
     var boIdIPImage=Number(cbIdIPImage.prop('checked'));
     var o1={displayName:nameT, strSubscription:JSON.stringify(myWebPush.subscription), tel:strTel, displayEmail:strEmail, currency:curT, charRole:charRole, boIdIPImage:boIdIPImage};
-    var vec=[['RIntroCB',o1,function(data){el.closePop();}], ['setupById', {}]];   majax(oAJAX,vec);
+    var vec=[['RIntroCB',o1,function(data){el.closePop();}], ['setupById', {}]];   majax(vec);
 
     var iframeConversion=createElement('iframe').prop({src:uConversion, scrolling:"no", frameborder:0,  allowTransparency:true}).css({border:'none', overflow:'hidden', width:'292px', height:'62px', display:'none'});
     elBody.myAppend(iframeConversion);
@@ -3197,13 +3282,15 @@ var mainIntroPopCreator=function(oRole){
   //var butToggle=createElement('button').myText('boPushToggle').on('click', function(){this.disabled=true; myWebPush.togglePushNotifications();} );
   
   var spanBoWebPushOK, divBoWebPushOK=createElement('div');
+  divBoWebPushOK.toggle(boEnablePushNotification);
   
   var inpTel=createElement('input').prop('type','tel').css({width:'70%', 'box-sizing':'border-box'});
   var divTel=createElement('p'); divTel.myAppend(langHtml.Tel, '*: ',inpTel);
   
   var inpEmail=createElement('input').prop('type','email').css({width:'70%', 'box-sizing':'border-box'});
   var divEmail=createElement('p'); divEmail.myAppend(langHtml.Email, '*: ',inpEmail);
-  var pBread3=createElement('p').myText("*At least one of these must be enabled/supplied.").css({'font-size':'78%'});
+  var strTmp=boEnablePushNotification?"*At least one of these must be enabled/supplied.":"*At least one of these must be supplied.";
+  var pBread3=createElement('p').myText(strTmp).css({'font-size':'78%'});
   //divName.add(divTel).add(divIdIPImage).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
   //[divName, divTel, divIdIPImage].cssChildren({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
   [divName, divIdIPImage, divTel, divEmail].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
@@ -3244,7 +3331,7 @@ var viewComplaintCommentPopCreator=function(){
     idComplainee=idComplaineeT; spanIdComplainee.myText(idComplaineeT);
 
     if(isSet(sessionLoginIdP) || typeof userInfoFrDB.user=='object'){} else {setMess('not logged in', 5); return;}
-    var vec=[['complaintOneGet', {idComplainee:idComplainee}, complaintCommentOneGet]];   majax(oAJAX,vec);
+    var vec=[['complaintOneGet', {idComplainee:idComplainee}, complaintCommentOneGet]];   majax(vec);
     el.setVis();
     comment.focus();
   };
@@ -3255,7 +3342,7 @@ var viewComplaintCommentPopCreator=function(){
   el.closeFunc=function(){    historyBack();    }
   var sendFunc=function() {
     var o1={idComplainee:idComplainee,comment:comment.value.trim()};
-    var vec=[['complaintUpdateComment',o1], ['getComplaintsOnComplainee', viewComplainee.getLoadArg(), viewComplainee.getComplaintsOnComplaineeRet], ['setupById', {}]];   majax(oAJAX,vec);
+    var vec=[['complaintUpdateComment',o1], ['getComplaintsOnComplainee', viewComplainee.getLoadArg(), viewComplainee.getComplaintsOnComplaineeRet], ['setupById', {}]];   majax(vec);
     historyBack();
   }
   var complaintCommentOneGet=function(data){
@@ -3293,7 +3380,7 @@ var viewComplaintAnswerPopCreator=function(){
   el.toString=function(){return 'complaintAnswerPop';}
   el.openFunc=function(idT){
     idComplainer=idT;  spanIdComplainer.myText(idT);
-    var o1={idComplainer:idComplainer}, vec=[['complaintOneGet',o1,complaintAnswerOneGet]];   majax(oAJAX,vec);
+    var o1={idComplainer:idComplainer}, vec=[['complaintOneGet',o1,complaintAnswerOneGet]];   majax(vec);
     answer.focus();
     doHistPush({view:viewComplaintAnswerPop});
     el.setVis();
@@ -3308,7 +3395,7 @@ var viewComplaintAnswerPopCreator=function(){
     var vecG; 
     if(viewComplainee.css('display')!='none') { vecG=['getComplaintsOnComplainee', viewComplainee.getLoadArg(), viewComplainee.getComplaintsOnComplaineeRet];  }
     else { vecG=['getComplaintsFromComplainer', viewComplainer.getLoadArg(), viewComplainer.getComplaintsFromComplainerRet];   }
-    var vec=[['complaintUpdateAnswer',o1],vecG];   majax(oAJAX,vec);
+    var vec=[['complaintUpdateAnswer',o1],vecG];   majax(vec);
     historyBack();
   }
 
@@ -3365,7 +3452,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
   }
   el.getLoadArg=function(){ return {offset:offset, rowCount:rowCount, idComplainee:el.idComplainee};   }
   el.load=function(){
-    setMess('',null,true);  majax(oAJAX,[['getComplaintsOnComplainee', el.getLoadArg(), el.getComplaintsOnComplaineeRet]]);
+    setMess('',null,true);  majax([['getComplaintsOnComplainee', el.getLoadArg(), el.getComplaintsOnComplaineeRet]]);
     el.boLoaded=1;
   }
   var makeImgClickFun=function(objArg){return function(){
@@ -3425,7 +3512,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
       if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
         var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
         var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code:code};
-        var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(oAJAX,vec);   yield;
+        var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
       }
       doHistPush({view:viewComplaintCommentPop});   viewComplaintCommentPop.openFunc(viewComplainee.idComplainee);
     })(); flow.next();
@@ -3474,7 +3561,7 @@ var viewComplainerCreator=function(){  // Complaints from a certain Complainer
   }
   el.getLoadArg=function(){ return {offset:offset,rowCount:rowCount,idComplainer:idComplainer}; }
   el.load=function(){
-    setMess('',null,true); majax(oAJAX,[['getComplaintsFromComplainer', el.getLoadArg(), el.getComplaintsFromComplainerRet]]);
+    setMess('',null,true); majax([['getComplaintsFromComplainer', el.getLoadArg(), el.getComplaintsFromComplainerRet]]);
     el.boLoaded=1;
   }
   var ansButClick=function(e){
@@ -4248,11 +4335,16 @@ var mapDivCreator=function(){
       var strName=this.oRole.ColsShow[j], tmp, prop=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
       var rowMTab=this.oRole.MTab[i];
       if('setMapMF' in prop) {  var tmp=prop.setMapMF.call({strName:strName, iRole:this.oRole.ind}, rowMTab);  } else tmp=rowMTab[strName];
-      if(typeof tmp=='string' || typeof tmp=='number') { this.arrFuncOverData[k]=calcLabel(langHtml.prop, strName)+': '+tmp; k++; }
+      if(typeof tmp=='string' || typeof tmp=='number') {
+        this.arrFuncOverData[k]=calcLabel(langHtml.prop, strName)+': '+tmp; k++;
+        //tmp=calcLabel(langHtml.prop, strName)+': '+tmp; 
+        //this.arrFuncOverData[k]=tmp; k++;
+      }
     }
     this.arrFuncOverData.length=k;
     var tmp=this.arrFuncOverData.join('\n');
-    return makeMarkerBubble({text:tmp,color:this.oRole.strColor});
+    return makeMarkerBubble({text:tmp, color:this.oRole.strColor});
+    //return makeMapMultBubble({arrObj:this.arrFuncOverData, color:this.oRole.strColor});
   }
   MarkerT.tmpPrototype.funcOver=function() {
     var elMark=this, i=elMark.dataInd;
@@ -4395,7 +4487,7 @@ var mapDivCreator=function(){
       viewInfoT.setVis();
       doHistPush({view:viewInfoT});
     }
-    var vec=[['getSingleUser',{IRole:[iRole], idUser:idUser}, retFunc]];  majax(oAJAX,vec); 
+    var vec=[['getSingleUser',{IRole:[iRole], idUser:idUser}, retFunc]];  majax(vec); 
   });
   elGlas.append(elImgMe, el.elImgOpponent);
   
@@ -4469,6 +4561,18 @@ var viewFrontCreator=function(){
   el.entryButtonW.append(entryButtonC, entryButtonS);
   
   
+    // QuickDiv
+  var QuickDiv=[];
+  for(var i=0;i<ORole.length;i++){
+    QuickDiv[i]=quickCreator(ORole[i]).css({padding:'0.7em 0.2em 0.1em',margin:'0em 0em 0em',display:'flex','border-top':'solid 1px'});   QuickDiv[i].hide();
+  }
+  el.QuickDiv=QuickDiv;
+  
+  var quickDivOuter=createElement('div').css({flex:'0 0 auto'}); quickDivOuter.myAppend.apply(quickDivOuter, QuickDiv);
+  //if(boIOS && boTouch) quickDivOuter.css({padding:'0em 0em 1.7em'});
+  
+  
+    // divFoot
   var settingButtonClick=function(){
     viewSettingW.setVis(); doHistPush({view:viewSettingW});
     ga('send', 'event', 'button', 'click', 'setting');
@@ -4487,72 +4591,59 @@ var viewFrontCreator=function(){
     ga('send', 'event', 'button', 'click', 'table');
   }
   var tmpImg=createElement('img').prop({src:uList16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  el.tableButton=createElement('button').myAppend(tmpImg).addClass('fixWidth').css({'margin-left':'0.8em'}).prop('title',langHtml.ComparisonTable).on('click',tableButtonClick);  // , background:'transparent'
+  el.tableButton=createElement('button').myAppend(tmpImg).addClass('fixWidth').css({'margin':'0 0.8em 0 0.4em'}).prop('title',langHtml.ComparisonTable).on('click',tableButtonClick);  // , background:'transparent'
   
   
-  el.filterButton=filterButtonCreator().css({'margin-left':'0.4em', 'white-space':'nowrap'}); //, background:'transparent'
+  el.filterButton=filterButtonCreator().css({'margin-left':'0.0em', 'white-space':'nowrap'}); //, background:'transparent'
 
       // QuickFilterButtons
-  var setBut=function(boOn){
-    boOn=Boolean(boOn); var b=this, iRole=this==ButRole[1]?1:0; 
-    if(boOn) b.css({color:'black', background:ORole[iRole].strColor}); else b.css({color:'graytext', background:''});
-  }
   var clickF=function(){
-    var iRole=this==ButRole[1]?1:0;
-    var b=this, bAlt=ButRole[1-iRole];
-    var boOn=this.style.color=='black',  boOnAlt=bAlt.style.color=='black'; 
+    var iRole=this==CbRole[1]?1:0, iRoleAlt=1-iRole;
+    var b=this, bAlt=CbRole[iRoleAlt];
+    //var boOn=this.style.color=='black',  boOnAlt=bAlt.style.color=='black'; 
+    var boOn=this.checked,  boOnAlt=bAlt.checked; 
     
-    var iRoleT=iRole;
+    if(!boOn && !boOnAlt) { bAlt.checked=true; boOnAlt=true;}
     
-    if(boOn && boOnAlt) boOnAlt=false;
-    else if(!boOn && boOnAlt) boOn=true;
-    else if(boOn && !boOnAlt) boOnAlt=true;
-    else if(!boOn && !boOnAlt) boOn=true;
-    
+    var iRoleT=boOn?iRole:iRoleAlt;
     charRole=ORole[iRoleT].charRole;  setItem('charRole', charRole);
     
     if(boOn) viewFilter.ElRole[iRole].Filt.filtAll(); else viewFilter.ElRole[iRole].Filt.filtNone(); 
-    if(boOnAlt) viewFilter.ElRole[1-iRole].Filt.filtAll(); else viewFilter.ElRole[1-iRole].Filt.filtNone(); 
+    if(boOnAlt) viewFilter.ElRole[iRoleAlt].Filt.filtAll(); else viewFilter.ElRole[iRoleAlt].Filt.filtNone(); 
     loadTabStart(); 
-    
-    setBut.call(b, boOn);
-    setBut.call(bAlt, boOnAlt);
-    
-    //if(boOn && boOnAlt) {
-      //spanLab.css({background:'linear-gradient(to bottom, pink 50%, lightblue 50%)'});
-      //spanRole.myText(' ('+langHtml['Customers']+' + '+langHtml['Sellers']+')');
-    //}else{
-      //spanLab.css({background:ORole[iRole].strColor});
-      //var strTmp=langHtml[iRole?'Sellers':'Customers']; spanRole.myText(' ('+strTmp+')');
-    //}
   }
  
-  
-  var QuickDiv=[];
-  for(var i=0;i<ORole.length;i++){
-    QuickDiv[i]=quickCreator(ORole[i]).css({padding:'0.7em 0.2em 0.1em',margin:'0em 0em 0em',display:'flex','border-top':'solid 1px'});   QuickDiv[i].hide();
-  }
-  el.QuickDiv=QuickDiv;
-  
-  
-  //var spanRole=createElement('span');
-  //var spanLab=createElement('span').myAppend(langHtml.Map, spanRole).addClass('footDivLabel');
-  
-  var ButRole=[];
+  var DivButRole=[], CbRole=[], Label=[];
   for(var i=0;i<2;i++){
-    var strRole=i?'Sellers':'Customers', strTmp=langHtml[strRole], oRole=ORole[i];
-    ButRole[i]=createElement('button').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0.1em'}).addClass('flexWidth').prop('title','Show / hide '+strTmp).on('click',clickF);
-    setBut.call(ButRole[i], true);
+    var strRole=i?'Sellers':'Customers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
+    Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'80%', left:'0px', 'box-sizing':'border-box', width:'100%', 'line-height':'90%'});  //, 'z-index':'-1'
+    CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, margin:'0em 0 0.4em',width:'1.4em',height:'1.4em'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
+    DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, position:'relative', 'padding':'0em .6em 0'}); //, padding:'0.2em'
   }
-  ButRole[0].css({'margin-left':'0.8em'});
-  ButRole[1].css({'margin-left':'0.4em'});
-
   
-  var divFoot=createElement('div').myAppend(settingButton, infoLink, ...ButRole, el.tableButton, el.filterButton).addClass('footDiv'); //.css({display:'flex', 'align-items':'center', 'justify-content':'space-between'});
-
   
-  var quickDivOuter=createElement('div').css({flex:'0 0 auto'}); quickDivOuter.myAppend.apply(quickDivOuter, QuickDiv);
-  //if(boIOS && boTouch) quickDivOuter.css({padding:'0em 0em 1.7em'});
+  //var DivButRole=[], CbRole=[], Label=[];
+  //for(var i=0;i<2;i++){
+    //var strRole=i?'Sellers':'Customers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
+    //Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'100%', left:'0px', 'box-sizing':'border-box', width:'100%', 'line-height':'100%'});  //, 'z-index':'-1'
+    //CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, margin:'0 0 0.4em',transform:'scale(1.6)'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
+    //DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, position:'relative', 'padding':'.3em .8em 0', top:'-3px'}); //, padding:'0.2em'
+  //}
+  
+  //var DivButRole=[], CbRole=[], Label=[];
+  //for(var i=0;i<2;i++){
+    //var strRole=i?'Sellers':'Customers', strTmp=langHtml[strRole], oRole=ORole[i];
+    //Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0.1em'});
+    //CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, padding:'0.1em', transform:'scale(1.6)', margin:'0.3em 0 0.1em'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
+    //DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, display:'flex', 'flex-direction':'column', 'align-items':'center'}); //, padding:'0.2em'
+  //}
+  
+  
+  var labelFilterBut=createElement('div').myText('Filtering').css({'font-size':'70%', padding:'0.1em', position:'absolute', bottom:'100%', width:'100%', 'text-align':'center'});
+  var divFilterBut=createElement('div').myAppend(...DivButRole, el.filterButton, labelFilterBut).css({position:'relative', 'box-sizing': 'border-box', flex:'0 0 auto', display:'flex', 'align-items':'center', 'justify-content':'space-between'});
+  
+  var divFoot=createElement('div').myAppend(settingButton, infoLink, el.tableButton, divFilterBut).addClass('footDiv'); //.css({display:'flex', 'align-items':'center', 'justify-content':'space-between'});
+
   
   el.append(el.entryButtonW, mapDiv, quickDivOuter, divFoot);
 
@@ -4565,7 +4656,7 @@ var quickCreator=function(oRole){
   var {charRole, strRole}=oRole;
   var myHide=function(){
     setMess('',null,true);
-    var vec=[['RHide',{charRole:charRole}], ['setupById', {Role:strRole}]];  majax(oAJAX,vec); 
+    var vec=[['RHide',{charRole:charRole}], ['setupById', {Role:strRole}]];  majax(vec); 
   }
 
   el.setUp=function(){
@@ -4587,17 +4678,15 @@ var quickCreator=function(oRole){
   var divButts=createElement('span').myAppend(butShowWPos,buthide);
 
   var myShow=function(pos){
-    var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
-    mapDiv.setMe(latlng, 1);
-    uploadPosNLoadTabStart(Number(selHideTimer.value), oRole);
+    uploadPosNLoadTabStart(pos, Number(selHideTimer.value), oRole);
   }
 
   butShowWPos.on('click', function(){
     if(boDbg && window.location.hostname!='localhost') {  setMess('... using origo ... ',null,true); myShow({coords:{latitude:0, longitude:0}});  return;  }
       
-    if(boFirstPosOK==0) {setMess('You must agree to sending your position.'); return;}
+    if(boGeoApproved==0) {setMess('You must agree to sending your position.'); return;}
     setMess('... getting position ... ',null,true);
-    if(boEmulator){ myShow(posDebug); }else{ navigator.geolocation.getCurrentPosition(myShow, geoError);  }  //, {maximumAge:Infinity, timeout:5000}
+    navigator.geolocation.getCurrentPosition(myShow, geoError);  //, {maximumAge:Infinity, timeout:5000}
   });
 
   buthide.on('click', myHide);
@@ -5219,12 +5308,12 @@ var viewGreetingCreator=function(){
     app.myWebPush=new MyWebPush();
 
     myWebPush.uploadFun=function(){ 
-      var vec=[['setWebPushSubcription',{strSubscription: JSON.stringify(myWebPush.subscription)}], ['setupById', {Role:['customer', 'seller']}]];   majax(oAJAX,vec);
+      var vec=[['setWebPushSubcription',{strSubscription: JSON.stringify(myWebPush.subscription)}], ['setupById', {Role:['customer', 'seller']}]];   majax(vec);
     }
     myWebPush.cbFun=function(err, elSpan){
       if(err) console.log(err);
-      SpanInpWebPushToggle.Span.forEach(ele=>ele.myCB(err));
-      if(typeof elSpan!='undefined' && typeof elSpan.myCBOne!='undefined') elSpan.myCBOne();
+      SpanInpWebPushToggle.Span.forEach(ele=>ele.myCBAny(err));
+      if(typeof elSpan!='undefined' && typeof elSpan.myCB!='undefined') elSpan.myCB();
     }
     var setOpponentNLoadTabStart=function(){ // Called with postMessage from serviceWorker
       var {objSender, iRole, message, tSent, latlngSender}=data;
@@ -5247,14 +5336,15 @@ var viewGreetingCreator=function(){
       //var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
       //var vec=[['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
       
-      majax(oAJAX,vec);
+      majax(vec);
       setMess('',null,true);
     }
 
     myWebPush.cbOnMessage=function(dataT){
       data=dataT;
-      history.funOverRule=setOpponentNLoadTabStart;
-      history.fastBack(viewFront,1);
+      var dist=history.distToGoal(viewFront);
+      if(dist){  history.funOverRule=setOpponentNLoadTabStart; history.fastBack(viewFront,1); } 
+      else setOpponentNLoadTabStart();
     }
     if(myWebPush.boPushSupported) myWebPush.registerSW();
 
@@ -5267,7 +5357,7 @@ var viewGreetingCreator=function(){
     divDisabledMess.toggle(Boolean(strGeoErrCode)).myText(strMess);
   }
   el.setUpB=function(){ // Called in setVis
-    butSendMess.disabled=true;  elText.value='';
+    butSendMess.disabled=true;  elText.value=''; elText.focus();
     //clearTimeout(timerButSendDelay); timerButSendDelay=setTimeout(function(){butSendMess.disabled=false; imgSendMessTimer.hide();},5000);
     clearTimeout(timerButSendDelay); countButSendDelay=boDbg?2:3; spanSendMessTimer.myText(countButSendDelay.toString()).show();
     timerButSendDelay=setInterval(function(){
@@ -5284,7 +5374,7 @@ var viewGreetingCreator=function(){
   var spanSendMessTimer=createElement('span').css({'margin-left':'.4em', zoom:0.9});
   var butSendMess=createElement('button').myAppend('sendMess', spanSendMessTimer).prop({disabled:false}).on('click', function(){
     if(!elText.value) {setMess('empty text',5); return;}
-    var vec=[['sendNotification',{idReceiver: idUser, iRole:iRole, message:elText.value, latlngSender:mapDiv.latlngMe}]];   majax(oAJAX,vec);
+    var vec=[['sendNotification',{idReceiver: idUser, iRole:iRole, message:elText.value, latlngSender:mapDiv.latlngMe}]];   majax(vec);
     history.back();
   }).css({display:'block'});
   var divDisabledMess=createElement('div').css({'background':'lightgrey'});
@@ -5312,11 +5402,7 @@ var viewGreetingCreator=function(){
  *
  *******************************************************************************************************************
  *******************************************************************************************************************/
-var objHash={}; if(window.location.hash) {
-  var jsonHash=decodeURIComponent(window.location.hash.substr(1));
-  objHash=JSON.parse(jsonHash);
-  console.log(jsonHash);
-}
+
 
 var firstAJAXCall=function(latlngFirst){ // Called after first geosuccess
   var setUpRet=function(data){
@@ -5326,14 +5412,14 @@ var firstAJAXCall=function(latlngFirst){ // Called after first geosuccess
   mapDiv.setMe(latlngFirst, 1);
   
     // If opponent exist then focus on him
-  var boOpponent='latlngSender' in objHash;
+  var boOpponent='latlngSender' in objMess;
   if(boOpponent) {
-    var {objSender, iRole, message, tSent, latlngSender}=objHash;
+    var {objSender, iRole, message, tSent, latlngSender}=objMess;
     var {displayName}=objSender;
     latlngFirst=latlngSender;
     var objTmp=makeMarkerBubble({text:displayName+' says:\n'+message, color:ORole[iRole].strColor});
     //mapDiv.setOpponent(latlngFirst, objTmp.url);
-    mapDiv.setOpponent(objHash, objTmp.url);
+    mapDiv.setOpponent(objMess, objTmp.url);
   }
   mapDiv.elImgOpponent.toggle(boOpponent);
   
@@ -5342,12 +5428,25 @@ var firstAJAXCall=function(latlngFirst){ // Called after first geosuccess
 
   var o1={pC:pC, VPSize:VPSizeT};
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-  var vec=[['getSetting',{Var:['boShowTeam']},viewAdmin.setUp], ['setupById', {}], ['VSetPosCond',pC],
-    ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
-  majax(oAJAX,vec);
+  var vec=[['getSetting',{Var:[]},viewAdmin.setUp], ['setupById', {}], ['VSetPosCond',pC],
+    ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];  //'boShowTeam'
+  majax(vec);
   setMess('',null,true);
 }
-
+app.myGeoWatchId=null
+app.geoCB=function(pos){
+  console.log('geoCB');
+  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
+  mapDiv.setMe(latlng, 1);
+  var o1=mapDiv.getMapStatus(), {pC}=o1;
+  var boC=userInfoFrDB.customer.boShow, boS=userInfoFrDB.seller.boShow;
+  var boShowAny=boC||boS, boShowBoth=boC&&boS;    if(boShowBoth) console.log('boC && boS ????');
+  if(myGeoWatchId && (!boShowAny || !boGeoWatch)) {navigator.geolocation.clearWatch(myGeoWatchId); myGeoWatchId=null; return; }
+  var charRole=''; if(boC) charRole='c'; else if(boS) charRole='s';
+  if(charRole.length==0) {  return; }
+  
+  var vec=[['RShow', {x:pC.x, y:pC.y, charRole:charRole}]]; majax(vec);
+}
 app.loadTabStart=function(boSetupById=0){ // Called when mapDiv becomes idle(boSetupById=1), when filter changes, and when pink/blue buttons are clicked on viewFront
   ga('send', 'event', 'tab', 'loadTab');
   var o1=mapDiv.getMapStatus(); // pC, zoom, VPSize
@@ -5358,11 +5457,13 @@ app.loadTabStart=function(boSetupById=0){ // Called when mapDiv becomes idle(boS
     var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
     if(arrRole.length) vec.unshift(['setupById', {Role:arrRole}]);
   }
-  majax(oAJAX,vec);
+  majax(vec);
   setMess('',null,true);
 }
 
-var uploadPosNLoadTabStart=function(hideTimer, oRole){ // Called when butShow is clicked
+var uploadPosNLoadTabStart=function(pos, hideTimer, oRole){ // Called when butShow is clicked
+  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
+  mapDiv.setMe(latlng, 1);
   var o1=mapDiv.getMapStatus(), {pC}=o1;
   var boRefresh=mapDiv.setTile(o1.zoom);
   
@@ -5372,13 +5473,13 @@ var uploadPosNLoadTabStart=function(hideTimer, oRole){ // Called when butShow is
   var vec=[['RUpdate',{hideTimer: hideTimer, charRole:oRole.charRole}], ['RShow', {x:pC.x, y:pC.y, charRole:oRole.charRole}],  // copySome(o1, oRole, ['charRole'])],
     ['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
   
-  majax(oAJAX,vec);
+  majax(vec);
   setMess('',null,true);
 }
 
 
 
-var majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
+app.majax=function(vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
   var xhr = new XMLHttpRequest();
   xhr.open('POST', uBE, true);
   xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
@@ -5438,6 +5539,12 @@ window.GRet=function(data){
 
   toggleSpecialistButts();
   mainLoginInfo.setStat();
+  
+  
+  var boC=userInfoFrDB.customer.boShow, boS=userInfoFrDB.seller.boShow;
+  var boShowAny=boC||boS, boShowBoth=boC&&boS;    if(boShowBoth) console.log('boC && boS ????');
+  if(boShowAny  && !myGeoWatchId && boGeoWatch) { myGeoWatchId=navigator.geolocation.watchPosition(geoCB, geoError, {timeout:20000,maximumAge:60000}); }
+  if(myGeoWatchId && (!boShowAny || !boGeoWatch)) {navigator.geolocation.clearWatch(myGeoWatchId); myGeoWatchId=null; }
 
   //var boE=Boolean(userInfoFrDB.seller);
 
@@ -5583,8 +5690,20 @@ dr=Math.pow(2,drLev);
   //console.log('This browser does not support URLSearchParams');
   //window.boEmulator=null;    window.startFilter=null;
 //}
-var strHash=window.location.hash||"&",  params=parseQS(strHash.substring(1));
-window.boEmulator=params.boEmulator||null;   window.startFilterC=params.idTeamC||null;   window.startFilterS=params.idTeamS||null;   window.boVideo=params.boVideo||null;
+//var objMess={}; if(window.location.hash) {
+  //var jsonHash=decodeURIComponent(window.location.hash.substr(1));
+  //objMess=JSON.parse(jsonHash);
+  //console.log(jsonHash);
+//}
+window.interpretHashVariables=function(){
+  var strHash=window.location.hash||"&",  params=parseQS(strHash.substring(1));
+  //window.boEmulator=params.boEmulator||null;
+  window.StartFilter=[params.idTeamC||null, params.idTeamS||null];   window.boVideo=params.boVideo||null;
+  window.objMess={}; if('jsonMess' in params) {
+    try {objMess=JSON.parse(params.jsonMess);} catch(e){ setMess(e);  return; }
+  }
+}
+interpretHashVariables();
 
 var strBackSymbol=(boIOS || boIE)?'◄':'◀';
 
@@ -5633,7 +5752,7 @@ var uConversion=uSite+'/conversion.html';
 app.uUserImage=uSite+'/image/u';
 app.uCustomerTeamImage=uSite+'/image/c';
 app.uSellerTeamImage=uSite+'/image/s';
-
+app.URoleTeamImage=[uCustomerTeamImage, uSellerTeamImage];
 
 app.wseImageFolder='/'+flImageFolder+'/';
 app.uImageFolder=uCommon+wseImageFolder;
@@ -5755,19 +5874,22 @@ replaceNom(langHtml,'TableS');
 
 
 replaceNom(langHtml,'headOrdinalC');
-replaceNom(langHtml,'headOrdinalDoubleC');
-if(langHtml.customerRewritten!=langHtml.customer)  langHtml.headOrdinalC=langHtml.headOrdinalDoubleC;
+//replaceNom(langHtml,'headOrdinalDoubleC');
+//if(langHtml.customerRewritten!=langHtml.customer)  langHtml.headOrdinalC=langHtml.headOrdinalDoubleC;
+//if(langHtml.customerVanilla!=langHtml.customer)  langHtml.headOrdinalC=langHtml.headOrdinalDoubleC;
 replaceNom(langHtml,'labOrdinalC');
 
 replaceNom(langHtml,'headOrdinalS');
-replaceNom(langHtml,'headOrdinalDoubleS');
-if(langHtml.sellerRewritten!=langHtml.seller)  langHtml.headOrdinalS=langHtml.headOrdinalDoubleS;
+//replaceNom(langHtml,'headOrdinalDoubleS');
+//if(langHtml.sellerRewritten!=langHtml.seller)  langHtml.headOrdinalS=langHtml.headOrdinalDoubleS;
+//if(langHtml.sellerVanilla!=langHtml.seller)  langHtml.headOrdinalS=langHtml.headOrdinalDoubleS;
 replaceNom(langHtml,'labOrdinalS');
 
 replaceNom(langHtml,'ChangeMapMarkersC');
 replaceNom(langHtml,'ChangeMapMarkersS');
 
-langHtml.RoleRewritten=[langHtml.customerRewritten||langHtml.customer, langHtml.sellerRewritten||langHtml.seller];
+//langHtml.RoleRewritten=[langHtml.customerRewritten||langHtml.customer, langHtml.sellerRewritten||langHtml.seller];
+langHtml.Role=[langHtml.customer, langHtml.seller];
 
 langHtml.DidYouUseAltIPBefore=langHtml.DidYouUseAltIPBefore.replace(regNom,strIPAltLong);
 
@@ -5808,9 +5930,15 @@ app.currencies=[['UAE Dirham','Afghani','Lek','Armenian Dram','Netherlands Antil
 
 
 var imgBusy=createElement('img').prop({src:uBusy});
-var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
+//var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
+var divMessageText=divMessageTextCreate().css({margin:'0em auto', width:'100%', 'max-width':'800px', 'text-align':'center', position:'relative'});
+var divMessageTextW=createElement('div').myAppend(divMessageText).css({width:'100%', position:'fixed', bottom:'0px', left:'0px', 'z-index':'2'});
+  //.addClass('mainDiv'); 
+elBody.append(divMessageTextW);
+window.setMess=divMessageText.setMess;  window.resetMess=divMessageText.resetMess;  window.appendMess=divMessageText.appendMess;
 
-var busyLarge=createElement('img').prop({src:uBusyLarge}).css({position:'fixed',top:'50%',left:'50%','margin-top':'-42px','margin-left':'-42px','z-index':'1000',border:'black solid 1px'}).hide();
+//var busyLarge=createElement('img').prop({src:uBusyLarge}).css({position:'fixed',top:'50%',left:'50%','margin-top':'-42px','margin-left':'-42px','z-index':'1000',border:'black solid 1px'}).hide();
+var busyLarge=createElement('img').prop({src:uBusyLarge}).addClass("Center").hide();
 elBody.append(busyLarge);
 
 
@@ -5820,6 +5948,9 @@ var tmp=getItem('boFirstVisit'),  boFirstVisit=tmp===null;      setItem('boFirst
 
 app.imgHelp=createElement('img').prop({src:uHelpFile}).css({'vertical-align':'-0.4em', 'margin-left':'0.6em'});
 app.hovHelp=createElement('span').myText('?').css({'font-size':'88%',color:'#a7a7a7','vertical-align':'-0.4em'}); //on('click', function(){return false;})    //'pointer-events':'none',
+app.hovHelpMy=createElement('span').myText('?').addClass('btn-round').css({color:'white', background:'blue'}); //on('click', function(){return false;})    //'pointer-events':'none',
+
+//elBody.append(hovHelpMy);
 
 for(var i=0;i<ORole.length;i++){
   ORole[i].KeyCol=Object.keys(ORole[i].Prop);
@@ -5853,6 +5984,11 @@ history.replaceState(stateMem, '', uCanonical);
 history.StateMy=[];
 
 window.on('popstate', function(event) {
+  if(!history.state) {
+    interpretHashVariables(); setUpStartFilter();
+    stateMem.ind++; history.replaceState(stateMem, '', uCanonical);
+    return;
+  }
   var dir=history.state.ind-stateMem.ind;
   //if(Math.abs(dir)>1) {debugger; alert('dir=',dir); }
   var boSameHash=history.state.hash==stateMem.hash;
@@ -6001,15 +6137,23 @@ viewGreeting.initMyWebPush();
    // Let plugins rewrite objects
 for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteObj; if(tmp) tmp();   }
 
+window.setUpStartFilter=function(){
+  for(var i=0;i<ORole.length;i++){
+    var idTeam=StartFilter[i]; if(idTeam===null) return;
+    var StrOrderFilt=ORole[i].filter.StrProp, StrOrderFiltFlip=array_flip(StrOrderFilt);
+    myCopy(viewFilter.ElRole[i].Filt[StrOrderFiltFlip.idTeam], [[],[Number(idTeam)],1]);
+  }
+}
+
 viewUserSetting.createDivs();
 for(var i=0;i<ORole.length;i++){
   viewSetting.ElRole[i].createDivs();
   viewFilter.ElRole[i].createDivs();
-  var tmpStartFilter=ORole[i].strRole=='customer'?startFilterC:startFilterS;
-  if(tmpStartFilter){
-    var StrOrderFilt=ORole[i].filter.StrProp, StrOrderFiltFlip=array_flip(StrOrderFilt);
-    viewFilter.ElRole[i].Filt[StrOrderFiltFlip.idTeam]=[[],[tmpStartFilter],1];
-  }
+  //var tmpStartFilter=ORole[i].strRole=='customer'?startFilterC:startFilterS;
+  //if(tmpStartFilter){
+    //var StrOrderFilt=ORole[i].filter.StrProp, StrOrderFiltFlip=array_flip(StrOrderFilt);
+    //myCopy(viewFilter.ElRole[i].Filt[StrOrderFiltFlip.idTeam], [[],[Number(tmpStartFilter)],1]);
+  //}
 
   viewTable.ElRole[i].createTBody();   viewTable.ElRole[i].setRowDisp();
 
@@ -6019,6 +6163,7 @@ for(var i=0;i<ORole.length;i++){
   viewMarkSelector.ElRole[i].createTable();
   MainIntroPop[i].createDivs();
 }
+setUpStartFilter();
 
 //if(typeof StrMainProt=='undefined') var StrMainProt=[];
 StrMainProt.push('front', 'userSetting', 'admin', 'complainee', 'complainer', 'formLogin', 'createUser', 'convertID', 'settingW', 'deleteAccountPop', 'complaintCommentPop', 'complaintAnswerPop', 'uploadImage', 'changePWPop', 'forgottPWPop', 'columnSorter', 'columnSelector', 'table', 'markSelector', 'filter', 'setting', 'greeting');
@@ -6207,55 +6352,50 @@ viewGreeting.setVis=function(){
 
 busyLarge.show();
 
-var boFirstLoadTab=1;
-
-if(boEmulator || boVideo) {
-  var latlngDebug={lat:59.330454370984235, lng:18.059076067697106};
-  var posDebug={coords:{latitude:latlngDebug.lat,longitude:latlngDebug.lng}};
-}
 window.addEventListener("resize", function(){
   mapDiv.dispatchEvent(new Event('myResize'));
 });
 
+
+var boFirstLoadTab=1, boGeoApproved=0;
+
+if(boVideo) {
+  var latlngDebug={lat:59.330454370984235, lng:18.059076067697106};
+  var posDebug={coords:{latitude:latlngDebug.lat,longitude:latlngDebug.lng}};
+}
+
 //ga('send', 'event', 'button', 'click', 'geoOK');
 
-var boFirstPosOK=0;
+var boGeoWatch=getItem('boGeoWatch');  if(boGeoWatch===null) boGeoWatch=false;
 
-var tmpFGeoSuccess=function(pos){
-  //tmpFUseApprox=doNothing;
-  if(typeof timerCoordApprox!='undefined') clearTimeout(timerCoordApprox);
-  //clearTimeout(timerGeoNotOK);
-  boFirstPosOK=1;
-  boGeoOK=true; setItem('boGeoOK',boGeoOK);
-  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude};
+var semGeoApprox=false, semGeoReal=false, boGeoOK=false;
+var geoCBFirst=function(pos){
+  var latlng, boCallerGeo=typeof pos=='object';
+  if(boCallerGeo) {
+    boGeoOK=true; setItem('boGeoOK',boGeoOK); boGeoApproved=true;  // boGeoApproved should be replaced with navigator.permissions once supported by iOS.
+    latlng={lat:pos.coords.latitude, lng:pos.coords.longitude};
+  } else { latlng={lat:coordApprox[0], lng:coordApprox[1]}; }
+  
   if(boVideo) latlng=latlngDebug;
+  if(semGeoReal) { return; }
+  if(semGeoApprox) { mapDiv.setMe(latlng, 1);return;}
   clearTimeout(startPopTimer);  startPop.closeFunc();
-  if(typeof boApproxCalled=='undefined') firstAJAXCall(latlng);
-  else mapDiv.setMe(latlng, 1);
+  firstAJAXCall(latlng);
+  //else mapDiv.setMe(latlng, 1);
+  
+  if(boCallerGeo) semGeoReal=true; else semGeoApprox=true;
 }
 
-if(boEmulator){ tmpFGeoSuccess(posDebug); }else{ navigator.geolocation.getCurrentPosition(function(pos){tmpFGeoSuccess(pos);}, geoError,{timeout:20000,maximumAge:60000});  }
-//, {maximumAge:Infinity, timeout:5000,enableHighAccuracy:false}
-//setMess('... getting position ... ',null,true);
-var tmpFUseApprox=function(){
-  var latlng={lat:coordApprox[0],lng:coordApprox[1]};  if(boVideo) latlng=latlngDebug;
-  var boApproxCalled=true;
-  firstAJAXCall(latlng);
-}
-//var tmpFGeoNotOK=function(){ boGeoOK=false; setItem('boGeoOK',boGeoOK); }
+navigator.geolocation.getCurrentPosition(geoCBFirst, geoError, {timeout:20000,maximumAge:60000});
+
 var boGeoOK=getItem('boGeoOK');  if(boGeoOK===null) boGeoOK=false;
-//var tTmp=2; if(boAndroid && boGeoOK) tTmp=10;
-var tTmp=2; if(boGeoOK) tTmp=10;
-var timerCoordApprox=setTimeout(tmpFUseApprox,(tTmp)*1000);
-boGeoOK=false;  setItem('boGeoOK',boGeoOK);
-//timerGeoNotOK=setTimeout(tmpFGeoNotOK,20*1000);
+setTimeout(geoCBFirst,  boGeoOK?10000:2000);
+boGeoOK=false; setItem('boGeoOK',boGeoOK)
 
 
 };
 
 //0123456789abcdef
-
-
 
 
 
