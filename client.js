@@ -15,7 +15,6 @@
 // cookies aren't allowed, are they?
 // viewColumnSorterCreator: Can it be used without creating two instances?
 // Obscurifying
-// oBuyer instead of oC
 
 // does miles work
 // Analytics event from clicking moreinfo link
@@ -24,7 +23,7 @@
 // comparative price in info, could be displayed inside the button
 // remove unnesecary label in langHtml
 // test viewTeam
-// delete me as customer resp delete me as driver
+// delete me as buyer resp delete me as driver
 // Ability to see and select image in introPop
 // 👋🌍
 
@@ -67,8 +66,8 @@ app.CreatorPlugin.general=function(){
 
   var oTmp={StrProp:[], StrGroupFirst:[], StrGroup:[]};
   var oRoleProt={ MTab:[], nMTab:0, MGroupTab:[], Main:oTmp, roleSetting:copyDeep(oTmp), filter:copyDeep(oTmp)};  // , colOneMark:"", ColsShow:[] 
-  extend(oC,oRoleProt); extend(oS,copyDeep(oRoleProt));
-  extend(oC,{ strColor:'pink', strGroupColor:'#fd98a9'});  
+  extend(oB,oRoleProt); extend(oS,copyDeep(oRoleProt));
+  extend(oB,{ strColor:'pink', strGroupColor:'#fd98a9'});  
   extend(oS,{ strColor:'lightblue', strGroupColor:'#9ca6e8' });
   oS.yOffsetGroupMarker=1;
   
@@ -103,6 +102,28 @@ app.CreatorPlugin.general=function(){
   
   //this.rewriteLang=function(){};
 
+
+  app.rewriteLangContractor=function(){
+    langHtml.loginInfo.seller=langHtml.contractor;
+    langHtml.Seller=ucfirst(langHtml.contractor);
+    langHtml.Sellers=ucfirst(langHtml.contractors);
+    langHtml.IndependentSeller=langHtml.IndependentContractor;
+
+    langHtml.seller=langHtml.contractor;   langHtml.sellers=langHtml.contractors;
+    langHtml.theSeller=langHtml.theContractor;   langHtml.theSellers=langHtml.theContractors;
+    langHtml.theSellers0=langHtml.theContractors0;
+  };
+  app.rewriteLangCustomer=function(){
+    langHtml.loginInfo.buyer=langHtml.customer;
+    langHtml.Buyer=ucfirst(langHtml.customer);
+    langHtml.Buyers=ucfirst(langHtml.customers);
+    langHtml.IndependentBuyer=langHtml.IndependentCustomer;
+
+    langHtml.buyer=langHtml.customer;   langHtml.buyers=langHtml.customers;
+    langHtml.theBuyer=langHtml.theCustomer;  langHtml.theBuyers=langHtml.theCustomers;
+    langHtml.theBuyers0=langHtml.theCustomers0;
+  };
+  
   this.rewriteObj=function(){
 
       // tHeadLabel: Add timeStampButt and distUnitChoise 
@@ -186,7 +207,7 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
       if(idTeam) { //&& idTeam.length>0 && idTeam!==0
         var strTmp=URoleTeamImage[this.iRole]+idTeam+'?v='+imTagTeam;
         tmp = {url:strTmp, boUseFrame:true};
-      } else tmp=(this.iRole?langHtml.IndependentSeller:langHtml.IndependentCustomer).replace("<br>","\n");
+      } else tmp=(this.iRole?langHtml.IndependentSeller:langHtml.IndependentBuyer).replace("<br>","\n");
       return tmp;
     }
     const tmpSetMapMF=function(rowMTab){
@@ -419,17 +440,6 @@ app.CreatorPlugin.vehicleType=function(){
     langHtml.seller=langHtml.driver;   langHtml.sellers=langHtml.drivers;
     langHtml.theSeller=langHtml.theDriver;  langHtml.theSellers=langHtml.theDrivers;
     langHtml.theSellers0=langHtml.theDrivers0;
-  };
-
-  app.rewriteLangContractor=function(){
-    langHtml.loginInfo.seller=langHtml.contractor;
-    langHtml.Seller=ucfirst(langHtml.contractor);
-    langHtml.Sellers=ucfirst(langHtml.contractors);
-    langHtml.IndependentSeller=langHtml.IndependentContractor;
-
-    langHtml.seller=langHtml.contractor;   langHtml.sellers=langHtml.contractors;
-    langHtml.theSeller=langHtml.theContractor;   langHtml.theSellers=langHtml.theContractors;
-    langHtml.theSellers0=langHtml.theContractors0;
   };
 
   //this.rewriteLang=function(){};
@@ -717,19 +727,19 @@ app.CreatorPlugin.distNTimePrice=function(){
 "use strict"
 app.CreatorPlugin.price=function(charRoleUC){
   this.rewriteObj=function(){
-    var oRole=charRoleUC=='C'?oC:oS;
+    var oRole=charRoleUC=='B'?oB:oS;
     extend(oRole.Prop.price, {strType:'number', inpW:4});
   }
 };
 //0123456789abcdef
 
-//0123456789abcdef pluginTransportCustomer.js
+//0123456789abcdef pluginTransportBuyer.js
 "use strict"
-app.CreatorPlugin.transportCustomer=function(){
+app.CreatorPlugin.transportBuyer=function(){
   this.rewriteObj=function(){
       // distStartToGoal
     var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
-    extend(oC.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet });
+    extend(oB.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet });
       // compassPoint
     var tmpSet=function(rowMTab){  return langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; }
     var crInpFunc=function(){
@@ -737,7 +747,7 @@ app.CreatorPlugin.transportCustomer=function(){
       for(var i=0;i<arrTmp.length;i++){  var opt=createElement('option').myText(arrTmp[i]).prop('value',i);   c.append(opt);    }
       return c;
     };
-    extend(oC.Prop.compassPoint, {
+    extend(oB.Prop.compassPoint, {
       strType:'select',
       crInp:crInpFunc,
       setInfo:tmpSet,
@@ -746,7 +756,7 @@ app.CreatorPlugin.transportCustomer=function(){
       setFilterButtF:function(span,val,boOn){ var tmp=langHtml.compassPoint[val]; span.firstChild.nodeValue=tmp;  }
     });
       // destination
-    extend(oC.Prop.destination, {inpW:8});
+    extend(oB.Prop.destination, {inpW:8});
     
   }
 };
@@ -822,7 +832,7 @@ app.CreatorPlugin.shiftEnd=function(){
 //0123456789abcdef pluginHourlyPrice.js
 "use strict"
 app.CreatorPlugin.hourlyPrice=function(charRoleUC){
-  var oRole=charRoleUC=='C'?oC:oS;
+  var oRole=charRoleUC=='B'?oB:oS;
   
   this.rewriteObj=function(){
       // pricePerHour
@@ -861,14 +871,14 @@ app.CreatorPlugin.taxi=function(){
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   
   var {StrPropE}=site;  // ['nPassenger','nChildSeat','nWheelChairPlace']
-  var {StrTransportCustomer}=oC;  // ['distStartToGoal','compassPoint','destination']
+  var {StrTransportBuyer}=oB;  // ['distStartToGoal','compassPoint','destination']
   
   
     // oRole.Main: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson],
   ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
-  ['Destination', ...StrTransportCustomer, 'price', 'currency'],
+  ['Destination', ...StrTransportBuyer, 'price', 'currency'],
   ['RequestedVehicle', ...StrPropE],
   ['Price', 'price', 'currency', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
@@ -882,9 +892,9 @@ app.CreatorPlugin.taxi=function(){
   ['Reputation', ...StrPropRep]]);
     
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Destination', ...StrTransportCustomer],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Destination', ...StrTransportBuyer],
   ['Vehicle', ...StrPropE],
   ['Price', 'currency', 'price']]);
   oS.roleSetting=separateGroupLabels([
@@ -893,9 +903,9 @@ app.CreatorPlugin.taxi=function(){
   ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', ...StrPropE, 'tPos', 'idTeam'],
-  ['Destination', ...StrTransportCustomer],
+  oB.filter=separateGroupLabels([
+  ['Buyer', ...StrPropE, 'tPos', 'idTeam'],
+  ['Destination', ...StrTransportBuyer],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
@@ -904,10 +914,10 @@ app.CreatorPlugin.taxi=function(){
 
   
     // Default columns
-  oC.ColsShowDefault= ['image', ...StrTransportCustomer, 'idTeam', 'price'];  //'distStartToGoal', 'compassPoint', 'destination'
-  oC.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
-  oC.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
-  oC.colOneMarkDefault='image';
+  oB.ColsShowDefault= ['image', ...StrTransportBuyer, 'idTeam', 'price'];  //'distStartToGoal', 'compassPoint', 'destination'
+  oB.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
+  oB.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
+  oB.colOneMarkDefault='image';
   
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'brand', 'nPassengers', 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'brand', 'comparePrice'];
@@ -927,6 +937,7 @@ app.CreatorPlugin.taxi=function(){
 
 
   this.rewriteLang=function(){
+    rewriteLangCustomer();
     rewriteLangDriver();
     var tmp=createElement('span').myHtml(langHtml.helpBub.nExtraSeat);
     tmp.querySelector('img:nth-of-type(1)').prop({src:uExtraSeat,width:200});
@@ -961,17 +972,17 @@ app.CreatorPlugin.transport=function(){
   var StrS=oS.StrPropE;  // ['brand']
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   var {StrPropE}=site;
-  var {StrTransportCustomer}=oC;  // ['distStartToGoal','compassPoint','destination']
+  var {StrTransportBuyer}=oB;  // ['distStartToGoal','compassPoint','destination']
  
 
   //var StrTransportBool=['generalCargo', 'tailLift', 'loaderCrane', 'tipper', 'loadableFromTheSide', 'iso20', 'iso40', 'tiltBed', 'sideLift', 'rollerContainer', 'otherContainer'];
   var StrTransportBool=site.StrTransportBool;
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson],
   ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
-  ['Destination', ...StrTransportCustomer, 'price', 'currency'],
+  ['Destination', ...StrTransportBuyer, 'price', 'currency'],
   ['RequestedVehicle', ...StrPropE],
   ['Price', 'price', 'currency', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
@@ -985,9 +996,9 @@ app.CreatorPlugin.transport=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Destination', ...StrTransportCustomer],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Destination', ...StrTransportBuyer],
   ['Cargo', ...StrPropE],
   ['Price', 'currency', 'price']]);
   oS.roleSetting=separateGroupLabels([
@@ -996,10 +1007,10 @@ app.CreatorPlugin.transport=function(){
   ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', 'tPos', 'idTeam'],
+  oB.filter=separateGroupLabels([
+  ['Buyer', 'tPos', 'idTeam'],
   ['Cargo', ...StrPropE],
-  ['Destination', ...StrTransportCustomer],
+  ['Destination', ...StrTransportBuyer],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
@@ -1007,10 +1018,10 @@ app.CreatorPlugin.transport=function(){
   ['Reputation', ...StrPropRep]]);
 
     // Default columns
-  oC.ColsShowDefault= ['image', ...StrTransportCustomer, 'idTeam', 'price'];
-  oC.ColsShowDefaultS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
-  oC.ColsShowDefaultRS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
-  oC.colOneMarkDefault='image';
+  oB.ColsShowDefault= ['image', ...StrTransportBuyer, 'idTeam', 'price'];
+  oB.ColsShowDefaultS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
+  oB.ColsShowDefaultRS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
+  oB.colOneMarkDefault='image';
   
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
@@ -1027,6 +1038,7 @@ app.CreatorPlugin.transport=function(){
   app.uSleepy=uSpecImageFolder+'carSleepy.png';
 
   this.rewriteLang=function(){
+    rewriteLangCustomer();
     rewriteLangDriver();
     var Tmp=StrTransportBool.slice(0,-1);
     for(var i=0;i<Tmp.length;i++) {
@@ -1045,7 +1057,7 @@ app.CreatorPlugin.transport=function(){
       // brand
     extend(oS.Prop.brand, {strType:'text', inpW:6});
       // payload
-    var tmp={strType:'number', inpW:3, saveInp:posNumF}; extend(oC.Prop.payload, tmp); extend(oS.Prop.payload, tmp);
+    var tmp={strType:'number', inpW:3, saveInp:posNumF}; extend(oB.Prop.payload, tmp); extend(oS.Prop.payload, tmp);
   }
 };
 //0123456789abcdef
@@ -1055,14 +1067,14 @@ app.CreatorPlugin.transport=function(){
 //0123456789abcdef pluginCleaner.js
 "use strict"
 app.CreatorPlugin.cleaner=function(){
-  var StrC=oC.StrPropE;  // ['household','janitor','sanitation', 'exterior','customerHasEquipment']
+  var StrB=oB.StrPropE;  // ['household','janitor','sanitation', 'exterior','customerHasEquipment']
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson],
   ['Contact', ...StrPropContact],
-  ['Type', ...StrC],
+  ['Type', ...StrB],
   ['Price', 'pricePerHour', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
   ['Reputation', ...StrPropRep]]);
@@ -1074,18 +1086,18 @@ app.CreatorPlugin.cleaner=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Type', ...StrC],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Type', ...StrB],
   ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
   ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType'],
   ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['Type', ...StrC],
+  oB.filter=separateGroupLabels([
+  ['Buyer', 'homeTown', 'currency', 'tPos', 'idTeam'],
+  ['Type', ...StrB],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos', 'idTeam'],
@@ -1093,10 +1105,10 @@ app.CreatorPlugin.cleaner=function(){
   
   
     // Default columns
-  oC.ColsShowDefault=['image', 'displayName', ...StrC, 'tel', 'idTeam', 'pricePerHour'];
-  oC.ColsShowDefaultS=['image', 'displayName', ...StrC, 'pricePerHour'];
-  oC.ColsShowDefaultRS=['image', ...StrC, 'pricePerHour'];
-  oC.colOneMarkDefault='image';
+  oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
+  oB.ColsShowDefaultS=['image', 'displayName', ...StrB, 'pricePerHour'];
+  oB.ColsShowDefaultRS=['image', ...StrB, 'pricePerHour'];
+  oB.colOneMarkDefault='image';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
@@ -1110,12 +1122,12 @@ app.CreatorPlugin.cleaner=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    //langHtml.sellerRewritten=langHtml.contractor;
+    rewriteLangCustomer();
     rewriteLangContractor();
   };
   this.rewriteObj=function(){
-      // StrC
-    for(var i=0;i<StrC.length;i++) { var strName=StrC[i]; extend(oC.Prop[strName], propBoolProt); }
+      // StrB
+    for(var i=0;i<StrB.length;i++) { var strName=StrB[i]; extend(oB.Prop[strName], propBoolProt); }
   };
 };
 //0123456789abcdef
@@ -1125,12 +1137,12 @@ app.CreatorPlugin.cleaner=function(){
 //0123456789abcdef pluginWindowcleaner.js
 "use strict"
 app.CreatorPlugin.windowcleaner=function(){
-  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  var StrB=oB.StrPropE, StrS=oS.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson, ...StrC],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson, ...StrB],
   ['Contact', ...StrPropContact],
   ['Price', 'pricePerHour', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
@@ -1144,9 +1156,9 @@ app.CreatorPlugin.windowcleaner=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Other', ...StrC],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
+  ['Other', ...StrB],
   ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
   ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
@@ -1154,8 +1166,8 @@ app.CreatorPlugin.windowcleaner=function(){
   ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
+  oB.filter=separateGroupLabels([
+  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', 'idTeam'],
@@ -1163,10 +1175,10 @@ app.CreatorPlugin.windowcleaner=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Default columns
-  oC.ColsShowDefault=['image', 'displayName', ...StrC, 'tel', 'idTeam', 'pricePerHour'];
-  oC.ColsShowDefaultS=['image', 'displayName', ...StrC, 'pricePerHour'];
-  oC.ColsShowDefaultRS=['image', ...StrC, 'pricePerHour'];
-  oC.colOneMarkDefault='image';
+  oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
+  oB.ColsShowDefaultS=['image', 'displayName', ...StrB, 'pricePerHour'];
+  oB.ColsShowDefaultRS=['image', ...StrB, 'pricePerHour'];
+  oB.colOneMarkDefault='image';
 
   oS.ColsShowDefault=['image', 'displayName', ...StrS, 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS=['image', 'displayName', ...StrS, 'vehicleType', 'comparePrice'];
@@ -1181,15 +1193,15 @@ app.CreatorPlugin.windowcleaner=function(){
   var uSpecImageFolder=uCommon+'/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    //langHtml.sellerRewritten=langHtml.windowcleaner;
+    rewriteLangCustomer();
     rewriteLangContractor();
   };
 
   this.rewriteObj=function(){
       // customerHasEquipment
-    var strName='customerHasEquipment';  extend(oC.Prop[strName], propBoolProt);
+    var strName='customerHasEquipment';  extend(oB.Prop[strName], propBoolProt);
       // nWindow
-    extend(oC.Prop.nWindow, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+    extend(oB.Prop.nWindow, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
     
       // StrS
     for(var i=0;i<StrS.length;i++) { var strName=StrS[i]; extend(oS.Prop[strName], propBoolProt); }
@@ -1201,12 +1213,12 @@ app.CreatorPlugin.windowcleaner=function(){
 //0123456789abcdef pluginLawnmowing.js
 "use strict"
 app.CreatorPlugin.lawnmowing=function(){
-  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  var StrB=oB.StrPropE, StrS=oS.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice'],   ['pushMower','ridingMower', 'edger']
   
       // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson, ...StrC],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson, ...StrB],
   ['Contact', ...StrPropContact],
   ['Price', 'pricePerHour', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
@@ -1219,26 +1231,26 @@ app.CreatorPlugin.lawnmowing=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrC],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB],
   ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
   ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', ...StrS],
   ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
+  oB.filter=separateGroupLabels([
+  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS, 'idTeam'],
   ['Reputation', ...StrPropRep]]);
 
     // Default columns
-  oC.ColsShowDefault=['image', 'displayName', ...StrC, 'tel', 'idTeam', 'pricePerHour'];
-  oC.ColsShowDefaultS=['image', 'displayName', ...StrC, 'pricePerHour'];
-  oC.ColsShowDefaultRS=['image', ...StrC, 'pricePerHour'];
-  oC.colOneMarkDefault='image';
+  oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
+  oB.ColsShowDefaultS=['image', 'displayName', ...StrB, 'pricePerHour'];
+  oB.ColsShowDefaultRS=['image', ...StrB, 'pricePerHour'];
+  oB.colOneMarkDefault='image';
 
   oS.ColsShowDefault=['image', 'displayName', 'tel', 'vehicleType', ...StrS, 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS=['image', 'displayName', 'vehicleType', ...StrS, 'comparePrice'];
@@ -1253,16 +1265,15 @@ app.CreatorPlugin.lawnmowing=function(){
   app.uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    //langHtml.sellerRewritten=langHtml.lawnmowing;
-    //langHtml.sellerRewritten=langHtml.contractor;
+    rewriteLangCustomer();
     rewriteLangContractor();
   };
 
   this.rewriteObj=function(){
       // customerHasEquipment
-    var strName='customerHasEquipment';  extend(oC.Prop[strName], propBoolProt);
+    var strName='customerHasEquipment';  extend(oB.Prop[strName], propBoolProt);
       // area
-    extend(oC.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+    extend(oB.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
     
       // oS.StrBool
     for(var i=0;i<oS.StrBool.length;i++) { var strName=oS.StrBool[i]; extend(oS.Prop[strName], propBoolProt); }
@@ -1277,12 +1288,12 @@ app.CreatorPlugin.lawnmowing=function(){
 //0123456789abcdef pluginSnowremoval.js
 "use strict"
 app.CreatorPlugin.snowremoval=function(){
-  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  var StrB=oB.StrPropE, StrS=oS.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson, ...oC.StrBool, 'area'],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson, ...oB.StrBool, 'area'],
   ['Contact', ...StrPropContact],
   ['Price', 'pricePerHour', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
@@ -1295,16 +1306,16 @@ app.CreatorPlugin.snowremoval=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...oC.StrBool, 'area'],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...oB.StrBool, 'area'],
   ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
   ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', ...oS.StrBool, 'vehicleType'],
   ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
+  oB.filter=separateGroupLabels([
+  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
@@ -1312,10 +1323,10 @@ app.CreatorPlugin.snowremoval=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Default columns
-  oC.ColsShowDefault=['image', 'displayName', ...oC.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour'];
-  oC.ColsShowDefaultS=['image', 'displayName', ...oC.StrBool, 'area', 'pricePerHour'];
-  oC.ColsShowDefaultRS=['image', ...oC.StrBool, 'area', 'pricePerHour'];
-  oC.colOneMarkDefault='image';
+  oB.ColsShowDefault=['image', 'displayName', ...oB.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour'];
+  oB.ColsShowDefaultS=['image', 'displayName', ...oB.StrBool, 'area', 'pricePerHour'];
+  oB.ColsShowDefaultRS=['image', ...oB.StrBool, 'area', 'pricePerHour'];
+  oB.colOneMarkDefault='image';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', ...oS.StrBool, 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', ...oS.StrBool, 'comparePrice'];
@@ -1330,16 +1341,15 @@ app.CreatorPlugin.snowremoval=function(){
   app.uDummy=uSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    //langHtml.sellerRewritten=langHtml.snowRemovalWorker;
-    //langHtml.sellerRewritten=langHtml.contractor;
+    rewriteLangCustomer();
     rewriteLangContractor();
   };
 
   this.rewriteObj=function(){
-    for(var i=0;i<oC.StrBool.length;i++) { var strName=oC.StrBool[i]; extend(oC.Prop[strName], propBoolProt); }
+    for(var i=0;i<oB.StrBool.length;i++) { var strName=oB.StrBool[i]; extend(oB.Prop[strName], propBoolProt); }
     for(var i=0;i<oS.StrBool.length;i++) { var strName=oS.StrBool[i]; extend(oS.Prop[strName], propBoolProt); }
       // area
-    extend(oC.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
+    extend(oB.Prop.area, {strType:'number', inpW:3, saveInp:posNumOrEmptyF});
     
   };
 };
@@ -1349,12 +1359,12 @@ app.CreatorPlugin.snowremoval=function(){
 //0123456789abcdef pluginFruitpicker.js
 "use strict"
 app.CreatorPlugin.fruitpicker=function(){
-  var StrC=oC.StrPropE;
+  var StrB=oB.StrPropE;
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson, ...StrC],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson, ...StrB],
   ['Contact', ...StrPropContact],
   ['Price', 'pricePerHour', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
@@ -1367,26 +1377,26 @@ app.CreatorPlugin.fruitpicker=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrC],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB],
   ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
   ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
   ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', ...StrC, 'idTeam'],
+  oB.filter=separateGroupLabels([
+  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'currency', 'tPos', 'vehicleType', 'idTeam'],
   ['Reputation', ...StrPropRep]]);
   
     // Default columns
-  oC.ColsShowDefault=['image', 'displayName', 'fruit', 'tel', 'idTeam', 'pricePerHour'];
-  oC.ColsShowDefaultS=['image', 'displayName', 'fruit', 'pricePerHour'];
-  oC.ColsShowDefaultRS=['image', 'fruit', 'pricePerHour'];
-  oC.colOneMarkDefault='fruit';
+  oB.ColsShowDefault=['image', 'displayName', 'fruit', 'tel', 'idTeam', 'pricePerHour'];
+  oB.ColsShowDefaultS=['image', 'displayName', 'fruit', 'pricePerHour'];
+  oB.ColsShowDefaultRS=['image', 'fruit', 'pricePerHour'];
+  oB.colOneMarkDefault='fruit';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
@@ -1412,7 +1422,7 @@ app.CreatorPlugin.fruitpicker=function(){
   }
   this.rewriteObj=function(){
       // fruit
-    extend(oC.Prop.fruit, {strType:'text', inpW:8});
+    extend(oB.Prop.fruit, {strType:'text', inpW:8});
   }
 };
 //0123456789abcdef
@@ -1420,15 +1430,15 @@ app.CreatorPlugin.fruitpicker=function(){
 //0123456789abcdef pluginProgrammer.js
 "use strict"
 app.CreatorPlugin.programmer=function(){
-  var StrC=oC.StrPropE, StrS=oS.StrPropE;
+  var StrB=oB.StrPropE, StrS=oS.StrPropE;
   
   var StrProgrammerLang=oS.StrProgrammerLang;
 
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
-  oC.Main=separateGroupLabels([
-  ['Customer', ...StrPropPerson],
+  oB.Main=separateGroupLabels([
+  ['Buyer', ...StrPropPerson],
   ['Contact', ...StrPropContact],
-  ['RequestedSkills', ...StrC],
+  ['RequestedSkills', ...StrB],
   ['Price', 'pricePerHour', 'tLastPriceChange'],
   ['Position', ...StrPropPos],
   ['Reputation', ...StrPropRep]]);
@@ -1441,9 +1451,9 @@ app.CreatorPlugin.programmer=function(){
   ['Reputation', ...StrPropRep]]);
   
     // Properties in roleSettingDiv
-  oC.roleSetting=separateGroupLabels([
-  ['Customer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['RequestedSkills', ...StrC],
+  oB.roleSetting=separateGroupLabels([
+  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
+  ['RequestedSkills', ...StrB],
   ['Price', 'currency', 'pricePerHour']]);
   oS.roleSetting=separateGroupLabels([
   ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
@@ -1452,9 +1462,9 @@ app.CreatorPlugin.programmer=function(){
   
 
     // Properties in filterDiv
-  oC.filter=separateGroupLabels([
-  ['Customer', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['RequestedSkills', ...StrC],
+  oB.filter=separateGroupLabels([
+  ['Buyer', 'homeTown', 'currency', 'tPos', 'idTeam'],
+  ['RequestedSkills', ...StrB],
   ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
   oS.filter=separateGroupLabels([
   ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
@@ -1462,10 +1472,10 @@ app.CreatorPlugin.programmer=function(){
   ['Reputation', ...StrPropRep]]);
 
     // Default columns
-  oC.ColsShowDefault=['image', 'displayName', 'language', 'database', 'tel', 'idTeam', 'pricePerHour'];
-  oC.ColsShowDefaultS=['image', 'displayName', 'language', 'database', 'pricePerHour'];
-  oC.ColsShowDefaultRS=['image', 'language', 'database', 'pricePerHour'];
-  oC.colOneMarkDefault='image';
+  oB.ColsShowDefault=['image', 'displayName', 'language', 'database', 'tel', 'idTeam', 'pricePerHour'];
+  oB.ColsShowDefaultS=['image', 'displayName', 'language', 'database', 'pricePerHour'];
+  oB.ColsShowDefaultRS=['image', 'language', 'database', 'pricePerHour'];
+  oB.colOneMarkDefault='image';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'idTeam', 'pricePerHour','c','java','php','javascript'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'pricePerHour','c','java','php','javascript'];
@@ -1491,9 +1501,9 @@ app.CreatorPlugin.programmer=function(){
   this.rewriteObj=function(){
 
       // database
-    extend(oC.Prop.database, {strType:'text',inpW:6});
+    extend(oB.Prop.database, {strType:'text',inpW:6});
       // language
-    extend(oC.Prop.language, {strType:'text',inpW:6});
+    extend(oB.Prop.language, {strType:'text',inpW:6});
 
       // StrProgrammerLang
     var crInpFunc=function(){
@@ -1561,7 +1571,7 @@ app.butTimeStampCreator=function(iRole, colName){ // Used in plugins (in viewTab
 
 app.thumbTeamCreator=function(oRole){
   var el=createElement('a');
-  //var uRoleTeamImage=oRole==oC?uCustomerTeamImage:uSellerTeamImage;
+  //var uRoleTeamImage=oRole==oB?uBuyerTeamImage:uSellerTeamImage;
   el.mySet=function(rT){
     //var rT=oRole.MTab[iMTab];
     var data=rT.idTeam, tag=rT.imTagTeam;
@@ -1883,15 +1893,15 @@ var charRole=getItem('charRole');  if(charRole===null) charRole=charRoleDefault;
 var roleTogglerCreator=function(viewTarget){
   var el=createElement('button');
   el.setStat=function(charRole){
-    var charRoleAlt=charRole=='c'?'s':'c';
+    var charRoleAlt=charRole=='b'?'s':'b';
     var strCol=charRoleAlt=='s'?'lightblue':'pink';
-    var strRoleUC=charRoleAlt=='s'?'Sellers':'Customers';
+    var strRoleUC=charRoleAlt=='s'?'Sellers':'Buyers';
     el.css({'background':strCol}).myText(langHtml[strRoleUC]);
   }
-  el.getStat=function(){  return el.style.background=='lightblue'?'c':'s';   }
-  el.prop('title', langHtml.ToggleBetweenCustomerAndSeller).on('click',function(){
+  el.getStat=function(){  return el.style.background=='lightblue'?'b':'s';   }
+  el.prop('title', langHtml.ToggleBetweenBuyerAndSeller).on('click',function(){
     charRole=el.getStat();
-    charRole=charRole=='c'?'s':'c';
+    charRole=charRole=='b'?'s':'b';
     el.setStat(charRole);
     setItem('charRole', charRole);
 
@@ -1968,7 +1978,7 @@ var toggleSpecialistButts=function(){
   
   var boAny=0, boBoth=1;
   for(var i=0;i<2;i++){
-    var strRole=i?'seller':'customer', objTeam=userInfoFrDB[strRole+'Team'];
+    var strRole=i?'seller':'buyer', objTeam=userInfoFrDB[strRole+'Team'];
     var boTeamExist=Boolean(objTeam), boTeamApproved=boTeamExist&&objTeam.boApproved;
     viewSettingW.TeamButton[i].toggle(Boolean(boTeamApproved));
     ViewEntry[i].teamApprovedMess.toggle(Boolean(boTeamExist && !boTeamApproved));
@@ -2104,8 +2114,8 @@ var divLoginSelectorCreator=function(oRole){
       var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
 
       var boE=Boolean(userInfoFrDB[strRole]);
-      var tmpIntroPop=strRole=='customer'?mainIntroPopC:mainIntroPopS;
-      //var tmpQuickDiv=strRole=='customer'?viewFront.quickDivC:viewFront.quickDivS;
+      var tmpIntroPop=strRole=='buyer'?mainIntroPopB:mainIntroPopS;
+      //var tmpQuickDiv=strRole=='buyer'?viewFront.quickDivB:viewFront.quickDivS;
       var tmpQuickDiv=viewFront.QuickDiv[Number(strRole=='seller')];
       if(boE) tmpQuickDiv.setUp(); else tmpIntroPop.openFunc(); 
       history.fastBack(viewFront);
@@ -2396,7 +2406,7 @@ var viewFilterCreator=function(){
   el.setUp=function() {
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     spanLab.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Customers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
     roleToggler.setStat(charRole);
     ElRole[indRole].show(); //.setUp();
     ElRole[1-indRole].hide();
@@ -2490,7 +2500,7 @@ var viewSettingWCreator=function(){
   el.toString=function(){return 'settingW';}
   
   
-  //var buttShowMarkSelectC=createElement('button').myText(langHtml.Customers).css({background:oC.strColor, 'margin-left':'0.4em'}).on('click', function(){
+  //var buttShowMarkSelectB=createElement('button').myText(langHtml.Buyers).css({background:oB.strColor, 'margin-left':'0.4em'}).on('click', function(){
     //var viewTmp=viewMarkSelector.ElRole[0]; viewTmp.setVis();doHistPush({view:viewTmp});
   //});
   //var buttShowMarkSelectS=createElement('button').myText(langHtml.Sellers).css({background:oS.strColor}).on('click', function(){
@@ -2502,14 +2512,14 @@ var viewSettingWCreator=function(){
   el.TeamButton=[];
   var ButtShowMarkSelect=[];
   for(let i=0;i<2;i++) {
-    var oRole=ORole[i], strTmp=i?'Sellers':'Customers';
+    var oRole=ORole[i], strTmp=i?'Sellers':'Buyers';
     ButtShowMarkSelect[i]=createElement('button').myText(langHtml[strTmp]).css({background:oRole.strColor}).on('click', function(){
       charRole=ORole[i].charRole; // Temporary
       viewMarkSelector.setVis(); doHistPush({view:viewMarkSelector});
     });
-    var strTmp=i?'Seller':'Customer';
+    var strTmp=i?'Seller':'Buyer';
     el.userDiv.SettingButton[i]=createElement('button').myText(langHtml[strTmp+'Settings']).on('click',function(){
-      charRole=i?'s':'c';
+      charRole=i?'s':'b';
       viewSetting.setVis(); doHistPush({view:viewSetting});
     });
     el.TeamButton[i]=createElement('button').myText(strTmp+' team settings').on('click', function(){
@@ -2547,7 +2557,7 @@ var viewSettingWCreator=function(){
   var fragOpt=createFragment(divMapMarker, el.userDiv);
   fragOpt.cssChildren({'margin':'1em 0em 1em 0.6em'});
   
-  [el.userDiv.SettingButton[0], el.TeamButton[0]].forEach((ele)=>{ele.css({background:oC.strColor}) });
+  [el.userDiv.SettingButton[0], el.TeamButton[0]].forEach((ele)=>{ele.css({background:oB.strColor}) });
   [el.userDiv.SettingButton[1], el.TeamButton[1]].forEach((ele)=>{ele.css({background:oS.strColor})});
   
 
@@ -2575,8 +2585,8 @@ var viewUserSettingCreator=function(){
   el.setUp=function(){
     var tmp=userInfoFrDB.user;
     inpDisplayName.value=tmp.displayName;  
-    oC.Prop.image.setInp.call(spanImg);
-    oC.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
+    oB.Prop.image.setInp.call(spanImg);
+    oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     cbBoGeoWatch.checked=boGeoWatch;
     divIPSetting.setUp();
     return true;
@@ -2590,10 +2600,10 @@ var viewUserSettingCreator=function(){
   
 
   el.createDivs=function(){
-    spanImg=oC.Prop.image.crInp();
+    spanImg=oB.Prop.image.crInp();
     divImage.myAppend('Display image: ', spanImg);
     
-    spanBoWebPushOK=oC.Prop.boWebPushOK.crInp('setting');
+    spanBoWebPushOK=oB.Prop.boWebPushOK.crInp('setting');
     divBoWebPushOK.myAppend("Enable Push Messages: ", spanBoWebPushOK);
   }
   var spanImg, divImage=createElement('div');
@@ -2606,7 +2616,7 @@ var viewUserSettingCreator=function(){
   divBoWebPushOK.toggle(boEnablePushNotification);
   
     // boGeoWatch
-  var imgH=imgHelp.cloneNode(); popupHover(imgH,createElement('div').myText('For continues tracking to work on mobile devices, the device must be prevented from going to sleep, and the browser must be in the foreground.'));
+  var imgH=imgHelp.cloneNode(); popupHover(imgH,createElement('div').myText('For continuous tracking to work on mobile devices, the device must be prevented from going to sleep, and the browser must be in the foreground.'));
   var cbBoGeoWatch=createElement('input').prop({type:'checkbox'}).on('click',function(){
     boGeoWatch=this.checked;
   });
@@ -2916,7 +2926,7 @@ var viewSettingCreator=function(){
     elRole=ElRole[indRole];
       // span
     spanLab.css({background:oRole.strColor});
-    var strTmp=indRole?'SellerSettings':'CustomerSettings';  strTmp=langHtml[strTmp]; spanRole.myText(strTmp);
+    var strTmp=indRole?'SellerSettings':'BuyerSettings';  strTmp=langHtml[strTmp]; spanRole.myText(strTmp);
     var boAlt=userInfoFrDB[oRoleAlt.strRole]; roleToggler.toggle(boAlt);
     var boCur=userInfoFrDB[oRole.strRole];
     elRoleAlt.hide(); roleToggler.setStat(charRole);
@@ -2953,7 +2963,7 @@ var viewSettingCreator=function(){
 app.spanIdTeamWantedCreator=function(oRole){
   var el=createElement('span');
   var strRole=oRole.strRole;
-  //var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
+  //var uRoleTeamImage=strRole=='buyer'?uBuyerTeamImage:uSellerTeamImage;
   el.setStat=function(){
     var idTmp=userInfoFrDB[strRole].idTeamWanted, tag=userInfoFrDB[strRole].imTagTeam;
     if(idTmp!=0){ var strTmp=URoleTeamImage[oRole.ind]+idTmp+'?v='+tag; thumbDis.prop({src:strTmp}); thumbDis.show(); spanDisNApproved.show(); inp.value=idTmp;}
@@ -3058,7 +3068,7 @@ var viewTeamCreator=function(oRole){
   var calcTeamImageUrl=function(){
     var {idUser, imTag}=userInfoFrDB[strRole+'Team'];  return URoleTeamImage[oRole.ind]+idUser+'?v='+imTag;
   }
-  //var uRoleTeamImage=strRole=='customer'?uCustomerTeamImage:uSellerTeamImage;
+  //var uRoleTeamImage=strRole=='buyer'?uBuyerTeamImage:uSellerTeamImage;
   el.boLoaded=0;
   var elId=createElement('span').css({'font-weight':'bold'});
   var elLink=createElement('input').attr({type:'text',size:10}).on('keypress', function(e){ if(e.which==13) {saveName();return false;}} );
@@ -3108,7 +3118,7 @@ var mainLoginInfoCreator=function(){
     var arrKind=[], boIn=0;
     if('user' in userInfoFrDB && userInfoFrDB.user){
       boIn=1;
-      var arrTmp=['customer','seller','complainer', 'admin']
+      var arrTmp=['buyer','seller','complainer', 'admin']
       for(var i=0; i<arrTmp.length; i++){  var key=arrTmp[i]; if(userInfoFrDB[key]) {  arrKind.push(langHtml.loginInfo[key]); }   }
     }
     if(boIn){
@@ -3147,7 +3157,7 @@ var viewEntryCreator=function(oRole){
   var {strRole, charRoleUC}=oRole;
   el.toString=function(){return 'entry'+charRoleUC;}
   el.setUp=function(){
-    var nTmp=strRole=='customer'?nCustomerReal:nSellerReal;
+    var nTmp=strRole=='buyer'?nBuyerReal:nSellerReal;
     var nNext=nTmp+1; //if(nNext==13) nNext=14;
     var ending=makeOrdinalEndingEn(nNext);
     spanNNext.myText(nNext); //+ending
@@ -3253,13 +3263,13 @@ var mainIntroPopCreator=function(oRole){
     var nameT=isSet(sessionLoginIdP)?sessionLoginIdP.nameIP:'';
     inpName.value=nameT;
     cbIdIPImage.prop('checked', true);
-    oC.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
+    oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     return true;
   }
   el.openFunc=function(){   el.openPop(); el.setUp(); }
  
   el.createDivs=function(){
-    spanBoWebPushOK=oC.Prop.boWebPushOK.crInp('intro');
+    spanBoWebPushOK=oB.Prop.boWebPushOK.crInp('intro');
     divBoWebPushOK.myAppend("Enable Push Messages*: ", spanBoWebPushOK);
   }
   popUpExtend(el);  
@@ -4274,8 +4284,8 @@ var mapDivCreator=function(){
     }
      
   }
-  //el.setMarkers=function(){ el.arrMarkerC.setMarkers(); el.arrMarkerS.setMarkers();}
-  //el.drawMarkers=function(){el.arrMarkerC.drawMarkers(); el.arrMarkerS.drawMarkers();}
+  //el.setMarkers=function(){ el.arrMarkerB.setMarkers(); el.arrMarkerS.setMarkers();}
+  //el.drawMarkers=function(){el.arrMarkerB.drawMarkers(); el.arrMarkerS.drawMarkers();}
   el.setMarkers=function(){  for(var i=0;i<ORole.length;i++) el.ArrMarker[i].setMarkers();  }
   el.drawMarkers=function(){  for(var i=0;i<ORole.length;i++) el.ArrMarker[i].drawMarkers();  }
   
@@ -4370,7 +4380,7 @@ var mapDivCreator=function(){
   }
   MarkerT.tmpPrototype.funcInfoClick=function(){
     var i=this.dataInd;
-    var viewTmp=this.oRole==oC?viewInfoC:viewInfoS;
+    var viewTmp=this.oRole==oB?viewInfoB:viewInfoS;
     viewTmp.setContainers(i);
     viewTmp.setVis();
     doHistPush({view:viewTmp});
@@ -4546,19 +4556,19 @@ var viewFrontCreator=function(){
   el.toString=function(){return 'front';}
   
     // entryButtonW
-  var entryButtonC=createElement('button').myText(langHtml.AppearAsCustomer).addClass('flexWidth').css({'width':'initial','font-size':'0.7em', background:ORole[0].strColor}).on('click',function(){
-    viewEntryC.setVis(); doHistPush({view:viewEntryC});
-    ga('send', 'event', 'button', 'click', 'entryDivC');
+  var entryButtonB=createElement('button').myText(langHtml.AppearAsBuyer).addClass('flexWidth').css({'width':'initial','font-size':'0.7em', background:ORole[0].strColor}).on('click',function(){
+    viewEntryB.setVis(); doHistPush({view:viewEntryB});
+    ga('send', 'event', 'button', 'click', 'entryDivB');
   });
   var entryButtonS=createElement('button').myText(langHtml.AppearAsSeller).addClass('flexWidth').css({'width':'initial','font-size':'0.7em', background:ORole[1].strColor}).on('click',function(){
     viewEntryS.setVis(); doHistPush({view:viewEntryS});
     ga('send', 'event', 'button', 'click', 'entryDivS');
   });
-  if(document.domain.substr(0,4)=='demo') {entryButtonC.hide(); entryButtonS.hide();}
+  if(document.domain.substr(0,4)=='demo') {entryButtonB.hide(); entryButtonS.hide();}
   
   el.entryButtonW=createElement('div').css({background:'', "box-sizing":"border-box",color:'black','font-size':'1.2em','line-height':'1.6em','font-weight':'bold','text-align':'center',
       padding:'0.2em 0em 0.2em', margin:'1px 0em 0em 0em', flex:'0 0 auto', display:"flex", "justify-content":"space-around"}); //, 'border-top':'solid 1px', "justify-content":"space-evenly"
-  el.entryButtonW.append(entryButtonC, entryButtonS);
+  el.entryButtonW.append(entryButtonB, entryButtonS);
   
   
     // QuickDiv
@@ -4615,7 +4625,7 @@ var viewFrontCreator=function(){
  
   var DivButRole=[], CbRole=[], Label=[];
   for(var i=0;i<2;i++){
-    var strRole=i?'Sellers':'Customers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
+    var strRole=i?'Sellers':'Buyers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
     Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'80%', left:'0px', 'box-sizing':'border-box', width:'100%', 'line-height':'90%'});  //, 'z-index':'-1'
     CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, margin:'0em 0 0.4em',width:'1.4em',height:'1.4em'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
     DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, position:'relative', 'padding':'0em .6em 0'}); //, padding:'0.2em'
@@ -4624,7 +4634,7 @@ var viewFrontCreator=function(){
   
   //var DivButRole=[], CbRole=[], Label=[];
   //for(var i=0;i<2;i++){
-    //var strRole=i?'Sellers':'Customers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
+    //var strRole=i?'Sellers':'Buyers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
     //Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'100%', left:'0px', 'box-sizing':'border-box', width:'100%', 'line-height':'100%'});  //, 'z-index':'-1'
     //CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, margin:'0 0 0.4em',transform:'scale(1.6)'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
     //DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, position:'relative', 'padding':'.3em .8em 0', top:'-3px'}); //, padding:'0.2em'
@@ -4632,7 +4642,7 @@ var viewFrontCreator=function(){
   
   //var DivButRole=[], CbRole=[], Label=[];
   //for(var i=0;i<2;i++){
-    //var strRole=i?'Sellers':'Customers', strTmp=langHtml[strRole], oRole=ORole[i];
+    //var strRole=i?'Sellers':'Buyers', strTmp=langHtml[strRole], oRole=ORole[i];
     //Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0.1em'});
     //CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, padding:'0.1em', transform:'scale(1.6)', margin:'0.3em 0 0.1em'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
     //DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, display:'flex', 'flex-direction':'column', 'align-items':'center'}); //, padding:'0.2em'
@@ -4712,15 +4722,15 @@ var quickCreator=function(oRole){
     var boVis=QDCur.spanLabel.style.display!='none';
     var boAltVis=QuickDiv[1-oRole.ind].spanLabel.style.display!='none';
     if(boVis && boAltVis){
-      QDCur.ElToggleble.forEach((ele)=>{ele.hide()});  QDCur.butTog.myText('+');  QDCur.css({'padding-top':'.2em'});  QDCur.butTog.css(oRole==oC?'top':'bottom','0em');  QDAlt.butTog.hide();
+      QDCur.ElToggleble.forEach((ele)=>{ele.hide()});  QDCur.butTog.myText('+');  QDCur.css({'padding-top':'.2em'});  QDCur.butTog.css(oRole==oB?'top':'bottom','0em');  QDAlt.butTog.hide();
     }else {
       for(var i=0;i<ORole.length;i++) {
         QuickDiv[i].ElToggleble.forEach((ele)=>{ele.show()});  QuickDiv[i].butTog.myText('-').show();   QuickDiv[i].css({'padding-top':'.7em'});
-        QuickDiv[i].butTog.css(ORole[i]==oC?'top':'bottom','0.3em');
+        QuickDiv[i].butTog.css(ORole[i]==oB?'top':'bottom','0.3em');
       }
     }
   });
-  el.butTog.css(oRole==oC?'top':'bottom','0.3em');
+  el.butTog.css(oRole==oB?'top':'bottom','0.3em');
   el.butTogW=createElement('span').myAppend(el.butTog);
 
   el.append(...el.ElToggleble);
@@ -4786,7 +4796,7 @@ var viewMarkSelectorCreator=function(){
   el.setUp=function() {  
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     spanLab.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Customers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
     roleToggler.setStat(charRole);
     ElRole[indRole].show().setUp();
     ElRole[1-indRole].hide();
@@ -4887,7 +4897,7 @@ var viewColumnSelectorCreator=function(){
   el.setUp=function() {
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     spanLab.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Customers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
     roleToggler.setStat(charRole);
     ElRole[indRole].show().setUp();
     ElRole[1-indRole].hide();
@@ -4910,7 +4920,7 @@ var viewColumnSelectorCreator=function(){
   var tmpImg=createElement('img').prop({src:uColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//, 'margin-right':'0.5em'
   //var buttSort=createElement('button').myAppend(tmpImg).css({'margin-left':'auto', 'margin-right':'1em', 'font-size':'0.72rem'}).addClass('flexWidth');
   var buttSort=createElement('button').myAppend('sort').css({'margin-left':'auto', 'margin-right':'1em'}).addClass('flexWidth').on('click', function(){
-    //var viewTmp=oRole.strRole=='customer'?viewColumnSorterC:viewColumnSorterS;
+    //var viewTmp=oRole.strRole=='buyer'?viewColumnSorterB:viewColumnSorterS;
     //viewTmp.setVis();    doHistPush({view:viewTmp});
     viewColumnSorter.setVis();    doHistPush({view:viewColumnSorter});
   });
@@ -4999,7 +5009,7 @@ var viewColumnSorterCreator=function(){
     arrLabel.length=0;  for(var i=0;i<oRole.ColsShow.length;i++){ arrLabel[i]=calcLabel(langHtml.prop, oRole.ColsShow[i]);  }
     dragSorter.setUp(oRole.ColsShow,arrLabel);
     spanLab.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Customers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
     roleToggler.setStat(oRole.charRole);
   }
 
@@ -5216,7 +5226,7 @@ var tableCreator=function(oRole){
       var strName=elC.attr('name');
       var iMTab=elC.parentNode.iMTab, val=oRole.MTab[iMTab][strName];
       if(strName=='tel' && val.length || strName=='displayEmail' && val.length || strName=='link' && val.length || strName=='nComplaint' || strName=='boWebPushOK') return;
-      var viewroleInfo=strRole=='customer'?viewInfoC:viewInfoS;
+      var viewroleInfo=strRole=='buyer'?viewInfoB:viewInfoS;
       viewroleInfo.setContainers(iMTab);
       viewroleInfo.setVis();
       doHistPush({view:viewroleInfo});
@@ -5251,7 +5261,7 @@ var viewTableCreator=function(){
   el.setUp=function(){
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     spanLab.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Customers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
     roleToggler.setStat(charRole);
     ElRole[indRole].show(); //.setUp();
     ElRole[1-indRole].hide();
@@ -5308,7 +5318,7 @@ var viewGreetingCreator=function(){
     app.myWebPush=new MyWebPush();
 
     myWebPush.uploadFun=function(){ 
-      var vec=[['setWebPushSubcription',{strSubscription: JSON.stringify(myWebPush.subscription)}], ['setupById', {Role:['customer', 'seller']}]];   majax(vec);
+      var vec=[['setWebPushSubcription',{strSubscription: JSON.stringify(myWebPush.subscription)}], ['setupById', {Role:['buyer', 'seller']}]];   majax(vec);
     }
     myWebPush.cbFun=function(err, elSpan){
       if(err) console.log(err);
@@ -5327,14 +5337,14 @@ var viewGreetingCreator=function(){
       mapDiv.elImgOpponent.toggle(1);
       
       var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-      var vec=[['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+      var vec=[['setUpCond',{CharRole:'bs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
       
-      var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+      var arrRole=[]; if(userInfoFrDB.buyer) arrRole.push('buyer'); if(userInfoFrDB.seller) arrRole.push('seller');
       if(arrRole.length) vec.unshift(['setupById', {Role:arrRole}]);
       
-      //var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+      //var arrRole=[]; if(userInfoFrDB.buyer) arrRole.push('buyer'); if(userInfoFrDB.seller) arrRole.push('seller');
       //var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-      //var vec=[['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+      //var vec=[['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'bs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
       
       majax(vec);
       setMess('',null,true);
@@ -5429,7 +5439,7 @@ var firstAJAXCall=function(latlngFirst){ // Called after first geosuccess
   var o1={pC:pC, VPSize:VPSizeT};
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
   var vec=[['getSetting',{Var:[]},viewAdmin.setUp], ['setupById', {}], ['VSetPosCond',pC],
-    ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];  //'boShowTeam'
+    ['setUpCond',{CharRole:'bs', OFilt:OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];  //'boShowTeam'
   majax(vec);
   setMess('',null,true);
 }
@@ -5439,10 +5449,10 @@ app.geoCB=function(pos){
   var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
   mapDiv.setMe(latlng, 1);
   var o1=mapDiv.getMapStatus(), {pC}=o1;
-  var boC=userInfoFrDB.customer.boShow, boS=userInfoFrDB.seller.boShow;
-  var boShowAny=boC||boS, boShowBoth=boC&&boS;    if(boShowBoth) console.log('boC && boS ????');
+  var boB=userInfoFrDB.buyer.boShow, boS=userInfoFrDB.seller.boShow;
+  var boShowAny=boB||boS, boShowBoth=boB&&boS;    if(boShowBoth) console.log('boB && boS ????');
   if(myGeoWatchId && (!boShowAny || !boGeoWatch)) {navigator.geolocation.clearWatch(myGeoWatchId); myGeoWatchId=null; return; }
-  var charRole=''; if(boC) charRole='c'; else if(boS) charRole='s';
+  var charRole=''; if(boB) charRole='b'; else if(boS) charRole='s';
   if(charRole.length==0) {  return; }
   
   var vec=[['RShow', {x:pC.x, y:pC.y, charRole:charRole}]]; majax(vec);
@@ -5452,9 +5462,9 @@ app.loadTabStart=function(boSetupById=0){ // Called when mapDiv becomes idle(boS
   var o1=mapDiv.getMapStatus(); // pC, zoom, VPSize
 
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-  var vec=[['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+  var vec=[['setUpCond',{CharRole:'bs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
   if(boSetupById){
-    var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+    var arrRole=[]; if(userInfoFrDB.buyer) arrRole.push('buyer'); if(userInfoFrDB.seller) arrRole.push('seller');
     if(arrRole.length) vec.unshift(['setupById', {Role:arrRole}]);
   }
   majax(vec);
@@ -5467,11 +5477,11 @@ var uploadPosNLoadTabStart=function(pos, hideTimer, oRole){ // Called when butSh
   var o1=mapDiv.getMapStatus(), {pC}=o1;
   var boRefresh=mapDiv.setTile(o1.zoom);
   
-  var arrRole=[]; if(userInfoFrDB.customer) arrRole.push('customer'); if(userInfoFrDB.seller) arrRole.push('seller');
+  var arrRole=[]; if(userInfoFrDB.buyer) arrRole.push('buyer'); if(userInfoFrDB.seller) arrRole.push('seller');
   
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
   var vec=[['RUpdate',{hideTimer: hideTimer, charRole:oRole.charRole}], ['RShow', {x:pC.x, y:pC.y, charRole:oRole.charRole}],  // copySome(o1, oRole, ['charRole'])],
-    ['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'cs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
+    ['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'bs', OFilt:OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
   
   majax(vec);
   setMess('',null,true);
@@ -5531,8 +5541,8 @@ window.GRet=function(data){
   if('sessionLoginIdP' in data) sessionLoginIdP=data.sessionLoginIdP;
   //var WBD=[]; tmp=data.boSpecialistWannaBe; if(typeof tmp!="undefined") {
   //    for(var key in tmp){   if(boSpecialistWannaBe[key]==tmp[key]) {delete tmp[key];} else {boSpecialistWannaBe[key]=tmp[key]; }  } mainLoginInfo.setStat(); WBD=tmp; }
-  var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if(tmp.customer) viewFront.QuickDiv[0].setUp();  if(tmp.seller) viewFront.QuickDiv[1].setUp(); }
-  if('nCustomerReal' in data) window.nCustomerReal=data.nCustomerReal;
+  var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if(tmp.buyer) viewFront.QuickDiv[0].setUp();  if(tmp.seller) viewFront.QuickDiv[1].setUp(); }
+  if('nBuyerReal' in data) window.nBuyerReal=data.nBuyerReal;
   if('nSellerReal' in data) window.nSellerReal=data.nSellerReal;
 
   //var err=myWebPush.init(boSubscribed); if(err) { console.log(err); setMess(err); throw err; }
@@ -5541,8 +5551,8 @@ window.GRet=function(data){
   mainLoginInfo.setStat();
   
   
-  var boC=userInfoFrDB.customer.boShow, boS=userInfoFrDB.seller.boShow;
-  var boShowAny=boC||boS, boShowBoth=boC&&boS;    if(boShowBoth) console.log('boC && boS ????');
+  var boB=userInfoFrDB.buyer.boShow, boS=userInfoFrDB.seller.boShow;
+  var boShowAny=boB||boS, boShowBoth=boB&&boS;    if(boShowBoth) console.log('boB && boS ????');
   if(boShowAny  && !myGeoWatchId && boGeoWatch) { myGeoWatchId=navigator.geolocation.watchPosition(geoCB, geoError, {timeout:20000,maximumAge:60000}); }
   if(myGeoWatchId && (!boShowAny || !boGeoWatch)) {navigator.geolocation.clearWatch(myGeoWatchId); myGeoWatchId=null; }
 
@@ -5698,7 +5708,7 @@ dr=Math.pow(2,drLev);
 window.interpretHashVariables=function(){
   var strHash=window.location.hash||"&",  params=parseQS(strHash.substring(1));
   //window.boEmulator=params.boEmulator||null;
-  window.StartFilter=[params.idTeamC||null, params.idTeamS||null];   window.boVideo=params.boVideo||null;
+  window.StartFilter=[params.idTeamB||null, params.idTeamS||null];   window.boVideo=params.boVideo||null;
   window.objMess={}; if('jsonMess' in params) {
     try {objMess=JSON.parse(params.jsonMess);} catch(e){ setMess(e);  return; }
   }
@@ -5731,9 +5741,9 @@ assignSiteSpecific();
 console.log('boDbg='+boDbg);
 
 app.ORole=site.ORole;
-//var [oC,oS]=site.ORole;
-//app.oC=site.oC; app.oS=site.oS;
-[app.oC, app.oS]=ORole;
+//var [oB,oS]=site.ORole;
+//app.oB=site.oB; app.oS=site.oS;
+[app.oB, app.oS]=ORole;
 
 var objLong={fb:'Facebook',google:"Google",idplace:"idPlace"};
 var strIPPrimLong=objLong[strIPPrim];
@@ -5750,9 +5760,9 @@ var uConversion=uSite+'/conversion.html';
 //var uTeamImage=uSite+'/image/t';
 //var uSellerImage=uSite+'/image/s';
 app.uUserImage=uSite+'/image/u';
-app.uCustomerTeamImage=uSite+'/image/c';
+app.uBuyerTeamImage=uSite+'/image/b';
 app.uSellerTeamImage=uSite+'/image/s';
-app.URoleTeamImage=[uCustomerTeamImage, uSellerTeamImage];
+app.URoleTeamImage=[uBuyerTeamImage, uSellerTeamImage];
 
 app.wseImageFolder='/'+flImageFolder+'/';
 app.uImageFolder=uCommon+wseImageFolder;
@@ -5807,7 +5817,7 @@ langClientFunc();
 window.PlugIn=[];
 var rewriteProg=function(){
   for(var i=0;i<site.StrPlugInNArg.length;i++){
-    var nameT=site.StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+    var nameT=site.StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
     PlugIn[i]=new CreatorPlugin[nameT](charRoleUC);
   }
 };
@@ -5820,7 +5830,7 @@ rewriteProg();
    //
 
    // Create ucfirst versions
-var StrMakeUCase=['seller', 'sellers', 'customer', 'customers', 'column', 'visible', 'show'];
+var StrMakeUCase=['seller', 'sellers', 'buyer', 'buyers', 'column', 'visible', 'show'];
 for(var i=0;i<StrMakeUCase.length;i++){var name=StrMakeUCase[i]; langHtml[ucfirst(name)]=ucfirst(langHtml[name]); }
 
 
@@ -5852,32 +5862,33 @@ replaceNom(langHtml.helpBub,'shiftEnd');
 //replaceNom(langHtml.helpBub,'donatedAmount');
 
 replaceNom(langHtml,'SellerSettings');
+replaceNom(langHtml,'BuyerSettings');
 //replaceNom(langHtml,'SellerLogin'); // Not used
-replaceNom(langHtml,'AppearAsCustomer');
+replaceNom(langHtml,'AppearAsBuyer');
 replaceNom(langHtml,'AppearAsSeller');
 replaceNom(langHtml,'FilterTitle');
-replaceNom(langHtml,'ToggleBetweenCustomerAndSeller');
+replaceNom(langHtml,'ToggleBetweenBuyerAndSeller');
 //replaceNom(langHtml,'gettingStartedLink');
 replaceNom(langHtml,'toManyMess');
 //replaceNom(langHtml,'SeeUnActivePopMess');
 replaceNom(langHtml,'writeComplaintPopup');
-replaceNom(langHtml,'introHeadC');
+replaceNom(langHtml,'introHeadB');
 replaceNom(langHtml,'introHeadS');
 replaceNom(langHtml,'LoginSingInAsSeller');
 
-replaceNom(langHtml,'FilterC');
+replaceNom(langHtml,'FilterB');
 replaceNom(langHtml,'FilterS');
-replaceNom(langHtml,'TableC');
+replaceNom(langHtml,'TableB');
 replaceNom(langHtml,'TableS');
 
 //replaceNom(langHtml,'DummiesShowingMess');
 
 
-replaceNom(langHtml,'headOrdinalC');
-//replaceNom(langHtml,'headOrdinalDoubleC');
-//if(langHtml.customerRewritten!=langHtml.customer)  langHtml.headOrdinalC=langHtml.headOrdinalDoubleC;
-//if(langHtml.customerVanilla!=langHtml.customer)  langHtml.headOrdinalC=langHtml.headOrdinalDoubleC;
-replaceNom(langHtml,'labOrdinalC');
+replaceNom(langHtml,'headOrdinalB');
+//replaceNom(langHtml,'headOrdinalDoubleB');
+//if(langHtml.buyerRewritten!=langHtml.buyer)  langHtml.headOrdinalB=langHtml.headOrdinalDoubleB;
+//if(langHtml.buyerVanilla!=langHtml.buyer)  langHtml.headOrdinalB=langHtml.headOrdinalDoubleB;
+replaceNom(langHtml,'labOrdinalB');
 
 replaceNom(langHtml,'headOrdinalS');
 //replaceNom(langHtml,'headOrdinalDoubleS');
@@ -5885,11 +5896,11 @@ replaceNom(langHtml,'headOrdinalS');
 //if(langHtml.sellerVanilla!=langHtml.seller)  langHtml.headOrdinalS=langHtml.headOrdinalDoubleS;
 replaceNom(langHtml,'labOrdinalS');
 
-replaceNom(langHtml,'ChangeMapMarkersC');
+replaceNom(langHtml,'ChangeMapMarkersB');
 replaceNom(langHtml,'ChangeMapMarkersS');
 
-//langHtml.RoleRewritten=[langHtml.customerRewritten||langHtml.customer, langHtml.sellerRewritten||langHtml.seller];
-langHtml.Role=[langHtml.customer, langHtml.seller];
+//langHtml.RoleRewritten=[langHtml.buyerRewritten||langHtml.buyer, langHtml.sellerRewritten||langHtml.seller];
+langHtml.Role=[langHtml.buyer, langHtml.seller];
 
 langHtml.DidYouUseAltIPBefore=langHtml.DidYouUseAltIPBefore.replace(regNom,strIPAltLong);
 
@@ -6084,7 +6095,7 @@ for(var i=0;i<ORole.length;i++){
   MainIntroPop[i]=mainIntroPopCreator(ORole[i]);
   ListCtrlDiv[i]=listCtrlCreator(ORole[i]).css({display:'inline-block','float':'right'});
 }
-[app.mainIntroPopC, app.mainIntroPopS]=MainIntroPop;  [app.listCtrlDivC, app.listCtrlDivS]=ListCtrlDiv;
+[app.mainIntroPopB, app.mainIntroPopS]=MainIntroPop;  [app.listCtrlDivB, app.listCtrlDivS]=ListCtrlDiv;
 app.mapDiv=mapDivCreator().css({overflow:'hidden', flex:"auto"});  // "overflow-y":"scroll", "-webkit-overflow-scrolling":"touch",
 
 
@@ -6124,12 +6135,12 @@ for(var i=0;i<ORole.length;i++){
   ViewEntry[i]=viewEntryCreator(ORole[i]).addClass('mainDiv');
   ViewInfo[i]=viewInfoCreator(ORole[i]).addClass('mainDiv');
 }
-//[viewSettingC,viewSettingS]=ViewSetting;
-[app.viewTeamC, app.viewTeamS]=ViewTeam;
-//[viewFilterC, viewFilterS]=ViewFilter;   //[viewColumnSelectorC, viewColumnSelectorS]=ViewColumnSelector;   //[viewColumnSorterC, viewColumnSorterS]=ViewColumnSorter;
-//[viewTableC, viewTableS]=ViewTable;
-[app.viewEntryC, app.viewEntryS]=ViewEntry;
-[app.viewInfoC, app.viewInfoS]=ViewInfo;  // [viewMarkSelectorC, viewMarkSelectorS]=ViewMarkSelector;
+//[viewSettingB,viewSettingS]=ViewSetting;
+[app.viewTeamB, app.viewTeamS]=ViewTeam;
+//[viewFilterB, viewFilterS]=ViewFilter;   //[viewColumnSelectorB, viewColumnSelectorS]=ViewColumnSelector;   //[viewColumnSorterB, viewColumnSorterS]=ViewColumnSorter;
+//[viewTableB, viewTableS]=ViewTable;
+[app.viewEntryB, app.viewEntryS]=ViewEntry;
+[app.viewInfoB, app.viewInfoS]=ViewInfo;  // [viewMarkSelectorB, viewMarkSelectorS]=ViewMarkSelector;
 
 app.viewGreeting=viewGreetingCreator().addClass('mainDiv');
 viewGreeting.initMyWebPush();
@@ -6149,7 +6160,7 @@ viewUserSetting.createDivs();
 for(var i=0;i<ORole.length;i++){
   viewSetting.ElRole[i].createDivs();
   viewFilter.ElRole[i].createDivs();
-  //var tmpStartFilter=ORole[i].strRole=='customer'?startFilterC:startFilterS;
+  //var tmpStartFilter=ORole[i].strRole=='buyer'?startFilterB:startFilterS;
   //if(tmpStartFilter){
     //var StrOrderFilt=ORole[i].filter.StrProp, StrOrderFiltFlip=array_flip(StrOrderFilt);
     //myCopy(viewFilter.ElRole[i].Filt[StrOrderFiltFlip.idTeam], [[],[Number(tmpStartFilter)],1]);
@@ -6173,7 +6184,7 @@ StrMainProtRole.push( 'info', 'entry', 'team');
 
 var MainDiv=[];
 for(var i=0;i<StrMainProt.length;i++){ var key='view'+ucfirst(StrMainProt[i]); MainDiv.push(window[key]); }
-for(var i=0;i<StrMainProtRole.length;i++){ var key='view'+ucfirst(StrMainProtRole[i]);  MainDiv.push(window[key+'C']); MainDiv.push(window[key+'S']); }
+for(var i=0;i<StrMainProtRole.length;i++){ var key='view'+ucfirst(StrMainProtRole[i]);  MainDiv.push(window[key+'B']); MainDiv.push(window[key+'S']); }
 
 
 
@@ -6205,7 +6216,7 @@ viewFront.setVis=function(){
   mapDiv.dispatchEvent(new Event('myResize'));
   return true;
 }
-//viewTableC.setVis=
+//viewTableB.setVis=
 viewTable.setVis=function(){
   MainDiv.forEach(ele=>ele.hide()); this.show();
   this.prepend(...DivTopMain);
@@ -6214,7 +6225,7 @@ viewTable.setVis=function(){
   scalableTog(1);
   return true;
 }
-//viewFilterC.setVis=
+//viewFilterB.setVis=
 viewFilter.setVis=function(){
   MainDiv.forEach(ele=>ele.hide()); this.show();
   this.prepend(...DivTopMain);
@@ -6229,8 +6240,8 @@ viewUserSetting.setVis=function(){
   scalableTog(1);
   return true;
 }
-//viewSettingC.setVis=function(){
-  //if(!userInfoFrDB.customer) return false;
+//viewSettingB.setVis=function(){
+  //if(!userInfoFrDB.buyer) return false;
   //MainDiv.forEach(ele=>ele.hide()); this.show();
   //this.setUp();
   //scalableTog(1);
@@ -6249,7 +6260,7 @@ viewSetting.setVis=function(){
   scalableTog(1);
   return true;
 }
-viewInfoC.setVis=
+viewInfoB.setVis=
 viewInfoS.setVis=function(){
   if(this.boLoaded==0) return false;
   MainDiv.forEach(ele=>ele.hide()); this.show();
@@ -6276,7 +6287,7 @@ viewAdmin.setVis=function(){
   scalableTog(1);
   return true;
 }
-viewEntryC.setVis=
+viewEntryB.setVis=
 viewEntryS.setVis=function(){
   MainDiv.forEach(ele=>ele.hide()); this.show();
   this.setUp();
@@ -6308,28 +6319,28 @@ viewSettingW.setVis=function(){
   scalableTog(1);
   return true;
 }
-//viewColumnSelectorC.setVis=
+//viewColumnSelectorB.setVis=
 viewColumnSelector.setVis=function(){
   MainDiv.forEach(ele=>ele.hide()); this.show();
   this.setUp();
   scalableTog(1);
   return true;
 }
-//viewColumnSorterC.setVis=
+//viewColumnSorterB.setVis=
 viewColumnSorter.setVis=function(){
   MainDiv.forEach(ele=>ele.hide()); this.show();
   this.setUp();
   scalableTog(1);
   return true;
 }
-//viewMarkSelectorC.setVis=
+//viewMarkSelectorB.setVis=
 viewMarkSelector.setVis=function(){
   MainDiv.forEach(ele=>ele.hide()); this.show();
   this.setUp();
   scalableTog(1);
   return true;
 }
-viewTeamC.setVis=
+viewTeamB.setVis=
 viewTeamS.setVis=function(){
   if(this.boLoaded==0) return false;
   MainDiv.forEach(ele=>ele.hide()); this.show();

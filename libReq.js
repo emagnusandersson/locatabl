@@ -408,7 +408,7 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
   Str.push("\n<script type=\"text/javascript\" language=\"JavaScript\" charset=\"UTF-8\"> var CreatorPlugin={};</script>");
   var StrPlugInNArg=site.StrPlugInNArg;
   for(var i=0;i<StrPlugInNArg.length;i++){
-    var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+    var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
     var Name=ucfirst(nameT); 
     var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
   }
@@ -515,14 +515,14 @@ app.reqImage=function*() {
   var keyCache=siteName+'/'+pathName;
   if(keyCache in ETagImage && ETagImage[keyCache]===this.eTagIn) { res.out304(); return; }
 
-  var Match=RegExp('^/image/(u|c|s)([0-9]+)$').exec(pathName);
+  var Match=RegExp('^/image/(u|b|s)([0-9]+)$').exec(pathName);
   if(Match && Match.length>2){kind=Match[1]; id=Number(Match[2]);} else { res.out404('404 Not found'); return; }
 
-  var {userImageTab, customerTeamImageTab, sellerTeamImageTab}=site.TableName;
+  var {userImageTab, buyerTeamImageTab, sellerTeamImageTab}=site.TableName;
   
   var tab;
   if(kind=='u')tab=userImageTab; 
-  else if(kind=='c') tab=customerTeamImageTab;
+  else if(kind=='b') tab=buyerTeamImageTab;
   else if(kind=='s')tab=sellerTeamImageTab; 
   var sql = "SELECT data FROM "+tab+" WHERE idUser=?", Val=[id];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) { res.out500(err); return;}
@@ -636,7 +636,7 @@ app.reqVerifyPWResetReturn=function*() {
 
 app.reqVerifyEmailNCreateUserReturn=function*() {
   var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var {userTab, customerTab, sellerTab}=site.TableName;
+  var {userTab, buyerTab, sellerTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
@@ -644,7 +644,7 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   var iRole=Number(objQS.charRole=='s');
   var oRole=site.ORole[iRole];
   var {charRole, strRole}=oRole;
-  var roleTab=iRole?sellerTab:customerTab;
+  var roleTab=iRole?sellerTab:buyerTab;
   
   //var objT=yield* getRedis(flow, codeIn+'_verifyEmailNCreateUser', true); if(!objT) { res.out200('No such code'); return;}
   var [err,value]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyEmailNCreateUser']),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
@@ -661,7 +661,7 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
   var sql=Sql.join('\n');
@@ -669,9 +669,9 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   var c=results[0].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
-  var boIns=Number(results[3][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewCustomers=boIns;
+  var boIns=Number(results[3][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewBuyers=boIns;
   site.nUser=Number(results[4][0].n);
-  site.nTotC=Number(results[5][0].n);
+  site.nTotB=Number(results[5][0].n);
   site.nTotS=Number(results[6][0].n);
   var tmp=boIns?'created':'updated';
   var Str=[`<!DOCTYPE html><html><head>
@@ -729,7 +729,7 @@ app.reqStatic=function*() {
 app.reqMonitor=function*(){
   var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var timeCur=unixNow(), boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
-  var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, customerTab}=site.TableName;
+  var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, buyerTab}=site.TableName;
   var flow=req.flow;
   
   //if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
@@ -737,42 +737,42 @@ app.reqMonitor=function*(){
   if(boRefresh){ 
     var Sql=[];
     //Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBeforeHiding+";");
-    Sql.push("SELECT count(*) AS n FROM "+customerTab+" WHERE boShow=1 AND "+ sqlBeforeHiding+";");
-    Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+    Sql.push("SELECT count(*) AS n FROM "+buyerTab+" WHERE boShow=1 AND "+ sqlBeforeHiding+";");
+    Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
     Sql.push("SELECT count(*) AS n FROM "+sellerTab+" WHERE boShow=1 AND "+ sqlBeforeHiding+";");
     //Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
     Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
 
     var sql=Sql.join('\n'), Val=[];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return; }
-    site.nVisC=results[0][0].n;
-    site.nTotC=results[1][0].n;
+    site.nVisB=results[0][0].n;
+    site.nTotB=results[1][0].n;
     site.nVisS=results[2][0].n;
     site.nTotS=results[3][0].n;
   }
 
-  var {nVisC, nTotC, nVisS, nTotS}=site;
+  var {nVisB, nTotB, nVisS, nTotS}=site;
   var Str=[];
   Str.push(`<!DOCTYPE html>
 <html><head><meta name="robots" content="noindex"></head>`);
-  //var strTotC=nTotC, strTotS=nTotS;
+  //var strTotB=nTotB, strTotS=nTotS;
   //var strColor='';
   //if('admin' in objQS && objQS.admin){
     //if(boRefresh) strColor=';background-color:lightgreen';
-    //if(site.boGotNewCustomers) strTotC='<span style="background-color:pink">'+nTotC+'</span>';
+    //if(site.boGotNewBuyers) strTotB='<span style="background-color:pink">'+nTotB+'</span>';
     //if(site.boGotNewSellers) strTotS='<span style="background-color:lightblue">'+nTotS+'</span>';
   //}
-  //Str.push('<body style="margin: 0px'+strColor+'">'+nVisC+"/"+strTotC+", "+nVisS+"/"+strTotS+"</body>");
+  //Str.push('<body style="margin: 0px'+strColor+'">'+nVisB+"/"+strTotB+", "+nVisS+"/"+strTotS+"</body>");
   
-  var strColor='', strColorC='pink', strColorS='lightblue';
+  var strColor='', strColorB='pink', strColorS='lightblue';
   if('admin' in objQS && objQS.admin){
     if(boRefresh) strColor=';background-color:lightgreen';
-    if(site.boGotNewCustomers) strColorC='red';
+    if(site.boGotNewBuyers) strColorB='red';
     if(site.boGotNewSellers) strColorS='blue';
   }
-  var strC='<span style="background-color:'+strColorC+'">'+nVisC+'/'+nTotC+'</span>';
+  var strB='<span style="background-color:'+strColorB+'">'+nVisB+'/'+nTotB+'</span>';
   var strS='<span style="background-color:'+strColorS+'">'+nVisS+'/'+nTotS+'</span>';
-  Str.push('<body style="margin: 0px'+strColor+'">'+strC+", "+strS+"</body>");
+  Str.push('<body style="margin: 0px'+strColor+'">'+strB+", "+strS+"</body>");
   
   Str.push("</html>");
   
@@ -813,16 +813,16 @@ app.reqStat=function*(){
   
   if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
 
-  var siteName=site.siteName, objQS=req.objQS, {userTab, customerTab, sellerTab}=site.TableName;
+  var siteName=site.siteName, objQS=req.objQS, {userTab, buyerTab, sellerTab}=site.TableName;
   
   var iRole=Number(objQS.role=='s');
   var oRole=site.ORole[iRole];
   var {charRole, strRole}=oRole;
-  var roleTab=iRole?sellerTab:customerTab;
+  var roleTab=iRole?sellerTab:buyerTab;
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
   var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
@@ -834,9 +834,9 @@ app.reqStat=function*(){
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
 
   if('code' in objQS && objQS.code=='amfoen') {
-    if(iRole) site.boGotNewSellers=0; else site.boGotNewCustomers=0;
+    if(iRole) site.boGotNewSellers=0; else site.boGotNewBuyers=0;
     site.nUser=Number(results[0][0].n);
-    site.nTotC=Number(results[1][0].n);
+    site.nTotB=Number(results[1][0].n);
     site.nTotS=Number(results[2][0].n);
   }
   var matA=results[3];
@@ -880,41 +880,41 @@ app.reqStatBoth=function*(){
   
   if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
 
-  var siteName=site.siteName, objQS=req.objQS, {userTab, customerTab, sellerTab}=site.TableName;
+  var siteName=site.siteName, objQS=req.objQS, {userTab, buyerTab, sellerTab}=site.TableName;
   
   var charRole=objQS.role||'s';
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
   var strColsU="u.idUser, idFB, idIdPlace, idOpenId, displayName, u.boWebPushOK";
-  //var strColsC="c.homeTown, c.currency, c.boShow, c.tPos, CONVERT(BIN(c.histActive),CHAR(30)) AS c_histActive, c.tLastWriteOfTA, c.tAccumulated, c.hideTimer";
+  //var strColsB="b.homeTown, b.currency, b.boShow, b.tPos, CONVERT(BIN(b.histActive),CHAR(30)) AS c_histActive, b.tLastWriteOfTA, b.tAccumulated, b.hideTimer";
   //var strColsS="s.homeTown, s.currency, s.boShow, s.tPos, CONVERT(BIN(s.histActive),CHAR(30)) AS s_histActive, s.tLastWriteOfTA, s.tAccumulated, s.hideTimer";
 
   var StrRoleCols=[];
   var StrColsProt=["homeTown", "currency", "boShow", "tPos", "tLastWriteOfTA", "tAccumulated", "hideTimer"];
   for(var i=0;i<2;i++){
-    var strRole=i?'s':'c', StrTmp=[];
+    var strRole=i?'s':'b', StrTmp=[];
     for(var j=0;j<StrColsProt.length;j++){
       StrTmp[j]=strRole+'.'+StrColsProt[j]+" AS "+strRole+'_'+StrColsProt[j];
     }
     StrTmp.push("CONVERT(BIN("+strRole+".histActive),CHAR(30)) AS "+strRole+"_histActive");
     StrRoleCols[i]=StrTmp.join(', ');
   }
-  var [strColsC, strColsS]=StrRoleCols;
+  var [strColsB, strColsS]=StrRoleCols;
 
-  Sql.push("SELECT "+strColsU+", "+strColsC+", "+strColsS+" FROM "+userTab+" u LEFT JOIN "+customerTab+" c ON u.idUser=c.idUser LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
+  Sql.push("SELECT "+strColsU+", "+strColsB+", "+strColsS+" FROM "+userTab+" u LEFT JOIN "+buyerTab+" b ON u.idUser=b.idUser LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
 
-  Sql.push("SELECT "+strColsU+", "+strColsC+" FROM "+userTab+" u RIGHT JOIN "+customerTab+" c ON u.idUser=c.idUser WHERE u.idUser IS NULL;");
+  Sql.push("SELECT "+strColsU+", "+strColsB+" FROM "+userTab+" u RIGHT JOIN "+buyerTab+" b ON u.idUser=b.idUser WHERE u.idUser IS NULL;");
   Sql.push("SELECT "+strColsU+", "+strColsS+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
   if('code' in objQS && objQS.code=='amfoen') {
-    if(charRole=='s') site.boGotNewSellers=0; else site.boGotNewCustomers=0;
+    if(charRole=='s') site.boGotNewSellers=0; else site.boGotNewBuyers=0;
     site.nUser=Number(results[0][0].n);
-    site.nTotC=Number(results[1][0].n);
+    site.nTotB=Number(results[1][0].n);
     site.nTotS=Number(results[2][0].n);
   }
   var matA=results[3];
@@ -941,7 +941,7 @@ td:nth-child(n+14){background:lightblue}
       for(var j=0;j<Keys.length;j++){
         var key=Keys[j], t=row[key];
           // Format t
-        if(/^[cs]_(tAccumulated|hideTimer)/.test(key)) {
+        if(/^[bs]_(tAccumulated|hideTimer)/.test(key)) {
           var [ttmp,u]=getSuitableTimeUnit(t); row[key]=Math.round(ttmp)+u;
         }else if(t instanceof Date){
           var unixT=t.valueOf()/1000;
@@ -952,7 +952,7 @@ td:nth-child(n+14){background:lightblue}
     Str.push(makeTable(Keys,matA));
   }
   var nB=matB.length;
-  Str.push("<hr>customers with no user ("+nB+")");
+  Str.push("<hr>buyers with no user ("+nB+")");
   if(nB>0){
     var Keys=Object.keys(matB[0]);
     Str.push(makeTable(Keys,matB));
@@ -980,18 +980,18 @@ app.reqStatTeam=function*(){
   if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
   if('code' in objQS && objQS.code=='amfoen') {} else {res.outCode(401, "Not authorized");  return;  }
   
-  var {userTab, userImageTab, customerTab, customerTeamTab, customerTeamImageTab, sellerTab, sellerTeamTab, sellerTeamImageTab}=site.TableName;
+  var {userTab, userImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, sellerTab, sellerTeamTab, sellerTeamImageTab}=site.TableName;
   
   var iRole=Number(objQS.role=='s');
   var oRole=site.ORole[iRole];
   var {charRole, strRole}=oRole;
-  var roleTab=iRole?sellerTab:customerTab;
-  var roleTeamTab=iRole?sellerTeamTab:customerTeamTab;
+  var roleTab=iRole?sellerTab:buyerTab;
+  var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
 
   var Sql=[];
-  Sql.push("SELECT count(*) AS n FROM "+customerTeamTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+buyerTeamTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTeamTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+customerTeamImageTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+buyerTeamImageTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTeamImageTab+";");
   
   var strCols="u.idUser, u.nameIP";
@@ -1002,10 +1002,10 @@ app.reqStatTeam=function*(){
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
 
-  if(iRole) site.boGotNewSellers=0; else site.boGotNewCustomers=0;
-  var nTotC=Number(results[0][0].n);
+  if(iRole) site.boGotNewSellers=0; else site.boGotNewBuyers=0;
+  var nTotB=Number(results[0][0].n);
   var nTotS=Number(results[1][0].n);
-  var nTotCI=Number(results[2][0].n);
+  var nTotBI=Number(results[2][0].n);
   var nTotSI=Number(results[3][0].n);
   
   var matA=results[4];
@@ -1044,9 +1044,9 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   var site=Site[siteName]; 
   
   var SqlTabDrop=[], SqlTab=[];
-  var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
+  var {TableName, ViewName, ORole}=site, [oB, oS]=ORole;
   //eval(extractLoc(TableName,'TableName'));
-  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab, webPushSubscriptionTab}=TableName;
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab, webPushSubscriptionTab}=TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   //var {histView}=site.ViewName;
 
@@ -1154,22 +1154,22 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   }
 
 
-    // Create customerTab
-  //var StrProp=Object.keys(oC.Prop);
+    // Create buyerTab
+  //var StrProp=Object.keys(oB.Prop);
   var arrCols=[];
-  for(var i=0;i<oC.StrOrder.length;i++){
-    var name=oC.StrOrder[i];
-    var arr=oC.Prop[name];
+  for(var i=0;i<oB.StrOrder.length;i++){
+    var name=oB.StrOrder[i];
+    var arr=oB.Prop[name];
     var b=arr.b;
-    if(Number(b[oC.bFlip.customerTab])){
+    if(Number(b[oB.bFlip.buyerTab])){
       var strType=arr.type || '';
       if(strType=='ENUM'){
         //$tmpName='enum'.ucfirst($name);
         //$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
-        var arra=oC.Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
+        var arra=oB.Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
         strType="ENUM("+str+")";
       }
-      var strNull=Number(b[oC.bFlip.notNull])?'NOT NULL':'';
+      var strNull=Number(b[oB.bFlip.notNull])?'NOT NULL':'';
       var strDefault=''; 
       if('default' in arr){
         if(arr.type.toUpperCase()=='TIMESTAMP'){strDefault=arr.default;}
@@ -1183,19 +1183,19 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   }
   var strSql=arrCols.join(",\n");
 
-  SqlTab.push(`CREATE TABLE `+customerTab+` (
+  SqlTab.push(`CREATE TABLE `+buyerTab+` (
   `+strSql+`,
   PRIMARY KEY (idUser),
   FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
   ) ENGINE=`+engine+` COLLATE `+collate+``); 
 
 
-    // Create CustomerTab indexes
-  for(var name in oC.Prop){
-    var arr=oC.Prop[name];
+    // Create BuyerTab indexes
+  for(var name in oB.Prop){
+    var arr=oB.Prop[name];
     var b=arr.b;
-    if(Number(b[oC.bFlip.customerTabIndex])){
-      if(0) SqlFunction.push("CREATE INDEX "+name+"Index ON "+customerTab+"("+name+")");
+    if(Number(b[oB.bFlip.buyerTabIndex])){
+      if(0) SqlFunction.push("CREATE INDEX "+name+"Index ON "+buyerTab+"("+name+")");
     }
   }
   
@@ -1240,8 +1240,8 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
 
 
 
-    // Create customerTeamTab
-  SqlTab.push(`CREATE TABLE `+customerTeamTab+` (
+    // Create buyerTeamTab
+  SqlTab.push(`CREATE TABLE `+buyerTeamTab+` (
   idUser int(4) NOT NULL,
   link varchar(128) CHARSET utf8 NOT NULL DEFAULT '',
   imTag int(4) NOT NULL default 0,
@@ -1274,11 +1274,11 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   ) ENGINE=`+engine+` COLLATE `+collate); 
 
 
-  SqlTab.push(`CREATE TABLE `+customerTeamImageTab+` (
+  SqlTab.push(`CREATE TABLE `+buyerTeamImageTab+` (
   idUser int(4) NOT NULL,
   data BLOB NOT NULL,
   UNIQUE KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+customerTeamTab+`(idUser) ON DELETE CASCADE
+  FOREIGN KEY (idUser) REFERENCES `+buyerTeamTab+`(idUser) ON DELETE CASCADE
   ) ENGINE=`+engine+` COLLATE `+collate); 
   
   SqlTab.push(`CREATE TABLE `+sellerTeamImageTab+` (
@@ -1293,7 +1293,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   //boFB tinyint(1) NOT NULL,
 
   addBinTableSql(SqlTabDrop, SqlTab, siteName, oS.Prop, engine, collate);
-  addBinTableSql(SqlTabDrop, SqlTab, siteName, oC.Prop, engine, collate);
+  addBinTableSql(SqlTabDrop, SqlTab, siteName, oB.Prop, engine, collate);
 
   
   if(boDropOnly) var Sql=SqlTabDrop;
@@ -1311,8 +1311,8 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
 
   var SqlFunctionDrop=[], SqlFunction=[];
   
-  var {TableName, ViewName, ORole}=site, [oC, oS]=ORole;
-  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
+  var {TableName, ViewName, ORole}=site, [oB, oS]=ORole;
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
   //eval(extractLoc(ViewName,'ViewName'));
   //var {histView}=site.ViewName;
 
@@ -1332,7 +1332,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdOne");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdOne(IN IidUser INT)
       BEGIN
-        UPDATE `+customerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser;
+        UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser;
         UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser;
       END`);
   //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"AutoHideOne");
@@ -1349,7 +1349,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
         IF UNIX_TIMESTAMP(now())>tLastWriteOfBoShow+10 THEN
           UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBeforeHiding+`,boShow,0) WHERE boShow=1;
-          UPDATE `+customerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBeforeHiding+`,boShow,0) WHERE boShow=1;
+          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBeforeHiding+`,boShow,0) WHERE boShow=1;
           UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(now()) WHERE name='tLastWriteOfBoShow';
         END IF;
       END`);
@@ -1368,7 +1368,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
       SET recentDay=floor( UNIX_TIMESTAMP(now())/`+sPerDay+` );   SET dayDiff=recentDay-tLastWriteOfHA;
       IF dayDiff>0 THEN
         UPDATE `+sellerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
-        UPDATE `+customerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
+        UPDATE `+buyerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
         UPDATE `+settingTab+` SET value=recentDay WHERE name='tLastWriteOfHA';
       END IF;
       COMMIT;
@@ -1393,7 +1393,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag, boWebPushOK";
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboCustomer INT, IboSeller INT, IboCustomerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboBuyer INT, IboSeller INT, IboBuyerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
     proc_label:BEGIN
       START TRANSACTION;
       IF IidUser IS NOT NULL THEN
@@ -1412,9 +1412,9 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idOpenId not found: ', IidOpenId) AS mess; LEAVE proc_label; END IF;
         SET IidUser=@idUserTmp;
       END IF;
-      IF IboCustomer THEN     SELECT `+SqlColOTmp[0]+` FROM (`+customerTab+` ro LEFT JOIN `+customerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboBuyer THEN     SELECT `+SqlColOTmp[0]+` FROM (`+buyerTab+` ro LEFT JOIN `+buyerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       IF IboSeller THEN       SELECT `+SqlColOTmp[1]+` FROM (`+sellerTab+` ro LEFT JOIN `+sellerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboCustomerTeam THEN SELECT * FROM `+customerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboBuyerTeam THEN SELECT * FROM `+buyerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       IF IboSellerTeam THEN   SELECT * FROM `+sellerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       IF IboAdmin THEN        SELECT * FROM `+adminTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       IF IboComplainer THEN   SELECT count(*) AS n FROM `+complaintTab+` WHERE idComplainer=IidUser;     ELSE SELECT 1 FROM dual; END IF;
@@ -1429,7 +1429,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
       IF IRole THEN
         INSERT INTO `+sellerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,now(),1);
       ELSE
-        INSERT INTO `+customerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,now(),1);
+        INSERT INTO `+buyerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,now(),1);
       END IF;
     END`);
   
@@ -1448,8 +1448,8 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         IF ROW_COUNT() THEN
           UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
           UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
-          UPDATE `+customerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+customerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+buyerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+buyerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
           UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
           UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
         END IF;
@@ -1459,8 +1459,8 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         IF ROW_COUNT()=1 THEN   # If inserted
           UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
           UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
-          UPDATE `+customerTab+` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
-          UPDATE `+customerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          UPDATE `+buyerTab+` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE `+buyerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
           UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
           UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
           SELECT 'entry inserted' AS mess;
@@ -1482,8 +1482,8 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         IF ROW_COUNT() THEN
           UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
           UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
-          UPDATE `+customerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+customerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE `+buyerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE `+buyerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
           UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
           UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
         END IF;
@@ -1565,8 +1565,8 @@ CLIENT_FOUND_ROWS
       CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
 
       IF IiRole=0 THEN
-        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+customerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+customerTab+` WHERE idUser=VidUser;
+        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
       ELSE
         #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
         SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
@@ -1589,14 +1589,14 @@ CLIENT_FOUND_ROWS
 
       IF IboShow=0 THEN
         IF IiRole=0 THEN
-          UPDATE `+customerTab+` SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser;
         ELSE
           UPDATE `+sellerTab+` SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       ELSE
         IF IiRole=0 THEN
-          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+customerTab+` WHERE idUser=VidUser;
+          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+buyerTab+` WHERE idUser=VidUser;
         ELSE
           SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+sellerTab+` WHERE idUser=VidUser;
         END IF;
@@ -1606,10 +1606,10 @@ CLIENT_FOUND_ROWS
         CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy);
 
         IF IiRole=0 THEN
-          UPDATE `+customerTab+` SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser;
           UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser;
         ELSE
-          UPDATE `+customerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser;
           UPDATE `+sellerTab+` SET x=Ix, y=Iy, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
@@ -1625,9 +1625,9 @@ CLIENT_FOUND_ROWS
         CALL copyTable('`+sellerTab+`_dup','`+sellerTab+`');
         CALL copyTable('`+sellerTeamTab+`_dup','`+sellerTeamTab+`');
         CALL copyTable('`+sellerTeamImageTab+`_dup','`+sellerTeamImageTab+`');
-        CALL copyTable('`+customerTab+`_dup','`+customerTab+`');
-        CALL copyTable('`+customerTeamTab+`_dup','`+customerTeamTab+`');
-        CALL copyTable('`+customerTeamImageTab+`_dup','`+customerTeamImageTab+`');
+        CALL copyTable('`+buyerTab+`_dup','`+buyerTab+`');
+        CALL copyTable('`+buyerTeamTab+`_dup','`+buyerTeamTab+`');
+        CALL copyTable('`+buyerTeamImageTab+`_dup','`+buyerTeamImageTab+`');
         CALL copyTable('`+userImageTab+`_dup','`+userImageTab+`');
         CALL copyTable('`+complaintTab+`_dup','`+complaintTab+`');
         CALL copyTable('`+adminTab+`_dup','`+adminTab+`');
@@ -1642,9 +1642,9 @@ CLIENT_FOUND_ROWS
         DELETE FROM `+sellerTab+` WHERE 1;
         DELETE FROM `+sellerTeamTab+` WHERE 1;
         DELETE FROM `+sellerTeamImageTab+` WHERE 1;
-        DELETE FROM `+customerTab+` WHERE 1;
-        DELETE FROM `+customerTeamTab+` WHERE 1;
-        DELETE FROM `+customerTeamImageTab+` WHERE 1;
+        DELETE FROM `+buyerTab+` WHERE 1;
+        DELETE FROM `+buyerTeamTab+` WHERE 1;
+        DELETE FROM `+buyerTeamImageTab+` WHERE 1;
         DELETE FROM `+userImageTab+` WHERE 1;
         DELETE FROM `+complaintTab+` WHERE 1;
         DELETE FROM `+adminTab+` WHERE 1;
@@ -1654,9 +1654,9 @@ CLIENT_FOUND_ROWS
         INSERT INTO `+sellerTab+` SELECT * FROM `+sellerTab+`_dup;
         INSERT INTO `+sellerTeamTab+` SELECT * FROM `+sellerTeamTab+`_dup;
         INSERT INTO `+sellerTeamImageTab+` SELECT * FROM `+sellerTeamImageTab+`_dup;
-        INSERT INTO `+customerTab+` SELECT * FROM `+customerTab+`_dup;
-        INSERT INTO `+customerTeamTab+` SELECT * FROM `+customerTeamTab+`_dup;
-        INSERT INTO `+customerTeamImageTab+` SELECT * FROM `+customerTeamImageTab+`_dup;
+        INSERT INTO `+buyerTab+` SELECT * FROM `+buyerTab+`_dup;
+        INSERT INTO `+buyerTeamTab+` SELECT * FROM `+buyerTeamTab+`_dup;
+        INSERT INTO `+buyerTeamImageTab+` SELECT * FROM `+buyerTeamImageTab+`_dup;
         INSERT INTO `+userImageTab+` SELECT * FROM `+userImageTab+`_dup;
         INSERT INTO `+complaintTab+` SELECT * FROM `+complaintTab+`_dup;
         INSERT INTO `+adminTab+` SELECT * FROM `+adminTab+`_dup;
@@ -1668,9 +1668,9 @@ CLIENT_FOUND_ROWS
         DROP TABLE IF EXISTS `+sellerTab+`_dup;
         DROP TABLE IF EXISTS `+sellerTeamTab+`_dup;
         DROP TABLE IF EXISTS `+sellerTeamImageTab+`_dup;
-        DROP TABLE IF EXISTS `+customerTab+`_dup;
-        DROP TABLE IF EXISTS `+customerTeamTab+`_dup;
-        DROP TABLE IF EXISTS `+customerTeamImageTab+`_dup;
+        DROP TABLE IF EXISTS `+buyerTab+`_dup;
+        DROP TABLE IF EXISTS `+buyerTeamTab+`_dup;
+        DROP TABLE IF EXISTS `+buyerTeamImageTab+`_dup;
         DROP TABLE IF EXISTS `+userImageTab+`_dup;
         DROP TABLE IF EXISTS `+complaintTab+`_dup;
         DROP TABLE IF EXISTS `+adminTab+`_dup;
@@ -1857,7 +1857,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     coordinatePrecisionM:{FixedData:1},
     
     otherContainer:{Enum:[0,1]},
-    boCustomerHasEquipment:{Enum:[0,1]},
+    boBuyerHasEquipment:{Enum:[0,1]},
     nWindows:{Enum:range(1,30,1)},
     area:{Enum:range(1,1000,1)},
     boRoad:{Enum:[0,1]},
@@ -1894,7 +1894,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
         
     
     
-  var {sellerTab, sellerTeamTab, sellerTeamImageTab, customerTab, customerTeamTab, customerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
   //var {histView}=site.ViewName;
   
     // Insert into userTab
@@ -1940,13 +1940,13 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     // Insert into roleTabs
   var StrPlugInNArg=site.StrPlugInNArg;
   var StrPlugIn=[];
-  for(var i=0;i<StrPlugInNArg.length;i++){var strTmp=StrPlugInNArg[i], n=strTmp.length, charLast=strTmp[n-1]; if(charLast=='C' || charLast=='S') { strTmp=strTmp.substr(0,n-1); } StrPlugIn.push(strTmp); }
+  for(var i=0;i<StrPlugInNArg.length;i++){var strTmp=StrPlugInNArg[i], n=strTmp.length, charLast=strTmp[n-1]; if(charLast=='B' || charLast=='S') { strTmp=strTmp.substr(0,n-1); } StrPlugIn.push(strTmp); }
   
   for(var iRole=0;iRole<ORole.length;iRole++){
     var oRole=ORole[iRole];
     var Prop=oRole.Prop;
     var {charRole, charRoleUC}=oRole;
-    var roleTab=charRole=='c'?customerTab:sellerTab;
+    var roleTab=charRole=='b'?buyerTab:sellerTab;
 
 
 
@@ -1958,13 +1958,13 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
 
     if(in_array("vehicleType", StrPlugInNArg) && charRole=='s'){ arrAssign.push('vehicleType');  }
     if(in_array("distNTimePrice", StrPlugInNArg) && charRole=='s'){ arrAssign.push('priceStart', 'strUnitDist', 'pricePerDist', 'pricePerHour');  }
-    if(in_array("transportCustomer", StrPlugInNArg) && charRole=='c'){ arrAssign.push('distStartToGoal', 'compassPoint', 'destination'); }
+    if(in_array("transportBuyer", StrPlugInNArg) && charRole=='b'){ arrAssign.push('distStartToGoal', 'compassPoint', 'destination'); }
     if(in_array("standingByMethod", StrPlugInNArg) && charRole=='s'){  arrAssign.push('standingByMethod');   }
     if(in_array("shiftEnd", StrPlugInNArg) && charRole=='s'){ arrAssign.push('shiftEnd');  }
     if(in_array("hourlyPrice"+charRoleUC, StrPlugInNArg)){   arrAssign.push('pricePerHour');    }
     if(in_array("price"+charRoleUC, StrPlugInNArg)){   arrAssign.push('price');    }
 
-    if(in_array("fixedPricePerUnit", StrPlugInNArg) && charRole=='c'){  arrAssign.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');}
+    if(in_array("fixedPricePerUnit", StrPlugInNArg) && charRole=='b'){  arrAssign.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');}
 
     if(in_array("taxi", StrPlugInNArg)){
       array_mergeM(arrAssign, site.StrPropE);
@@ -1977,14 +1977,14 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
       if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
     }
     if(intersectBool(["cleaner"], StrPlugInNArg)){ 
-      if(charRole=='c') { 
+      if(charRole=='b') { 
         var StrTmp=oRole.StrPropE;
         for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
         array_mergeM(arrAssign, StrTmp);
       }
     }
     if(intersectBool(["windowcleaner"], StrPlugInNArg)){ 
-      if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE); // 'nWindows', 'boCustomerHasEquipment'
+      if(charRole=='b') array_mergeM(arrAssign, oRole.StrPropE); // 'nWindows', 'boBuyerHasEquipment'
       if(charRole=='s') { 
         var StrTmp=oRole.StrPropE;
         for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
@@ -1992,7 +1992,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
       }
     }
     if(in_array("lawnmowing", StrPlugInNArg)){ 
-      if(charRole=='c') array_mergeM(arrAssign, oRole.StrPropE);   // 'area', 'boCustomerHasEquipment'
+      if(charRole=='b') array_mergeM(arrAssign, oRole.StrPropE);   // 'area', 'boBuyerHasEquipment'
       if(charRole=='s') { 
         var StrTmp=oRole.StrBool;
         for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
@@ -2000,7 +2000,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
       }
     }
     if(in_array("snowremoval", StrPlugInNArg)){
-      if(charRole=='c') {
+      if(charRole=='b') {
         var StrTmp=oRole.StrBool;  //
         for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
         array_mergeM(arrAssign, StrTmp, ['area']);
@@ -2012,10 +2012,10 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
       }
     }
     if(in_array("fruitpicker", StrPlugInNArg)){ 
-      if(charRole=='c') arrAssign.push('fruit');
+      if(charRole=='b') arrAssign.push('fruit');
     }
     if(in_array("programmer", StrPlugInNArg)){ 
-      if(charRole=='c') arrAssign.push('database', 'language');
+      if(charRole=='b') arrAssign.push('database', 'language');
       if(charRole=='s') { 
         var StrTmp=oRole.StrProgrammerLang;
         for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1,2,3,4,5]; }
@@ -2063,7 +2063,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
 
   } // end of loop through ORole
   
-  Sql.push(`UPDATE `+customerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount`);
+  Sql.push(`UPDATE `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount`);
   Sql.push(`UPDATE `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount`);
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
@@ -2156,7 +2156,7 @@ var writeMessTextOfMultQuery=function(Sql, err, results){
 }
 
 app.createDumpCommand=function(){ 
-  var strCommand='', StrTabType=['seller','sellerTeam','sellerTeamImage','customer','customerTeam','customerTeamImage','userImage','complaint','admin','setting','user'];
+  var strCommand='', StrTabType=['seller','sellerTeam','sellerTeamImage','buyer','buyerTeam','buyerTeamImage','userImage','complaint','admin','setting','user'];
   for(var i=0;i<StrTabType.length;i++){
     var strTabType=StrTabType[i], StrTab=[];
     for(var j=0;j<SiteName.length;j++){
