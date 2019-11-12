@@ -17,7 +17,7 @@ Brand:'Brand',  // Vehicle brand
 Independent:'Independent',
 Cargo:'Cargo',
 
-//customerRewritten:'customer',
+//buyerRewritten:'buyer',
 //sellerRewritten:'seller',
 
 
@@ -62,6 +62,11 @@ snowRemovalWorker:'snow removal worker',
 lawnmowing:'lawnmowing',
 
 
+buyer:'buyer', buyers:'buy­ers',
+theBuyer:"the buyer", theBuyers:"the buyers",
+theBuyers0:"buyers",
+IndependentBuyer:'No team',
+
 customer:'customer', customers:'cust­omers',
 theCustomer:"the customer", theCustomers:"the customers",
 theCustomers0:"customers",
@@ -83,7 +88,7 @@ SelectColumns:'Select columns',
 AddRemoveColumns:'Add/remove columns',
 MapMarkers:'Map markers',
 ChangeMapMarkers:'Change map markers',
-ChangeMapMarkersC:'Change <span nom="customer">customer</span> map markers',
+ChangeMapMarkersB:'Change <span nom="buyer">buyer</span> map markers',
 ChangeMapMarkersS:'Change <span nom="seller">seller</span> map markers',
 Prices:'Prices',
 UserInfo:'User info',
@@ -106,9 +111,9 @@ All:'All',
 Settings:'Settings',
 SellerSettings:'<span nom="Seller">Seller</span> settings',
 //SellerSettings:'Seller settings',
-CustomerSettings:'Customer settings',
+BuyerSettings:'<span nom="Buyer">Buyer</span> settings',
 SellerLogin:'Login (<span nom="Sellers">Sellers</span>)',
-AppearAsCustomer:'Appear as <span nom="customer">customer</span>',
+AppearAsBuyer:'Appear as <span nom="buyer">buyer</span>',
 AppearAsSeller:'Appear as <span nom="seller">seller</span>',
 DidYouUseAltIPBefore:'Did you use <span nom="IP">another IP</span> to login before?',
 
@@ -144,10 +149,10 @@ Back:'⇦',
 Compare:'Compare',
 //Compare:'&#63523,
 Filter:'Filter',
-FilterC:'<span nom="Customer">Customer</span> filter',
+FilterB:'<span nom="Buyer">Buyer</span> filter',
 FilterS:'<span nom="Seller">Seller</span> filter',
 Table:'Table',
-TableC:'<span nom="Customer">Customer</span> table',
+TableB:'<span nom="Buyer">Buyer</span> table',
 TableS:'<span nom="Seller">Seller</span> table',
 Filtered:'Filtered',
 
@@ -164,16 +169,14 @@ TeamAdmin:'Team administrator',
 gettingStartedLink:'Getting started',
 SeeAlso:'See also',
 
-headOrdinalC:'New <span nom="customer">customer</span>?',
-//headOrdinalDoubleC:'New customer (<span nom="customerRewritten">customer</span>)?',
-labOrdinalC:'Join now and be <span nom="customer">customer</span> number <span></span>.',
-labOrdinalBC:'You can delete your account at any time.',
+headOrdinalB:'New <span nom="buyer">buyer</span>?',
+//headOrdinalDoubleB:'New buyer (<span nom="buyerRewritten">buyer</span>)?',
+labOrdinalB:'Join now and be <span nom="buyer">buyer</span> number <span></span>.',
 
 //labOrdinal:'Be the <span></span> <span nom="seller">seller</span> to join.',
 headOrdinalS:'New <span nom="seller">seller</span>?',
 //headOrdinalDoubleS:'New seller (<span nom="sellerRewritten">seller</span>)?',
 labOrdinalS:'Join now and be <span nom="seller">seller</span> number <span></span>.',
-labOrdinalBV:'You can delete your account at any time.',
 
 Info:'Info',
 OtherJobs:'Other jobs/services...',
@@ -181,7 +184,7 @@ OtherMapApps:'Other map apps',
 OtherMarkets:'Other markets',
 ComparisonTable:'Comparison table',
 FilterTitle:'Filter (hide uninteresting <span nom="sellers">sellers</span>)',
-ToggleBetweenCustomerAndSeller:'Toggle between customers and <span nom="sellers">sellers</span>',
+ToggleBetweenBuyerAndSeller:'Toggle between buyers and <span nom="sellers">sellers</span>',
 
 //toManyMess:'To many <span nom="sellers">sellers</span> for listing details, zoom in, or use filter to reduce the number below '+maxList,
 //toManyMess:'Max '+maxList+' <span nom="sellers">sellers</span> to see the comparisson table, zoom in, or use filter to reduce the number.',
@@ -195,13 +198,13 @@ tsPopup:'Exact timepoint', // As in opposite of approximate timepoint
 //SeeUnActivePopMessButt:'Include older positions now.',
 
 //driverTextPopup:{
-//idDriverGovernment:'Serves as verification to the customer that you are a real taxi driver',
-//tel:'The number you want the customers to call',
+//idDriverGovernment:'Serves as verification to the buyer that you are a real taxi driver',
+//tel:'The number you want the buyers to call',
 //contactEmail:'Will not be displayed to the public',
-//homeTown:'Good if you are in other town and wants to get in contact with customers heading in the same direction',
+//homeTown:'Good if you are in other town and wants to get in contact with buyers heading in the same direction',
 //standingByMethod:'How are you waiting',
 ////idTeam:'If you are connected to a team who in turn is connected to taxiselecor.com',
-//shiftEnd:'When do you end for the day.<br>Useful for customers that wants to book ahead, or to go on long trips'
+//shiftEnd:'When do you end for the day.<br>Useful for buyers that wants to book ahead, or to go on long trips'
 //},
 
 
@@ -216,7 +219,7 @@ pricePref:{pop:"Change distance and time"},
 
   //login
 loginInfo:{'complainer':'complainer',
-'customer':'customer',
+'buyer':'buyer',
 'seller':'seller',
 'team':'team',
 'admin':'admin',
@@ -334,7 +337,7 @@ WaitingForYourPositionHelp:'No collected data is saved',
 CurrentlyNoOneIsVisible:'Currently no one is visible',
 
 
-introHeadC:'New <span nom="customer">customer</span>, welcome!',
+introHeadB:'New <span nom="buyer">buyer</span>, welcome!',
 introHeadS:'New <span nom="seller">seller</span>, welcome!',
 introBread:'A contact email is needed incase the site changes ID-provider. (The contact email will not be be shown to the public.)',
 Tel:'Tel',
@@ -498,7 +501,7 @@ boWebPushOK:'Messages sent to "push notifications" (not supported by iOS) (Note!
 link:'If the user has an own webpage.',
 homeTown:'',
 standingByMethod:'',
-idDriverGovernment:'Driver ID number from government/authority (so that customers can verify that they are dealing with a legitimate driver.',
+idDriverGovernment:'Driver ID number from government/authority (so that buyers can verify that they are dealing with a legitimate driver.',
 vehicleType:'',
 brand:'',
 nPassengers:'',

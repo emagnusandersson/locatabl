@@ -292,6 +292,7 @@ ReqBE.prototype.go=function*(){
     boCheckCSRF=0; boSetNewCSRF=0;   for(var i=0; i<beArr.length; i++){ var row=beArr[i]; if(in_array(row[0],arrCSRF)) {  boCheckCSRF=1; boSetNewCSRF=1;}  }    
     if(StrComp(StrInFunc,['setUpCond','setUp','getList','getGroupList','getHist']) || StrComp(StrInFunc,['getSetting','setupById','VSetPosCond', 'setUpCond','setUp','getList','getGroupList','getHist']))
         { boCheckCSRF=0; boSetNewCSRF=1; }
+    if(StrComp(StrInFunc,['RShow']) || StrComp(StrInFunc,['RHide'])) { boCheckCSRF=0; boSetNewCSRF=0; } // Request from service worker
   }else if(caller=='pubKeyStore'){
     arrCSRF=['pubKeyStore','loginGetGraph'];   arrNoCSRF=['setupById','logout'];   allowed=arrCSRF.concat(arrNoCSRF);
 
@@ -675,7 +676,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   //var [err,con]=yield*mysqlGetConnection(flow, this.pool);  if(err) return [err];   this.con=con;
   //var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
   var [err]=yield* this.myMySql.startTransaction(flow);  if(err) return [err]; 
-  if(['userFun', 'complainerFun', 'customerFun', 'sellerFun', 'teamFun', 'adminFun', 'refetchFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
+  if(['userFun', 'complainerFun', 'buyerFun', 'sellerFun', 'teamFun', 'adminFun', 'refetchFun', 'mergeIDFun'].indexOf(strFun)!=-1){ 
     var [err, result]=yield *this[strFun](inObj);  //if(err) return [err];
   }
   //if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
@@ -686,14 +687,14 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
 
 ReqBE.prototype.userFun=
 ReqBE.prototype.complainerFun=
-ReqBE.prototype.customerFun=
+ReqBE.prototype.buyerFun=
 ReqBE.prototype.sellerFun=function*(){
   var Ou={};
   var objT=this.sessionLoginIdP, [err, results]=yield* accountMerge.call(this, objT); if(err) return [err];
   return [null, Ou];
 }
 //ReqBE.prototype.teamFun=function*(inObj){
-  //var req=this.req, flow=req.flow, site=req.site, {userTab, customerTeamTab, sellerTeamTab}=site.TableName;
+  //var req=this.req, flow=req.flow, site=req.site, {userTab, buyerTeamTab, sellerTeamTab}=site.TableName;
   //var Ou={};
   //var objT=this.sessionLoginIdP, [err, results]=yield* accountMerge.call(this, objT); if(err) return [err];
   
@@ -702,8 +703,8 @@ ReqBE.prototype.sellerFun=function*(){
   //Sql.push(`INSERT INTO `+userTab+` (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND()))
   //ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;`);
   
-  //if(inObj.strRole=='customer'){
-    //Sql.push("INSERT INTO "+customerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
+  //if(inObj.strRole=='buyer'){
+    //Sql.push("INSERT INTO "+buyerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
   //}else{
     //Sql.push("INSERT INTO "+sellerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
   //}
@@ -749,7 +750,7 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   
   var StrRole=null; if(inObj && typeof inObj=='object' && 'Role' in inObj) StrRole=inObj.Role;
   
-  var StrRoleAll=['customer', 'seller','customerTeam','sellerTeam','admin','complainer','complainee'];
+  var StrRoleAll=['buyer', 'seller','buyerTeam','sellerTeam','admin','complainer','complainee'];
   if(typeof StrRole=='undefined' || !StrRole) StrRole=StrRoleAll; 
   if(typeof StrRole=='string') StrRole=[StrRole];
   var BoTest={};
@@ -762,7 +763,7 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   if(!idUser) { idUser=yield* getRedis(flow, req.sessionID+'_LoginIdUser'); }
   //if(!idUser) { var [err,idUser]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_LoginIdUser']); }
     
-  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.customer, BoTest.seller, BoTest.customerTeam, BoTest.sellerTeam, BoTest.admin, BoTest.complainer, BoTest.complainee];
+  var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.buyer, BoTest.seller, BoTest.buyerTeam, BoTest.sellerTeam, BoTest.admin, BoTest.complainer, BoTest.complainee];
   Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
   var sql=Sql.join('\n');
   
@@ -770,9 +771,9 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   var res=results[0], c=res.length; 
   if(c==1) {
     userInfoFrDBUpd.user=res[0];
-    var res=results[1], c=res.length; if(BoTest.customer) userInfoFrDBUpd.customer=c==1?res[0]:0;
+    var res=results[1], c=res.length; if(BoTest.buyer) userInfoFrDBUpd.buyer=c==1?res[0]:0;
     var res=results[2], c=res.length; if(BoTest.seller) userInfoFrDBUpd.seller=c==1?res[0]:0;
-    var res=results[3], c=res.length; if(BoTest.customerTeam) userInfoFrDBUpd.customerTeam=c==1?res[0]:0;
+    var res=results[3], c=res.length; if(BoTest.buyerTeam) userInfoFrDBUpd.buyerTeam=c==1?res[0]:0;
     var res=results[4], c=res.length; if(BoTest.sellerTeam) userInfoFrDBUpd.sellerTeam=c==1?res[0]:0;
     var res=results[5], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0;
     var n=results[6][0].n;   if(BoTest.complainer) userInfoFrDBUpd.complainer=n?{idUser:userInfoFrDBUpd.user.idUser, n:n}:0; 
@@ -786,8 +787,8 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
 }
 
 ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, Ou={}, {customerTab, sellerTab}=site.TableName;
-  var {user, customer, seller}=this.sessionUserInfoFrDB; if(!customer && !seller) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for sellers as well as any visitor) 
+  var req=this.req, flow=req.flow, site=req.site, Ou={}, {buyerTab, sellerTab}=site.TableName;
+  var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!buyer && !seller) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for sellers as well as any visitor) 
   var {x,y}=inObj;
   var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
   if(seller){
@@ -796,10 +797,10 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
     var sql="UPDATE "+sellerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
-  if(customer){
-    var {idUser,coordinatePrecisionM}=customer;
+  if(buyer){
+    var {idUser,coordinatePrecisionM}=buyer;
     var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
-    var sql="UPDATE "+customerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
+    var sql="UPDATE "+buyerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
   return [null, [Ou]];
@@ -814,14 +815,14 @@ ReqBE.prototype.logout=function*(inObj){
 }
 
 ReqBE.prototype.setUpCond=function*(inObj){
-  var site=this.req.site, req=this.req, flow=req.flow, ORole=site.ORole;  //[oC, oS]
+  var site=this.req.site, req=this.req, flow=req.flow, ORole=site.ORole;  //[oB, oS]
   if(typeof inObj.CharRole!='string') return [new ErrorClient("typeof inObj.CharRole!='string'")];
   if(inObj.CharRole.length>2) return [new ErrorClient("inObj.CharRole.length>2")];
     // Check CharRole input
   var oFound={}
   for(var i=0;i<inObj.CharRole.length;i++){
     var charRole=inObj.CharRole[i];
-    if("cs".indexOf(charRole)==-1) return [new ErrorClient('"cs".indexOf(charRole)==-1')];
+    if("bs".indexOf(charRole)==-1) return [new ErrorClient('"bs".indexOf(charRole)==-1')];
     if(charRole in oFound) return [new ErrorClient("charRole in oFound")];
     oFound[charRole]=1;
   }
@@ -841,7 +842,7 @@ ReqBE.prototype.setUpCond=function*(inObj){
   return [null, [Ou]];
 } 
 ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize, pC, zoom).
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, customerTab, sellerTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
   
   var Ou={},  Sql=[];
   Sql.push("SELECT UNIX_TIMESTAMP(now()) AS now;");
@@ -856,28 +857,28 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
   Sql.push("CALL "+siteName+"IFunPoll;"); 
 
   if(boCalcZoom){  
-    //Sql.push("SELECT count(u.idUser) AS nCustomerReal FROM "+userTab+" u JOIN "+customerTab+" ro ON u.idUser=ro.idUser;");
+    //Sql.push("SELECT count(u.idUser) AS nBuyerReal FROM "+userTab+" u JOIN "+buyerTab+" ro ON u.idUser=ro.idUser;");
     //Sql.push("SELECT count(u.idUser) AS nSellerReal FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
-    Sql.push("SELECT count(*) AS nCustomerReal FROM "+customerTab+";");
+    Sql.push("SELECT count(*) AS nBuyerReal FROM "+buyerTab+";");
     Sql.push("SELECT count(*) AS nSellerReal FROM "+sellerTab+";");
  
-    var WhereTmpC=this.OQueryPart[0].Where.concat("boShow=1", sqlBeforeHiding),  strCondC=array_filter(WhereTmpC).join(' AND ');
+    var WhereTmpB=this.OQueryPart[0].Where.concat("boShow=1", sqlBeforeHiding),  strCondB=array_filter(WhereTmpB).join(' AND ');
     var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", sqlBeforeHiding),  strCondS=array_filter(WhereTmpS).join(' AND ');
     
     var xOpp, xAddTerm; if(xC>128) {xOpp=xC-128; xAddTerm="IF(x<"+xOpp+",256,0)";}  else {xOpp=xC+128;  xAddTerm="IF(x>"+xOpp+",-256,0)"; } // xOpp : x of opposite side of planet
     var tmp="min(greatest(abs(x+"+xAddTerm+"-"+xC+"),abs(y-"+yC+")))";
-    Sql.push("SELECT "+tmp+" AS distMin FROM "+customerTab+" ro WHERE "+strCondC+";");
+    Sql.push("SELECT "+tmp+" AS distMin FROM "+buyerTab+" ro WHERE "+strCondB+";");
     Sql.push("SELECT "+tmp+" AS distMin FROM "+sellerTab+" ro WHERE "+strCondS+";");
   }
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   this.GRet.curTime=results[0][0].now; 
   if(boCalcZoom){
-    this.GRet.nCustomerReal=results[2][0].nCustomerReal||0; 
+    this.GRet.nBuyerReal=results[2][0].nBuyerReal||0; 
     this.GRet.nSellerReal=results[3][0].nSellerReal||0; 
-    var distMinC=results[4][0].distMin,   distMinS=results[5][0].distMin;
-    if(distMinC===null) distMinC=intMax;  if(distMinS===null) distMinS=intMax;
-    var distMin=Math.min(distMinC,distMinS);  
+    var distMinB=results[4][0].distMin,   distMinS=results[5][0].distMin;
+    if(distMinB===null) distMinB=intMax;  if(distMinS===null) distMinS=intMax;
+    var distMin=Math.min(distMinB,distMinS);  
     var minVP=Math.min(wVP,hVP);    
     if(distMin>0.001){
       var zFac=minVP/distMin;
@@ -895,7 +896,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
 
 
 ReqBE.prototype.getList=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, customerTab, customerTeamTab, complaintTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, buyerTab, buyerTeamTab, complaintTab}=site.TableName;
 
   var Ou={};
   var xl,xh,yl,yh;
@@ -913,8 +914,8 @@ ReqBE.prototype.getList=function*(inObj){
     var charRole=CharRole[i];
     var iRole=Number(charRole=='s');
     var oRole=site.ORole[iRole];
-    var roleTab=iRole?sellerTab:customerTab;
-    var roleTeamTab=iRole?sellerTeamTab:customerTeamTab;
+    var roleTab=iRole?sellerTab:buyerTab;
+    var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
     
     var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", sqlBeforeHiding),  strCond=array_filter(WhereTmp).join(' AND ');
     //var strColT=this.OQueryPart[i].strCol;
@@ -936,7 +937,7 @@ ReqBE.prototype.getList=function*(inObj){
     var nFound=results[3*i+1][0].n;
     this.BoUseList[i]=nFound<=maxList;
     var tmp=[]; if(this.BoUseList[i]){ tmp=results[3*i]; } Ou.arrList[i]=arrObj2TabNStrCol(tmp);
-    //var tmp=CharRole[i]=='c'?'Customers':'Sellers';  this.mes(tmp+": "+nFound);
+    //var tmp=CharRole[i]=='b'?'Buyers':'Sellers';  this.mes(tmp+": "+nFound);
     Ou.NTotNFilt[i]=[nFound, results[3*i+2][0].n];
   }
   
@@ -944,7 +945,7 @@ ReqBE.prototype.getList=function*(inObj){
   return [null, [Ou]];
 } 
 ReqBE.prototype.getSingleUser=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, customerTab, customerTeamTab, complaintTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, buyerTab, buyerTeamTab, complaintTab}=site.TableName;
 
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
@@ -954,8 +955,8 @@ ReqBE.prototype.getSingleUser=function*(inObj){
   for(var i=0;i<len;i++){
     var iRole=IRole[i];
     var oRole=site.ORole[iRole];
-    var roleTab=iRole?sellerTab:customerTab;
-    var roleTeamTab=iRole?sellerTeamTab:customerTeamTab;
+    var roleTab=iRole?sellerTab:buyerTab;
+    var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
     
     //var strColT=this.OQueryPart[i].strCol;
     var strColT=oRole.strCol;
@@ -973,7 +974,7 @@ ReqBE.prototype.getSingleUser=function*(inObj){
 
 
 ReqBE.prototype.getGroupList=function*(inObj){  
-  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, customerTab, sellerTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
   
   //var zoomFac=Math.pow(2,this.zoom-4.3);
   var zoomFac=Math.pow(2,this.zoom-5);
@@ -983,7 +984,7 @@ ReqBE.prototype.getGroupList=function*(inObj){
     if(!this.BoUseList[i]){
       var charRole=this.CharRole[i];
       var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", sqlBeforeHiding]),  strCond=array_filter(WhereTmp).join(' AND ');
-      var roleTab=charRole=='c'?customerTab:sellerTab;
+      var roleTab=charRole=='b'?buyerTab:sellerTab;
       //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
       var strTableRef=roleTab+' ro';
       Sql.push("SELECT round(x*"+zoomFac+")/"+zoomFac+" AS roundX, round(y*"+zoomFac+")/"+zoomFac+" AS roundY, count(*) AS n FROM "+strTableRef+" WHERE "+strCond+" GROUP BY roundX, roundY;");
@@ -1005,11 +1006,11 @@ ReqBE.prototype.getGroupList=function*(inObj){
 
 
 ReqBE.prototype.getHist=function*(inObj){
-  var req=this.req, flow=req.flow, site=req.site, {userTab, customerTab, sellerTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, buyerTab, sellerTab}=site.TableName;
   var Ou={arrHist:[]};
   for(var i=0;i<this.CharRole.length;i++){
     var charRole=this.CharRole[i], charRoleUC=charRole.toUpperCase();
-    var roleTab=charRole=='c'?customerTab:sellerTab;
+    var roleTab=charRole=='b'?buyerTab:sellerTab;
     
     
     //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
@@ -1057,7 +1058,7 @@ ReqBE.prototype.UUpdate=function*(inObj){  // writing needSession
 
 ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site;
-  var {userTab, customerTab, sellerTab}=site.TableName;
+  var {userTab, buyerTab, sellerTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser; 
@@ -1069,13 +1070,13 @@ ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
   extend(this.GRet.userInfoFrDBUpd, specialistDefault); 
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  site.boGotNewSellers=1; site.boGotNewCustomers=1;
+  site.boGotNewSellers=1; site.boGotNewBuyers=1;
   site.nUser=Number(results[1][0].n);
-  site.nTotC=Number(results[2][0].n);
+  site.nTotB=Number(results[2][0].n);
   site.nTotS=Number(results[3][0].n);
   this.mes('deleted');      
   return [null, [Ou]];
@@ -1087,7 +1088,7 @@ ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
  *********************************************************************************************/
 
 ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, {userTab, customerTab, sellerTab, webPushSubscriptionTab}=site.TableName, [oC, oS]=site.ORole;
+  var req=this.req, flow=req.flow, site=req.site, {userTab, buyerTab, sellerTab, webPushSubscriptionTab}=site.TableName, [oB, oS]=site.ORole;
   var Ou={}; 
   if(isEmpty(this.sessionLoginIdP)) {this.mes('No session'); return [null, [Ou]]; }
   var {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
@@ -1103,12 +1104,12 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   //var boWebPushOK=false;
   const boWebPushOK=strSubscription!='null';
   
-  if('cs'.indexOf(inObj.charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  if('bs'.indexOf(inObj.charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
   
   var iRole=Number(inObj.charRole=='s');
   var oRole=site.ORole[iRole];
   var {charRole, strRole}=oRole;
-  var roleTab=iRole?sellerTab:customerTab;
+  var roleTab=iRole?sellerTab:buyerTab;
   
   
     // An entry in userTab may exist (if the user is a complainer). However an entry in roleTab is something one can assume does not exist.
@@ -1126,7 +1127,7 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+customerTab+";");
+  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
   if(boWebPushOK){
@@ -1138,9 +1139,9 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   var c=results[0].affectedRows; if(c>1) return [new Error(c+" userTab rows affected")];
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
-  var boIns=Number(results[3][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewCustomers=boIns;
+  var boIns=Number(results[3][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewBuyers=boIns;
   site.nUser=Number(results[4][0].n);
-  site.nTotC=Number(results[5][0].n);
+  site.nTotB=Number(results[5][0].n);
   site.nTotS=Number(results[6][0].n);
   var  tmpMes='Data '+(boIns?'inserted':'updated'); this.mes(tmpMes);
   return [null, [Ou]];
@@ -1148,7 +1149,7 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
 
 
 ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, site=req.site, [oC, oS]=site.ORole, {userTab, customerTab, sellerTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, [oB, oS]=site.ORole, {userTab, buyerTab, sellerTab}=site.TableName;
   var Ou={}; 
 
   var user=this.sessionUserInfoFrDB.user, objT;
@@ -1156,9 +1157,9 @@ ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
   var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objT; 
   if(typeof idUser=='undefined') {return [new Error('no idUser')];}
   
-  var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
-  var roleTab=charRole=='c'?customerTab:sellerTab;
-  var oRole=charRole=='c'?oC:oS;
+  var charRole=inObj.charRole; if('bs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  var roleTab=charRole=='b'?buyerTab:sellerTab;
+  var oRole=charRole=='b'?oB:oS;
 
   var objVar=extend({},inObj); delete objVar.charRole;
   
@@ -1220,14 +1221,14 @@ ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
 
 ReqBE.prototype.RShow=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var {customerTab, sellerTab}=site.TableName;
+  var {buyerTab, sellerTab}=site.TableName;
   var Ou={};
-  var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
-  var {user, customer, seller}=this.sessionUserInfoFrDB; if(!user || (!customer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
-  var roleTab=charRole=='c'?customerTab:sellerTab;
-  var role=charRole=='c'?customer:seller;
+  var charRole=inObj.charRole; if('bs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var roleTab=charRole=='b'?buyerTab:sellerTab;
+  var role=charRole=='b'?buyer:seller;
   
-  var roleTabAlt=charRole=='c'?sellerTab:customerTab;
+  var roleTabAlt=charRole=='b'?sellerTab:buyerTab;
   
   var {idUser,coordinatePrecisionM}=role;
   var {x,y}=inObj;
@@ -1241,17 +1242,17 @@ ReqBE.prototype.RShow=function*(inObj){  // writing needSession
   Val=[idUser,xtmp,ytmp,idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  var strTmp=charRole=='c'?'Customer':'Seller';   this.mes(strTmp+' visible');    
+  var strTmp=charRole=='b'?'Buyer':'Seller';   this.mes(strTmp+' visible');    
   return [null, [Ou]];
 }
 ReqBE.prototype.RHide=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var {customerTab, sellerTab}=site.TableName;
+  var {buyerTab, sellerTab}=site.TableName;
   var Ou={};
-  var charRole=inObj.charRole; if('cs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
-  var {user, customer, seller}=this.sessionUserInfoFrDB; if(!user || (!customer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var charRole=inObj.charRole; if('bs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
+  var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var idUser=user.idUser;
-  var roleTab=charRole=='c'?customerTab:sellerTab;
+  var roleTab=charRole=='b'?buyerTab:sellerTab;
 
   var Sql=[], Val=[];
   Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
@@ -1259,7 +1260,7 @@ ReqBE.prototype.RHide=function*(inObj){  // writing needSession
   Val=[idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  var strTmp=charRole=='c'?'Customer':'Seller';   this.mes(strTmp+' hidden');      
+  var strTmp=charRole=='b'?'Buyer':'Seller';   this.mes(strTmp+' hidden');      
   return [null, [Ou]];
 }
 
@@ -1406,7 +1407,7 @@ ReqBE.prototype.getComplaintsFromComplainer=function*(inObj){
 ReqBE.prototype.teamSaveName=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site;
   var Ou={};
-  var strRole=inObj.strRole; if(strRole!='customer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
+  var strRole=inObj.strRole; if(strRole!='buyer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
   var roleTeamTab=site.TableName[strRole+'TeamTab'];
 
   var {user}=this.sessionUserInfoFrDB, roleTeam=this.sessionUserInfoFrDB[strRole+'Team'];
@@ -1424,7 +1425,7 @@ ReqBE.prototype.teamSaveName=function*(inObj){  // writing needSession
 ReqBE.prototype.teamSave=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site;
   var Ou={};
-  var strRole=inObj.strRole; if(strRole!='customer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
+  var strRole=inObj.strRole; if(strRole!='buyer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
   var roleTab=site.TableName[strRole+'Tab'];
   
   var {user}=this.sessionUserInfoFrDB, roleTeam=this.sessionUserInfoFrDB[strRole+'Team'];
@@ -1441,7 +1442,7 @@ ReqBE.prototype.teamSave=function*(inObj){  // writing needSession
 ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
   var req=this.req, flow=req.flow, site=req.site, {userTab}=site.TableName;
   var Ou={};
-  var strRole=inObj.strRole; if(strRole!='customer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
+  var strRole=inObj.strRole; if(strRole!='buyer' && strRole!='seller') { this.mes('No such strRole: '+strRole); return [null, [Ou,'errFunc']];}
   var roleTab=site.TableName[strRole+'Tab'];
   
   var {user}=this.sessionUserInfoFrDB, roleTeam=this.sessionUserInfoFrDB[strRole+'Team'];
@@ -1532,7 +1533,7 @@ ReqBE.prototype.setSetting=function*(inObj){
 
 ReqBE.prototype.uploadImage=function*(inObj){
   var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var {userTab, sellerTeamTab, sellerTeamImageTab, customerTeamTab, customerTeamImageTab, userImageTab}=site.TableName;
+  var {userTab, sellerTeamTab, sellerTeamImageTab, buyerTeamTab, buyerTeamImageTab, userImageTab}=site.TableName;
   var Ou={};
   var regImg=RegExp("^(png|jpeg|jpg|gif|svg)$");
 
@@ -1560,16 +1561,16 @@ ReqBE.prototype.uploadImage=function*(inObj){
   if(!semCB) { semY=1; yield;}
   if(err) return [err];
 
-  var {user, customer, seller, customerTeam, sellerTeam}=this.sessionUserInfoFrDB;
+  var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
   
   var kind=this.kind;
   if(kind=='u'){
-    if(!customer && !seller) { this.mes('No session'); return [null, [Ou]];}
+    if(!buyer && !seller) { this.mes('No session'); return [null, [Ou]];}
     var idUser=user.idUser, tab=userImageTab;
   }
-  else if(kind=='c'){
-    if(!customerTeam) { this.mes('No session'); return [null, [Ou]];}
-    var idUser=customerTeam.idUser, tab=customerTeamImageTab;
+  else if(kind=='b'){
+    if(!buyerTeam) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=buyerTeam.idUser, tab=buyerTeamImageTab;
   }
   else if(kind=='s'){
     if(!sellerTeam) { this.mes('No session'); return [null, [Ou]];}
@@ -1585,7 +1586,7 @@ ReqBE.prototype.uploadImage=function*(inObj){
   var Sql=[], Val=[];
   Sql.push("REPLACE INTO "+tab+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
   if(kind=='u') {    Sql.push("UPDATE "+userTab+" SET boImgOwn=1,imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser);    }
-  else if(kind=='c'){     Sql.push("UPDATE "+customerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
+  else if(kind=='b'){     Sql.push("UPDATE "+buyerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
   else if(kind=='s'){     Sql.push("UPDATE "+sellerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
   
   //var sql='INSERT INTO imgTab SET ?';
@@ -1600,12 +1601,12 @@ ReqBE.prototype.uploadImage=function*(inObj){
 
 ReqBE.prototype.setWebPushSubcription=function*(inObj){
   var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var {userTab, sellerTab, customerTab, webPushSubscriptionTab}=site.TableName;
+  var {userTab, sellerTab, buyerTab, webPushSubscriptionTab}=site.TableName;
   var Ou={};
 
   var strSubscription=inObj.strSubscription;
 
-  var {user, customer, seller, customerTeam, sellerTeam}=this.sessionUserInfoFrDB;
+  var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
   
   var idUser=user.idUser;
   //const boWebPushOK=Boolean(strSubscription);
@@ -1616,13 +1617,13 @@ ReqBE.prototype.setWebPushSubcription=function*(inObj){
   var Sql=[], Val=[];
   //Sql.push("REPLACE INTO "+tab+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data)
   Sql.push("UPDATE "+userTab+" SET boWebPushOK=? WHERE idUser=?;");
-  Sql.push("UPDATE "+customerTab+" SET boWebPushOK=? WHERE idUser=?;");
+  Sql.push("UPDATE "+buyerTab+" SET boWebPushOK=? WHERE idUser=?;");
   Sql.push("UPDATE "+sellerTab+" SET boWebPushOK=? WHERE idUser=?;");
   var arrT=[boWebPushOK, idUser]; Val.push(...arrT,...arrT,...arrT);
   if(boWebPushOK){
     Sql.push("REPLACE INTO "+webPushSubscriptionTab+" VALUES (?, ?);");  Val.push(idUser, strSubscription);
   } else { Sql.push("DELETE FROM "+webPushSubscriptionTab+" WHERE idUser=?;");  Val.push(idUser); }
-  //else if(kind=='c'){     Sql.push("UPDATE "+customerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
+  //else if(kind=='b'){     Sql.push("UPDATE "+buyerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
   //else if(kind=='s'){     Sql.push("UPDATE "+sellerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
   
   var sql=Sql.join('\n');
@@ -1634,10 +1635,10 @@ ReqBE.prototype.setWebPushSubcription=function*(inObj){
 
 ReqBE.prototype.sendNotification=function*(inObj){
   var self=this, req=this.req, flow=req.flow, site=req.site, siteName=site.siteName;
-  var {userTab, sellerTab, customerTab, webPushSubscriptionTab}=site.TableName;
+  var {userTab, sellerTab, buyerTab, webPushSubscriptionTab}=site.TableName;
   var Ou={};
   var {idReceiver, iRole, message, latlngSender}=inObj;
-  var {user, customer, seller, customerTeam, sellerTeam}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
+  var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
   
   

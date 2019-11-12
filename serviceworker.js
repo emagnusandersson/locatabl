@@ -23,27 +23,6 @@ self.addEventListener('activate', function(event) {
   if(self.myData) return;
   event.waitUntil(tryGetDataFrClient());
 });
-//self.addEventListener('push', function(event) {
-  //var obj=event.data.json();
-  //self.objMess=obj;
-  //var {objSender, iRole, message, tSent, latlngSender}=obj;
-  //var strRole=myData.langHtml.Role[iRole];
-  //var title=ucfirst(strRole)+': '+objSender.displayName;
-  ////var title=objSender.displayName;
-  //var actions=[{action:'map', title:'Goto map'}]; //, {action:'respond', title:'Respond to message'}, {action:'info', title:'See '+strRole+' info' }
-  ////if(Notification.maxActions)
-  //const options = {
-    //body: message,
-    //icon: calcImageUrl(objSender),
-    //vibrate: [500,110,500,110,450,110,200,110,170,40,450,110,200,110,170,40,500],
-    //timestamp: new Date(tSent*1000),
-    //actions: actions
-  //};
-    //// Keep the service worker alive until the notification is created.
-  //event.waitUntil(
-    //self.registration.showNotification(title, options)
-  //);
-//});
 
 self.addEventListener('push', function(event) {
   event.waitUntil(async function() {
@@ -71,32 +50,6 @@ self.addEventListener('push', function(event) {
 });
 
 self.addEventListener("message", function(e) { self.myData=e.data; }, false);
-//self.addEventListener('notificationclick', function(event) {
-  //console.log('On notification click: ', event.notification.tag);
-  //var strAction=event.action;
-  //event.notification.close();
-  
-  //var strHash=encodeURIComponent(JSON.stringify(objMess));
-  //// This looks to see if the current is already open and
-  //// focuses if it is
-  //event.waitUntil(clients.matchAll({
-    //type: "window"
-  //}).then(function(clientList) {
-    //for(var i=0; i<clientList.length; i++) {
-      //var client=clientList[i];
-      //if('focus' in client) { 
-        //client.postMessage(objMess);
-        ////client.navigate('/#'+strHash);
-        //return client.focus();
-      //} //client.url=='/' && 
-    //}
-    //if(clients.openWindow) return clients.openWindow('/#'+strHash);
-  //}).then(function(client) {
-    ////return client.navigate('/#hello');
-  //})
-  
-  //);
-//});
 addEventListener('notificationclick', event => {
   event.waitUntil(async function() {
     const clientList = await clients.matchAll({type: "window" });
@@ -117,28 +70,23 @@ addEventListener('notificationclick', event => {
     // Message the client:
   }());
 });
-//addEventListener('notificationclick', event => {
-  //event.waitUntil(async function() {
+
+self.addEventListener('sync', function(event) {
+  var objIn=JSON.parse(event.tag);
+  //var objIn=event.tag;
+  
+  event.waitUntil( (async function() {
     //const clientList = await clients.matchAll({type: "window" });
-
-    //let myClient;
-
-    //// Let's see if we already have a chat window open:
-    //for(const client of clientList) {
-      ////const url = new URL(client.url);
-      //client.focus();
-      //myClient = client;
-      //break;
-    //}
-
-    //if(!myClient) {
-      ////var strHash=encodeURIComponent(JSON.stringify(objMess));
-      //myClient = await clients.openWindow('');  //'/#'+strHash
-    //}
-    //myClient.postMessage(objMess);
-
-    //// Message the client:
-  //}());
-//});
+    //let myClient;  for(const client of clientList) { myClient=client; break;}
+    //if(myClient) myClient.postMessage('dataLacking');
+    var dataOut=JSON.stringify(objIn.vec);
+    const client = await clients.get(event.clientId);
+    
+    const request = new Request(objIn.url, {method:'POST', headers:new Headers({'X-Requested-With':'XMLHttpRequest'}), body:dataOut}); 
+    var response=await fetch(request);
+    var data=await response.json();
+    if(typeof data=='object' && 'GRet' in data) console.log(data.GRet.strMessageText);
+  })() );
+});
 
 
