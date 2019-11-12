@@ -86,7 +86,7 @@ var globSubscription=null;
 //strCookieProp="; SameSite=Lax; HttpOnly";
 
 var StrCookiePropProt=["HttpOnly", "Path=/","max-age="+3600*24*30];
-//if(boDO) { StrCookiePropProt.push("secure"); }
+if(boDO) { StrCookiePropProt.push("secure"); }
 var StrCookiePropStrict=StrCookiePropProt.concat("SameSite=Strict"),   StrCookiePropLax=StrCookiePropProt.concat("SameSite=Lax"),   StrCookiePropNormal=StrCookiePropProt.concat(); //"SameSite=None"
 strCookiePropStrict=";"+StrCookiePropStrict.join(';');  strCookiePropLax=";"+StrCookiePropLax.join(';');  strCookiePropNormal=";"+StrCookiePropNormal.join(';');
 
@@ -354,6 +354,9 @@ var flow=( function*(){
             console.log(error);
           });
         }, req.body.delay * 1000);
+      }
+      else if(pathName=='/ttt'){ 
+        res.end('ttt');
       }
       else {res.out404("404 Not Found\n"); return; }
       objReqRes.myMySql.fin();

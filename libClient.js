@@ -567,50 +567,50 @@ app.urlBase64ToUint8Array=function(base64String){
 }
 
 
+window.swRegistration=null;
+
+app.registerSW=function(){
+  navigator.serviceWorker.register('serviceworker.js').then(function(swReg){
+    window.swRegistration=swReg;
+    //navigator.serviceWorker.controller.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+    //swReg.active.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+    //navigator.serviceWorker.onmessage=function(e){
+      //console.log('Message received from worker: '+JSON.stringify(e.data));
+      //if('cbOnMessage' in self) self.cbOnMessage(e.data);
+    //}
+    //navigator.serviceWorker.on('message', function(e){ console.log('Message received from worker: '+JSON.stringify(e.data)); })//addEventListener
+  }, (err)=>console.log(err));
+  navigator.serviceWorker.ready.then(function(swReg) {
+    const myData={langHtml:langHtml, uUserImage:uUserImage};
+    swReg.active.postMessage(myData); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+    navigator.serviceWorker.onmessage=function(e){
+      if(e.data=='dataLacking') {swReg.active.postMessage(myData); return;}
+      console.log('Message received from worker: '+JSON.stringify(e.data));
+      if('cbOnSWMessage' in window) window.cbOnSWMessage(e.data);
+    }
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    const myData={langHtml:langHtml, uUserImage:uUserImage};
+    navigator.serviceWorker.controller.postMessage(myData);
+  });
+}
         
 var MyWebPush=function(){
   var self=this;
   var subscription=self.subscription=null;
-  self.swRegistration=null;
-  
-  self.registerSW=function(){
-    navigator.serviceWorker.register('serviceworker.js').then(function(swReg){
-      self.swRegistration=swReg;
-      //navigator.serviceWorker.controller.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
-      //swReg.active.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
-      //navigator.serviceWorker.onmessage=function(e){
-        //console.log('Message received from worker: '+JSON.stringify(e.data));
-        //if('cbOnMessage' in self) self.cbOnMessage(e.data);
-      //}
-      //navigator.serviceWorker.on('message', function(e){ console.log('Message received from worker: '+JSON.stringify(e.data)); })//addEventListener
-    }, (err)=>console.log(err));
-    navigator.serviceWorker.ready.then(function(swReg) {
-      const myData={langHtml:langHtml, uUserImage:uUserImage};
-      swReg.active.postMessage(myData); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
-      navigator.serviceWorker.onmessage=function(e){
-        if(e.data=='dataLacking') {swReg.active.postMessage(myData); return;}
-        console.log('Message received from worker: '+JSON.stringify(e.data));
-        if('cbOnMessage' in self) self.cbOnMessage(e.data);
-      }
-    });
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      const myData={langHtml:langHtml, uUserImage:uUserImage};
-      navigator.serviceWorker.controller.postMessage(myData);
-    });
-  }
 
   self.subscribeUser=function(){
     var flow=(function*(){
       const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
         // Use the PushManager to get the user’s subscription to the push service.
-      var semY=0, semCB=0, err=null;  self.swRegistration.pushManager.getSubscription()
+      var semY=0, semCB=0, err=null;  swRegistration.pushManager.getSubscription()
       .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
       if(err){ cbFunW(err); return;}
       
       if(!subscription) {
         const convertedVapidKey=urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
           // Subscribe the user (userVisibleOnly allows to specify that we don’t plan to send notifications that don’t have a visible effect for the user).
-        var semY=0, semCB=0, err=null;  self.swRegistration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedVapidKey })
+        var semY=0, semCB=0, err=null;  swRegistration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedVapidKey })
         .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
         if(err){ cbFunW(err); return;}
       }
@@ -621,7 +621,7 @@ var MyWebPush=function(){
     var flow=(function*(){
       const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
         // Use the PushManager to get the user’s subscription to the push service.
-      var semY=0, semCB=0, err=null;  self.swRegistration.pushManager.getSubscription()
+      var semY=0, semCB=0, err=null;  swRegistration.pushManager.getSubscription()
       .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
       if(err){ cbFunW(err); return;}
       

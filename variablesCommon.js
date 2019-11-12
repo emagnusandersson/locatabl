@@ -30,13 +30,13 @@ if(boDbg) hideTimerDefault=30*60;
 hideTimerDefault=intMax;
 
    // DB- TableNameProt
-StrTableKey=["seller","sellerTeam","sellerTeamImage","customer","customerTeam","customerTeamImage","userImage","complaint","admin","webPushSubscription","user","setting"]; 
-StrViewsKey=["hist"]; 
+StrTableKey=["buyerTeamImage","buyerTeam","buyer","sellerTeamImage","sellerTeam","seller","userImage","complaint","admin","webPushSubscription","user","setting"]; 
+StrViewsKey=[]; //"hist"
 TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
 ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
 
 
-//StrTableKey=["sellerTab","sellerTeamTab","sellerTeamImageTab","customerTab","customerTeamTab","customerTeamImageTab","userImageTab","complaintTab","adminTab","settingTab","userTab"]; 
+//StrTableKey=["sellerTab","sellerTeamTab","sellerTeamImageTab","buyerTab","buyerTeamTab","buyerTeamImageTab","userImageTab","complaintTab","adminTab","settingTab","userTab"]; 
 //StrViewsKey=["histView"]; 
 //TableName={};for(var i=0;i<StrTableKey.length;i++) {var name=StrTableKey[i]; TableName[name]=strDBPrefix+'_'+name.slice(0,-3);}
 //ViewName={};for(var i=0;i<StrViewsKey.length;i++) {var name=StrViewsKey[i]; ViewName[name]=strDBPrefix+'_'+name.slice(0,-4);}
@@ -59,7 +59,7 @@ sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
 sqlBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer";
 
-specialistDefault={user:0,complainer:0,complainee:0,customer:0,seller:0,customerTeam:0,sellerTeam:0,admin:0};
+specialistDefault={user:0,complainer:0,complainee:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
 wc2m=156542;   // wc2m: Point (world coordinate) to meter (at equator) (Should be earthCircumference/256 = 40074784/256 = 156542 [m])
 //wc2m=40074784/256;
@@ -80,13 +80,13 @@ updTimeF=function(name,v){  return [  'FROM_UNIXTIME(?)', v ];  };
 
 
          //    0        1         2       3       4       5       6           7              8   
-var bNameC=['input','DBSelOne','DBSel','block','label','help','customerTab','notNull', 'customerTabIndex'];    // Block and label concerns customerInfo (customerInfoDiv?!?)
+var bNameB=['input','DBSelOne','DBSel','block','label','help','buyerTab','notNull', 'buyerTabIndex'];    // Block and label concerns buyerInfo (buyerInfoDiv?!?)
 var bNameS=['input','DBSelOne','DBSel','block','label','help','sellerTab','notNull', 'sellerTabIndex'];    // Block and label concerns sellerInfo (sellerInfoDiv?!?)
 
-var oCDefault={bFlip:array_flip(bNameC), Prop:{}, strRole:'customer', charRole:'c'};
-var oVDefault={bFlip:array_flip(bNameS), Prop:{}, strRole:'seller', charRole:'s'};
+var oBDefault={bFlip:array_flip(bNameB), Prop:{}, strRole:'buyer', charRole:'b'};
+var oSDefault={bFlip:array_flip(bNameS), Prop:{}, strRole:'seller', charRole:'s'};
 
-var ORoleDefault=[oCDefault,oVDefault];
+var ORoleDefault=[oBDefault,oSDefault];
 for(var i=0;i<ORoleDefault.length;i++){
   let oRole=ORoleDefault[i];
   oRole.charRoleUC=oRole.charRole.toUpperCase();
@@ -109,13 +109,13 @@ auto_increment_increment=1;
  * PluginF 
  ***********************************************************************************/
 // Properties with "feat" are used in filterDiv
-// Properties with "type" are in roleTab (customer/seller) (also have b[6] == "1")
+// Properties with "type" are in roleTab (buyer/seller) (also have b[6] == "1")
 
 // Both in userTab and roleTab: tCreated, boWebPushOK, donatedAmount, nComplaintGivenCum, nComplaintGiven, nComplaintCum, nComplaint
 
 PluginF={};
 PluginF.general=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
     // Both ////////////////////
   var arrTCreatedLabel=[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48], arrTCreatedMin=[].concat(eMultSc(arrTCreatedLabel,sPerMonth)); arrTCreatedLabel.splice(-1,1, '≥48');
   var arrTPosLabel=[0, 1, 2, 4, 8, 16, 24, 48], arrTPosMin=[].concat(eMultSc(arrTPosLabel,3600)); arrTPosLabel.splice(-1,1, '≥48');
@@ -246,23 +246,23 @@ PluginF.general=function(site){
 
   
   extend(oS.Prop, PropTmp);
-  extend(oC.Prop, PropTmp);  delete oC.Prop.experience;
+  extend(oB.Prop, PropTmp);  delete oB.Prop.experience;
   
 
   //site.StrOther=['idTeam', 'currency', 'experience'];
 
   var StrFiltAccept=['donatedAmount', 'tCreated', 'tPos', 'histActive', 'tAccumulated', 'hideTimer', 'homeTown', 'currency', 'tLastPriceChange', 'idTeam', 'nComplaint', 'nComplaintCum', 'nComplaintGiven', 'nComplaintGivenCum', 'coordinatePrecisionM'];
-  oC.StrFiltAccept=StrFiltAccept;
+  oB.StrFiltAccept=StrFiltAccept;
   oS.StrFiltAccept=StrFiltAccept.concat('experience');
   
-  oC.StrOrder=StrOrder;
+  oB.StrOrder=StrOrder;
   oS.StrOrder=StrOrder.concat('experience');
 }
 
 
 
 PluginF.vehicleType=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
 
     // oS ////////////////////
   var Prop=oS.Prop;
@@ -282,7 +282,7 @@ PluginF.vehicleType=function(site){
 }
 
 PluginF.distNTimePrice=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
 
     // oS ////////////////////
   var Prop=oS.Prop;
@@ -310,11 +310,11 @@ PluginF.distNTimePrice=function(site){
 }
 
 
-PluginF.transportCustomer=function(site){
-  var [oC,oS]=site.ORole;
+PluginF.transportBuyer=function(site){
+  var [oB,oS]=site.ORole;
   
-    // oC ////////////////////
-  var Prop=oC.Prop;
+    // oB ////////////////////
+  var Prop=oB.Prop;
   var tmpEnumCompassPoint=["-", 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   //var tmpEnumCompassPoint=['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
   //                         012345678
@@ -330,15 +330,15 @@ PluginF.transportCustomer=function(site){
   Prop.compassPoint.selF=selEnumF;
   Prop.compassPoint.selOneF=selEnumF;
   Prop.compassPoint.roleUpdF=updEnumBoundF;
-  oC.StrTransportCustomer=['compassPoint','distStartToGoal','destination']; // ,'price'
+  oB.StrTransportBuyer=['compassPoint','distStartToGoal','destination']; // ,'price'
   var StrTmp=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, StrTmp);
-  array_mergeM(oC.StrOrder, StrTmp);
+  array_mergeM(oB.StrFiltAccept, StrTmp);
+  array_mergeM(oB.StrOrder, StrTmp);
 }
 
     
 PluginF.standingByMethod=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
     // oS ////////////////////
   var Prop=oS.Prop;
   
@@ -357,7 +357,7 @@ PluginF.standingByMethod=function(site){
 }
 
 PluginF.shiftEnd=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
     // oS ////////////////////
   var Prop=oS.Prop;
   //                           012345678
@@ -381,8 +381,8 @@ PluginF.shiftEnd=function(site){
 }
 
 PluginF.price=function(site, charRoleUC){
-  var [oC,oS]=site.ORole;
-  var oRole=charRoleUC=='C'?oC:oS;
+  var [oB,oS]=site.ORole;
+  var oRole=charRoleUC=='B'?oB:oS;
     // oRole ////////////////////
   //                         012345678
   var PropTmp={
@@ -394,8 +394,8 @@ PluginF.price=function(site, charRoleUC){
   oRole.StrOrder.push('price');
 }
 PluginF.hourlyPrice=function(site, charRoleUC){
-  var [oC,oS]=site.ORole;
-  var oRole=charRoleUC=='C'?oC:oS;
+  var [oB,oS]=site.ORole;
+  var oRole=charRoleUC=='B'?oB:oS;
     // oRole ////////////////////
   //                         012345678
   var PropTmp={
@@ -408,17 +408,17 @@ PluginF.hourlyPrice=function(site, charRoleUC){
 }
 
 PluginF.fixedPricePerUnit=function(site){
-  var [oC,oS]=site.ORole;
-    // oC ////////////////////
+  var [oB,oS]=site.ORole;
+    // oB ////////////////////
   //                            012345678
   var PropTmp={
     fixedPricePerUnit:      {b:'111010110',type:'DECIMAL(10,0)', default:0},
     fixedPricePerUnitUnit:  {b:'111011111',type:'VARCHAR(5)', default:'', feat:{kind:'B'}}
   };
-  extend(oC.Prop, PropTmp); 
-  oC.StrPrice=oC.StrPrice||[];  oC.StrPrice.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');
-  array_mergeM(oC.StrFiltAccept, 'fixedPricePerUnit', 'fixedPricePerUnitUnit');
-  oC.StrOrder.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');
+  extend(oB.Prop, PropTmp); 
+  oB.StrPrice=oB.StrPrice||[];  oB.StrPrice.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');
+  array_mergeM(oB.StrFiltAccept, 'fixedPricePerUnit', 'fixedPricePerUnitUnit');
+  oB.StrOrder.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');
 }
 
 /***********************************************************************************
@@ -427,7 +427,7 @@ PluginF.fixedPricePerUnit=function(site){
 
 //PluginF.taxi=PluginF.demo=PluginF.test=function(){
 PluginF.taxi=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
   
     // Both ////////////////////
   //                           012345678
@@ -437,12 +437,12 @@ PluginF.taxi=function(site){
     nWheelChairPlaces:    {b:'111010110',type:'TINYINT', default:0, feat:{kind:'S10',min:[0, 1, 2, 3],span:1}}
   };
 
-  extend(oC.Prop,PropTmp);   extend(oS.Prop, PropTmp);
+  extend(oB.Prop,PropTmp);   extend(oS.Prop, PropTmp);
   site.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, site.StrPropE);   array_mergeM(oS.StrFiltAccept, site.StrPropE); 
-  //oC.StrOrder.push('nPassengers', 'nChildSeat', 'nWheelChairPlaces');
+  array_mergeM(oB.StrFiltAccept, site.StrPropE);   array_mergeM(oS.StrFiltAccept, site.StrPropE); 
+  //oB.StrOrder.push('nPassengers', 'nChildSeat', 'nWheelChairPlaces');
   //oS.StrOrder.push('nPassengers', 'nChildSeat', 'nWheelChairPlaces');
-  array_mergeM(oC.StrOrder, site.StrPropE);
+  array_mergeM(oB.StrOrder, site.StrPropE);
   array_mergeM(oS.StrOrder, site.StrPropE);
   
       // oS ////////////////////
@@ -464,7 +464,7 @@ PluginF.taxi=function(site){
 }
 
 PluginF.transport=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
  
     // Both ////////////////////
   var PropTmp={
@@ -480,12 +480,12 @@ PluginF.transport=function(site){
     PropTmp[name]=          {b:'111011110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   } 
   
-  extend(oC.Prop, PropTmp); extend(oS.Prop, PropTmp);
+  extend(oB.Prop, PropTmp); extend(oS.Prop, PropTmp);
   site.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, site.StrPropE);  array_mergeM(oS.StrFiltAccept, site.StrPropE);
-  //array_mergeM(oC.StrOrder, 'payload', site.StrTransportBool);
+  array_mergeM(oB.StrFiltAccept, site.StrPropE);  array_mergeM(oS.StrFiltAccept, site.StrPropE);
+  //array_mergeM(oB.StrOrder, 'payload', site.StrTransportBool);
   //array_mergeM(oS.StrOrder, 'payload', site.StrTransportBool);
-  array_mergeM(oC.StrOrder, site.StrPropE);
+  array_mergeM(oB.StrOrder, site.StrPropE);
   array_mergeM(oS.StrOrder, site.StrPropE);
    
     // oS ////////////////////
@@ -506,9 +506,9 @@ PluginF.transport=function(site){
 }
 
 PluginF.cleaner=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
   
-    // oC ////////////////////
+    // oB ////////////////////
   var StrCleanerBool=['household','janitor','sanitation', 'exterior','customerHasEquipment'];
   //                          012345678
   var PropTmp={};
@@ -516,10 +516,10 @@ PluginF.cleaner=function(site){
     var name=StrCleanerBool[i];
     PropTmp[name]=         {b:'111011110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   }
-  extend(oC.Prop, PropTmp); 
-  oC.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, oC.StrPropE); 
-  array_mergeM(oC.StrOrder, oC.StrPropE);
+  extend(oB.Prop, PropTmp); 
+  oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, oB.StrPropE); 
+  array_mergeM(oB.StrOrder, oB.StrPropE);
   
     // oS ////////////////////
   oS.Prop.vehicleType.feat.bucket=oS.Prop.vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
@@ -527,18 +527,18 @@ PluginF.cleaner=function(site){
 
 
 PluginF.windowcleaner=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
   
-    // oC ////////////////////
+    // oB ////////////////////
   //                          012345678
   var PropTmp={
     nWindow:               {b:'111110111',type:'INT(4)', default:0, feat:{kind:'S11',min:[0, 1, 2, 4, 8, 16, 32, 64, 128, 256]}},
     customerHasEquipment:{b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}}
   };
-  extend(oC.Prop,PropTmp);
-  oC.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, oC.StrPropE); 
-  array_mergeM(oC.StrOrder, oC.StrPropE);
+  extend(oB.Prop,PropTmp);
+  oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, oB.StrPropE); 
+  array_mergeM(oB.StrOrder, oB.StrPropE);
   
   
     // oS ////////////////////
@@ -557,18 +557,18 @@ PluginF.windowcleaner=function(site){
 }
 
 PluginF.lawnmowing=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
   
-    // oC ////////////////////
+    // oB ////////////////////
   //                        012345678
   var PropTmp={
     area:                  {b:'111110111',type:'INT(4)', default:0, feat:{kind:'S11',min:[0, 100, 500, 2000, 10000, 50000]}},
     customerHasEquipment:{b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}}
   };
-  extend(oC.Prop,PropTmp);
-  oC.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, oC.StrPropE);
-  array_mergeM(oC.StrOrder, oC.StrPropE);
+  extend(oB.Prop,PropTmp);
+  oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
+  array_mergeM(oB.StrOrder, oB.StrPropE);
   
     // oS ////////////////////
   oS.StrBool=['pushMower','ridingMower', 'edger'];
@@ -591,22 +591,22 @@ PluginF.lawnmowing=function(site){
 
 
 PluginF.snowremoval=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
 
-    // oC ////////////////////
-  oC.StrBool=['road', 'driveway', 'roof', 'customerHasEquipment'];
+    // oB ////////////////////
+  oB.StrBool=['road', 'driveway', 'roof', 'customerHasEquipment'];
   //                         012345678
   var PropTmp={
     area:                  {b:'111110111',type:'INT(4)', default:0, feat:{kind:'S11',min:[0, 10, 50, 200, 1000, 5000]}}
   };
-  for(var i=0;i<oC.StrBool.length;i++){
-    var name=oC.StrBool[i];
+  for(var i=0;i<oB.StrBool.length;i++){
+    var name=oB.StrBool[i];
     PropTmp[name]=          {b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   }
-  extend(oC.Prop, PropTmp); 
-  oC.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, oC.StrPropE);
-  array_mergeM(oC.StrOrder, oC.StrPropE);
+  extend(oB.Prop, PropTmp); 
+  oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
+  array_mergeM(oB.StrOrder, oB.StrPropE);
   
   
     // oS ////////////////////
@@ -625,17 +625,17 @@ PluginF.snowremoval=function(site){
 }
 
 PluginF.fruitpicker=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
   
-    // oC ////////////////////
+    // oB ////////////////////
   //                        012345678
   var PropTmp={
     fruit:              {b:'111111111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
   };
-  extend(oC.Prop, PropTmp); 
-  oC.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, oC.StrPropE);
-  array_mergeM(oC.StrOrder, oC.StrPropE);
+  extend(oB.Prop, PropTmp); 
+  oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
+  array_mergeM(oB.StrOrder, oB.StrPropE);
 
 
     // oS ////////////////////
@@ -647,18 +647,18 @@ PluginF.fruitpicker=function(site){
 //bNameS=['input','DBSelOne','DBSel','block','label','help','sellerTab','notNull', 'sellerTabIndex'];
 
 PluginF.programmer=function(site){
-  var [oC,oS]=site.ORole;
+  var [oB,oS]=site.ORole;
   
-    // oC ////////////////////
+    // oB ////////////////////
   //                           012345678
   var PropTmp={
     database:              {b:'111111111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}},
     language:              {b:'111111111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
   };
-  extend(oC.Prop, PropTmp);
-  oC.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oC.StrFiltAccept, oC.StrPropE);
-  array_mergeM(oC.StrOrder, oC.StrPropE);
+  extend(oB.Prop, PropTmp);
+  oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
+  array_mergeM(oB.StrOrder, oB.StrPropE);
   
   
     // oS ////////////////////
@@ -743,7 +743,7 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
   site.TableName={};   for(var name in TableNameProt){  site.TableName[name+"Tab"]=siteName+'_'+name; }
   site.ViewName={}; for(var name in ViewNameProt){  site.ViewName[name+"View"]=siteName+'_'+name; }
 
-  extend(site, {boGotNewSellers:0, boGotNewCustomers:0, timerNUserLast:0, nVisC:0, nVisS:0, nTotC:0, nTotS:0, nUser:0}); 
+  extend(site, {boGotNewSellers:0, boGotNewBuyers:0, timerNUserLast:0, nVisB:0, nVisS:0, nTotB:0, nTotS:0, nUser:0}); 
   
   //site.db=siteName in DB?siteName:'default';
   //var db=siteName in DB?DB[siteName]:DB.default;  site.pool=db.pool;
@@ -762,21 +762,21 @@ SiteExtend=function(){
     var siteName=SiteName[i], StrPlugInNArg=[];
     //var tmp={siteName:siteName, Prop:{}, Cond0F:{}, Cond1F:{}, SelOneF:{}, SelF:{}, HistCondF:{}, SellerUpdF:{}, Enum:{}};
     var ORole=JSON.parse(JSON.stringify(ORoleDefault));
-    var tmp={siteName:siteName, ORole:ORole, oC:ORole[0], oS:ORole[1]};
+    var tmp={siteName:siteName, ORole:ORole, oB:ORole[0], oS:ORole[1]};
     var site=extend(Site[siteName],tmp);
     if(['taxi', 'transport'].indexOf(siteName)!=-1) { // , 'demo', 'test'
-      StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'priceC', 'transportCustomer', 'standingByMethod', 'shiftEnd', siteName];   //if(['demo', 'test'].indexOf(siteName)!=-1) StrPlugInNArg.splice(5,0,'taxi');
+      StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'priceB', 'transportBuyer', 'standingByMethod', 'shiftEnd', siteName];   //if(['demo', 'test'].indexOf(siteName)!=-1) StrPlugInNArg.splice(5,0,'taxi');
     }
-    else if(siteName=='cleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', 'shiftEnd', siteName];
-    else if(siteName=='windowcleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', siteName];
-    else if(siteName=='fruitpicker') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', 'fixedPricePerUnit', siteName];
-    else if(siteName=='lawnmowing') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', siteName];
-    else if(siteName=='snowremoval') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceC', siteName];
-    else if(siteName=='programmer') StrPlugInNArg=['general', 'hourlyPriceC', 'hourlyPriceS', siteName];
+    else if(siteName=='cleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', 'shiftEnd', siteName];
+    else if(siteName=='windowcleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', siteName];
+    else if(siteName=='fruitpicker') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', 'fixedPricePerUnit', siteName];
+    else if(siteName=='lawnmowing') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', siteName];
+    else if(siteName=='snowremoval') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', siteName];
+    else if(siteName=='programmer') StrPlugInNArg=['general', 'hourlyPriceB', 'hourlyPriceS', siteName];
     else StrPlugInNArg=['general'];
     
     for(var j=0;j<StrPlugInNArg.length;j++){
-      var nameT=StrPlugInNArg[j], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='C' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+      var nameT=StrPlugInNArg[j], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
       PluginF[nameT](site, charRoleUC);
     }
     siteCalcValExtend(site,siteName);

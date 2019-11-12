@@ -35,7 +35,7 @@ MyMySql.prototype.fin=function(){   if(this.connection) { this.connection.destro
   // accountMerge: The arguments: idUser, idFB, idIdPlace, idOpenId and email may point to different accounts. If so, then those accounts should be merged.
   // Any of the above mentioned arguments may be null.
 app.accountMerge=function*(objArg){
-  var req=this.req, flow=req.flow, site=req.site, ORole=site.ORole, {userTab, customerTab, sellerTab, complaintTab}=site.TableName;
+  var req=this.req, flow=req.flow, site=req.site, ORole=site.ORole, {userTab, buyerTab, sellerTab, complaintTab}=site.TableName;
   var con=this.con;
   var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objArg, Ou={idUser:null};
   var StrMes=[];
@@ -75,7 +75,7 @@ app.accountMerge=function*(objArg){
       // Now check which roleTab row to keep
     for(var j=0;j<ORole.length;j++){
       var {charRole, strRole}=ORole[j];
-      var roleTab=charRole=='c'?customerTab:sellerTab;
+      var roleTab=charRole=='b'?buyerTab:sellerTab;
       var strQMark=array_fill(nU,'?').join(', ');
       var sql="SELECT idUser, coordinatePrecisionM, tCreated, histActive, tAccumulated FROM "+roleTab+" WHERE idUser IN("+strQMark+");";
       var [err, resultsR]=yield* this.myMySql.query(flow, sql, ValU); if(err) return [err];
@@ -140,7 +140,7 @@ app.accountMerge=function*(objArg){
     Sql.push('SELECT @n:=COUNT(*) FROM '+complaintTab+' WHERE idComplainee=?;');
     Sql.push('SELECT @nW:=COUNT(*) FROM '+complaintTab+' WHERE idComplainer=?;');
     Sql.push('UPDATE '+userTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
-    Sql.push('UPDATE '+customerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
+    Sql.push('UPDATE '+buyerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
     Sql.push('UPDATE '+sellerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
     var sql=Sql.join('\n'), Val=Array(5).fill(idUserUBest);
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
@@ -156,7 +156,7 @@ app.accountMerge=function*(objArg){
     var Sql=[];
     Sql.push("UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=?, donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;"); // , nComplaint=?, nComplaintGiven=?
     var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image, donatedAmount, nComplaintCum, nComplaintGivenCum, idUserUBest];  // , nComplaint, nComplaintGiven
-    Sql.push("UPDATE "+customerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
+    Sql.push("UPDATE "+buyerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
     Sql.push("UPDATE "+sellerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
     var sql=Sql.join('\n'), arrT=[donatedAmount, nComplaintCum, nComplaintGivenCum, idUserUBest];  Val.push(...arrT,...arrT);
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
