@@ -2623,7 +2623,9 @@ var viewUserSettingCreator=function(){
   divBoWebPushOK.toggle(boEnablePushNotification);
   
     // boGeoWatch
-  var imgH=imgHelp.cloneNode(); popupHover(imgH,createElement('div').myText('For continuous tracking to work on mobile devices, the device must be prevented from going to sleep, and the browser must be in the foreground.'));
+  var strHelp='For continuous tracking to work on mobile devices, the device must be prevented from going to sleep, and the browser must be in the foreground.';
+  var strHelp='Note on mobile devices: If the screen goes black (or the webpage leaves forground) then continuous tracking will stop working';
+  var imgH=imgHelp.cloneNode(); popupHover(imgH,createElement('div').myText(strHelp));
   var cbBoGeoWatch=createElement('input').prop({type:'checkbox'}).on('click',function(){
     boGeoWatch=this.checked;
   });
@@ -4633,7 +4635,7 @@ var viewFrontCreator=function(){
   var DivButRole=[], CbRole=[], Label=[];
   for(var i=0;i<2;i++){
     var strRole=i?'Sellers':'Buyers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
-    Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'80%', left:'0px', 'box-sizing':'border-box', width:'100%', 'line-height':'90%'});  //, 'z-index':'-1'
+    Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'80%', left:'0px', 'box-sizing':'border-box', width:'100%', 'line-height':'90%', height:'2em'});  //, 'z-index':'-1'
     CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, margin:'0em 0 0.4em',width:'1.4em',height:'1.4em'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
     DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, position:'relative', 'padding':'0em .6em 0'}); //, padding:'0.2em'
   }

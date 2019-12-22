@@ -697,6 +697,13 @@ app.reqStatic=function*() {
   var site=req.site, siteName=site.siteName;
   var pathName=req.pathName;
 
+
+  //var RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(closeby\.market|gavott\.com)")];
+  //var RegAllowedOriginOfStaticFile=[RegExp("^http\:\/\/(localhost|192\.168\.0)")];
+  var RegAllowedOriginOfStaticFile=[];
+  setAccessControlAllowOrigin(req, res, RegAllowedOriginOfStaticFile);
+  if(req.method=='OPTIONS'){ res.end(); return ;}
+
   var eTagIn=getETag(req.headers);
   var keyCache=pathName; if(pathName==='/'+leafSiteSpecific) keyCache=siteName+keyCache;
   if(!(keyCache in CacheUri)){
@@ -1741,7 +1748,7 @@ app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
 
 
 app.SetupSql.prototype.createDummies=function*(flow, siteName){
-  var nData=10;
+  var nData=100;
   var Sql=[];
   
 
