@@ -28,18 +28,15 @@ if(!String.format){
   };
 }
 
-app.ltrim=function(str,charlist){
-  if(charlist === undefined) charlist = "\\s";
+app.ltrim=function(str,charlist=String.raw`\s`){
   return str.replace(new RegExp("^[" + charlist + "]+"), "");
 };
-app.rtrim=function(str,charlist){
-  if (charlist === undefined) charlist = "\\s";
+app.rtrim=function(str,charlist=String.raw`\s`){
   return str.replace(new RegExp("[" + charlist + "]+$"), "");
 };
-app.trim=function(str,charlist){
-  if (charlist === undefined) charlist = "\\s";
-  return str.replace(new RegExp("^[" + charlist + "]+([^" + charlist + "]*)[" + charlist + "]+$"), function(m){return m[1];});
-};
+app.trim=function(str,charlist=String.raw`\s`){
+  return str.replace(new RegExp("^[" + charlist + "]+([^" + charlist + "]*)[" + charlist + "]+$"), function(m,n){return n;});
+}
 
 //app.pad2=function(n){ return ('0'+n).slice(-2);}
 app.pad2=function(n){return (n<10?'0':'')+n;}
@@ -392,17 +389,19 @@ app.closest2Val=function(v, val){
   return [v[best_i], best_i];
 }
 app.normalizeAng=function(angIn, angCenter=0, lapSize=twoPi){
-  var angOut,nLapsCorrection;
   var lapSizeHalf=lapSize/2;
 
-  var upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf, angInTransfer=angIn-angCenter;
-  var tmp;
-  if(angIn>=upper){tmp=angInTransfer+lapSizeHalf; nLapsCorrection=Math.floor(tmp/lapSize);}
-  else if(angIn<lower){tmp=angInTransfer+lapSizeHalf; nLapsCorrection=Math.floor(tmp/lapSize);}
-  else return [angIn,0];
+  //var upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf, angInRelative=angIn-angCenter;
+  //var tmp, nLapsCorrection;
+  //if(angIn>=upper){tmp=angInRelative+lapSizeHalf; nLapsCorrection=Math.floor(tmp/lapSize);}
+  //else if(angIn<lower){tmp=angInRelative+lapSizeHalf; nLapsCorrection=Math.floor(tmp/lapSize);}
+  //else return [angIn,0];
   
-  angOut=angIn-nLapsCorrection*lapSize;  
+  var upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf;   if(angIn<upper && angIn>=lower){return [angIn,0];}
+  var angInRelative=angIn-angCenter;  // angInRelative: angIn relative to angCenter
+  var tmp=angInRelative+lapSizeHalf, nLapsCorrection=Math.floor(tmp/lapSize);
 
+  var angOut=angIn-nLapsCorrection*lapSize;  
   return [angOut,nLapsCorrection];
 }
 
@@ -469,7 +468,7 @@ MercatorProjection.prototype.fromPointToLatLngV = function(point,noWrap=1){
   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI/2);
   if(noWrap) [lng]=normalizeAng(lng,0,360);
   return [lat, lng];
-};
+}
 MercatorProjection.prototype.fromPointToLatLng = function(point,noWrap=1){  var [lat,lng]=this.fromPointToLatLngV(point, noWrap);  return {lat:lat,lng:lng};  };
 MercatorProjection.prototype.getBounds=function(pC,z,size){
   var zf=Math.pow(2, z)*2;
@@ -483,12 +482,106 @@ MercatorProjection.prototype.fromYToLat = function(y){
   var latRadians = (y - yOrg) / -this.pixelsPerLonRadian_;
   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI/2);
   return lat;
-};
+}
 
 app.resM2resWC=function(resMEquator,lat){
   var divisor=Math.cos(deg2r*lat), resT=resMEquator/divisor;  if(resT<1)resT=1;
   var resWC=resT*m2wc; return resWC;
 }  
+
+
+  //
+  // GeoHash
+  //
+
+  // Functions for creating bitmasks
+var createBMOne=function(i) {    var imod=i%32, a;     if(imod==31) a=0x80000000; else  a=1<<imod;     if(i>=32) a=a*0x100000000;     return a;  }  // 0≤i. Ex: i=5 => 0000 0000 0000 0000  0000 0000 0010 0000
+var floorLowerBits=function(a,n=0){
+  if(n==0) return a;
+  var div=Math.pow(2,n);
+  var b=Math.floor(a/div)*div;
+  return b;
+}
+app.GeoHash={}
+GeoHash.int2GeoHash=function(IntPoint){
+  var {x,y}=IntPoint, strX=x.toString(2).padStart(32, '0'), strY=y.toString(2).padStart(32, '0');
+  if(strX.length>32) alert("strX.length>32"); 
+  if(strY.length>32) alert("strY.length>32"); 
+  var arrT=Array(64); for(var i=0;i<32;i++){ arrT[2*i+1]=strX[i]; arrT[2*i]=strY[i]; }
+  var strGeoHash=arrT.join('');
+  return strGeoHash;
+}
+GeoHash.wc2ustr32=function(x, boInt=false){ // Returns a string of length 34 !!
+  var strX=Math.floor(x).toString(2).padStart(10, '0')  +  (x%1).toString(2).slice(2).padEnd(24,'0').slice(0,24);  
+  if(boInt) return parseInt(strX,2); else return strX;
+}
+GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
+  if(intX1<0) intX1+=0x100000000; if(intY1<0) intY1+=0x100000000;
+  var intX1Corrected=intX1>intX0?intX1:intX1+0x100000000;
+  var intDX=intX1Corrected-intX0, strDX=intDX.toString(2), intDY=intY1-intY0, strDY=intDY.toString(2);
+  
+    // Create an array of pot size candidates
+  var lenStrDX=ltrim(strDX,'0').length, lenStrDY=ltrim(strDY,'0').length;  // lenStrDX and lenStrDY ∈[0,34]. Ex: lenStrDX==32 => intDX is wider than half the world
+  var msbXD=lenStrDX-1, msbYD=lenStrDY-1;  // msbXD and msbYD ∈[-1,33]. Ex: msbXD==31 => intDX is wider than half the world
+  var levXD=msbXD, levYD=msbYD,  levXDP1=msbXD+1, levYDP1=msbYD+1,  levXDP2=msbXD+2, levYDP2=msbYD+2;
+
+  var obj={};
+  var obj = Object.fromEntries([[levXD+'_'+levXD], [levXDP1+'_'+levXD], [levXDP1+'_'+levXDP1], [levXDP2+'_'+levXDP1],   [levYD+'_'+levYD], [levYDP1+'_'+levYD], [levYDP1+'_'+levYDP1], [levYDP2+'_'+levYDP1]]);
+  var StrPotSizeLev=Object.keys(obj); // StrPotSizeLev: Ex: ["6_6", "5_6", "5_5", "4_5",   "9_9", "8_9", "8_8", "7_8"]
+  var arrIntPotSizeLev=StrPotSizeLev.map(str=>{var a=str.split('_'); a[0]=parseInt(a[0]); a[1]=parseInt(a[1]); return a;}); // arrIntPotSizeLev: array of [intLevW,intLevH], Ex: [[5,5], [4,5], [6,6], [5,6],   [8,8], [7,8], [9,9], [8,9]]
+  
+  for(var i=arrIntPotSizeLev.length-1;i>=0;i--){
+    var tmp=arrIntPotSizeLev[i];  if(tmp[0]<0 || tmp[0]>32 || tmp[1]<0 || tmp[1]>32) arrIntPotSizeLev.splice(i,1);  // So 33 bits are allowed here
+  }
+  
+    // Sort the array before finding the best pot size
+  arrIntPotSizeLev.sort((IntA, IntB)=>{var a=IntA[0]*IntA[1], b=IntB[0]*IntB[1]; return a-b;});
+  
+    // Find the best pot size
+    // Going through the array backwards gives preference to larger pots if the area is equal.
+  var fitBest=Infinity, iBest=-1, nWBest, nHBest;
+  for(var i=arrIntPotSizeLev.length-1;i>=0;i--){
+    var IntPotSizeLev=arrIntPotSizeLev[i];
+    var [intPotSizeLev0, intPotSizeLev1]=IntPotSizeLev;
+    var nW=1, nH=1;
+    var intPotSizeX=createBMOne(intPotSizeLev0),  intPotSizeY=createBMOne(intPotSizeLev1);
+    if(intPotSizeLev0<32) {
+      var intX0LowEdge=floorLowerBits(intX0, intPotSizeLev0),  intX1LowEdge=floorLowerBits(intX1Corrected, intPotSizeLev0);
+      nW=Math.floor(intX1LowEdge/intPotSizeX)-Math.floor(intX0LowEdge/intPotSizeX)+1;
+    }
+    if(intPotSizeLev1<32) {
+      var intY0LowEdge=floorLowerBits(intY0, intPotSizeLev1),  intY1LowEdge=floorLowerBits(intY1, intPotSizeLev1);
+      nH=Math.floor(intY1LowEdge/intPotSizeY)-Math.floor(intY0LowEdge/intPotSizeY)+1;
+    }
+    var area=nW*intPotSizeX*nH*intPotSizeY, fitTmp=area;
+    //if(nW>5 || nH>5) fitTmp*=10;
+    if(fitTmp<fitBest){ fitBest=fitTmp; iBest=i; nWBest=nW; nHBest=nH;}
+  }
+  var IntPotSizeLev=arrIntPotSizeLev[iBest], nW=nWBest, nH=nHBest;
+  var [intPotSizeLev0, intPotSizeLev1]=IntPotSizeLev;
+  var intPotSizeX=createBMOne(intPotSizeLev0),  intPotSizeY=createBMOne(intPotSizeLev1);
+  var intX0Edge=floorLowerBits(intX0, intPotSizeLev0), intY0Edge=floorLowerBits(intY0, intPotSizeLev1)
+
+    // Create an array of pots
+  var arrRange=[], arrRangeHash=[], arrRangeStr=[], arrBigIntHashSta=new BigUint64Array(nW*nH), arrBigIntHashEnd=new BigUint64Array(nW*nH);
+  for(var i=0;i<nH;i++){
+    var yStart=intY0Edge+i*intPotSizeY, yEnd=yStart+intPotSizeY-1;
+    for(var j=0;j<nW;j++){
+      var xStart=intX0Edge+j*intPotSizeX, xEnd=xStart+intPotSizeX-1;
+      var uintLim=0x100000000; if(xStart>=uintLim) {xStart-=uintLim; xEnd-=uintLim;}
+      if(xEnd>=uintLim) {console.log('xEnd>=uintLim'); debugger;}
+      var IntStart={x:xStart,y:yStart}, IntEnd={x:xEnd,y:yEnd};
+      arrRange.push({IntStart, IntEnd});
+      var StrSta={x:xStart.toString(2).padStart(32,0),y:yStart.toString(2).padStart(32,0)}, StrEnd={x:xEnd.toString(2).padStart(32,0),y:yEnd.toString(2).padStart(32,0)};  arrRangeStr.push({StrSta, StrEnd});
+      var strGeoHashStart=GeoHash.int2GeoHash(IntStart), strGeoHashEnd=GeoHash.int2GeoHash(IntEnd);
+      arrRangeHash.push([strGeoHashStart, strGeoHashEnd]);
+      arrBigIntHashSta[i*nW+j]='0b'+strGeoHashStart;
+      arrBigIntHashEnd[i*nW+j]='0b'+strGeoHashEnd;
+    }
+  }
+  return {arrRangeHash, arrBigIntHashSta, arrBigIntHashEnd, arrRange, arrRangeStr, IntPotSizeLev, nW, nH };
+}
+
 
 
 
