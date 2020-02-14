@@ -791,16 +791,17 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
   var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!buyer && !seller) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for sellers as well as any visitor) 
   var {x,y}=inObj;
   var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
+  var strGeoHash=GeoHash.pWC2GeoHash({x,y}), bigIntGeoHash=BigInt('0b'+strGeoHash);
   if(seller){
     var {idUser,coordinatePrecisionM}=seller;
     var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
-    var sql="UPDATE "+sellerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
+    var sql="UPDATE "+sellerTab+" SET x=?, y=?, geoHash=? WHERE idUser=? ", Val=[xtmp,ytmp,bigIntGeoHash,idUser];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
   if(buyer){
     var {idUser,coordinatePrecisionM}=buyer;
     var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
-    var sql="UPDATE "+buyerTab+" SET x=?, y=? WHERE idUser=? ", Val=[xtmp,ytmp,idUser];
+    var sql="UPDATE "+buyerTab+" SET x=?, y=?, geoHash=? WHERE idUser=? ", Val=[xtmp,ytmp,bigIntGeoHash,idUser];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
   return [null, [Ou]];
@@ -854,7 +855,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
   //Sql.push("SET @xC="+xC+"; SET @yC="+yC+"; SET @wVP="+wVP+"; SET @hVP="+hVP+";
   
   //sql="UPDATE "+sellerTab+" SET boShow=0, tPos=now() WHERE boShow=1 AND now()>DATE_ADD(tPos, INTERVAL hideTimer SECOND)";
-  Sql.push("CALL "+siteName+"IFunPoll;"); 
+  Sql.push("CALL "+siteName+"IFunPoll("+intTAccumulatedUpdateTimer+");"); 
 
   if(boCalcZoom){  
     //Sql.push("SELECT count(u.idUser) AS nBuyerReal FROM "+userTab+" u JOIN "+buyerTab+" ro ON u.idUser=ro.idUser;");
@@ -862,11 +863,11 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
     Sql.push("SELECT count(*) AS nBuyerReal FROM "+buyerTab+";");
     Sql.push("SELECT count(*) AS nSellerReal FROM "+sellerTab+";");
  
-    var WhereTmpB=this.OQueryPart[0].Where.concat("boShow=1", sqlBeforeHiding),  strCondB=array_filter(WhereTmpB).join(' AND ');
-    var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", sqlBeforeHiding),  strCondS=array_filter(WhereTmpS).join(' AND ');
+    var WhereTmpB=this.OQueryPart[0].Where.concat("boShow=1", sqlBoBeforeHiding),  strCondB=array_filter(WhereTmpB).join(' AND ');
+    var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", sqlBoBeforeHiding),  strCondS=array_filter(WhereTmpS).join(' AND ');
     
     var xOpp, xAddTerm; if(xC>128) {xOpp=xC-128; xAddTerm="IF(x<"+xOpp+",256,0)";}  else {xOpp=xC+128;  xAddTerm="IF(x>"+xOpp+",-256,0)"; } // xOpp : x of opposite side of planet
-    var tmp="min(greatest(abs(x+"+xAddTerm+"-"+xC+"),abs(y-"+yC+")))";
+    var tmp="MIN(GREATEST(ABS(x+"+xAddTerm+"-"+xC+"),ABS(y-"+yC+")))";
     Sql.push("SELECT "+tmp+" AS distMin FROM "+buyerTab+" ro WHERE "+strCondB+";");
     Sql.push("SELECT "+tmp+" AS distMin FROM "+sellerTab+" ro WHERE "+strCondS+";");
   }
@@ -892,6 +893,20 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
   return [null, [Ou]];
 } 
 
+//dydx=hVP/wVP;
+//Sql.push("SELECT x, y FROM "+buyerTab+" ro WHERE geoHash<=? AND "+strCondB+" UNION ");
+//Sql.push("SELECT x, y FROM "+sellerTab+" ro WHERE geoHash<=? AND "+strCondS+" UNION ");
+//Sql.push("SELECT x, y FROM "+buyerTab+" ro WHERE geoHash>? AND "+strCondB+" UNION ");
+//Sql.push("SELECT x, y FROM "+sellerTab+" ro WHERE geoHash>? AND "+strCondS+";");
+  //var sql=Sql.join('\n'), Val=[strGeoHash, strGeoHash, strGeoHash, strGeoHash];
+  //var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  //var fitBest=Infinity, xBest, yBest;
+  //for(var i=0;i<results.length;i++){
+    //var {x,y}=results[i], xDist=Math.abs(x+(x<xOpp?256:0)-xC), yDist=Math.abs(y-yC), fit=Math.max(xDist, yDist/dydx);
+    //if(fit<fitBest) {fitBest=fit; xBest=xDist; yBest=yDist; }
+  //} 
+
+    
 //ReqBE.prototype.addMapCond=function*(inObj){}
 
 
@@ -899,14 +914,35 @@ ReqBE.prototype.getList=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, buyerTab, buyerTeamTab, complaintTab}=site.TableName;
 
   var Ou={};
-  var xl,xh,yl,yh;
-  if(this.zoom>1){
+  var xl,xh,yl,yh,xho,yho;  // o for "open set" 
+  if(this.zoom<=1){xl=0; xh=256; yl=0; yh=256; }
+  else{
     var projs=new MercatorProjection();
-    var {sw, ne}=projs.getBounds(this.pC,this.zoom,this.VPSize); xl=sw.x; xh=ne.x; yl=ne.y; yh=sw.y;
-  }  else {xl=0; xh=256; yl=0; yh=256;}
-  if(xh-xl>256) {xl=0; xh=256;}
-  [xl]=normalizeAng(xl,128,256);   [xh]=normalizeAng(xh,128,256);
-  this.whereMap="y>"+yl+" AND y<"+yh+" AND "; if(xl<xh) this.whereMap+="x>"+xl+" AND x<"+xh; else this.whereMap+="(x>"+xl+" OR x<"+xh+")";
+    //var {sw, ne}=projs.getBounds(this.pC,this.zoom,this.VPSize); xl=sw.x; xh=ne.x; yl=ne.y; yh=sw.y;
+    var [xl, xh, yl, yh]=projs.getBounds(this.pC,this.zoom,this.VPSize);
+    if(xh-xl>256) {xl=0; xh=256; xho=wcUpperLim;}
+    [xl]=normalizeAng(xl,128,256);   [xh]=normalizeAng(xh,128,256);
+    var xl=bound(xl,0,256), xh=bound(xh,0,256), yl=bound(yl,0,256), yh=bound(yh,0,256);
+    //var xl=bound(xl,0,256), xh=bound(xh,0), yl=bound(yl,0,256), yh=bound(yh,0);
+  }
+  xho=xh;yho=yh; if(xh==256) xho=wcUpperLim;  if(yh==256) yho=wcUpperLim;
+  var strXCond=(xl<xh)?("x>="+xl+" AND x<"+xh):("(x>="+xl+" OR x<"+xh+")");
+  this.whereMap="y>="+yl+" AND y<"+yh+" AND "+strXCond;
+  
+  
+    // Add geoHash condition
+  var arrInp=[xl,xho,yl,yho];
+  arrInp=arrInp.map((a,i)=>{a=wc2uint32(a); if(i%2) a-=1; return a;}); // Interpret upper limits as the first number outside the range.
+  var {arrRangeHash, arrBigIntHash, arrBigIntHashSta, arrBigIntHashEnd, arrRange, arrRangeStr, IntPotSizeLev, nW, nH }=GeoHash.getRectangleSelection(...arrInp);
+  var WhereGeoHash=[]
+  for(var i=0;i<arrRangeHash.length;i++){
+    var {IntStart:{x:xSta,y:ySta},IntEnd:{x:xEnd,y:yEnd}}=arrRange[i];
+    //var nPad=10;  console.log(xSta.toString().padStart(nPad)+','+ySta.toString().padStart(nPad)+' '+xEnd.toString().padStart(nPad)+','+yEnd.toString().padStart(nPad));
+    //console.log(arrRangeHash[i].join(',')+': '+arrBigIntHashSta[i].toString().padStart(20)+' '+arrBigIntHashEnd[i].toString().padStart(20));
+    WhereGeoHash.push('(geoHash>='+arrBigIntHashSta[i] + ' AND ' + 'geoHash<='+(arrBigIntHashEnd[i]) + ')');
+  }
+  var whereGeoHash=WhereGeoHash.join(' OR '); if(WhereGeoHash.length>1) whereGeoHash='( '+whereGeoHash+' )';
+  this.whereMap+=' AND '+whereGeoHash;
   
   var CharRole=this.CharRole, len=this.CharRole.length;
   var Sql=[];
@@ -917,14 +953,14 @@ ReqBE.prototype.getList=function*(inObj){
     var roleTab=iRole?sellerTab:buyerTab;
     var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
     
-    var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", sqlBeforeHiding),  strCond=array_filter(WhereTmp).join(' AND ');
+    var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", sqlBoBeforeHiding),  strCond=array_filter(WhereTmp).join(' AND ');
     //var strColT=this.OQueryPart[i].strCol;
     var strColT=oRole.strCol;
 //Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM (("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idComplainee=ro.idUser WHERE "+strCond+" GROUP BY ro.idUser ORDER BY tPos DESC LIMIT 0, "+maxList+";");
     Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM ("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam  WHERE "+strCond+" LIMIT 0, "+maxList+";"); // ORDER BY tPos DESC GROUP BY ro.idUser
     Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
 
-    var WhereTmp=[this.whereMap, "boShow=1", sqlBeforeHiding],  strCond=array_filter(WhereTmp).join(' AND ');
+    var WhereTmp=[this.whereMap, "boShow=1", sqlBoBeforeHiding],  strCond=array_filter(WhereTmp).join(' AND ');
     Sql.push("SELECT count(*) AS n FROM "+roleTab+" ro WHERE "+strCond+";"); // nUnFiltered
   }
   
@@ -983,7 +1019,7 @@ ReqBE.prototype.getGroupList=function*(inObj){
   for(var i=0;i<this.CharRole.length;i++){
     if(!this.BoUseList[i]){
       var charRole=this.CharRole[i];
-      var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", sqlBeforeHiding]),  strCond=array_filter(WhereTmp).join(' AND ');
+      var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", sqlBoBeforeHiding]),  strCond=array_filter(WhereTmp).join(' AND ');
       var roleTab=charRole=='b'?buyerTab:sellerTab;
       //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
       var strTableRef=roleTab+' ro';
@@ -1016,7 +1052,7 @@ ReqBE.prototype.getHist=function*(inObj){
     //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
     var strTableRef=roleTab+' ro';
     
-    var arg={strTableRef:strTableRef, WhereExtra:[this.whereMap, "boShow=1", sqlBeforeHiding], myMySql:this.myMySql};  //, Ou:Ou
+    var arg={strTableRef:strTableRef, WhereExtra:[this.whereMap, "boShow=1", sqlBoBeforeHiding], myMySql:this.myMySql};  //, Ou:Ou
     arg.Filt=this.OFilt[i];
     //arg.mysqlPool=this.pool;
     //arg.oRole=site['o'+charRoleUC];
@@ -1233,13 +1269,14 @@ ReqBE.prototype.RShow=function*(inObj){  // writing needSession
   var {idUser,coordinatePrecisionM}=role;
   var {x,y}=inObj;
   var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
-  var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
+  var [x,y]=roundXY(coordinatePrecisionM, x, y, lat);
+  var strGeoHash=GeoHash.pWC2GeoHash({x,y}), bigIntGeoHash=BigInt('0b'+strGeoHash);
 
   var Sql=[], Val=[];
   Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
-  Sql.push("UPDATE "+roleTab+" SET x=?, y=?, boShow=1, tPos=now(), histActive=histActive|1 WHERE idUser=?;");
+  Sql.push("UPDATE "+roleTab+" SET x=?, y=?, geoHash=?, boShow=1, tPos=now(), histActive=histActive|1 WHERE idUser=?;");
   Sql.push("UPDATE "+roleTabAlt+" SET boShow=0, tPos=0, histActive=histActive|1 WHERE idUser=?;");
-  Val=[idUser,xtmp,ytmp,idUser,idUser];
+  Val=[idUser,x,y,bigIntGeoHash,idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var strTmp=charRole=='b'?'Buyer':'Seller';   this.mes(strTmp+' visible');    

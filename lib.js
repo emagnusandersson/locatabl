@@ -442,6 +442,8 @@ app.makeOrdinalEndingEn=function(n){
 // MercatorProjection
 //
 
+app.wcResolution=256*Number.EPSILON;
+app.wcUpperLim=256-256*Number.EPSILON;
 app.TILE_SIZE = 256;
 app.degreesToRadians=function(deg){  return deg*(Math.PI/180);  }
 app.radiansToDegrees=function(rad){  return rad/(Math.PI/180);  }
@@ -471,11 +473,13 @@ MercatorProjection.prototype.fromPointToLatLngV = function(point,noWrap=1){
 }
 MercatorProjection.prototype.fromPointToLatLng = function(point,noWrap=1){  var [lat,lng]=this.fromPointToLatLngV(point, noWrap);  return {lat:lat,lng:lng};  };
 MercatorProjection.prototype.getBounds=function(pC,z,size){
+  var {x,y}=pC;
   var zf=Math.pow(2, z)*2;
   var dw=size[0]/zf, dh=size[1]/zf;
-  var sw={x:pC.x-dw, y:pC.y+dh};
-  var ne={x:pC.x+dw, y:pC.y-dh};
-  return {sw:sw,ne:ne};
+  //var sw={x:x-dw, y:y+dh};
+  //var ne={x:x+dw, y:y-dh};
+  //return {sw:sw,ne:ne};
+  var xl=x-dw, xh=x+dw, yl=y-dh, yh=y+dh;  return [xl, xh, yl, yh];
 }
 MercatorProjection.prototype.fromYToLat = function(y){
   var yOrg=this.pOrg.y;
@@ -494,31 +498,32 @@ app.resM2resWC=function(resMEquator,lat){
   // GeoHash
   //
 
-  // Functions for creating bitmasks
-var createBMOne=function(i) {    var imod=i%32, a;     if(imod==31) a=0x80000000; else  a=1<<imod;     if(i>=32) a=a*0x100000000;     return a;  }  // 0≤i. Ex: i=5 => 0000 0000 0000 0000  0000 0000 0010 0000
-var floorLowerBits=function(a,n=0){
+
+app.createBMOne=function(i) {    var imod=i%32, a;     if(imod==31) a=0x80000000; else  a=1<<imod;     if(i>=32) a=a*0x100000000;     return a;  }  // 0≤i. Ex: i=5 => 0000 0000 0000 0000  0000 0000 0010 0000
+app.floorLowerBits=function(a,n=0){
   if(n==0) return a;
   var div=Math.pow(2,n);
   var b=Math.floor(a/div)*div;
   return b;
 }
+app.zipperMergeInt=function(a,b){ // The bits of two integers (uint32) a and b are "zipper merged" into c (a string of length 64) like [a31,b31,a30,b30, ... a0,b0]
+  var strA=a.toString(2).padStart(32, '0'), strB=b.toString(2).padStart(32, '0');
+  if(strA.length>32) {console.log("strA.length>32"); debugger; }
+  if(strB.length>32) {console.log("strB.length>32"); debugger; }
+  var arrT=Array(64); for(var i=0;i<32;i++){ arrT[2*i+1]=strA[i]; arrT[2*i]=strB[i]; }
+  var c=arrT.join('');
+  return c;
+}
+app.wc2uint32=function(x){ return Math.floor(x*0x1000000); }
+
 app.GeoHash={}
-GeoHash.int2GeoHash=function(IntPoint){
-  var {x,y}=IntPoint, strX=x.toString(2).padStart(32, '0'), strY=y.toString(2).padStart(32, '0');
-  if(strX.length>32) alert("strX.length>32"); 
-  if(strY.length>32) alert("strY.length>32"); 
-  var arrT=Array(64); for(var i=0;i<32;i++){ arrT[2*i+1]=strX[i]; arrT[2*i]=strY[i]; }
-  var strGeoHash=arrT.join('');
-  return strGeoHash;
-}
-GeoHash.wc2ustr32=function(x, boInt=false){ // Returns a string of length 34 !!
-  var strX=Math.floor(x).toString(2).padStart(10, '0')  +  (x%1).toString(2).slice(2).padEnd(24,'0').slice(0,24);  
-  if(boInt) return parseInt(strX,2); else return strX;
-}
+GeoHash.pWC2GeoHash=function(pWC){ var intX=wc2uint32(pWC.x), intY=wc2uint32(pWC.y),   strGeoHash=zipperMergeInt(intX, intY);      return strGeoHash;  }
 GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
+  
   if(intX1<0) intX1+=0x100000000; if(intY1<0) intY1+=0x100000000;
   var intX1Corrected=intX1>intX0?intX1:intX1+0x100000000;
   var intDX=intX1Corrected-intX0, strDX=intDX.toString(2), intDY=intY1-intY0, strDY=intDY.toString(2);
+  
   
     // Create an array of pot size candidates
   var lenStrDX=ltrim(strDX,'0').length, lenStrDY=ltrim(strDY,'0').length;  // lenStrDX and lenStrDY ∈[0,34]. Ex: lenStrDX==32 => intDX is wider than half the world
@@ -536,6 +541,7 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
   
     // Sort the array before finding the best pot size
   arrIntPotSizeLev.sort((IntA, IntB)=>{var a=IntA[0]*IntA[1], b=IntB[0]*IntB[1]; return a-b;});
+  
   
     // Find the best pot size
     // Going through the array backwards gives preference to larger pots if the area is equal.
@@ -563,7 +569,7 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
   var intX0Edge=floorLowerBits(intX0, intPotSizeLev0), intY0Edge=floorLowerBits(intY0, intPotSizeLev1)
 
     // Create an array of pots
-  var arrRange=[], arrRangeHash=[], arrRangeStr=[], arrBigIntHashSta=new BigUint64Array(nW*nH), arrBigIntHashEnd=new BigUint64Array(nW*nH);
+  var arrRange=[], arrRangeHash=[], arrRangeStr=[], arrBigIntHashSta=new BigUint64Array(nW*nH), arrBigIntHashEnd=new BigUint64Array(nW*nH), arrBigIntHash=[];
   for(var i=0;i<nH;i++){
     var yStart=intY0Edge+i*intPotSizeY, yEnd=yStart+intPotSizeY-1;
     for(var j=0;j<nW;j++){
@@ -573,17 +579,15 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
       var IntStart={x:xStart,y:yStart}, IntEnd={x:xEnd,y:yEnd};
       arrRange.push({IntStart, IntEnd});
       var StrSta={x:xStart.toString(2).padStart(32,0),y:yStart.toString(2).padStart(32,0)}, StrEnd={x:xEnd.toString(2).padStart(32,0),y:yEnd.toString(2).padStart(32,0)};  arrRangeStr.push({StrSta, StrEnd});
-      var strGeoHashStart=GeoHash.int2GeoHash(IntStart), strGeoHashEnd=GeoHash.int2GeoHash(IntEnd);
+      var strGeoHashStart=zipperMergeInt(IntStart.x, IntStart.y), strGeoHashEnd=zipperMergeInt(IntEnd.x, IntEnd.y);
       arrRangeHash.push([strGeoHashStart, strGeoHashEnd]);
       arrBigIntHashSta[i*nW+j]='0b'+strGeoHashStart;
       arrBigIntHashEnd[i*nW+j]='0b'+strGeoHashEnd;
+      arrBigIntHash.push([BigInt('0b'+strGeoHashStart), BigInt('0b'+strGeoHashEnd)]);
     }
   }
-  return {arrRangeHash, arrBigIntHashSta, arrBigIntHashEnd, arrRange, arrRangeStr, IntPotSizeLev, nW, nH };
+  return {arrRangeHash, arrBigIntHash, arrBigIntHashSta, arrBigIntHashEnd, arrRange, arrRangeStr, IntPotSizeLev, nW, nH };
 }
-
-
-
 
 //
 // Obsolete

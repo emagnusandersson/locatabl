@@ -57,7 +57,7 @@ var sqlHistActiveCol="histActive<<"+sqlDayDiff+"  "+sqlMaskHistActive;
 //sqlHistActiveColUpd="histActive= (histActive<<"+sqlDayDiff+" | 1) "+sqlMaskHistActive; // "<<" has higher precedence than "|"
 sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
-sqlBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer";
+sqlBoBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer"; // "-" has higher precedence than "<"
 
 specialistDefault={user:0,complainer:0,complainee:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
@@ -146,6 +146,7 @@ PluginF.general=function(site){
   tLastPriceChange:    {b:'011011101',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP'},
   x:                   {b:'111000111',type:'DOUBLE', default:0},
   y:                   {b:'111000111',type:'DOUBLE', default:0},
+  geoHash:             {b:'000000111',type:'BIGINT UNSIGNED', default:0},
   //nMonthsStartOffer: {b:'000000110',type:'INT(4)', default:0},
 
   //nPayment:          {b:'000000000'},
