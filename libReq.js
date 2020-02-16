@@ -119,6 +119,10 @@ app.reqCurlEnd=function*(){
 app.reqPubKeyStore=function*(){
   var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS, uSite=req.uSite; //this.pool=DB[site.db].pool;
   var flow=req.flow;
+  
+  var strT=req.headers['Sec-Fetch-Mode'];
+  if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  
   //this.mesO=mesOMake('\n');
   
   var pubKey=objQS.pubKey||'';
@@ -180,12 +184,17 @@ setItem('CSRFCode',CSRFCode);
  ******************************************************************************/
 app.reqPrev=function*() {
   var req=this.req, res=this.res;
+  
+  var strT=req.headers['Sec-Fetch-Mode'];
+  if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  
   res.end(`<!DOCTYPE html>
 <html><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" id="viewportMy" content="initial-scale=1" />
 <meta name="robots" content="noindex">
-</head><body>
+</head>
+<body>
 <p>Prev
 <p><a href=`+req.uSite+`>index</a>
 </body></html>`);
@@ -200,6 +209,10 @@ app.reqPrev=function*() {
 // Not used: strLangBrowser
 app.reqIndex=function*() {
   var req=this.req, res=this.res;
+  
+  var strT=req.headers['Sec-Fetch-Mode'];
+  if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  
   var objQS=req.objQS;
   var site=req.site, siteName=site.siteName, wwwSite=req.wwwSite, uSite=req.uSite;
 
@@ -550,6 +563,10 @@ app.reqImage=function*() {
  ******************************************************************************/
 app.reqLoginBack=function*(){
   var req=this.req, res=this.res;
+  
+  //var strT=req.headers['Sec-Fetch-Mode'];
+  //if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  
   var wwwLoginScopeTmp=null; if('wwwLoginScope' in req.site) wwwLoginScopeTmp=req.site.wwwLoginScope;
   var uSite=req.strSchemeLong+req.wwwSite;
   
@@ -638,6 +655,10 @@ app.reqVerifyPWResetReturn=function*() {
 app.reqVerifyEmailNCreateUserReturn=function*() {
   var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var {userTab, buyerTab, sellerTab}=site.TableName;
+  
+  //var strT=req.headers['Sec-Fetch-Mode'];
+  //if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
@@ -740,7 +761,7 @@ app.reqMonitor=function*(){
   var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, buyerTab}=site.TableName;
   var flow=req.flow;
   
-  //if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
+  //if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
   if(boRefresh){ 
     var Sql=[];
@@ -819,7 +840,7 @@ app.reqStat=function*(){
   var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var flow=req.flow;
   
-  if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
+  if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
   var siteName=site.siteName, objQS=req.objQS, {userTab, buyerTab, sellerTab}=site.TableName;
   
@@ -886,7 +907,7 @@ app.reqStatBoth=function*(){
   var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var flow=req.flow;
   
-  if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
+  if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
   var siteName=site.siteName, objQS=req.objQS, {userTab, buyerTab, sellerTab}=site.TableName;
   
@@ -985,7 +1006,7 @@ app.reqStatTeam=function*(){
   var flow=req.flow;
   var siteName=site.siteName, objQS=req.objQS;
   
-  if(!req.boCookieLaxOK) {res.outCode(401, "Lax cookie not set");  return;  }
+  if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
   if('code' in objQS && objQS.code=='amfoen') {} else {res.outCode(401, "Not authorized");  return;  }
   
   var {userTab, userImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, sellerTab, sellerTeamTab, sellerTeamImageTab}=site.TableName;
@@ -1610,9 +1631,11 @@ CLIENT_FOUND_ROWS
 
       IF IboShow=0 THEN
         IF IiRole=0 THEN
-          UPDATE `+buyerTab+` SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser;
+          #UPDATE `+buyerTab+` SET boShow=IboShow, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET boShow=IboShow, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
         ELSE
-          UPDATE `+sellerTab+` SET boShow=IboShow, tPos=now(), histActive=histActive|1 WHERE idUser=VidUser;
+          #UPDATE `+sellerTab+` SET boShow=IboShow, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET boShow=IboShow, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       ELSE
@@ -1628,17 +1651,18 @@ CLIENT_FOUND_ROWS
         SET @bigIntGeoHash=pWC2GeoHash(Ix, Iy);
 
         IF IiRole=0 THEN
-          UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser;
+          #UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second) WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now(), tHide=now() WHERE idUser=VidUser;
         ELSE
-          UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now() WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now() WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now(), tHide=now() WHERE idUser=VidUser;
+          #UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second) WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       END IF;
       COMMIT;
     END`);
-
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupMake");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupMake()
@@ -1793,7 +1817,7 @@ app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
 
 
 app.SetupSql.prototype.createDummies=function*(flow, siteName){
-  var nData=20000;
+  var nData=10;
   
 
   var SEK2CUR={SEK:1,USD:0.14,GBP:0.1,EUR:0.12,CNY:0.72,JPY:14.37,INR:7.35,DKK:1,NOK:1}
@@ -1909,6 +1933,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     boShow:{Enum:[0,1]},
     histActive:{FixedData:1},
     coordinatePrecisionM:{FixedData:1},
+    //tHide:{FixedData:""},
     
     otherContainer:{Enum:[0,1]},
     boBuyerHasEquipment:{Enum:[0,1]},
@@ -2012,7 +2037,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
 
     var arrAssign=[]; // arrAssign: as in draw a random number from a bucket
     if(in_array("general", StrPlugInNArg)){ 
-      arrAssign=['boShow', 'tCreated', 'tPos', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'hideTimer', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'geoHash', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM'];
+      arrAssign=['boShow', 'tCreated', 'tPos', 'hideTimer', 'tHide', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'geoHash', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM'];
       if(charRole=='s') arrAssign.push('experience');
     }
 

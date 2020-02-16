@@ -279,12 +279,14 @@ var buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).c
   var b=this; b.boOn=!b.boOn;  b.myText(b.boOn?strHide:strShow); divKey.toggle(b.boOn);
 });
 var divKey=createElement('div').myText(pubKey).hide().css({'font-weight':'bold'});
-var headA=createElement('div').myAppend('You are now on ',tmpB, ' with one half of a ',aTmp,'. (as seen in the address bar)').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
+//var headA=createElement('div').myAppend('You are now on ',tmpB, ' with one half of a ',aTmp,'. (as seen in the address bar)').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
+var headA=createElement('div').myAppend('You are now on ',tmpB, ' with a code (as seen in the address bar).').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
 
 
-var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText("Storing the key-half will allow the sender (the owner of the other half) to write certain data on this site: (position (latitude/longitude), visibility (on/off), hideTimer)");     popupHover(imgTmp,bub);  
-var headB=createElement('div').myAppend('Those who created the link that brought you here (those who know the other key-half) will be able change certain data. (Your "visibility" (on/off), position and hideTimer.)');
-var headC=createElement('div').myAppend('Do you want to store this key-half?');
+//var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText("Storing the key-half will allow the sender (the owner of the other half) to write certain data on this site: (position (latitude/longitude), visibility (on/off), hideTimer)");     popupHover(imgTmp,bub);  
+//var headB=createElement('div').myAppend('Those who created the link that brought you here (those who know the other key-half) will be able change certain data. (Your "visibility" (on/off), position and hideTimer.)');
+var headB=createElement('div').myAppend('Those who created that code (the link that brought you here) will be able change your "visibility" on this site.');
+var headC=createElement('div').myAppend('Do you want to store this code?'); //key-half
 //<b>position</b>, <b>last activity</b> and <b>visibility</b>
 
 //messageText=messExtend(createElement('span'));  window.setMess=messageText.setMess;  window.resetMess=messageText.resetMess;  messageText.css({font:'courier'});  

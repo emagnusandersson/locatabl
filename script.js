@@ -1,4 +1,4 @@
-
+//android-studio-ide-191.6010548-linux.tar.gz
 
 
 http = require("http");
@@ -246,44 +246,97 @@ var flow=( function*(){
       var cookies = parseCookies(req);
       req.cookies=cookies;
 
-      req.boCookieNormalOK=req.boCookieLaxOK=req.boCookieStrictOK=false;
+
+
+      var boCookieDDOSOK=false; //req.boCookieLaxOK=req.boCookieStrictOK=
       
+        // Check if a valid sessionIDDDos-cookie came in
+      var sessionIDDDos=null, redisVarDDos;
+      if('sessionIDDDos' in cookies) {
+        sessionIDDDos=cookies.sessionIDDDos;  redisVarDDos=sessionIDDDos+'_DDOS';
+        var [err, tmp]=yield* cmdRedis(req.flow, 'EXISTS', redisVarDDos); boCookieDDOSOK=tmp;
+      }
+        // If non-valid sessionIDDDos, then create a new one.
+      if(!boCookieDDOSOK) { sessionIDDDos=randomHash();  redisVarDDos=sessionIDDDos+'_DDOS'; }
+      
+        // Increase redisVarDDos 
+      var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
+      var [err, intCount]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDos, tDDOSBan]);
+      
+        // Increase redisVarDDosIP.
+      var ipClient=getIP(req), redisVarDDosIP=ipClient+'_DDOS';
+      var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
+      var [err, intCountIP]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDosIP, tDDOSIPBan]);
+        
+      res.setHeader("Set-Cookie", "sessionIDDDos="+sessionIDDDos+strCookiePropNormal);
+      
+        // If to many, then ban
+      if(boCookieDDOSOK) {  var intCountT=intCount, intDDOSMaxT=intDDOSMax, tDDOSBanT=tDDOSBan;   }   else   {    intCountT=intCountIP; intDDOSMaxT=intDDOSIPMax; tDDOSBanT=tDDOSIPBan;   }
+      if(intCountT>intDDOSMaxT) {res.outCode(429,"Too Many Requests ("+intCountT+"), wait "+tDDOSBanT+"s\n"); return; }
+      
+      
+      req.boCookieOK=false;
         // Check if a valid sessionID-cookie came in
-      var boSessionCookieInInput='sessionIDNormal' in cookies, sessionID=null, redisVarSessionMain;
+      var boSessionCookieInInput='sessionID' in cookies, sessionID=null, redisVarSessionMain;
       if(boSessionCookieInInput) {
-        sessionID=cookies.sessionIDNormal;  redisVarSessionMain=sessionID+'_Main';
-        var [err, tmp]=yield* cmdRedis(req.flow, 'EXISTS', redisVarSessionMain); req.boCookieNormalOK=tmp;
+        sessionID=cookies.sessionID;  redisVarSessionMain=sessionID+'_Main';
+        var [err, tmp]=yield* cmdRedis(req.flow, 'EXISTS', redisVarSessionMain); req.boCookieOK=tmp;
       } 
       
-      if(req.boCookieNormalOK){
-          // Check if Lax / Strict -cookies are OK
-        req.boCookieLaxOK=('sessionIDLax' in cookies) && cookies.sessionIDLax===sessionID;
-        req.boCookieStrictOK=('sessionIDStrict' in cookies) && cookies.sessionIDStrict===sessionID;
-        var redisVarDDOSCounter=sessionID+'_Counter';
-      }else{
-        sessionID=randomHash();  redisVarSessionMain=sessionID+'_Main';
-        var ipClient=getIP(req), redisVarDDOSCounter=ipClient+'_Counter';
-      }
-      
-        // Increase DDOS counter 
-      var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
-      var [err, intCount]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDOSCounter, tDDOSBan]);
+      if(!req.boCookieOK){ sessionID=randomHash();  redisVarSessionMain=sessionID+'_Main'; }
       
       
-      res.setHeader("Set-Cookie", ["sessionIDNormal="+sessionID+strCookiePropNormal, "sessionIDLax="+sessionID+strCookiePropLax, "sessionIDStrict="+sessionID+strCookiePropStrict]);
-       
-        // Check if to many requests comes in a short time (DDOS)
-      if(intCount>intDDOSMax) {res.outCode(429,"Too Many Requests ("+intCount+"), wait "+tDDOSBan+"s\n"); return; }
+      res.setHeader("Set-Cookie", ["sessionID="+sessionID+strCookiePropLax]);
       
-      
-        // Refresh / create  redisVarSessionMain
-      if(req.boCookieNormalOK){
+
+         //Refresh / create  redisVarSessionMain
+      if(req.boCookieOK){
         var luaCountFunc=`local c=redis.call('GET',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
         var [err, value]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarSessionMain, maxUnactivity]); req.sessionCache=JSON.parse(value)
       } else { 
         yield* setRedis(req.flow, redisVarSessionMain, 1, maxUnactivity); 
         req.sessionCache={};
       }
+
+
+      //req.boCookieNormalOK=req.boCookieLaxOK=req.boCookieStrictOK=false;
+      
+        //// Check if a valid sessionID-cookie came in
+      //var boSessionCookieInInput='sessionIDNormal' in cookies, sessionID=null, redisVarSessionMain;
+      //if(boSessionCookieInInput) {
+        //sessionID=cookies.sessionIDNormal;  redisVarSessionMain=sessionID+'_Main';
+        //var [err, tmp]=yield* cmdRedis(req.flow, 'EXISTS', redisVarSessionMain); req.boCookieNormalOK=tmp;
+      //} 
+      
+      //if(req.boCookieNormalOK){
+          //// Check if Lax / Strict -cookies are OK
+        //req.boCookieLaxOK=('sessionIDLax' in cookies) && cookies.sessionIDLax===sessionID;
+        //req.boCookieStrictOK=('sessionIDStrict' in cookies) && cookies.sessionIDStrict===sessionID;
+        //var redisVarDDOSCounter=sessionID+'_Counter';
+      //}else{
+        //sessionID=randomHash();  redisVarSessionMain=sessionID+'_Main';
+        //var ipClient=getIP(req), redisVarDDOSCounter=ipClient+'_Counter';
+      //}
+      
+        //// Increase DDOS counter 
+      //var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
+      //var [err, intCount]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDOSCounter, tDDOSBan]);
+      
+      
+      //res.setHeader("Set-Cookie", ["sessionIDNormal="+sessionID+strCookiePropNormal, "sessionIDLax="+sessionID+strCookiePropLax, "sessionIDStrict="+sessionID+strCookiePropStrict]);
+       
+        //// Check if to many requests comes in a short time (DDOS)
+      //if(intCount>intDDOSMax) {res.outCode(429,"Too Many Requests ("+intCount+"), wait "+tDDOSBan+"s\n"); return; }
+      
+      
+        // Refresh / create  redisVarSessionMain
+      //if(req.boCookieNormalOK){
+        //var luaCountFunc=`local c=redis.call('GET',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
+        //var [err, value]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarSessionMain, maxUnactivity]); req.sessionCache=JSON.parse(value)
+      //} else { 
+        //yield* setRedis(req.flow, redisVarSessionMain, 1, maxUnactivity); 
+        //req.sessionCache={};
+      //}
       
 
         // Set mimetype if the extention is recognized
