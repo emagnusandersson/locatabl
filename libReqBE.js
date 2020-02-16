@@ -208,6 +208,9 @@ ReqBE.prototype.mesEO=function(e){
 ReqBE.prototype.go=function*(){
   var req=this.req, flow=req.flow, res=this.res, site=req.site;
   
+  var strT=req.headers['Sec-Fetch-Site'];
+  if(strT && strT!='same-origin') { this.mesEO(new Error("Sec-Fetch-Site header is not 'same-origin' ("+strT+")"));  return;}
+  
   if('x-requested-with' in req.headers && req.headers['x-requested-with']=="XMLHttpRequest") ; else { this.mesEO(new Error("Ajax-request: req.headers['x-requested-with']!='XMLHttpRequest'"));  return; }
 
   if('referer' in req.headers){
@@ -247,7 +250,7 @@ ReqBE.prototype.go=function*(){
 
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
-  if(!req.boCookieStrictOK) {this.mesEO(new Error('Strict cookie not set'));  return;   }
+  if(!req.boCookieOK) {this.mesEO(new Error('Cookie not set'));  return;   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
   
   this.sessionUserInfoFrDB=yield *getRedis(flow, req.sessionID+'_UserInfoFrDB', true);
   //var [err,value]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
@@ -1274,8 +1277,9 @@ ReqBE.prototype.RShow=function*(inObj){  // writing needSession
 
   var Sql=[], Val=[];
   Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
-  Sql.push("UPDATE "+roleTab+" SET x=?, y=?, geoHash=?, boShow=1, tPos=now(), histActive=histActive|1 WHERE idUser=?;");
-  Sql.push("UPDATE "+roleTabAlt+" SET boShow=0, tPos=0, histActive=histActive|1 WHERE idUser=?;");
+  //Sql.push("UPDATE "+roleTab+" SET x=?, y=?, geoHash=?, boShow=1, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=?;");
+  Sql.push("UPDATE "+roleTab+" SET x=?, y=?, geoHash=?, boShow=1, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,"+intMax+")), histActive=histActive|1 WHERE idUser=?;");
+  Sql.push("UPDATE "+roleTabAlt+" SET boShow=0, tPos=0, tHide=0, histActive=histActive|1 WHERE idUser=?;");
   Val=[idUser,x,y,bigIntGeoHash,idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
@@ -1293,7 +1297,7 @@ ReqBE.prototype.RHide=function*(inObj){  // writing needSession
 
   var Sql=[], Val=[];
   Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
-  Sql.push("UPDATE "+roleTab+" SET boShow=0, tPos=0, histActive=histActive|1 WHERE idUser=?;");
+  Sql.push("UPDATE "+roleTab+" SET boShow=0, tPos=0, tHide=0, histActive=histActive|1 WHERE idUser=?;");
   Val=[idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
@@ -1536,7 +1540,7 @@ ReqBE.prototype.pubKeyStore=function*(inObj){
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
   //if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
-  if(nUpd==1) {boOK=1; mestmp="Key-half updated";} else {boOK=1; mestmp="Nothing changed (same key-half as before)";}
+  if(nUpd==1) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
   Ou.boOK=boOK;    Ou.strMess=mestmp;
   return [null, [Ou]];
 }

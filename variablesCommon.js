@@ -57,7 +57,8 @@ var sqlHistActiveCol="histActive<<"+sqlDayDiff+"  "+sqlMaskHistActive;
 //sqlHistActiveColUpd="histActive= (histActive<<"+sqlDayDiff+" | 1) "+sqlMaskHistActive; // "<<" has higher precedence than "|"
 sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
-sqlBoBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer"; // "-" has higher precedence than "<"
+//sqlBoBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer"; // "-" has higher precedence than "<"
+sqlBoBeforeHiding="UNIX_TIMESTAMP(now())<UNIX_TIMESTAMP(tHide)"; // "-" has higher precedence than "<"
 
 specialistDefault={user:0,complainer:0,complainee:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
@@ -132,10 +133,11 @@ PluginF.general=function(site){
   boShow:              {b:'110000110',type:'TINYINT', default:0},
   tCreated:            {b:'011111101',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP', feat:{kind:'S10',min:arrTCreatedMin, bucketLabel:arrTCreatedLabel}},
   tPos:                {b:'011011101',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP', feat:{kind:'S01',min:arrTPosMin, bucketLabel:arrTPosLabel}},
+  hideTimer:           {b:'110000110',type:'INT(8)', default:hideTimerDefault},  // Not UNSIGNED because mysql cant have uint in expressions that end up negative
+  tHide:               {b:'001000111',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP'}, // Cached value of tPos+hideTimer
   histActive:          {b:'011110111',type:'BIGINT UNSIGNED', default:0},  // feat:{kind:'S10',min:[0,1,2,4,6,10,15,20,24,26,28,29,30]}},
   tLastWriteOfTA:      {b:'000000110',type:'TIMESTAMP', default:'CURRENT_TIMESTAMP'},  // tLastWriteOfTimeAccumulated 
   tAccumulated:        {b:'011110111',type:'INT(8) UNSIGNED', default:0, feat:{kind:'S10',min:arrTAccumulatedMin, bucketLabel:arrTAccumulatedLabel}},
-  hideTimer:           {b:'110000110',type:'INT(8)', default:hideTimerDefault},  // Not UNSIGNED because mysql cant have uint in expressions that end up negative
   //terminationDate:   {b:'010000101',type:'TIMESTAMP', default:0},
   displayName:         {b:'001000000'},
   tel:                 {b:'111010110',type:'VARCHAR(65)', default:''},
@@ -175,7 +177,7 @@ PluginF.general=function(site){
 
   
     // StrOrder: Order of arguments in roleTab (Object.keys may give unpredictable order)
-  var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'hideTimer', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'pubKey', 'iSeq'
+  var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'hideTimer', 'tHide', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'pubKey', 'iSeq'
   
   
   
@@ -244,15 +246,16 @@ PluginF.general=function(site){
 
   PropTmp.idTeamWanted.roleUpdF=function(name,value){ var v=value.length==0?0:Number(value);  return ['?',v];};
   PropTmp.tCreated.roleUpdF=PropTmp.tPos.roleUpdF=PropTmp.tLastWriteOfTA.roleUpdF=PropTmp.tLastPriceChange.roleUpdF=updTimeF;  // =PropTmp.terminationDate.roleUpdF
+  //PropTmp.tHide.roleUpdF=function(){return ["FROM_UNIXTIME(UNIX_TIMESTAMP(tPos)+hideTimer)"];}
+  PropTmp.tHide.roleUpdF=function(){return ["FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(tPos)+hideTimer,"+intMax+"))"];}
 
-  
   extend(oS.Prop, PropTmp);
   extend(oB.Prop, PropTmp);  delete oB.Prop.experience;
   
 
   //site.StrOther=['idTeam', 'currency', 'experience'];
 
-  var StrFiltAccept=['donatedAmount', 'tCreated', 'tPos', 'histActive', 'tAccumulated', 'hideTimer', 'homeTown', 'currency', 'tLastPriceChange', 'idTeam', 'nComplaint', 'nComplaintCum', 'nComplaintGiven', 'nComplaintGivenCum', 'coordinatePrecisionM'];
+  var StrFiltAccept=['donatedAmount', 'tCreated', 'tPos', 'hideTimer', 'histActive', 'tAccumulated', 'homeTown', 'currency', 'tLastPriceChange', 'idTeam', 'nComplaint', 'nComplaintCum', 'nComplaintGiven', 'nComplaintGivenCum', 'coordinatePrecisionM'];
   oB.StrFiltAccept=StrFiltAccept;
   oS.StrFiltAccept=StrFiltAccept.concat('experience');
   
