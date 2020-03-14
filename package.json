@@ -15,7 +15,7 @@
     "formidable": "1.2.2",
     "gm": "^1.23.1",
     "ip": "^1.1.5",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.2",
     "mysql": "2.18.x",
     "node-rsa": "^1.0.7",
     "node-zip": "1.1.x",
