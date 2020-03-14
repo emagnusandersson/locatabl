@@ -149,12 +149,12 @@ var yesDivExtend=function(el){
   }
   var retF=function(data){   
     var tmp, strMess="";//boOK=false;
-    tmp=data.boOK;   if(typeof tmp!="undefined") var boOK=tmp; if(boOK) setTimeout(function(){ divLeaveMess.toggle(Boolean(boOK)); }, 2000);
+    tmp=data.boOK;   if(typeof tmp!="undefined") var boOK=tmp; //if(boOK) setTimeout(function(){ divLeaveMess.toggle(Boolean(boOK)); }, 2000);
     tmp=data.strMess;   if(typeof tmp!="undefined") strMess=tmp; divStrMess.myText(strMess); 
     
   }
   //var yesSpan=createElement('div').myText('Yes').css({'text-align':'center'});
-  var buttStore=createElement('button').myText('Yes').on('click', storeF).prop({disabled:true}).css({'margin-bottom':'1em'});
+  var buttStore=createElement('button').myText('Yes').on('click', storeF).prop({disabled:true}).css({'margin-bottom':'1em', 'font-weight':'bold'});
   var aTmp=createElement('a').attr({href:uSite,target:"_blank"}).myText(wwwSite);
   var spanErr=createElement('div').css({'margin-bottom':'.5em'}).myAppend('Not registered! Go to the main page: ',aTmp, ' and register first.').hide();
 
@@ -280,13 +280,13 @@ var buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).c
 });
 var divKey=createElement('div').myText(pubKey).hide().css({'font-weight':'bold'});
 //var headA=createElement('div').myAppend('You are now on ',tmpB, ' with one half of a ',aTmp,'. (as seen in the address bar)').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
-var headA=createElement('div').myAppend('You are now on ',tmpB, ' with a code (as seen in the address bar).').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
+var headA=createElement('div').myAppend('You are now on ',tmpB, '.').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
 
 
-//var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText("Storing the key-half will allow the sender (the owner of the other half) to write certain data on this site: (position (latitude/longitude), visibility (on/off), hideTimer)");     popupHover(imgTmp,bub);  
+var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 0em'}),  bub=createElement('div').myHtml("• Position (latitude/longitude)<br>• Visibility (on/off)<br>• hideTimer").css({'text-align':'left'});     popupHover(imgTmp,bub);  
 //var headB=createElement('div').myAppend('Those who created the link that brought you here (those who know the other key-half) will be able change certain data. (Your "visibility" (on/off), position and hideTimer.)');
-var headB=createElement('div').myAppend('Those who created that code (the link that brought you here) will be able change your "visibility" on this site.');
-var headC=createElement('div').myAppend('Do you want to store this code?'); //key-half
+var headB=createElement('div').myAppend('Those who created the link that brought you here will be able to write some data ', imgTmp,' on this site. (If you click yes below.)');
+var headC=createElement('div').myAppend('Do you want to store the supplied key?'); //key-half
 //<b>position</b>, <b>last activity</b> and <b>visibility</b>
 
 //messageText=messExtend(createElement('span'));  window.setMess=messageText.setMess;  window.resetMess=messageText.resetMess;  messageText.css({font:'courier'});  
@@ -295,11 +295,11 @@ var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.set
 
 var buttCancel=createElement('button').myText('Cancel').on('click', function(){window.close();});
 
-var strLeaveMess="(Click browser-back-button to leave.)";
+var strLeaveMess="(Click browser-back-button or close this tab to leave.)";
 var cssAns={width:'50%',display:'inline-block','box-sizing': 'border-box','text-align':'center',padding:'1em',flex:1};
 //cssAns={'text-align':'center',padding:'1em'};
 var yesDiv=yesDivExtend(createElement('div')).css(cssAns).css({'background':'lightgreen'});
-var noSpan=createElement('div').myText('No').css({'text-align':'center','margin-bottom':'1em'});
+var noSpan=createElement('div').myText('No').css({'text-align':'center','margin-bottom':'1em', 'font-weight':'bold'});
 var noDiv=createElement('div').css(cssAns).css({'border-left':'2px solid grey','vertical-align':'top','background':'pink'}).myAppend(noSpan,strLeaveMess);
 var answerDiv=createElement('div').myAppend(yesDiv,noDiv).css({display:'flex'}); //
 //mainDivs=([]).push(loginInfo).push(headA).push(headB).push(answerDiv);

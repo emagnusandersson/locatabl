@@ -675,10 +675,11 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
 
   
   var Sql=[], Val=[];
-  Sql.push("INSERT INTO "+userTab+" (email, nameIP, hashPW, tCreated) VALUES (?, ?, ?, now()) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
+  Sql.push("SET @tNow=now();");
+  Sql.push("INSERT INTO "+userTab+" (email, nameIP, hashPW, tCreated) VALUES (?, ?, ?, @tNow) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Val.push(email, name, password, name);
-  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, now(), now(), now(), now(), 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, @tNow, @tNow, @tNow, @tNow, 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
@@ -688,13 +689,13 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
-  var c=results[0].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
-  var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  var c=results[1].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
+  var idUser=Number(results[2][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
-  var boIns=Number(results[3][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewBuyers=boIns;
-  site.nUser=Number(results[4][0].n);
-  site.nTotB=Number(results[5][0].n);
-  site.nTotS=Number(results[6][0].n);
+  var boIns=Number(results[4][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewBuyers=boIns;
+  site.nUser=Number(results[5][0].n);
+  site.nTotB=Number(results[6][0].n);
+  site.nTotS=Number(results[7][0].n);
   var tmp=boIns?'created':'updated';
   var Str=[`<!DOCTYPE html><html><head>
 <meta name='viewport' id='viewportMy' content='initial-scale=1'/>
@@ -1353,17 +1354,18 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   //IFun "+siteName+"TimeAccumulatedUpdMult
 
   // If setting boShow then one must call "+siteName+"TimeAccumulatedUpdOne before. Hence tLastWriteOfTA will never be < than tPos
-  var sqlTimeSinceWriteOfTA="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in sellerTab
+  var sqlTimeSinceWriteOfTA="UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in sellerTab
   var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)";
   var sqlTRemaining="GREATEST(hideTimer-("+sqlTWritten+"),0)";
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdOne");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdOne(IN IidUser INT)
       BEGIN
-        UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser;
-        UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now() WHERE idUser=IidUser;
+        DECLARE VtNow TIMESTAMP DEFAULT now();
+        UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
+        UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
       END`);
   //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"AutoHideOne");
-  //SqlFunction.push(`CREATE PROCEDURE `+siteName+`AutoHideOne (IN id INT) BEGIN      UPDATE `+sellerTab+` SET boShow=IF(now()>hideTime,0,boShow) WHERE idUser=id;    END`);
+  //SqlFunction.push(`CREATE PROCEDURE `+siteName+`AutoHideOne (IN id INT) BEGIN      UPDATE `+sellerTab+` SET boShow=IF(VtNow>hideTime,0,boShow) WHERE idUser=id;    END`);
 
     // IFunPoll
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"IFunPoll");
@@ -1373,11 +1375,12 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   //SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdMult(Itimer INT)
       //BEGIN
         //DECLARE tLastWriteOfBoShow INT;
+        //DECLARE VtNow TIMESTAMP DEFAULT now();
         //SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
-        //IF UNIX_TIMESTAMP(now())>tLastWriteOfBoShow+Itimer THEN
-          //UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) WHERE boShow=1;
-          //UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) WHERE boShow=1;
-          //UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(now()) WHERE name='tLastWriteOfBoShow';
+        //IF UNIX_TIMESTAMP(VtNow)>tLastWriteOfBoShow+Itimer THEN
+          //UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) WHERE boShow=1;
+          //UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) WHERE boShow=1;
+          //UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(VtNow) WHERE name='tLastWriteOfBoShow';
         //END IF;
       //END`);
   
@@ -1387,27 +1390,29 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdMult(Itimer INT)
       BEGIN
         DECLARE tLastWriteOfBoShow INT;
+        DECLARE VtNow TIMESTAMP DEFAULT now();
         SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
-        IF UNIX_TIMESTAMP(now())>tLastWriteOfBoShow+Itimer THEN
-          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) 
-            WHERE boShow=1 AND UNIX_TIMESTAMP(now())>tPos+hideTimer;
-          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=now(), boShow=IF(`+sqlBoBeforeHiding+`,boShow,0)
-            WHERE boShow=1 AND UNIX_TIMESTAMP(now())>tPos+hideTimer;
-          UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(now()) WHERE name='tLastWriteOfBoShow';
+        IF UNIX_TIMESTAMP(VtNow)>tLastWriteOfBoShow+Itimer THEN
+          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) 
+            WHERE boShow=1 AND UNIX_TIMESTAMP(VtNow)>tPos+hideTimer;
+          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0)
+            WHERE boShow=1 AND UNIX_TIMESTAMP(VtNow)>tPos+hideTimer;
+          UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(VtNow) WHERE name='tLastWriteOfBoShow';
         END IF;
       END`);
 
   //sPerDay=10;
-  //var dayDiff="floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )  -  floor( UNIX_TIMESTAMP(tPos)/"+sPerDay+" )";
+  //var dayDiff="floor( UNIX_TIMESTAMP(VtNow)/"+sPerDay+" )  -  floor( UNIX_TIMESTAMP(tPos)/"+sPerDay+" )";
   // tLastWriteOfHA lastHistActiveWrite
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"HistActiveUpdMult");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`HistActiveUpdMult()
     BEGIN
       DECLARE tLastWriteOfHA, recentDay, dayDiff INT;
+      DECLARE VtNow TIMESTAMP DEFAULT now();
       START TRANSACTION;
       SELECT value INTO tLastWriteOfHA FROM `+settingTab+` WHERE name='tLastWriteOfHA';
-      SET recentDay=floor( UNIX_TIMESTAMP(now())/`+sPerDay+` );   SET dayDiff=recentDay-tLastWriteOfHA;
+      SET recentDay=floor( UNIX_TIMESTAMP(VtNow)/`+sPerDay+` );   SET dayDiff=recentDay-tLastWriteOfHA;
       IF dayDiff>0 THEN
         UPDATE `+sellerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
         UPDATE `+buyerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
@@ -1468,10 +1473,11 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MakeUserTeamLeader");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`MakeUserTeamLeader(IidUser INT, IRole INT)
     proc_label:BEGIN
+      DECLARE VtNow TIMESTAMP DEFAULT now();
       IF IRole THEN
-        INSERT INTO `+sellerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,now(),1);
+        INSERT INTO `+sellerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,VtNow,1);
       ELSE
-        INSERT INTO `+buyerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,now(),1);
+        INSERT INTO `+buyerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,VtNow,1);
       END IF;
     END`);
   
@@ -1483,6 +1489,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateComplaint");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`UpdateComplaint(IidComplainee INT, IidComplainer INT, Icomment TEXT)
     proc_label:BEGIN
+      DECLARE VtNow TIMESTAMP DEFAULT now();
       START TRANSACTION;
       IF Icomment IS NULL OR LENGTH(Icomment)=0 THEN
         UPDATE `+complaintTab+` SET comment=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
@@ -1497,7 +1504,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         END IF;
         SELECT 'entry deleted' AS mess;
       ELSE
-        INSERT INTO `+complaintTab+` (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,now(),now()) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=now();
+        INSERT INTO `+complaintTab+` (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,VtNow,VtNow) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=VtNow;
         IF ROW_COUNT()=1 THEN   # If inserted
           UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
           UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
@@ -1602,16 +1609,17 @@ CLIENT_FOUND_ROWS
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(IiRole INT, Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, VidUser, ViSeq, intMax INT;
+      DECLARE VtNow TIMESTAMP DEFAULT now();
       CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess);
       IF OboOK=0 THEN LEAVE proc_label; END IF;
       CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
 
       IF IiRole=0 THEN
-        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
+        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
       ELSE
-        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
+        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
       END IF;
       SET Vc=FOUND_ROWS();
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF;
@@ -1623,6 +1631,7 @@ CLIENT_FOUND_ROWS
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(IiRole INT, Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
+      DECLARE VtNow TIMESTAMP DEFAULT now();
       DECLARE Vc, Vn, VidUser, ViSeq, VresM INT;
       START TRANSACTION;
       CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess);
@@ -1631,11 +1640,11 @@ CLIENT_FOUND_ROWS
 
       IF IboShow=0 THEN
         IF IiRole=0 THEN
-          #UPDATE `+buyerTab+` SET boShow=IboShow, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
-          UPDATE `+buyerTab+` SET boShow=IboShow, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
+          #UPDATE `+buyerTab+` SET boShow=IboShow, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
         ELSE
-          #UPDATE `+sellerTab+` SET boShow=IboShow, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET boShow=IboShow, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
+          #UPDATE `+sellerTab+` SET boShow=IboShow, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       ELSE
@@ -1651,13 +1660,13 @@ CLIENT_FOUND_ROWS
         SET @bigIntGeoHash=pWC2GeoHash(Ix, Iy);
 
         IF IiRole=0 THEN
-          #UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second) WHERE idUser=VidUser;
-          UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now(), tHide=now() WHERE idUser=VidUser;
+          #UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second) WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
         ELSE
-          UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=now(), tHide=now() WHERE idUser=VidUser;
-          #UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=DATE_ADD(now(), INTERVAL hideTimer second) WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=now(), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
+          #UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second) WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       END IF;

@@ -5989,7 +5989,7 @@ var tmp=getItem('boFirstVisit'),  boFirstVisit=tmp===null;      setItem('boFirst
 
 app.imgHelp=createElement('img').prop({src:uHelpFile}).css({'vertical-align':'-0.4em', 'margin-left':'0.6em'});
 app.hovHelp=createElement('span').myText('?').css({'font-size':'88%',color:'#a7a7a7','vertical-align':'-0.4em'}); //on('click', function(){return false;})    //'pointer-events':'none',
-app.hovHelpMy=createElement('span').myText('?').addClass('btn-round').css({color:'white', background:'blue'}); //on('click', function(){return false;})    //'pointer-events':'none',
+app.hovHelpMy=createElement('span').myText('?').addClass('btn-round', 'helpButtonGradient'); //on('click', function(){return false;})    //'pointer-events':'none',
 
 //elBody.append(hovHelpMy);
 

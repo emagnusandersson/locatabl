@@ -101,8 +101,8 @@ background:#ddd;
 
 .btn-round {
   text-align: center;
-  width: 2em;
-  height: 2em;
+  width: 1.6em;
+  height: 1.6em;
   border-radius: 100%;
   border: 1px solid;
   display: inline-flex;
@@ -110,6 +110,14 @@ background:#ddd;
   justify-content: center;
   align-items: center;
   text-decoration: none
+}
+.helpButtonGradient {
+  background-image: radial-gradient(#daeaff, #8cbdfd, #0064ea);;
+  color: #5780a8;
+  border: 0;
+  font-weight: bold;
+  font-size: 90%;
+  text-shadow: 0.5px 0.5px #888888
 }
 
 
