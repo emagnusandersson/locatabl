@@ -263,7 +263,7 @@ button.fixWidth{width:2rem;height:1.8rem}
     cursor: -webkit-grabbing;
 }
 
-span.message{
+.message{
   border:black 1px solid;
   position:absolute;
   bottom:0%;
@@ -273,5 +273,5 @@ span.message{
   background-color:#F7F700;
   font-size: 0.8em;
   z-index: 10000;
- }
+}
 

@@ -145,7 +145,7 @@ var yesDivExtend=function(el){
     var boIp=isSet(sessionLoginIdP), boWannaBe=boIp && !boDb; loginDiv.toggle(!boDb);  buttStore.prop({disabled:!boDb}); spanErr.toggle(boWannaBe); 
   }
   var storeF=function(){
-    var vec=[['pubKeyStore',{pubKey:pubKey},retF]];   majax(oAJAX,vec);
+    var vec=[['keyFromExternalTrackerSave',{keyFromExternalTracker:keyFromExternalTracker},retF]];   majax(oAJAX,vec);
   }
   var retF=function(data){   
     var tmp, strMess="";//boOK=false;
@@ -262,7 +262,7 @@ var sessionLoginIdP={};
 var userInfoFrDB=extend({}, specialistDefault);
 
 var oAJAX={};
- //uPubKeyStoreBE
+ //uKeyFromExternalTrackerSaveBE
 
 assignSiteSpecific();
 langClientFunc();
@@ -278,7 +278,7 @@ var strShow='Show key-half', strHide='Hide key-half';
 var buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).css({'margin':'0 0.4em'}).on('click', function(){
   var b=this; b.boOn=!b.boOn;  b.myText(b.boOn?strHide:strShow); divKey.toggle(b.boOn);
 });
-var divKey=createElement('div').myText(pubKey).hide().css({'font-weight':'bold'});
+var divKey=createElement('div').myText(keyFromExternalTracker).hide().css({'font-weight':'bold'});
 //var headA=createElement('div').myAppend('You are now on ',tmpB, ' with one half of a ',aTmp,'. (as seen in the address bar)').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
 var headA=createElement('div').myAppend('You are now on ',tmpB, '.').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
 

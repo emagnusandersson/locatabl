@@ -32,6 +32,7 @@ Streamify = require('streamify-string');
 validator = require('validator');
 serialize = require('serialize-javascript');
 webPush = require('web-push');
+moment = require('moment');
 var argv = require('minimist')(process.argv.slice(2));
 app=(typeof window==='undefined')?global:window;
 
@@ -67,6 +68,11 @@ helpTextExit=function(){
   console.log(arr.join('\n'));
   process.exit(0);
 }
+
+var StrUnknown=AMinusB(Object.keys(argv),['_', 'h', 'help', 'p', 'port', 'sql']);
+var StrUnknown=[].concat(StrUnknown, argv._);
+if(StrUnknown.length){ console.log('Unknown arguments: '+StrUnknown.join(', ')); helpTextExit(); return;}
+
     // Set up redisClient
 var urlRedis;
 if(  (urlRedis=process.env.REDISTOGO_URL)  || (urlRedis=process.env.REDISCLOUD_URL)  ) {
@@ -162,9 +168,8 @@ var flow=( function*(){
     process.exit(0);
   }
 
-
   CacheUri=new CacheUriT();
-  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientPubKeyStore.js', 'stylesheets/style.css', 'serviceworker.js']; //, 'clientMergeID.js'
+  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientKeyFromExternalTrackerSave.js', 'stylesheets/style.css', 'serviceworker.js']; //, 'clientMergeID.js'
   splitterPlugIn=new SplitterPlugIn();
   for(var i=0;i<StrFilePreCache.length;i++) {
     var [err]=yield *readFileToCache(flow, StrFilePreCache[i]); if(err) {  console.error(err);  return;}
@@ -179,7 +184,7 @@ var flow=( function*(){
         var [err]=yield* splitterPlugIn.readFileToCacheClientJs(flow); if(err) console.error(err);
       })(); flow.next();
     });
-    fs.watch('.', makeWatchCB('.', ['filter.js', 'clientPubKeyStore.js', 'libClient.js', 'lib.js', 'serviceworker.js']) );
+    fs.watch('.', makeWatchCB('.', ['filter.js', 'clientKeyFromExternalTrackerSave.js', 'libClient.js', 'lib.js', 'serviceworker.js']) );
     fs.watch('stylesheets', makeWatchCB('stylesheets', ['style.css']) );
     fs.watch('lang', makeWatchCB('lang', ['en.js', 'sv.js']) );
   }
@@ -190,7 +195,7 @@ var flow=( function*(){
   ETagImage={};
 
   regexpLib=RegExp('^/(stylesheets|lib|pluginLib|Site|lang)/');
-  regexpLooseJS=RegExp('^/(lib|libClient|client|clientProt|clientPubKeyStore|filter|siteSpecific|serviceworker)\\.js'); //|clientMergeID
+  regexpLooseJS=RegExp('^/(lib|libClient|client|clientProt|clientKeyFromExternalTrackerSave|filter|siteSpecific|serviceworker)\\.js'); //|clientMergeID
   regexpPlugin=RegExp('^/plugin(\\w+)\\.js');
 
   regexpHerokuDomain=RegExp("\\.herokuapp\\.com$");
@@ -240,7 +245,7 @@ var flow=( function*(){
       var pathName=wwwReq.substr(wwwSite.length); if(pathName.length==0) pathName='/';
       var site=Site[siteName];
 
-      if(boDbg) console.log(pathName);
+      if(boDbg) {console.log(pathName);}
       
       
       var cookies = parseCookies(req);
@@ -358,8 +363,9 @@ var flow=( function*(){
       var objReqRes={req:req, res:res};
       objReqRes.myMySql=new MyMySql(DB[site.db].pool);
       if(pathName=='/'){
-        if("pubKey" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
-        else if("pubKey" in objQS){      yield* reqPubKeyStore.call(objReqRes);    }
+        //if("keyFromExternalTracker" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
+        if("dataFromExternalTracker" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
+        else if("keyFromExternalTracker" in objQS){      yield* reqKeyFromExternalTrackerSave.call(objReqRes);    }
         else{      yield* reqIndex.call(objReqRes);      }
       }
       //else if(pathName=='/'+leafAssign){    var reqAssign=new ReqAssign(req, res);    reqAssign.go();    }
@@ -424,7 +430,11 @@ var flow=( function*(){
   }
 
   if(boUseSSLViaNodeJS){
-    const options = { key: fs.readFileSync('0SSLCert/server.key'), cert: fs.readFileSync('0SSLCert/server.cert') };
+    var strName='192.168.0.3';
+    //var strName='r50.local';
+    //var strName='localhost';
+    //const options = { key: fs.readFileSync('0SSLCert/server.key'), cert: fs.readFileSync('0SSLCert/server.cert') };
+    const options = { key: fs.readFileSync('0SSLCert/'+strName+'.key'), cert: fs.readFileSync('0SSLCert/'+strName+'.crt') };
     https.createServer(options, handler).listen(port);   console.log("Listening to HTTPS requests at port " + port);
   } else{
     http.createServer(handler).listen(port);   console.log("Listening to HTTP requests at port " + port);

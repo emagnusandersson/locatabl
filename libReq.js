@@ -1,42 +1,6 @@
 
 "use strict"
 
-//mesOMake=function(glue){ return function(str){
-  //if(str) this.Str.push(str);
-  //var str=this.Str.join(glue);  this.res.end(str);
-//}}
-//mesEOMake=function(glue){ return function(err){
-  //var error=new Error(err); console.log(error.stack);
-  //this.Str.push('E: '+err.syscal+' '+err.code);
-  //var str=this.Str.join(glue); this.res.end(str);  
-//}}
-app.mesOMakeJSON=function(glue){ return function(str){
-  var res=this.res;
-  if(str) this.Str.push(str);
-  var str=this.Str.join(glue);
-  str=serialize(str);
-  if(str.length<lenGZ) res.end(str);
-  else{
-    res.setHeader("Content-Encoding", 'gzip');
-    res.setHeader('Content-Type', MimeType.json);
-    Streamify(str).pipe(zlib.createGzip()).pipe(res);
-  }
-}}
-app.mesEOMakeJSON=function(glue){ return function(err){
-  var res=this.res;
-  console.error(err);
-  var tmp=err.syscal||''; this.Str.push('E: '+tmp+' '+err.code);
-  var str=this.Str.join(glue);
-  str=serialize(str);
-  if(str.length<lenGZ) res.end(str);
-  else{
-    res.setHeader("Content-Encoding", 'gzip');
-    res.setHeader('Content-Type', MimeType.json);
-    Streamify(str).pipe(zlib.createGzip()).pipe(res);
-  }
-}}
-
-
 
 /******************************************************************************
  * reqCurlEnd
@@ -45,10 +9,6 @@ app.reqCurlEnd=function*(){
   var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS; //this.pool=DB[req.site.db].pool
   var flow=req.flow;
   
-  this.mes=function(str){ this.Str.push(str); }
-  this.mesO=mesOMakeJSON('\n');
-  this.mesEO=mesEOMakeJSON('\n');
-  var Str=this.Str=[];
   
   res.setHeader('Content-Type', MimeType.json);
   res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept");
@@ -56,67 +16,78 @@ app.reqCurlEnd=function*(){
   //var http_origin = req.uDomain; 
   if('origin' in req.headers){ //if cross site
     var http_origin=req.headers.origin;
-    var boAllowDbg=boDbg && RegExp("^http\:\/\/(localhost|192\.168\.0)").test(http_origin);
+    //var boAllowDbg=boDbg && RegExp("^http\:\/\/(localhost|192\.168\.0)").test(http_origin);
+    var boAllowDbg=boDbg && RegExp("^https?\:\/\/(localhost|192\.168\.0)").test(http_origin);
+    //boAllowDbg=1;
     if(boAllowDbg || http_origin == "https://control.closeby.market" || http_origin == "https://controlclosebymarket.herokuapp.com" || http_origin == "https://emagnusandersson.github.io" ){
         res.setHeader("Access-Control-Allow-Origin", http_origin);
         res.setHeader("Vary", "Origin"); 
     }
-    if(req.method=='OPTIONS'){  this.mesO(); return;}
+    if(req.method=='OPTIONS'){  res.out200('');  return;}
   }
 
-  var pubKey; if("pubKey" in objQS) { pubKey=objQS.pubKey; }  else{ this.mesO('No public key "pubKey" in the query line'); return;}
-  var sixSignature; if("signature" in objQS) { sixSignature=objQS.signature; }  else{ this.mesO('No "signature" in the query line'); return;}
-  var data; if("data" in objQS) { data=objQS.data; }  else{ this.mesO('No "data" in the query line'); return;}
+  //var keyFromExternalTracker; if("keyFromExternalTracker" in objQS) { keyFromExternalTracker=objQS.keyFromExternalTracker; }  else{ res.out200('No public key "keyFromExternalTracker" in the query line'); return;}
+  //var sixSignature; if("signature" in objQS) { sixSignature=objQS.signature; }  else{ res.out200('No "signature" in the query line'); return;}
+  var {dataFromExternalTracker}=objQS;
+  //var data; if("data" in objQS) { data=objQS.data; }  else{ res.out200('No "data" in the query line'); return;}
 
-  //var pemPub=pubKey, sixPub=pubKey.split('\n').slice(1,-2).join('\n');
-  var pemPub="-----BEGIN PUBLIC KEY-----\n"+pubKey+"-----END PUBLIC KEY-----", sixPub=pubKey;
-  var keyTmp = new NodeRSA(pemPub);
-  var boOK=keyTmp.verify(data, sixSignature, 'utf8', 'base64');
-  var boOK; if(!boOK){ this.mesO('Message does NOT authenticate'); return;}
+  //var pemPub=keyFromExternalTracker, sixPub=keyFromExternalTracker.split('\n').slice(1,-2).join('\n');
+  //var pemPub="-----BEGIN PUBLIC KEY-----\n"+keyFromExternalTracker+"-----END PUBLIC KEY-----", sixPub=keyFromExternalTracker;
+  //var keyTmp = new NodeRSA(pemPub);
+  //var boOK=keyTmp.verify(data, sixSignature, 'utf8', 'base64');
+  //var boOK; if(!boOK){ res.out200('Message does NOT authenticate'); return;}
   //console.log('boVerifies: '+boOK);
 
-  var inObj=JSON.parse(data);//json_last_error_msg()
+  //var inObj=JSON.parse(data);//json_last_error_msg()
+  try{ var inObj=JSON.parse(dataFromExternalTracker); }catch(e){ res.out200('error parsing "dataFromExternalTracker"');  return; }
   //inObj=JSON.parse("{iSec:22, lat:59.83934260, lng:17.60569680}");
-  var iSeqN; if("iSeq" in inObj) { iSeqN=inObj.iSeq; }  else{  this.mesO('"iSeq" is not set'); return;}
+  var {keyFromExternalTracker, iSeq:iSeqN, boCheck, boShow, iRole, hideTimer, lat, lng}=inObj;
+  //var keyFromExternalTracker; if("keyFromExternalTracker" in inObj) { keyFromExternalTracker=inObj.iSeq; }  else{  res.out200('"keyFromExternalTracker" is not set'); return;}
+  //var iSeqN; if("iSeq" in inObj) { iSeqN=inObj.iSeq; }  else{  res.out200('"iSeq" is not set'); return;}
+  
+  
+  if(typeof keyFromExternalTracker=='undefined') {  res.out200('"keyFromExternalTracker" is not set'); return;}
+  if(keyFromExternalTracker.length!=32) {  res.out200('The length of keyFromExternalTracker should be 32 (length is '+keyFromExternalTracker.length+')'); return;}
+  if(typeof iSeqN=='undefined') {  res.out200('"iSeq" is not set'); return;}
+  if(typeof iRole=='undefined') {  res.out200('"iRole" is not set'); return;}
 
+  console.log(moment().format('HH:mm:ss')+' '+req.connection.remoteAddress+' '+keyFromExternalTracker);
   var Sql=[],Val=[];
-  if(inObj.boCheck){
-    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, ?, @boShow, @hideTimer, @tDiff, @boOk, @mess);"); Val.push(inObj.iRole, sixPub, iSeqN);
+  if(boCheck){
+    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, ?, @boShow, @hideTimer, @tDiff, @boOk, @mess);"); Val.push(iRole, keyFromExternalTracker, iSeqN);
     Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tDiff AS tDiff, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){this.mesEO(err); return; } 
+    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
     var {boShow, hideTimer, tDiff, boOK, mess}=results[1][0];
-    if(!boOK) {this.mesO(mess); return;}
+    if(!boOK) {res.out200(mess); return;}
     var str='Hidden';
     if(boShow){ var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   var str='Visible'; if(hideTimer!=intMax) str+=", Hiding in "+tDiffF+" "+u; };
-    this.mes(str);
+    res.out200(str);
   }
   else{
-    if(!("boShow" in inObj)) { this.mesO('"boShow" is not set'); return;}  var boShow=inObj.boShow;
-    if(boShow){
-      if(!("lat" in inObj || "lng" in inObj)){this.mesO('"lng" or "lat" are not set'); return;}
-      if(!("hideTimer" in inObj)) {this.mesO('"hideTimer" is not set'); return;} 
-      var {lat,lng}=inObj;
-      var projs=new MercatorProjection(),   tmp=projs.fromLatLngToPointV([lat, lng]),  x=tmp[0],  y=tmp[1], hideTimer=bound(inObj.hideTimer, 0, intMax); 
-    }else{var x=128, y=128, lat=0, hideTimer=0;}
+    var {boShow, hideTimer=0, lat=0, lng=0, boAuto=false}=inObj;
+    if(!("boShow" in inObj)) { res.out200('"boShow" is not set'); return;} 
+    if(boShow && !("lat" in inObj || "lng" in inObj)){res.out200('"lng" or "lat" are not set'); return;}
+    hideTimer=bound(hideTimer, 0, intMax);
+    var projs=new MercatorProjection(),   [x,y]=projs.fromLatLngToPointV([lat, lng]);
     //var strGeoHash=GeoHash.pWC2GeoHash({x,y});
-    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(inObj.iRole, sixPub, iSeqN, x, y, lat, boShow, hideTimer);
+    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(iRole, keyFromExternalTracker, iSeqN, x, y, lat, boShow, hideTimer, boAuto);
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){this.mesEO(err); return; } 
-    var {boShow, tDiff, boOK, mess}=results[1][0];
-    if(!boOK) {this.mesO(mess); return;}
-    var str=inObj.boShow?'Visible':'Hidden'; this.mes(str);
+    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
+    //var {boShow, tDiff, boOK, mess}=results[1][0];
+    var {boOK, mess}=results[1][0];
+    if(!boOK) {res.out200(mess); return;}
+    var str=boShow?'Visible':'Hidden'; res.out200(str);
   }
-  this.mesO();
 }
 
 
 
 /******************************************************************************
- * reqPubKeyStore
+ * reqKeyFromExternalTrackerSave
  ******************************************************************************/
-app.reqPubKeyStore=function*(){
+app.reqKeyFromExternalTrackerSave=function*(){
   var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS, uSite=req.uSite; //this.pool=DB[site.db].pool;
   var flow=req.flow;
   
@@ -125,7 +96,7 @@ app.reqPubKeyStore=function*(){
   
   //this.mesO=mesOMake('\n');
   
-  var pubKey=objQS.pubKey||'';
+  var keyFromExternalTracker=objQS.keyFromExternalTracker||'';
   var strLang='en';
 
   //var Str=this.Str=[];
@@ -152,18 +123,18 @@ app.reqPubKeyStore=function*(){
     // Include site specific JS-files
   var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'"></script>');
 
-  var StrTmp=['lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientPubKeyStore.js'];
+  var StrTmp=['lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyFromExternalTrackerSave.js'];
   for(var i=0;i<StrTmp.length;i++){
     var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
   }
 
 
-  var caller="pubKeyStore",  CSRFCode=randomHash();
+  var caller="keyFromExternalTrackerSave",  CSRFCode=randomHash();
   yield* setRedis(flow, req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode, maxUnactivity); 
   
 
   Str.push("<script>");
-  var objOut={CSRFCode:CSRFCode, caller:caller, specialistDefault:specialistDefault, pubKey:pubKey, maxList:maxList, wwwCommon:wwwCommon, leafBE:leafBE, flImageFolder:flImageFolder, UrlOAuth:UrlOAuth, response_type:response_type};
+  var objOut={CSRFCode:CSRFCode, caller:caller, specialistDefault:specialistDefault, keyFromExternalTracker:keyFromExternalTracker, maxList:maxList, wwwCommon:wwwCommon, leafBE:leafBE, flImageFolder:flImageFolder, UrlOAuth:UrlOAuth, response_type:response_type};
   copySome(objOut,req,['wwwSite', 'boTLS']);
 
   Str.push(`var tmp=`+serialize(objOut)+`;
@@ -1113,7 +1084,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   boImgOwn tinyint(1) NOT NULL DEFAULT 0, 
   displayName VARCHAR(32) NOT NULL DEFAULT '', 
   donatedAmount DOUBLE NOT NULL DEFAULT 0, 
-  pubKey VARCHAR(256) NOT NULL DEFAULT '', 
+  keyFromExternalTracker VARCHAR(32) NOT NULL DEFAULT '', 
   iSeq int(4) NOT NULL DEFAULT 0, 
   nComplaint int(4) UNSIGNED NOT NULL DEFAULT 0, 
   nComplaintCum int(4) UNSIGNED NOT NULL DEFAULT 0, 
@@ -1355,7 +1326,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
 
   // If setting boShow then one must call "+siteName+"TimeAccumulatedUpdOne before. Hence tLastWriteOfTA will never be < than tPos
   var sqlTimeSinceWriteOfTA="UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in sellerTab
-  var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)";
+  var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)"; // This variable is only used to make the expression sqlTRemaining (below) clearer
   var sqlTRemaining="GREATEST(hideTimer-("+sqlTWritten+"),0)";
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdOne");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdOne(IN IidUser INT)
@@ -1364,28 +1335,12 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
         UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
       END`);
-  //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"AutoHideOne");
-  //SqlFunction.push(`CREATE PROCEDURE `+siteName+`AutoHideOne (IN id INT) BEGIN      UPDATE `+sellerTab+` SET boShow=IF(VtNow>hideTime,0,boShow) WHERE idUser=id;    END`);
 
     // IFunPoll
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"IFunPoll");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`IFunPoll(Itimer INT) BEGIN      CALL `+siteName+`TimeAccumulatedUpdMult(Itimer);   CALL `+siteName+`HistActiveUpdMult;   END`);
   
-  //SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdMult");  // Update tAccumulated, tLastWriteOfTA and boShow
-  //SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdMult(Itimer INT)
-      //BEGIN
-        //DECLARE tLastWriteOfBoShow INT;
-        //DECLARE VtNow TIMESTAMP DEFAULT now();
-        //SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
-        //IF UNIX_TIMESTAMP(VtNow)>tLastWriteOfBoShow+Itimer THEN
-          //UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) WHERE boShow=1;
-          //UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) WHERE boShow=1;
-          //UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(VtNow) WHERE name='tLastWriteOfBoShow';
-        //END IF;
-      //END`);
-  
-  
-      //   Idea of using tHide instead of tPos (or as well as tPos)  in roleTab
+    // Idea of using tHide instead of tPos (or as well as tPos)  in roleTab
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdMult");  // Update tAccumulated, tLastWriteOfTA and boShow
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdMult(Itimer INT)
       BEGIN
@@ -1592,21 +1547,21 @@ CLIENT_FOUND_ROWS
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetIdUserNSetISeq");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(256), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(32), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, ViSeq INT;
-      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM `+userTab+` WHERE pubKey=Ikey;
+      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM `+userTab+` WHERE keyFromExternalTracker=Ikey LIMIT 1;
       SET Vc=FOUND_ROWS();
-      IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('pubKey exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
-      IF Vc=0 THEN SET OboOK=0, Omess='No such pubKey stored!'; LEAVE proc_label; END IF;
+      IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('keyFromExternalTracker exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
+      IF Vc=0 THEN SET OboOK=0, Omess='No such keyFromExternalTracker stored!'; LEAVE proc_label; END IF;
 
-      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the keys'; LEAVE proc_label; END IF;
+      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the key'; LEAVE proc_label; END IF;
       UPDATE `+userTab+` SET iSeq=iSeqN WHERE idUser=OidUser;
       SET OboOK=1, Omess='';
     END`);
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(IiRole INT, Ikey varchar(256), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(IiRole INT, Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, VidUser, ViSeq, intMax INT;
       DECLARE VtNow TIMESTAMP DEFAULT now();
@@ -1629,7 +1584,7 @@ CLIENT_FOUND_ROWS
     END`);
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(IiRole INT, Ikey varchar(256), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(IiRole INT, Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboAuto INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE VtNow TIMESTAMP DEFAULT now();
       DECLARE Vc, Vn, VidUser, ViSeq, VresM INT;
@@ -1660,13 +1615,15 @@ CLIENT_FOUND_ROWS
         SET @bigIntGeoHash=pWC2GeoHash(Ix, Iy);
 
         IF IiRole=0 THEN
-          #UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second) WHERE idUser=VidUser;
-          UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
+          UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
+            tHide=IF(IboAuto, tHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`))) 
+            WHERE idUser=VidUser;
           UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
         ELSE
           UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
-          #UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second) WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IhideTimer, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)) WHERE idUser=VidUser;
+          UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
+            tHide=IF(IboAuto, tHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`))) 
+            WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       END IF;
