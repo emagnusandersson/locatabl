@@ -96,7 +96,7 @@
 //'str'+ucfirst(strAppName)+'Md5Config'
 
 //req.sessionID+'_CSRFCode'+ucfirst(caller)
-   //libReqBE->go, libReq->reqPubKeyStore  --->  libReqBE->go
+   //libReqBE->go, libReq->reqKeyFromExternalTrackerSave  --->  libReqBE->go
    
 //req.sessionID+'_UserInfoFrDB'
    //libReqBE->go, loginGetGraph, setupById, UDelete  --->  libReqBE->go
@@ -296,8 +296,8 @@ ReqBE.prototype.go=function*(){
     if(StrComp(StrInFunc,['setUpCond','setUp','getList','getGroupList','getHist']) || StrComp(StrInFunc,['getSetting','setupById','VSetPosCond', 'setUpCond','setUp','getList','getGroupList','getHist']))
         { boCheckCSRF=0; boSetNewCSRF=1; }
     if(StrComp(StrInFunc,['RShow']) || StrComp(StrInFunc,['RHide'])) { boCheckCSRF=0; boSetNewCSRF=0; } // Request from service worker
-  }else if(caller=='pubKeyStore'){
-    arrCSRF=['pubKeyStore','loginGetGraph'];   arrNoCSRF=['setupById','logout'];   allowed=arrCSRF.concat(arrNoCSRF);
+  }else if(caller=='keyFromExternalTrackerSave'){
+    arrCSRF=['keyFromExternalTrackerSave','loginGetGraph'];   arrNoCSRF=['setupById','logout'];   allowed=arrCSRF.concat(arrNoCSRF);
 
       // Assign boCheckCSRF and boSetNewCSRF
     boCheckCSRF=0; boSetNewCSRF=0;   for(var i=0;i<beArr.length; i++){ var row=beArr[i]; if(in_array(row[0],arrCSRF)) {  boCheckCSRF=1; boSetNewCSRF=1;}  }
@@ -857,14 +857,15 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
   this.pC=inObj.pC; var xC=Number(this.pC.x), yC=Number(this.pC.y), wVP=Number(this.VPSize[0]), hVP=Number(this.VPSize[1]); 
   //Sql.push("SET @xC="+xC+"; SET @yC="+yC+"; SET @wVP="+wVP+"; SET @hVP="+hVP+";
   
-  //sql="UPDATE "+sellerTab+" SET boShow=0, tPos=now() WHERE boShow=1 AND now()>DATE_ADD(tPos, INTERVAL hideTimer SECOND)";
   Sql.push("CALL "+siteName+"IFunPoll("+intTAccumulatedUpdateTimer+");"); 
 
   if(boCalcZoom){  
     //Sql.push("SELECT count(u.idUser) AS nBuyerReal FROM "+userTab+" u JOIN "+buyerTab+" ro ON u.idUser=ro.idUser;");
     //Sql.push("SELECT count(u.idUser) AS nSellerReal FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
-    Sql.push("SELECT count(*) AS nBuyerReal FROM "+buyerTab+";");
-    Sql.push("SELECT count(*) AS nSellerReal FROM "+sellerTab+";");
+    //Sql.push("SELECT count(*) AS nBuyerReal FROM "+buyerTab+";");
+    //Sql.push("SELECT count(*) AS nSellerReal FROM "+sellerTab+";");
+    Sql.push('SELECT AUTO_INCREMENT AS idAutoIncrement FROM information_schema.TABLES WHERE TABLE_SCHEMA = "mmm" AND TABLE_NAME = "'+userTab+'";');
+    
  
     var WhereTmpB=this.OQueryPart[0].Where.concat("boShow=1", sqlBoBeforeHiding),  strCondB=array_filter(WhereTmpB).join(' AND ');
     var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", sqlBoBeforeHiding),  strCondS=array_filter(WhereTmpS).join(' AND ');
@@ -878,9 +879,10 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   this.GRet.curTime=results[0][0].now; 
   if(boCalcZoom){
-    this.GRet.nBuyerReal=results[2][0].nBuyerReal||0; 
-    this.GRet.nSellerReal=results[3][0].nSellerReal||0; 
-    var distMinB=results[4][0].distMin,   distMinS=results[5][0].distMin;
+    //this.GRet.nBuyerReal=results[2][0].nBuyerReal||0; 
+    //this.GRet.nSellerReal=results[3][0].nSellerReal||0; 
+    this.GRet.idAutoIncrement=results[2][0].idAutoIncrement||0; 
+    var distMinB=results[3][0].distMin,   distMinS=results[4][0].distMin;
     if(distMinB===null) distMinB=intMax;  if(distMinS===null) distMinS=intMax;
     var distMin=Math.min(distMinB,distMinS);  
     var minVP=Math.min(wVP,hVP);    
@@ -1530,13 +1532,13 @@ ReqBE.prototype.deleteImage=function*(inObj){
 }
 
 
-ReqBE.prototype.pubKeyStore=function*(inObj){
+ReqBE.prototype.keyFromExternalTrackerSave=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
   var {userTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
-  //var idUser=user.idUser, pubKey=inObj.pubKey;
-  var sql="UPDATE "+userTab+" SET pubKey=?, iSeq=0 WHERE idUser=?",   Val=[myJSEscape(inObj.pubKey),  user.idUser];
+  //var idUser=user.idUser, keyFromExternalTracker=inObj.keyFromExternalTracker;
+  var sql="UPDATE "+userTab+" SET keyFromExternalTracker=?, iSeq=0 WHERE idUser=?",   Val=[myJSEscape(inObj.keyFromExternalTracker),  user.idUser];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
   //if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}

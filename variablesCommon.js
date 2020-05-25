@@ -177,7 +177,7 @@ PluginF.general=function(site){
 
   
     // StrOrder: Order of arguments in roleTab (Object.keys may give unpredictable order)
-  var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'hideTimer', 'tHide', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'pubKey', 'iSeq'
+  var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'hideTimer', 'tHide', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'keyFromExternalTracker', 'iSeq'
   
   
   

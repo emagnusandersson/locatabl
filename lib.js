@@ -1,56 +1,55 @@
 "use strict"
 
 //var app=(typeof window==='undefined')?global:window;
-var app=(typeof window!=='undefined')?window:((typeof global!=='undefined')?global:self);
+//var app=(typeof window!=='undefined')?window:((typeof global!=='undefined')?global:self);
+var app;  if(typeof window!=='undefined') app=window; else if(typeof global!=='undefined') app=global; else app=self;
 
-
-
-app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for each strKey. Create an array with all strKey where Prop[strKey].b[iBit] is true.
-  var KeyAll=Object.keys(Prop)
-  var KeySel=[];  for(var i=0;i<KeyAll.length;i++) { var key=KeyAll[i], b=Prop[key].b;   if(Number(b[iBit])) KeySel.push(key);  }
-  return KeySel;
-}
 
 //
-// string
+// Object
 //
 
-app.ucfirst=function(string){  return string.charAt(0).toUpperCase() + string.slice(1);  }
-app.lcfirst=function(string){  return string.charAt(0).toLowerCase() + string.slice(1);  }
-app.isAlpha=function(star){  var regEx = /^[a-zA-Z0-9]+$/;  return str.match(regEx); } 
-//String.prototype.trim = function(){ return this.replace(/^\s+|\s+$/g,"");}
-if(!String.format){
-  String.format = function(format){
-    var args = Array.prototype.slice.call(arguments, 1);
-    return format.replace(/{(\d+)}/g, function(match, number){ 
-      return typeof args[number]!='undefined' ? args[number]:match;
-    });
-  };
+app.copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[name]=b[name]; } return a; }
+app.object_values=function(obj){
+  var arr=[];      for(var name in obj) arr.push(obj[name]);
+  return arr;
+}
+app.copy=function(o, isdeep){
+    if (o===undefined || o===null || ['string', 'number', 'boolean'].indexOf(typeof o)!==-1)
+        return o;
+    var n= o instanceof Array? [] :{};
+    for (var k in o)
+        if (o.hasOwnProperty(k))
+            n[k]= isdeep? copy(o[k], isdeep) : o[k];
+    return n;
+}
+app.removeProp=function(obj, arrProp){
+  if(typeof arrProp=='string') arrProp=[arrProp];
+  for(var i=0;i<arrProp.length;i++)  delete obj[arrProp[i]];
 }
 
-app.ltrim=function(str,charlist=String.raw`\s`){
-  return str.replace(new RegExp("^[" + charlist + "]+"), "");
-};
-app.rtrim=function(str,charlist=String.raw`\s`){
-  return str.replace(new RegExp("[" + charlist + "]+$"), "");
-};
-app.trim=function(str,charlist=String.raw`\s`){
-  return str.replace(new RegExp("^[" + charlist + "]+([^" + charlist + "]*)[" + charlist + "]+$"), function(m,n){return n;});
-}
+app.copyDeep=function(objI) { return JSON.parse(JSON.stringify(objI));};
 
-//app.pad2=function(n){ return ('0'+n).slice(-2);}
-app.pad2=function(n){return (n<10?'0':'')+n;}
-
-
-app.myParser=function(strText,obj){
-  var StrKey=Object.keys(obj);
-  for(var i=0;i<StrKey.length;i++){
-    var strKey=StrKey[i];
-    var regKey=new RegExp('\\$'+strKey, 'g');
-    strText.replace(regKey, obj[strKey]);
+/*JSON.myParse=function(str){
+    try{
+        return [null, JSON.parse(str)];
+    }catch(err){
+        return [err, undefined];
+    }
+}*/
+app.isEmpty=function(v){ 
+  if(typeof v=='undefined') return true;
+  if(typeof v=='number') return v==0;
+  if(typeof v=='string') return v.length==0;
+  if(typeof v=='object') {
+    if(v===null) return true;
+    if(v instanceof Array) return v.length==0;
+    return Object.keys(v).length==0;
   }
-  return strText;
 }
+app.isSet=function(v){ return !isEmpty(v); }
+
+
 
 //
 // Array
@@ -177,189 +176,56 @@ app.Str_moveM=function(arr,strRefVal,arrMove,boBefore){
 app.Str_addUnique=function(arr,str){ if(arr.indexOf(str)==-1) arr.push(str); return arr; } // Add if str does not exist in arr else do nothing
 app.Str_changeOne=function(arr,strO,strN){ var ind=arr.indexOf(strO); if(ind==-1) arr.push(strN); else arr[ind]=strN; return arr; } // Change strO to strN.
 
+
+
 //
-// Object
+// string
 //
 
-app.copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[name]=b[name]; } return a; }
-app.object_values=function(obj){
-  var arr=[];      for(var name in obj) arr.push(obj[name]);
-  return arr;
-}
-app.copy=function(o, isdeep){
-    if (o===undefined || o===null || ['string', 'number', 'boolean'].indexOf(typeof o)!==-1)
-        return o;
-    var n= o instanceof Array? [] :{};
-    for (var k in o)
-        if (o.hasOwnProperty(k))
-            n[k]= isdeep? copy(o[k], isdeep) : o[k];
-    return n;
-}
-app.removeProp=function(obj, arrProp){
-  if(typeof arrProp=='string') arrProp=[arrProp];
-  for(var i=0;i<arrProp.length;i++)  delete obj[arrProp[i]];
+app.ucfirst=function(string){  return string.charAt(0).toUpperCase() + string.slice(1);  }
+app.lcfirst=function(string){  return string.charAt(0).toLowerCase() + string.slice(1);  }
+app.isAlpha=function(star){  var regEx = /^[a-zA-Z0-9]+$/;  return str.match(regEx); } 
+//String.prototype.trim = function(){ return this.replace(/^\s+|\s+$/g,"");}
+if(!String.format){
+  String.format = function(format){
+    var args = Array.prototype.slice.call(arguments, 1);
+    return format.replace(/{(\d+)}/g, function(match, number){ 
+      return typeof args[number]!='undefined' ? args[number]:match;
+    });
+  };
 }
 
-app.copyDeep=function(objI) { return JSON.parse(JSON.stringify(objI));};
+app.ltrim=function(str,charlist=String.raw`\s`){
+  return str.replace(new RegExp("^[" + charlist + "]+"), "");
+};
+app.rtrim=function(str,charlist=String.raw`\s`){
+  return str.replace(new RegExp("[" + charlist + "]+$"), "");
+};
+app.trim=function(str,charlist=String.raw`\s`){
+  return str.replace(new RegExp("^[" + charlist + "]+([^" + charlist + "]*)[" + charlist + "]+$"), function(m,n){return n;});
+}
 
-/*JSON.myParse=function(str){
-    try{
-        return [null, JSON.parse(str)];
-    }catch(err){
-        return [err, undefined];
-    }
-}*/
-app.isEmpty=function(v){ 
-  if(typeof v=='undefined') return true;
-  if(typeof v=='number') return v==0;
-  if(typeof v=='string') return v.length==0;
-  if(typeof v=='object') {
-    if(v===null) return true;
-    if(v instanceof Array) return v.length==0;
-    return Object.keys(v).length==0;
+//app.pad2=function(n){ return ('0'+n).slice(-2);}
+app.pad2=function(n){return (n<10?'0':'')+n;}
+
+
+app.myParser=function(strText,obj){
+  var StrKey=Object.keys(obj);
+  for(var i=0;i<StrKey.length;i++){
+    var strKey=StrKey[i];
+    var regKey=new RegExp('\\$'+strKey, 'g');
+    strText.replace(regKey, obj[strKey]);
   }
+  return strText;
 }
-app.isSet=function(v){ return !isEmpty(v); }
 
-
-//
-// Misc
-//
-app.parseQS=function(str){
-  var params = {},      regex = /([^&=]+)=([^&]*)/g, m;
-  while (m = regex.exec(str)) {
-    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-  }
-  return params;
-}
 /////////////////////////////////////////////////////////////////////
-
-
-
-//extractLoc=function(obj,strObjName){   // Ex: eval(extractLoc(objMy,'objMy'));
-  //var Str=[];  for(var key in obj) Str.push(key+'='+strObjName+'.'+key);
-  //var str=''; if(Str.length) str='var '+Str.join(', ')+';';  return str;
-//}
-//extract=function(obj){  for(var key in obj){  window[key]=obj[key];  }  }
-//extract=function(obj,par){
-  //if(typeof par=='undefined') par=app; for(var key in obj){
-    //par[key]=obj[key];
-  //}
-//}
-//app.extract=function(obj,par=app){ for(var key in obj){ par[key]=obj[key]; } }
-//extractLocSome=function(strObjName,arrSome){  // Ex: eval(extractLocSome('objMy',['a','b']));
-  //if(typeof arrSome=='string') arrSome=[arrSome];
-  //var len=arrSome.length, Str=Array(len);  for(var i=0;i<len;i++) { var key=arrSome[i]; Str[i]=key+'='+strObjName+'.'+key; }
-  //return 'var '+Str.join(', ')+';';
-//}
-
-//
-// Data Formatting
-//
-
-app.arrObj2TabNStrCol=function(arrObj){ //  Ex: [{abc:0,def:1},{abc:2,def:3}] => {tab:[[0,1],[2,3]],StrCol:['abc','def']}
-    // Note! empty arrObj returns {tab:[]}
-  var Ou={tab:[]}, lenI=arrObj.length, StrCol=[]; if(!lenI) return Ou;
-  StrCol=Object.keys(arrObj[0]);  var lenJ=StrCol.length;
-  for(var i=0;i<lenI;i++) {
-    var row=arrObj[i], rowN=Array(lenJ);
-    for(var j=0;j<lenJ;j++){ var key=StrCol[j]; rowN[j]=row[key]; }
-    Ou.tab.push(rowN);
-  }
-  Ou.StrCol=StrCol;
-  return Ou;
-}
-app.tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['abc','def']}    =>    [{abc:0,def:1},{abc:2,def:3}] 
-    // Note! An "empty" input should look like this:  {tab:[]}
-  var tab=tabNStrCol.tab, StrCol=tabNStrCol.StrCol, arrObj=Array(tab.length);
-  for(var i=0;i<tab.length;i++){
-    var row={};
-    for(var j=0;j<StrCol.length;j++){  var key=StrCol[j]; row[key]=tab[i][j];  }
-    arrObj[i]=row;
-  }
-  return arrObj;
-}
-
-app.deserialize=function(serializedJavascript){
-  return eval('(' + serializedJavascript + ')');
-}
-
-app.print_r=function(o,boHTML){
-  var tmp=JSON.stringify(o,null,'\t');
-  if(typeof(boHTML) !='undefined' && boHTML) tmp=tmp.replace(/\n/g,'<br>').replace(/\t/g,'&nbsp;&nbsp;&nbsp;'); return tmp;
-}
-
-
-
-
-//
-// Dates and time
-//
-
-Date.prototype.toUnix=function(){return Math.round(this.valueOf()/1000);}
-Date.prototype.toISOStringMy=function(){return this.toISOString().substr(0,19);}
-app.swedDate=function(tmp){ if(tmp){tmp=UTC2JS(tmp);  tmp=tmp.getFullYear()+'-'+pad2(tmp.getMonth()+1)+'-'+pad2(tmp.getDate());}  return tmp;}
-app.UTC2JS=function(utcTime){ var tmp=new Date(Number(utcTime)*1000);  return tmp;  }
-app.UTC2Readable=function(utcTime){ var tmp=new Date(Number(utcTime)*1000);   return tmp.toLocaleString();  }
-//myISODATE=function(d){ return d.toISOString().substr(0,19);}
-//unixNowMS=function(){var tmp=new Date(); return Number(tmp);}
-//unixNow=function(){return Math.round(unixNowMS()/1000);}
-app.unixNow=function(){return (new Date()).toUnix();}
-
-app.getSuitableTimeUnit=function(t){ // t in seconds
-  var tabs=Math.abs(t), tsign=t>=0?+1:-1;
-  if(tabs<=90) return [tsign*tabs,'s'];
-  tabs/=60; // t in minutes
-  if(tabs<=90) return [tsign*tabs,'m']; 
-  tabs/=60; // t in hours
-  if(tabs<=36) return [tsign*tabs,'h'];
-  tabs/=24; // t in days
-  if(tabs<=2*365) return [tsign*tabs,'d'];
-  tabs/=365; // t in years
-  return [tsign*tabs,'y'];
-}
-
-app.getSuitableTimeUnitStr=function(tdiff,boLong=0,boArr=0){
-  //var tmp;  tmp=approxTimeDuration(tdiff,boLong,boArr);
-  var [ttmp,indA]=getSuitableTimeUnit(tdiff), n=Math.round(ttmp);
-  if(indA=='m') indA='min';
-  var jSingular=0, jPlural=1; if(boLong==1){jSingular=2; jPlural=3;}
-  var unit=langHtml.timeUnit, units=unit[indA][jSingular]; if(n!=1) units=unit[indA][jPlural];
-
-  if(boArr==1){  return [n,units];  }
-  else{
-    var tmp=n+' '+units;  if(tdiff<0) tmp='-';
-    return tmp;
-  }
-}
-
-//
-// Random
-//
-
-app.randomHash=function(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);}
-
-app.randomInt=function(min, max){    return min + Math.floor(Math.random() * (max - min + 1));  } // Random integer in the intervall [min, max] (That is including both min and max)
-
-app.gauss=function(){   // returns random number with normal distribution N(0,1)  (mean=0,  std dev=1)
-  var x=Math.random(), y=Math.random();
-
-  // two independent variables with normal distribution N(0,1)
-  var u=Math.sqrt(-2*Math.log(x))*Math.cos(2*Math.PI*y);
-  var v=Math.sqrt(-2*Math.log(x))*Math.sin(2*Math.PI*y);
-
-  // i will return only one, couse only one needed
-  return u;
-}
-
-app.gauss_ms=function(m=0,s=1){  // returns random number with normal distribution: N(m,s)  (mean=m,  std dev=s)
-  return gauss()*s+m;
-}
 
 
 //
 // Math
 //
+
 app.minKeepType=function(){var valBest=Infinity; for(var i=0;i<arguments.length;i++){ if(arguments[i]<valBest) valBest=arguments[i];} return valBest;} // Keeping the type as opposed to Math.min
 app.maxKeepType=function(){var valBest=-Infinity; for(var i=0;i<arguments.length;i++){ if(arguments[i]>valBest) valBest=arguments[i];} return valBest;} // Keeping the type as opposed to Math.max
 
@@ -430,13 +296,141 @@ app.approxDist=function(mWhole,boArr=0){
 }
 
 app.makeOrdinalEndingEn=function(n){
-  var oneth=n%10, tmp=Math.floor(n/10), tenth=tmp%10;
+  var ones=n%10, tmp=Math.floor(n/10), tens=tmp%10;
   var ending='th';
-  if(tenth!=1){ // if not in the teens
-    if(oneth==1){ ending='st';} else if(oneth==2){ ending='nd';} else if(oneth==3){ ending='rd';}
+  if(tens!=1){ // if not in the teens
+    if(ones==1){ ending='st';} else if(ones==2){ ending='nd';} else if(ones==3){ ending='rd';}
   }
   return ending;
 }
+//app.ordinal_suffix_of=function(i) {
+    //var j = i % 10,  k = i % 100;
+    //if (j == 1 && k != 11) {  return i + "st"; }
+    //if (j == 2 && k != 12) {  return i + "nd"; }
+    //if (j == 3 && k != 13) {  return i + "rd"; }
+    //return i + "th";
+//}
+
+
+//
+// Random
+//
+
+app.randomHash=function(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);}
+
+app.randomInt=function(min, max){    return min + Math.floor(Math.random() * (max - min + 1));  } // Random integer in the intervall [min, max] (That is including both min and max)
+
+app.gauss=function(){   // returns random number with normal distribution N(0,1)  (mean=0,  std dev=1)
+  var x=Math.random(), y=Math.random();
+
+  // two independent variables with normal distribution N(0,1)
+  var u=Math.sqrt(-2*Math.log(x))*Math.cos(2*Math.PI*y);
+  var v=Math.sqrt(-2*Math.log(x))*Math.sin(2*Math.PI*y);
+
+  // i will return only one, couse only one needed
+  return u;
+}
+
+app.gauss_ms=function(m=0,s=1){  // returns random number with normal distribution: N(m,s)  (mean=m,  std dev=s)
+  return gauss()*s+m;
+}
+
+
+//
+// Dates and time
+//
+
+Date.prototype.toUnix=function(){return Math.round(this.valueOf()/1000);}
+Date.prototype.toISOStringMy=function(){return this.toISOString().substr(0,19);}
+app.swedDate=function(tmp){ if(tmp){tmp=UTC2JS(tmp);  tmp=tmp.getFullYear()+'-'+pad2(tmp.getMonth()+1)+'-'+pad2(tmp.getDate());}  return tmp;}
+app.UTC2JS=function(utcTime){ var tmp=new Date(Number(utcTime)*1000);  return tmp;  }
+app.UTC2Readable=function(utcTime){ var tmp=new Date(Number(utcTime)*1000);   return tmp.toLocaleString();  }
+//myISODATE=function(d){ return d.toISOString().substr(0,19);}
+//unixNowMS=function(){var tmp=new Date(); return Number(tmp);}
+//unixNow=function(){return Math.round(unixNowMS()/1000);}
+app.unixNow=function(){return (new Date()).toUnix();}
+
+app.getSuitableTimeUnit=function(t){ // t in seconds
+  var tabs=Math.abs(t), tsign=t>=0?+1:-1;
+  if(tabs<=90) return [tsign*tabs,'s'];
+  tabs/=60; // t in minutes
+  if(tabs<=90) return [tsign*tabs,'m']; 
+  tabs/=60; // t in hours
+  if(tabs<=36) return [tsign*tabs,'h'];
+  tabs/=24; // t in days
+  if(tabs<=2*365) return [tsign*tabs,'d'];
+  tabs/=365; // t in years
+  return [tsign*tabs,'y'];
+}
+
+app.getSuitableTimeUnitStr=function(tdiff,boLong=0,boArr=0){
+  //var tmp;  tmp=approxTimeDuration(tdiff,boLong,boArr);
+  var [ttmp,indA]=getSuitableTimeUnit(tdiff), n=Math.round(ttmp);
+  if(indA=='m') indA='min';
+  var jSingular=0, jPlural=1; if(boLong==1){jSingular=2; jPlural=3;}
+  var unit=langHtml.timeUnit, units=unit[indA][jSingular]; if(n!=1) units=unit[indA][jPlural];
+
+  if(boArr==1){  return [n,units];  }
+  else{
+    var tmp=n+' '+units;  if(tdiff<0) tmp='-';
+    return tmp;
+  }
+}
+
+
+//
+// Data Formatting
+//
+
+app.arrObj2TabNStrCol=function(arrObj){ //  Ex: [{abc:0,def:1},{abc:2,def:3}] => {tab:[[0,1],[2,3]],StrCol:['abc','def']}
+    // Note! empty arrObj returns {tab:[]}
+  var Ou={tab:[]}, lenI=arrObj.length, StrCol=[]; if(!lenI) return Ou;
+  StrCol=Object.keys(arrObj[0]);  var lenJ=StrCol.length;
+  for(var i=0;i<lenI;i++) {
+    var row=arrObj[i], rowN=Array(lenJ);
+    for(var j=0;j<lenJ;j++){ var key=StrCol[j]; rowN[j]=row[key]; }
+    Ou.tab.push(rowN);
+  }
+  Ou.StrCol=StrCol;
+  return Ou;
+}
+app.tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['abc','def']}    =>    [{abc:0,def:1},{abc:2,def:3}] 
+    // Note! An "empty" input should look like this:  {tab:[]}
+  var tab=tabNStrCol.tab, StrCol=tabNStrCol.StrCol, arrObj=Array(tab.length);
+  for(var i=0;i<tab.length;i++){
+    var row={};
+    for(var j=0;j<StrCol.length;j++){  var key=StrCol[j]; row[key]=tab[i][j];  }
+    arrObj[i]=row;
+  }
+  return arrObj;
+}
+
+app.deserialize=function(serializedJavascript){
+  return eval('(' + serializedJavascript + ')');
+}
+
+app.print_r=function(o,boHTML){
+  var tmp=JSON.stringify(o,null,'\t');
+  if(typeof(boHTML) !='undefined' && boHTML) tmp=tmp.replace(/\n/g,'<br>').replace(/\t/g,'&nbsp;&nbsp;&nbsp;'); return tmp;
+}
+
+
+app.parseQS=function(str){
+  var params = {},      regex = /([^&=]+)=([^&]*)/g, m;
+  while (m = regex.exec(str)) {
+    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+  }
+  return params;
+}
+
+
+app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for each strKey. Create an array with all strKey where Prop[strKey].b[iBit] is true.
+  var KeyAll=Object.keys(Prop)
+  var KeySel=[];  for(var i=0;i<KeyAll.length;i++) { var key=KeyAll[i], b=Prop[key].b;   if(Number(b[iBit])) KeySel.push(key);  }
+  return KeySel;
+}
+
+
 
 //
 // MercatorProjection
@@ -494,10 +488,9 @@ app.resM2resWC=function(resMEquator,lat){
 }  
 
 
-  //
-  // GeoHash
-  //
-
+//
+// GeoHash
+//
 
 app.createBMOne=function(i) {    var imod=i%32, a;     if(imod==31) a=0x80000000; else  a=1<<imod;     if(i>=32) a=a*0x100000000;     return a;  }  // 0≤i. Ex: i=5 => 0000 0000 0000 0000  0000 0000 0010 0000
 app.floorLowerBits=function(a,n=0){
@@ -588,6 +581,8 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
   }
   return {arrRangeHash, arrBigIntHash, arrBigIntHashSta, arrBigIntHashEnd, arrRange, arrRangeStr, IntPotSizeLev, nW, nH };
 }
+
+
 
 //
 // Obsolete
