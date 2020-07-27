@@ -113,8 +113,15 @@ SellerSettings:'<span nom="Seller">Seller</span> settings',
 //SellerSettings:'Seller settings',
 BuyerSettings:'<span nom="Buyer">Buyer</span> settings',
 SellerLogin:'Login (<span nom="Sellers">Sellers</span>)',
-SignInAsBuyer:'Sign in as <span nom="buyer">buyer</span>',
-SignInAsSeller:'Sign in as <span nom="seller">seller</span>',
+
+// Sign in (appear on map) as:
+// Show yourself (your position) on the map:
+//ShowYourselfOnTheMap:'Show yourself (your position) on the map...',
+//SignInAsBuyer:'Appear on map as <span nom="buyer">buyer</span>',
+//SignInAsSeller:'Appear on map as <span nom="seller">seller</span>',
+AppearOnTheMap:'Appear on the map...',
+asBuyer:'...as <span nom="buyer">buyer</span>',
+asSeller:'...as <span nom="seller">seller</span>',
 DidYouUseAltIPBefore:'Did you use <span nom="IP">another IP</span> to login before?',
 
 
@@ -218,7 +225,7 @@ pricePref:{pop:"Change distance and time"},
 
 
   //login
-loginInfo:{'complainer':'complainer',
+divLoginInfo:{'complainer':'complainer',
 'buyer':'buyer',
 'seller':'seller',
 'team':'team',
@@ -289,8 +296,8 @@ semiTrailerWTrailer:'Semi trailer plus trailer',
 boat:'Boat'
 },
 
-standingByMethods:['In vehicle','At home','5 min','10 min'],
-standingByMethodsLong:['In vehicle','At home','Ready in 5 min','Ready in 10 min'],
+standingByMethods:['In vehi­cle','At home','5 min','10 min'],
+standingByMethodsLong:['In vehi­cle','At home','Ready in 5 min','Ready in 10 min'],
 compassPoint:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
 
 ShowNUpdate:'Visible / New pos',
@@ -377,7 +384,7 @@ idTeam:'Team-id'
 },
 
 NotYetApproved:'Not yet approved',
-
+SendPushNotification:'Send push not­ifica­tion',
 
 //standingByMethods:['0','1','2','3','4','5','10'],
 //standingByMethodsLong:['0','1','2','3','4','5','10'],
@@ -402,7 +409,7 @@ displayEmail:{label:'Email', boRot:0}, //✉
 boWebPushOK:{label:'"Push Not­ifica­tions" enabled', boRot:0},
 link:{label:'Link', boRot:0}, //🔗
 homeTown:{label:'Home town', boRot:0},
-standingByMethod:{label:'How is <span nom="theSeller">the seller</span> waiting', boRot:0},
+standingByMethod:{label:'How is <span nom="theSeller">the seller</span> wait­ing', boRot:0},
 //standingByMethod:{label:'How is the seller waiting', boRot:1},
 idDriverGovernment:{label:'Dri­ver-ID (gov)', boRot:0},
 vehicleType:{label:'Vehicle type', boRot:0},
@@ -430,7 +437,7 @@ linkTeam:{label:'', boRot:0},
 bla:{label:'', boRot:0},
 nComplaint:{label:'Com­pla­ints', boRot:0},
 histActive:{label:'Active days per last-<span></span>-days', boRot:0},
-tAccumulated:{label:'Accumu­lated time as visi­ble', boRot:0},
+tAccumulated:{label:'Acc­umu­lated time as visi­ble', boRot:0},
 tLastWriteOfTA:{label:'', boRot:0},
 hideTimer:{label:'Hide timer', boRot:0},
 hideTime:{label:'Auto­matic­ally hide', boRot:0},

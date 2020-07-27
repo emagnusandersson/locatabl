@@ -109,7 +109,7 @@
 //code+'_LoginWLink'  (email)
    //libReqBE->sendLoginLink  --->  libReq->reqLoginWLink
    
-//code+'_verifyEmailNCreateUser';     ({email:email, password:password, name:name})
+//code+'_verifyEmailNCreateUser';     ({email, password, name})
    //libReqBE->sendVerifyEmailNCreateUserMessage  --->  libReq->reqVerifyEmailNCreateUserReturn
 //code+'_verifyEmail'    (idUser)
    //libReqBE->verifyEmail  --->  libReq->reqVerifyEmailReturn
@@ -148,7 +148,8 @@
 app.ReqBE=function(objReqRes){
   Object.assign(this, objReqRes);
   this.site=this.req.site
-  this.Str=[];  this.Out={GRet:{userInfoFrDBUpd:{}}, dataArr:[]};  this.GRet=this.Out.GRet; 
+  //this.Str=[];  this.Out={GRet:{userInfoFrDBUpd:{}}, dataArr:[]};  this.GRet=this.Out.GRet; 
+  this.Str=[];  this.dataArr=[];  this.GRet={userInfoFrDBUpd:{}}; 
 }
 
   // Method "mesO" and "mesEO" are only called from "go". Method "mes" can be called from any method.
@@ -170,7 +171,8 @@ ReqBE.prototype.mesO=function(e){
     // closebymarket-specific
   this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
-  var str=serialize(this.Out);
+  var objOut=copySome({}, this, ["dataArr", "GRet"]);
+  var str=serialize(objOut);
   if(str.length<lenGZ) res.end(str);
   else{
     res.setHeader("Content-Encoding", 'gzip');
@@ -178,7 +180,7 @@ ReqBE.prototype.mesO=function(e){
     Streamify(str).pipe(zlib.createGzip()).pipe(res);
   }
 }
-ReqBE.prototype.mesEO=function(e){
+ReqBE.prototype.mesEO=function(e, statusCode=500){
   var res=this.res;
     // Prepare an error-message for the browser and one for the error log.
   var StrELog=[], strEBrowser;
@@ -200,7 +202,8 @@ ReqBE.prototype.mesEO=function(e){
   this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
   //res.writeHead(500, {"Content-Type": MimeType.txt}); 
-  res.end(serialize(this.Out));
+  var objOut=copySome({}, this, ["dataArr", "GRet"]);
+  res.end(serialize(objOut));
 }
 
 
@@ -340,7 +343,7 @@ ReqBE.prototype.go=function*(){
     else if(err){
       if(typeof err=='object' && err.name=='ErrorClient') this.mesO(err); else this.mesEO(err);     return;
     }
-    else this.Out.dataArr.push(result);
+    else this.dataArr.push(result);
   }
   this.mesO();
   
@@ -440,7 +443,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
   var expirationTime=20*60;
   var code=randomHash()+randomHash();
   var redisVar=code+'_verifyEmailNCreateUser';
-  var tmp=yield* setRedis(flow, redisVar, {email:email, password:password, name:name}, expirationTime);
+  var tmp=yield* setRedis(flow, redisVar, {email, password, name}, expirationTime);
   var Ou={};
 
     // Send email
@@ -493,7 +496,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
     //var idUser=this.sessionUserInfoFrDB.idUser=Number(results[1][0].idUser);
   //}
   //this.mes(mestmp);
-  //extend(Ou, {boOK:boOK});
+  //extend(Ou, {boOK});
   //yield* setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
   
   //return [null, [Ou]];
@@ -672,7 +675,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   if(typeof email=='undefined') { return [new ErrorClient("Email is required (incase the site changes Id-provider)")];}
   if(typeof idFB=='undefined') { return [new Error("Error idFB is empty")];}
   if(typeof nameIP=='undefined' ) {nameIP=idFB;}
-  this.sessionLoginIdP={IP:strIP, idFB:idFB, idIdPlace, idOpenId, email:email, nameIP:nameIP, image:image};
+  this.sessionLoginIdP={IP:strIP, idFB, idIdPlace, idOpenId, email, nameIP, image};
   yield *setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity);
   
   
@@ -779,8 +782,8 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
     var res=results[3], c=res.length; if(BoTest.buyerTeam) userInfoFrDBUpd.buyerTeam=c==1?res[0]:0;
     var res=results[4], c=res.length; if(BoTest.sellerTeam) userInfoFrDBUpd.sellerTeam=c==1?res[0]:0;
     var res=results[5], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0;
-    var n=results[6][0].n;   if(BoTest.complainer) userInfoFrDBUpd.complainer=n?{idUser:userInfoFrDBUpd.user.idUser, n:n}:0; 
-    var n=results[7][0].n;   if(BoTest.complainee) userInfoFrDBUpd.complainee=n?{idUser:userInfoFrDBUpd.user.idUser, n:n}:0;  
+    var n=results[6][0].n;   if(BoTest.complainer) userInfoFrDBUpd.complainer=n?{idUser:userInfoFrDBUpd.user.idUser, n}:0; 
+    var n=results[7][0].n;   if(BoTest.complainee) userInfoFrDBUpd.complainee=n?{idUser:userInfoFrDBUpd.user.idUser, n}:0;  
   } else extend(userInfoFrDBUpd, specialistDefault);
   
   extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
@@ -867,8 +870,8 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
     Sql.push('SELECT AUTO_INCREMENT AS idAutoIncrement FROM information_schema.TABLES WHERE TABLE_SCHEMA = "mmm" AND TABLE_NAME = "'+userTab+'";');
     
  
-    var WhereTmpB=this.OQueryPart[0].Where.concat("boShow=1", sqlBoBeforeHiding),  strCondB=array_filter(WhereTmpB).join(' AND ');
-    var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", sqlBoBeforeHiding),  strCondS=array_filter(WhereTmpS).join(' AND ');
+    var WhereTmpB=this.OQueryPart[0].Where.concat("boShow=1", "now()<tHide"),  strCondB=array_filter(WhereTmpB).join(' AND ');
+    var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", "now()<tHide"),  strCondS=array_filter(WhereTmpS).join(' AND ');
     
     var xOpp, xAddTerm; if(xC>128) {xOpp=xC-128; xAddTerm="IF(x<"+xOpp+",256,0)";}  else {xOpp=xC+128;  xAddTerm="IF(x>"+xOpp+",-256,0)"; } // xOpp : x of opposite side of planet
     var tmp="MIN(GREATEST(ABS(x+"+xAddTerm+"-"+xC+"),ABS(y-"+yC+")))";
@@ -958,14 +961,14 @@ ReqBE.prototype.getList=function*(inObj){
     var roleTab=iRole?sellerTab:buyerTab;
     var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
     
-    var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", sqlBoBeforeHiding),  strCond=array_filter(WhereTmp).join(' AND ');
+    var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", "now()<tHide"),  strCond=array_filter(WhereTmp).join(' AND ');
     //var strColT=this.OQueryPart[i].strCol;
     var strColT=oRole.strCol;
 //Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM (("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idComplainee=ro.idUser WHERE "+strCond+" GROUP BY ro.idUser ORDER BY tPos DESC LIMIT 0, "+maxList+";");
     Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM ("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam  WHERE "+strCond+" LIMIT 0, "+maxList+";"); // ORDER BY tPos DESC GROUP BY ro.idUser
     Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
 
-    var WhereTmp=[this.whereMap, "boShow=1", sqlBoBeforeHiding],  strCond=array_filter(WhereTmp).join(' AND ');
+    var WhereTmp=[this.whereMap, "boShow=1", "now()<tHide"],  strCond=array_filter(WhereTmp).join(' AND ');
     Sql.push("SELECT count(*) AS n FROM "+roleTab+" ro WHERE "+strCond+";"); // nUnFiltered
   }
   
@@ -1024,7 +1027,7 @@ ReqBE.prototype.getGroupList=function*(inObj){
   for(var i=0;i<this.CharRole.length;i++){
     if(!this.BoUseList[i]){
       var charRole=this.CharRole[i];
-      var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", sqlBoBeforeHiding]),  strCond=array_filter(WhereTmp).join(' AND ');
+      var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", "now()<tHide"]),  strCond=array_filter(WhereTmp).join(' AND ');
       var roleTab=charRole=='b'?buyerTab:sellerTab;
       //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
       var strTableRef=roleTab+' ro';
@@ -1057,7 +1060,7 @@ ReqBE.prototype.getHist=function*(inObj){
     //var strTableRef=userTab+' u JOIN '+roleTab+' ro ON u.idUser=ro.idUser';
     var strTableRef=roleTab+' ro';
     
-    var arg={strTableRef:strTableRef, WhereExtra:[this.whereMap, "boShow=1", sqlBoBeforeHiding], myMySql:this.myMySql};  //, Ou:Ou
+    var arg={strTableRef, WhereExtra:[this.whereMap, "boShow=1", "now()<tHide"], myMySql:this.myMySql};  //, Ou
     arg.Filt=this.OFilt[i];
     //arg.mysqlPool=this.pool;
     //arg.oRole=site['o'+charRoleUC];
