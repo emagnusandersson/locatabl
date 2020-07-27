@@ -27,28 +27,10 @@ dd {
 
 
 
-code {font-size:1em;
-font-family:courier;
-}
 
-pre {
-font-size: 0.8em;
-border: solid 1px #3c78b5;
-padding: 1em;
-border-style:dashed;
-}
-
-
-body {font-family:arial, verdana, helvetica;font-size:100%; overscroll-behavior: contain;}
-
-body { -webkit-text-size-adjust: 100%; }
-
-
-*.rota{
-transform:rotate(-90deg);
--ms-transform:rotate(-90deg); /* IE 9 */
--webkit-transform:rotate(-90deg); /* Safari and Chrome */
-}
+/*html {height:100%}*/
+/*body {font-size:100%}*/
+body {overscroll-behavior:contain; padding:0px; text-align:center; -webkit-text-size-adjust: 100%}
 
 
 table {border-width:1px;border-style:solid;border-collapse:collapse;font-size:inherit; box-sizing: border-box}
@@ -61,21 +43,14 @@ tbody,thead {border-width:inherit;border-style:inherit }
 
 input, textarea, keygen, select, button, isindex  {font-family:arial, verdana, helvetica;font-size:inherit}
 
-.mainDiv {
-  margin: 0em auto;
-  height: 100%;
-  width:100%;
-  display: flex;
-  flex-direction: column;
-  max-width:800px
-}
+
 .contDiv {
-    flex:1 1 auto; 
+    flex:1 1 0; 
     overflow-y:scroll;
     height:100%
 }
 .footDiv {margin: 0em auto;
-    max-width: 800px;
+    max-width: var(--maxWidth);
     width: 100%;
     padding: 1.2em 0 1em;
     border-top: solid 1px;
@@ -105,11 +80,10 @@ background:#ddd;
   height: 1.6em;
   border-radius: 100%;
   border: 1px solid;
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-decoration: none
+  display: inline-block;
+  text-decoration: none;
+  line-height: 1.7em;
+  cursor: default
 }
 .helpButtonGradient {
   background-image: radial-gradient(#daeaff, #8cbdfd, #0064ea);;
@@ -117,8 +91,8 @@ background:#ddd;
   border: 0;
   font-weight: bold;
   font-size: 90%;
-  text-shadow: 0.5px 0.5px #888888
 }
+/*text-shadow: 0.5px 0.5px #888888*/
 
 
 dt {font-weight:bold;}

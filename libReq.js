@@ -102,30 +102,27 @@ app.reqKeyFromExternalTrackerSave=function*(){
   //var Str=this.Str=[];
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html><head>
+<html lang="en"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" id="viewportMy" content="initial-scale=1" />
 <meta name="robots" content="noindex">
 </head>
 <body>`);
 
-
-  //var uCommon='http://'+wwwCommon;
   var uCommon=req.strSchemeLong+wwwCommon;
-  var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
-  //Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
-  //uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.min.js"; Str.push('<script src="'+uJQuery+'"></script>');
- 
+  Str.push(`<script>var app=window;</script>`);
+  Str.push(`<base href="`+uCommon+`">`);
+
 
           // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
-  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<link rel="stylesheet" href="'+uCommon+pathTmp+'?v='+vTmp+'" type="text/css">');
+  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css">');
 
     // Include site specific JS-files
-  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'"></script>');
+  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
 
   var StrTmp=['lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyFromExternalTrackerSave.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
 
@@ -134,12 +131,14 @@ app.reqKeyFromExternalTrackerSave=function*(){
   
 
   Str.push("<script>");
-  var objOut={CSRFCode:CSRFCode, caller:caller, specialistDefault:specialistDefault, keyFromExternalTracker:keyFromExternalTracker, maxList:maxList, wwwCommon:wwwCommon, leafBE:leafBE, flImageFolder:flImageFolder, UrlOAuth:UrlOAuth, response_type:response_type};
+  var objOut={CSRFCode, caller, specialistDefault, keyFromExternalTracker, maxList, wwwCommon, leafBE, flImageFolder, UrlOAuth, response_type};
   copySome(objOut,req,['wwwSite', 'boTLS']);
 
   Str.push(`var tmp=`+serialize(objOut)+`;
-extend(window, tmp);
-setItem('CSRFCode',CSRFCode);
+Object.assign(window, tmp);
+function indexAssign(){
+  setItem('CSRFCode',CSRFCode);
+}
 `);
   Str.push("</script>");
   Str.push("</body></html>");
@@ -160,7 +159,7 @@ app.reqPrev=function*() {
   if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
   
   res.end(`<!DOCTYPE html>
-<html><head>
+<html lang="en"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" id="viewportMy" content="initial-scale=1" />
 <meta name="robots" content="noindex">
@@ -209,7 +208,12 @@ app.reqIndex=function*() {
   var strLangBrowser=getBrowserLang(req); if(!checkIfLangIsValid(strLangBrowser)){ strLangBrowser='en'; }
 
   var ua=req.headers['user-agent']||''; ua=ua.toLowerCase();
-  var boMSIE=RegExp('msie').test(ua), boAndroid=RegExp('android').test(ua), boFireFox=RegExp('firefox').test(ua), boIOS= RegExp('iPhone|iPad|iPod','i').test(ua), boUC= RegExp('ucbrowser','i').test(ua);
+  var boMSIE=RegExp('msie').test(ua);
+  var boAndroid=RegExp('android').test(ua);
+  var boFireFox=RegExp('firefox').test(ua);
+  var boUC= RegExp('ucbrowser','i').test(ua);
+  //var boIOS= RegExp('iPhone|iPad|iPod','i').test(ua)
+  var boIOS= RegExp('iphone','i').test(ua);
   if(/facebookexternalhit/.test(ua)) {
     objQS.lang='en'; 
   }
@@ -236,27 +240,33 @@ app.reqIndex=function*() {
   res.statusCode=200;   
   
 
-
   //this.sessionLoginIdP={};
   //yield* setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity); 
 
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:og="http://ogp.me/ns#"
-      xmlns:fb="http://www.facebook.com/2008/fbml">`);
-  Str.push('<head>\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>');
-  
+<html 
+lang="en"
+xmlns="http://www.w3.org/1999/xhtml"
+xmlns:og="http://ogp.me/ns#"
+xmlns:fb="http://www.facebook.com/2008/fbml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>`);
 
+var uCommon=req.strSchemeLong+wwwCommon;
+Str.push(`<base href="`+uCommon+`">`);
+Str.push(`<link rel="manifest" href="`+uSite+`/`+leafWebManifest+`"/>`);
 
   //<meta name="apple-mobile-web-app-capable" content="yes" /> 
 
 
-  var tmpIcon=wwwIcon16; if('wwwIcon16' in site) tmpIcon=site.wwwIcon16;  var uIcon16=req.strSchemeLong+tmpIcon;
-  var tmpIcon=wwwIcon114; if('wwwIcon114' in site) tmpIcon=site.wwwIcon114;  var uIcon114=req.strSchemeLong+tmpIcon;
-  var tmpIcon=wwwIcon200; if('wwwIcon200' in site) tmpIcon=site.wwwIcon200;  var uIcon200=req.strSchemeLong+tmpIcon;
-  Str.push('<link rel="icon" type="image/png" href="'+uIcon16+'" />');
-  Str.push('<link rel="apple-touch-icon-precomposed" href="'+uIcon114+'"/>');
+  // var tmpIcon=wwwIcon16; if('wwwIcon16' in site) tmpIcon=site.wwwIcon16;  var uIcon16=req.strSchemeLong+tmpIcon;
+  // var tmpIcon=wwwIcon114; if('wwwIcon114' in site) tmpIcon=site.wwwIcon114;  var uIcon114=req.strSchemeLong+tmpIcon;
+  // var tmpIcon=wwwIcon200; if('wwwIcon200' in site) tmpIcon=site.wwwIcon200;  var uIcon200=req.strSchemeLong+tmpIcon;
+
+
+  Str.push('<link rel="icon" type="image/png" href="'+uSite+wsIcon16+'" />');
+  Str.push('<link rel="apple-touch-icon" href="'+uSite+wsIcon114+'"/>');
 
 
 
@@ -265,17 +275,12 @@ app.reqIndex=function*() {
   var strTmp='';  //if(boAndroid && boFireFox) {  strTmp=", width=device-width'";}    
   var strTmpB=''; //if(boAndroid || boIOS) strTmpB=", user-scalable=no";
 
-  Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1"+strTmp+strTmpB+"'/>");
-
+  Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1'/>");
   Str.push('<meta name="theme-color" content="#ff0"/>');
 
   require('./lang/'+strLang+'.js');  langServerFunc();
   site.langSetup();
-  var strTitle=site.serv.strTitle;
-  var strH1=site.serv.strH1;
-  var strDescription=site.serv.strDescription;
-  var strKeywords=site.serv.strKeywords;
-  var strSummary=site.serv.strSummary;
+  var {strTitle, strH1, strDescription, strKeywords, strSummary}=site.serv;
 
 
   Str.push(`
@@ -287,8 +292,8 @@ app.reqIndex=function*() {
   var tmp=`
 <meta property="og:title" content="`+wwwSite+`"/>
 <meta property="og:type" content="website" />
-<meta property="og:url" content="http://`+wwwSite+`"/>
-<meta property="og:image" content="`+uIcon200+`"/>
+<meta property="og:url" content="`+uSite+`"/>
+<meta property="og:image" content="`+uSite+wsIcon200+`"/>
 <meta property="og:site_name" content="`+wwwSite+`"/>
 <meta property="fb:admins" content="100002646477985"/>
 <meta property="fb:app_id" content="`+fiIdTmp+`"/>
@@ -298,25 +303,7 @@ app.reqIndex=function*() {
   if(!boDbg) Str.push(tmp);
 
 
-  //var tmp=`
-//<script>
-  //window.fbAsyncInit = function() {
-    //FB.init({
-      //appId      : "`+fiIdTmp+`",
-      //xfbml      : true,
-      //version    : "v4.0"
-    //});
-  //};
-  //(function(d, s, id){
-     //var js, fjs = d.getElementsByTagName(s)[0];
-     //if (d.getElementById(id)) {return;}
-     //js = d.createElement(s); js.id = id;
-     //js.src = "//connect.facebook.net/en_US/sdk.js";
-     //fjs.parentNode.insertBefore(js, fjs);
-   //}(document, "script", "facebook-jssdk"));
-//</script>`;
-  //Str.push(tmp);
-
+  Str.push(`<script>var app=window;</script>`);
 
   var tmp=`
 <script>
@@ -325,7 +312,7 @@ app.reqIndex=function*() {
       appId      : '`+fiIdTmp+`',
       cookie     : true,
       xfbml      : true,
-      version    : 'v4.0'
+      version    : 'v7.0'
     });
       
     FB.AppEvents.logPageView();   
@@ -356,21 +343,23 @@ app.reqIndex=function*() {
   Str.push(`<script> (function(){
 try { eval("(function *(){})");} catch(err) { alert("This browser does not support generators:\\n"+ err); return;}
 try { eval("(function(a=0){})");} catch(err) { alert("This browser does not support default parameters:\\n"+ err); return;}
-var tmpf=function(){return {a:1};};
-try { eval("var {a}=tmpf();");} catch(err) { alert("This browser does not support destructuring assignment:\\n"+ err); return;}
-var tmpf=function(){return [1];}
-try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support destructuring assignment with arrays:\\n"+ err); return;}
+try { eval("var {a}={a:1};");} catch(err) { alert("This browser does not support destructuring assignment:\\n"+ err); return;}
+try { eval("[a]=[1];");} catch(err) { alert("This browser does not support destructuring assignment with arrays:\\n"+ err); return;}
 })();</script>`);
-  //var uCommon='http://'+wwwCommon;
-  var uCommon=req.strSchemeLong+wwwCommon;
-  var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
-  //Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
-  //var uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/cash.js";  Str.push('<script src="'+uJQuery+'"></script>');
+  //Str.push(`<link rel="preconnect" href="`+uCommon+`">`);
+  //Str.push(`<link rel="preconnect" href="https://connect.facebook.net">`);
+  
+
+  Str.push(`<style>
+:root { --maxWidth:800px; height:100%}
+body {margin:0; height:100%; display:flow-root; font-family:arial, verdana, helvetica; }
+.mainDiv { margin: 0em auto; height: 100%; width:100%; display:flex; flex-direction:column; max-width:var(--maxWidth) }
+.mainDivR { box-sizing:border-box; margin:0em auto; width:100%; display:flex; max-width:var(--maxWidth) }
+h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px; color:black; font-size:1.6em; font-weight:bold; text-align:center; padding:0.4em 0em 0.4em 0em; background:#ff0;  }
+</style>`);
 
 
-  //Str.push('<base href="'+uCommon+'">');
-
-  Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
+  //Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
   
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
 
@@ -378,15 +367,15 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
   var boDbgT=boDbg; if(boIOS || boUC) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
   
     // Include stylesheets
-  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<link rel="stylesheet" href="'+uCommon+pathTmp+'?v='+vTmp+'" type="text/css">');
+  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css" async >');
 
     // Include site specific JS-files
-  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbgT) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'"></script>');
+  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbgT) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
 
     // Include JS-files
   var StrTmp=['filter.js', 'lib.js', 'libClient.js', 'client.js', 'lang/en.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
     // Include plugins
@@ -395,8 +384,11 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
   for(var i=0;i<StrPlugInNArg.length;i++){
     var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
     var Name=ucfirst(nameT); 
-    var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
+    var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
+
+    // Files with delayed loading
+  var pathTmp='/lib/foundOnTheInternet/sha1.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;   const wsSha1=pathTmp+'?v='+vTmp;
 
 
   var strTracker, tmpID=site.googleAnalyticsTrackingID||null;
@@ -413,39 +405,49 @@ try { eval("[a]=tmpf();");} catch(err) { alert("This browser does not support de
   }
   Str.push(strTracker);
   
-  Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit' defer></script>");
+  //Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit' defer></script>");
 
   Str.push("</head>");
-  Str.push('<body style="visibility:hidden">');
+  Str.push(`<body>
+<title>`+strTitle+`</title>
+<div class="viewFront mainDiv">
+<div id=divEntryBar class="mainDivR" style="min-height:2rem; visibility:hidden;"></div>
+<h1 class=mainH1>`+strH1+`</h1>
+<noscript><div style="text-align:center">You don't have javascript enabled, so this app won't work.</div></noscript>
+<div class=summary style="visibility:hidden">`+strSummary+`</div>
+</div>`); //style="display:none"
+  
 
-  Str.push("<title>"+strTitle+"</title>\n<h1>"+strH1+"</h1>\n"+strSummary);
 
-  Str.push(`<script type="text/javascript" language="JavaScript" charset="UTF-8">
-var app=window;
-var StrMainProt=[];
-var StrMainProtRole=[];`);
 
-  //var objOut={strLang:strLang, coordApprox:coordApprox, UrlOAuth:UrlOAuth, strReCaptchaSiteKey:strReCaptchaSiteKey, strSalt:strSalt, m2wc:m2wc, nHash:nHash, VAPID_PUBLIC_KEY:VAPID_PUBLIC_KEY};
+
+  Str.push(`<script>
+//var StrMainProt=[];
+//var StrMainProtRole=[];
+var MainDiv=[];
+var arrViewPop=[];`);
+
   var objOut={strLang, coordApprox, UrlOAuth, strReCaptchaSiteKey, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification};
-  copySome(objOut,req, ['boTLS']);
+  copySome(objOut, req, ['boTLS']);
+  extend(objOut, {wsSha1});
 
-  Str.push(`var tmp=`+serialize(objOut)+`;\n extend(window, tmp);`);
+  Str.push(`var tmp=`+serialize(objOut)+`;\n Object.assign(window, tmp);`);
   
   Str.push(`
 </script>
-<form  id=formLogin>
+<form  id=formLogin style="display:none">
 <label name=email>Email</label><input type=email name=email>
 <label name=password>Password</label><input type=password name=password>
 <button type=submit name=submit class=highStyle value="Sign in">Sign in</button> 
 </form>
-<form  id=formCreateAccount>
+<form  id=formCreateAccount style="display:none">
 <label name=name>Full name</label><input type=text name=name>
 <label name=email>Email</label><input type=email name=email>
 <label name=password>Password</label><input type=password name=password>
 <label name=passwordB>Password again</label><input type=password name=passwordB>
 </form>
 </body>
-</html>`);
+</html>`);  //visibility:hidden
 
 
   var str=Str.join('\n');
@@ -543,7 +545,7 @@ app.reqLoginBack=function*(){
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html><head><meta name='robots' content='noindex'>
+<html lang="en"><head><meta name='robots' content='noindex'>
 <link rel='canonical' href='`+uSite+`'/>
 </head>
 <body>
@@ -668,7 +670,7 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   site.nTotB=Number(results[6][0].n);
   site.nTotS=Number(results[7][0].n);
   var tmp=boIns?'created':'updated';
-  var Str=[`<!DOCTYPE html><html><head>
+  var Str=[`<!DOCTYPE html><html lang="en"><head>
 <meta name='viewport' id='viewportMy' content='initial-scale=1'/>
 </head><body>`];
   var uSite=req.strSchemeLong+req.wwwSite
@@ -699,7 +701,7 @@ app.reqStatic=function*() {
   if(req.method=='OPTIONS'){ res.end(); return ;}
 
   var eTagIn=getETag(req.headers);
-  var keyCache=pathName; if(pathName==='/'+leafSiteSpecific) keyCache=siteName+keyCache;
+  var keyCache=pathName; if(pathName==='/'+leafSiteSpecific || pathName==='/'+leafWebManifest) keyCache=siteName+keyCache;
   if(!(keyCache in CacheUri)){
     var filename=pathName.substr(1);
     var [err]=yield* readFileToCache(req.flow, filename);
@@ -738,9 +740,9 @@ app.reqMonitor=function*(){
   if(boRefresh){ 
     var Sql=[];
     //Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBoBeforeHiding+";");
-    Sql.push("SELECT count(*) AS n FROM "+buyerTab+" WHERE boShow=1 AND "+ sqlBoBeforeHiding+";");
+    Sql.push("SELECT count(*) AS n FROM "+buyerTab+" WHERE boShow=1 AND now()<tHide;");
     Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-    Sql.push("SELECT count(*) AS n FROM "+sellerTab+" WHERE boShow=1 AND "+ sqlBoBeforeHiding+";");
+    Sql.push("SELECT count(*) AS n FROM "+sellerTab+" WHERE boShow=1 AND now()<tHide;");
     //Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
     Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
 
@@ -755,7 +757,7 @@ app.reqMonitor=function*(){
   var {nVisB, nTotB, nVisS, nTotS}=site;
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html><head><meta name="robots" content="noindex"></head>`);
+<html lang="en"><head><meta name="robots" content="noindex"></head>`);
   //var strTotB=nTotB, strTotS=nTotS;
   //var strColor='';
   //if('admin' in objQS && objQS.admin){
@@ -845,7 +847,7 @@ app.reqStat=function*(){
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html><head>
+<html lang="en"><head>
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style> table,td,tr {border: solid 1px;border-collapse:collapse}</style>
@@ -924,7 +926,7 @@ app.reqStatBoth=function*(){
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html><head>
+<html lang="en"><head>
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style> table,td,tr {border: solid 1px;border-collapse:collapse}
@@ -1013,7 +1015,7 @@ app.reqStatTeam=function*(){
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html><head>
+<html lang="en"><head>
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style> table,td,tr {border: solid 1px;border-collapse:collapse}</style>
@@ -1078,7 +1080,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   idOpenId varchar(128) CHARSET utf8 NULL, 
   email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', 
   nameIP varchar(128) CHARSET utf8 NOT NULL DEFAULT '', 
-  image varchar(256) CHARSET utf8 NOT NULL DEFAULT '', 
+  image varchar(512) CHARSET utf8 NOT NULL DEFAULT '', 
   hashPW char(40) NOT NULL DEFAULT '', 
   imTag int(4) NOT NULL DEFAULT 0, 
   boImgOwn tinyint(1) NOT NULL DEFAULT 0, 
@@ -1328,6 +1330,8 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   var sqlTimeSinceWriteOfTA="UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in sellerTab
   var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)"; // This variable is only used to make the expression sqlTRemaining (below) clearer
   var sqlTRemaining="GREATEST(hideTimer-("+sqlTWritten+"),0)";
+  
+    // Note TimeAccumulatedUpdOne doesn't set boShow unlike TimeAccumulatedUpdMult (I think because one wants to keep the old boShow to as input to histActivity)
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdOne");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdOne(IN IidUser INT)
       BEGIN
@@ -1341,6 +1345,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`IFunPoll(Itimer INT) BEGIN      CALL `+siteName+`TimeAccumulatedUpdMult(Itimer);   CALL `+siteName+`HistActiveUpdMult;   END`);
   
     // Idea of using tHide instead of tPos (or as well as tPos)  in roleTab
+    // TimeAccumulatedUpdMult is only used in IFunPoll
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdMult");  // Update tAccumulated, tLastWriteOfTA and boShow
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdMult(Itimer INT)
       BEGIN
@@ -1348,10 +1353,10 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         DECLARE VtNow TIMESTAMP DEFAULT now();
         SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
         IF UNIX_TIMESTAMP(VtNow)>tLastWriteOfBoShow+Itimer THEN
-          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0) 
-            WHERE boShow=1 AND UNIX_TIMESTAMP(VtNow)>tPos+hideTimer;
-          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(`+sqlBoBeforeHiding+`,boShow,0)
-            WHERE boShow=1 AND UNIX_TIMESTAMP(VtNow)>tPos+hideTimer;
+          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0) 
+            WHERE boShow=1 AND VtNow>tHide;
+          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0)
+            WHERE boShow=1 AND VtNow>tHide;
           UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(VtNow) WHERE name='tLastWriteOfBoShow';
         END IF;
       END`);
@@ -1560,6 +1565,8 @@ CLIENT_FOUND_ROWS
       SET OboOK=1, Omess='';
     END`);
 
+
+    // GetValuesToController should return tElapsed instead of tDiff, then one could let hideTimer unsigned int (Mysql can't have unsigned in an expression that end up negative)
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(IiRole INT, Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128))
     proc_label:BEGIN
@@ -1571,10 +1578,12 @@ CLIENT_FOUND_ROWS
 
       IF IiRole=0 THEN
         #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
+        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tHide)-UNIX_TIMESTAMP(VtNow) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
       ELSE
         #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
+        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tHide)-UNIX_TIMESTAMP(VtNow) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
       END IF;
       SET Vc=FOUND_ROWS();
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF;
@@ -1583,6 +1592,7 @@ CLIENT_FOUND_ROWS
 
     END`);
 
+    // boUserButtClick (inverse of boAuto) should be used instead of boAuto
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(IiRole INT, Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboAuto INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
@@ -1953,7 +1963,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
   for(var i=0;i<nData;i++){
     var id=nStart+i+1; 
     let strName="dummy"+id, strNameUC=ucfirst(strName), email=strName+'@example.com', donatedAmount=makeRandSpanF('donatedAmount'); 
-    arrUser[i]={idFB:strName, email:email, displayName:strNameUC, tel:"07000000"+id};
+    arrUser[i]={idFB:strName, email, displayName:strNameUC, tel:"07000000"+id};
  
     //var SqlT=[id, 'null', 'null', "'"+strNameUC+"'", "'"+email+"'", "'"+strNameUC+"'", "''", "'"+strNameUC+"'", donatedAmount];
     //SqlAllU[i]="("+SqlT.join(', ')+")";

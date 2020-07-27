@@ -22,6 +22,10 @@ leafLoginWLink="loginWLink";
 //leafVerifyEmailReturn='verifyEmail';
 leafVerifyPWResetReturn='verifyPWReset';
 leafVerifyEmailNCreateUserReturn='verifyEmailNCreateUser';
+leafWebManifest='webmanifest.json';
+
+
+wsIcon16='/'+wIcon16;  wsIcon114='/'+wIcon114;  wsIcon192='/'+wIcon192;  wsIcon200='/'+wIcon200;  wsIcon512='/'+wIcon512;  wsIcon1024='/'+wIcon1024; 
 
 hideTimerDefault=30*24*3600;
 hideTimerDefault=365*24*3600;
@@ -58,7 +62,8 @@ var sqlHistActiveCol="histActive<<"+sqlDayDiff+"  "+sqlMaskHistActive;
 sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
 //sqlBoBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer"; // "-" has higher precedence than "<"
-sqlBoBeforeHiding="UNIX_TIMESTAMP(now())<UNIX_TIMESTAMP(tHide)"; // "-" has higher precedence than "<"
+//sqlBoBeforeHiding="UNIX_TIMESTAMP(now())<UNIX_TIMESTAMP(tHide)"; // "-" has higher precedence than "<"
+//sqlBoBeforeHiding="now()<tHide"; // "-" has higher precedence than "<"
 
 specialistDefault={user:0,complainer:0,complainee:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0};
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
@@ -675,7 +680,7 @@ PluginF.programmer=function(site){
   }
   PropTmp.otherLang=        {b:'111111111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}};
   
-  Object.assign(oS.Prop, PropTmp);
+  extend(oS.Prop, PropTmp);
   oS.StrPropE=Object.keys(PropTmp);
   array_mergeM(oS.StrFiltAccept, oS.StrPropE);
   array_mergeM(oS.StrOrder, oS.StrPropE);
@@ -758,15 +763,15 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
 SiteExtend=function(){
   Site.getSite=function(wwwReq){
     for(var i=0;i<SiteName.length;i++){
-      var siteName=SiteName[i];   var tmp; if(tmp=Site[siteName].testWWW(wwwReq)) {return {siteName:siteName, wwwSite:tmp};  }
+      var siteName=SiteName[i];   var tmp; if(tmp=Site[siteName].testWWW(wwwReq)) {return {siteName, wwwSite:tmp};  }
     }
     return {siteName:null};
   }
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i], StrPlugInNArg=[];
-    //var tmp={siteName:siteName, Prop:{}, Cond0F:{}, Cond1F:{}, SelOneF:{}, SelF:{}, HistCondF:{}, SellerUpdF:{}, Enum:{}};
+    //var tmp={siteName, Prop:{}, Cond0F:{}, Cond1F:{}, SelOneF:{}, SelF:{}, HistCondF:{}, SellerUpdF:{}, Enum:{}};
     var ORole=JSON.parse(JSON.stringify(ORoleDefault));
-    var tmp={siteName:siteName, ORole:ORole, oB:ORole[0], oS:ORole[1]};
+    var tmp={siteName, ORole, oB:ORole[0], oS:ORole[1]};
     var site=extend(Site[siteName],tmp);
     if(['taxi', 'transport'].indexOf(siteName)!=-1) { // , 'demo', 'test'
       StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'priceB', 'transportBuyer', 'standingByMethod', 'shiftEnd', siteName];   //if(['demo', 'test'].indexOf(siteName)!=-1) StrPlugInNArg.splice(5,0,'taxi');
@@ -827,7 +832,7 @@ DBExtend=function(){
 
     var StrMatch=RegExp('^(.*):(.*)$').exec(uriObj.auth);
     var nameDB=uriObj.pathname.substr(1);
-    DB[name]={nameDB:nameDB};
+    DB[name]={nameDB};
     var pool  = mysql.createPool({
       connectionLimit : nDBConnectionLimit,
       host            : uriObj.host,
