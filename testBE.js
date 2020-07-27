@@ -78,19 +78,19 @@ boTLS=false;
 console.log(strGenerator);
 
 headers={'if-none-match':'', "if-modified-since":0};
-req={method:'GET', boTLS:boTLS, www:www, headers:headers, site:Site.transport};  //, objUrl:objUrl, strSchemeLong:strSchemeLong, pathName:pathName
+req={method:'GET', boTLS, www, headers, site:Site.transport};  //, objUrl, strSchemeLong, pathName
 
 tmpf=function(){};
-//thisObj={req:req, res:res, GRet:{}, mesEO:tmpf, tModBrowser:(new Date()).toUnix(), Str:[]};
+//thisObj={req, res, GRet:{}, mesEO:tmpf, tModBrowser:(new Date()).toUnix(), Str:[]};
 
-objArg={boTLS:boTLS, www:www, requesterCacheTime:0}
+objArg={boTLS, www, requesterCacheTime:0}
 
 
 
 generatorWrap=function*(){
   
   
-  req=extend(req, {flow:flow, sessionID:0});
+  req=extend(req, {flow, sessionID:0});
   var reqBE=new ReqBE(req, res); extend(reqBE,{GRet:{}, mes:tmpf, mesO:tmpf, mesEO:tmpf, tModBrowser:(new Date()).toUnix()})
   if(strGenerator=='littleTester'){
     var objT=yield* reqBE[strGenerator](objArg); 

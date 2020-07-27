@@ -89,4 +89,19 @@ self.addEventListener('sync', function(event) {
   })() );
 });
 
-
+self.addEventListener('fetch', function(event) {
+  var objUrl = new URL(event.request.url);
+  if(objUrl.pathname=="/") {
+    event.respondWith(async function(){
+      try{
+        var response=await fetch(event.request);
+      }catch(e){
+        return new Response(e.message)
+      }
+      if(!response) {
+        return new Response("no response");
+      }
+      return response;
+    }());
+  }
+});

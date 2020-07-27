@@ -118,8 +118,14 @@ SellerSettings:'Inställningar (<span nom="seller">entreprenör</span>)',
 //SellerSettings:'Inställningar (säljare)',
 BuyerSettings:'Inställningar (köpare)',
 SellerLogin:'Login (<span nom="sellers">säljare</span>)',
-SignInAsBuyer:'Logga in som <span nom="buyer">köpare</span>',
-SignInAsSeller:'Logga in som <span nom="seller">säljare</span>',
+// Logga in (visa dig på kartan) som:
+// Visa dig (din position) på kartan:
+//ShowYourselfOnTheMap:'Visa dig (din position) på kartan...',
+AppearOnTheMap:'Visa dig på kartan...',
+asBuyer:'...som <span nom="buyer">köpare</span>',
+asSeller:'...som <span nom="seller">säljare</span>',
+//SignInAsBuyer:'Logga in som <span nom="buyer">köpare</span>',
+//SignInAsSeller:'Logga in som <span nom="seller">säljare</span>',
 DidYouUseAltIPBefore:'Använde du <span nom="IP">en annan IP</span> för att logga in förut?',
 
 

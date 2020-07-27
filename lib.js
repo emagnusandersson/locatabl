@@ -455,7 +455,7 @@ MercatorProjection.prototype.fromLatLngToPointV=function(latlng){
   var yOut=yOrg + 0.5*Math.log((1+siny)/(1-siny)) * -this.pixelsPerLonRadian_;
   return [xOut,yOut];
 }
-MercatorProjection.prototype.fromLatLngToPoint = function(latlng){  var [x,y]=this.fromLatLngToPointV(latlng);  return {x:x,y:y};   };
+MercatorProjection.prototype.fromLatLngToPoint = function(latlng){  var [x,y]=this.fromLatLngToPointV(latlng);  return {x,y};   };
 MercatorProjection.prototype.fromPointToLatLngV = function(point,noWrap=1){
   var x, y;    if(point instanceof Array) {x=point[0]; y=point[1]; } else { x=point.x; y=point.y;}
   var xOrg=this.pOrg.x, yOrg=this.pOrg.y;
@@ -465,14 +465,14 @@ MercatorProjection.prototype.fromPointToLatLngV = function(point,noWrap=1){
   if(noWrap) [lng]=normalizeAng(lng,0,360);
   return [lat, lng];
 }
-MercatorProjection.prototype.fromPointToLatLng = function(point,noWrap=1){  var [lat,lng]=this.fromPointToLatLngV(point, noWrap);  return {lat:lat,lng:lng};  };
+MercatorProjection.prototype.fromPointToLatLng = function(point,noWrap=1){  var [lat,lng]=this.fromPointToLatLngV(point, noWrap);  return {lat,lng};  };
 MercatorProjection.prototype.getBounds=function(pC,z,size){
   var {x,y}=pC;
   var zf=Math.pow(2, z)*2;
   var dw=size[0]/zf, dh=size[1]/zf;
   //var sw={x:x-dw, y:y+dh};
   //var ne={x:x+dw, y:y-dh};
-  //return {sw:sw,ne:ne};
+  //return {sw,ne};
   var xl=x-dw, xh=x+dw, yl=y-dh, yh=y+dh;  return [xl, xh, yl, yh];
 }
 MercatorProjection.prototype.fromYToLat = function(y){

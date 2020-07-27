@@ -13,7 +13,7 @@ window.rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSe
 
     bo1=(this===hand1)?1:0;
     
-    document.on(strMouseMoveEvent,myMousemove); document.on(strMouseUpEvent,myMouseup);
+    document.on(strMouseMoveEvent,myMousemove, {passive: false}); document.on(strMouseUpEvent,myMouseup, {passive: false});
     //setMess('Down'+bo1);
     arrHand[bo1].css({cursor:'move'});
   } 
@@ -122,7 +122,7 @@ window.rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSe
   arrHandW.forEach(ele=>ele.css({width:'0px',display:'inline-block'}));
   
   var strMouseDownEvent='mousedown', strMouseMoveEvent='mousemove', strMouseUpEvent='mouseup';  if(boTouch){  strMouseDownEvent='touchstart'; strMouseMoveEvent='touchmove'; strMouseUpEvent='touchend';  }
-  arrHand.forEach(ele=>ele.on(strMouseDownEvent,myMousedown));
+  arrHand.forEach(ele=>ele.on(strMouseDownEvent,myMousedown, {passive: false}));
   
   var boVis0=Prop[strName].feat.kind[1]=='1', boVis1=Prop[strName].feat.kind[2]=='1';
   handW0.toggle(boVis0);
@@ -197,7 +197,7 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
     for(var i=0;i<len;i++){
       var staple=createElement('span').css({width:'10px', display:'inline-block', position:'relative', bottom:'-1px'}); 
       var span;
-      //if('crFilterButtF' in prop) {var span=prop.crFilterButtF.call({strName:strName, iRole:this.oRole.indRole}, i);}
+      //if('crFilterButtF' in prop) {var span=prop.crFilterButtF.call({strName, iRole:this.oRole.indRole}, i);}
       if('crFilterButtF' in prop) {var span=prop.crFilterButtF(i);}
       else span=createElement('span').css({'margin':'0 0.25em 0 0.1em'}).myText('...');
       var butt=createElement('button').css({margin:'0.6em 0.2em'}).myAppend(span,staple); //,'vertical-align':'bottom', padding:'0.1em 0.2em',
@@ -399,7 +399,7 @@ filterDivICreator.tmpPrototype.createDivs=function(){
     var strName=el.StrOrderFilt[i];
     var divT=createElement('div').attr('name',strName);
     
-    if(strName in el.helpBub){ var imgH=imgHelp.cloneNode().css({'vertical-align':'top'});  popupHover(imgH,el.helpBub[strName]);    }   
+    if(strName in el.helpBub){ var imgH=imgHelp.cloneNode(1).css({'vertical-align':'top'});  popupHover(imgH,el.helpBub[strName]);    }   
     var strUnit=''; if(strName in el.Unit) strUnit=' ['+el.Unit[strName]+']';
     if(el.Prop[strName].feat.kind[0]=='B') { 
       h=createElement('div').myAppend(calcLabel(el.Label,strName),strUnit,': ',imgH); //.css({'margin':'0.3em 0em 0em'})

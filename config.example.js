@@ -10,16 +10,48 @@ ppStoredButt="ABCDEFGHIJKLM";  // Paypal-stored-button
 
 
 intDDOSMax=200; // intDDOSMax: How many requests before DDOSBlocking occurs. 
-tDDOSBan=5; // tDDOSBan: How long in seconds till the blocking is lifted
+tDDOSBan=5; // tDDOSBan: How long in seconds til the blocking is lifted
+intDDOSIPMax=100; // intDDOSIPMax: How many requests before DDOSBlocking occurs. 
+tDDOSIPBan=10; // tDDOSIPBan: How long in seconds til the blocking is lifted
+
+boUseDBIndex=0;
+intTAccumulatedUpdateTimer=3600; // How long to wait before updating tAccumulated in buyer/seller tabs
+
+  // Needed if you use Google Webmaster Tools  (www.google.com/webmasters)
+googleSiteVerification='googleXXXXXXXXXXXXXXXX.html';
 
 
+RegRedir=[];
 
-googleSiteVerification="googleXXXXXXXXXXXXXXXX.html"; // Needed if you use Google Webmaster Tools  (www.google.com/webmasters)
+
+strSalt='abcdefghijklmnop'; // Random letters to prevent that the hashed passwords looks the same as on other sites.
+
+
+  // Create idplace url (local or production etc.)
+var createUrlAuthIdPlace=function(strIdPlace="idplace",portIdPlace=5000){
+    // Note !!! no ending slash
+  var UrlIdplace={
+    local:"http://localhost:"+portIdPlace,
+    "192":"http://"+www192+":"+portIdPlace,
+    testgavott:"https://testgavott.herokuapp.com",
+    idplaceherokuapp:"https://idplace.herokuapp.com",
+    idplaceorg:"https://idplace.org"
+  }
+
+  return UrlIdplace[strIdPlace];
+  
+}
+
+var www192=ip.address();  // 192.168.0.X;
+if(www192=='127.0.0.1') www192='localhost';
+
+urlAuthIdplace=createUrlAuthIdPlace('idplaceorg');  // Which idplace (local or production etc.)
+strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
+strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
 apiKeySendGrid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
 
 
-RegRedir=[];
 
   //
   //  Since one might want use the software on several different infrastrucures (heroku.com, appfog.com, digitalocean.com, localhost ...),
@@ -27,7 +59,7 @@ RegRedir=[];
   //  This way one can use the same config file for all the infrastructures.
   //
 
-if(process.env.strInfrastructure=='heroku'){ 
+if(process.env.strInfrastructure=='heroku'){
 
     // UriDB: an object storing database urls
   UriDB={ 
@@ -58,13 +90,23 @@ if(process.env.strInfrastructure=='heroku'){
     taxi:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"},
     transport:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"}  
   }
+
   //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
   wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
-  wwwLoginScope=Site.taxi.wwwSite;
+  wwwLoginScope="closeby.market";
 
-}else if(process.env.strInfrastructure=='af'){  // (is yet to be written)
-}else if(process.env.strInfrastructure=='do'){  
+  RegRedir=[
+  function(req){
+    var Str=RegExp('^([^\\.]+)\\.tracker\\.center$').exec(req.headers.host);
+    if(Str) {    return 'https://'+Str[1]+'closeby.market/'+req.url;   }
+    return null;
+  }
+  ];
+
+
+}else if(process.env.strInfrastructure=='do'){
+
   UriDB={default:'mysql://user:password@host/database'};
 
   port = 8081;
@@ -78,65 +120,124 @@ if(process.env.strInfrastructure=='heroku'){
     taxi:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"},
     transport:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"UA-XXXXXXXX-XX",db:"default"}  
   }
+ 
   //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
-  wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
-  wwwLoginScope=Site.taxi.wwwSite;
+  wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;  wwwLoginScope="closeby.market";
 
+  RegRedir=[
+  function(req){
+    var Str=RegExp('^([^\\.]+)\\.tracker\\.center$').exec(req.headers.host);
+    if(Str) {    return 'https://'+Str[1]+'closeby.market/'+req.url;   }
+    return null;
+  }
+  ];
+ 
+
+  strReCaptchaSiteKey="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";   strReCaptchaSecretKey="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";  //localhost
+  //boDbg=1;
+  boShowTeam=1; 
 }
-else {  
+else {
+  boUseDBIndex=1;
+
+  var strIdPlace='192';
+  var strIdPlace='local';
+  var strIdPlace='idplaceorg';
+  urlAuthIdplace=createUrlAuthIdPlace(strIdPlace,5002);  // Which idplace (local or production etc.)
+  strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
+  strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
+
   UriDB={default:'mysql://user:password@host/database'};
 
+  var TmpCred={ // 
+    localhost:{
+      idplaceherokuapp:{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"},
+      //"192":{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"},
+      "local":{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXX"},
+      "192":{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXX"},
+      idplaceorg:{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}
+    },
+    dotLocal:{
+      "192":{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"},
+      "local":{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXX"},
+      idplaceorg:{id: "XXX", secret:"XXX"}
+    }
+  }
+  RootDomain={
+    localhost:{
+      fb:{id:"XXXXXXXXXXXXXXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"},
+      google:{id: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.apps.googleusercontent.com", secret:"XXXXXXXXXXXXXXXXXXXXXXXX"},
+      idplace:TmpCred.localhost[strIdPlace],
+      googleAPIKey:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    },
+    "192Loc":   {
+      idplace:{id: "XXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}, // https://idplace.herokuapp.com
+      fb:{id:"XXXXXXXXXXXXXXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"},
+      google:{id: "XXX", secret:"XXX"},
+      googleAPIKey:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    },
+    "dotLocal":   {
+      google:{id: "XXX", secret:"XXX"},
+      fb:{id:"XXXXXXXXXXXXXXX", secret:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"},
+      idplace:TmpCred.dotLocal[strIdPlace],
+    }
+  }
+
+  boUseSSLViaNodeJS=true;
+
   //port = process.argv[2] || 8081; 
-  port = port || 8081; 
+  port = port || 8081;
+  var portTmp=port;
+  var wwwLocalhost='localhost:'+portTmp, www192WPort=www192+':'+portTmp;
   Site={
     taxi:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"",db:"default"},
     transport:{wwwSite:"YOURTAXIWWW", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"",db:"default"}  
   }
   //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
-  wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
-  wwwLoginScope=Site.taxi.wwwSite;
+  
+  buDbgShowDummies=1;
 
-  boDbg=1; boShowTeam=0; 
-  userInfoFrIPDbg={IP:'fb',idIP:'100002646477985',nameIP:'Magnus Andersson'};
+  boDbg=1; boShowTeam=1; 
+  userInfoFrIPDbg={IP:'fb',idIP:'XXXXXXXXXXXXXXX',nameIP:'John Doe'};
+  boSlowNetWork=0; // In normal case, when debugging, one should disable cache. However if the network is really, really slow one can use caching and this option.  
 
-}  
-
-
-
-  // I used to have fb as IP (ID provider) then idplace
-  // The mergeID-request allows users to merge old ID, (reputation etc) into new ID.
-  // Hereof these variables:
-  //   strIPPrim: primary IP 
-  //   strIPAlt:  alternative IP
-strIPPrim='google';  strIPAlt='fb';
-strIPPrim='fb';  strIPAlt='google';
-strIPPrim='idplace';  strIPAlt='fb';
+  strReCaptchaSiteKey="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";   strReCaptchaSecretKey="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";  //localhost
+  
 
 
-  // OAuth response type 'code' or 'token'
+} // End of boLocal 
+
+  // WebPush keys
+VAPID_PUBLIC_KEY='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+VAPID_PRIVATE_KEY='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+
+boEnablePushNotification=true;
+
+//
+// wwwCommon
+//
+
+if(!wwwCommon) {var keys=Object.keys(Site), nKey=keys.length; wwwCommon=Site[keys[0]].wwwSite; }  
+
+//
+// Icons
+//
+
+wIcon16='sites/icon/icon16.png'; wIcon114='sites/icon/icon114.png'; wIcon192='sites/icon/icon192.png'; wIcon200='sites/icon/icon200.png'; wIcon512='sites/icon/icon512.png'; wIcon1024='sites/icon/icon1024.png';
+
+
+//
+// Endpoint urls for the IdP.
+//
+strFBVersion="v7.0"
+
+UrlOAuth={fb:"https://www.facebook.com/"+strFBVersion+"/dialog/oauth", google:"https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace}
+UrlToken={fb:"https://graph.facebook.com/"+strFBVersion+"/oauth/access_token", google:"https://accounts.google.com/o/oauth2/token", idplace:urlAuthIdplace+"/access_token"}
+UrlGraph={fb:"https://graph.facebook.com/"+strFBVersion+"/me", google:"https://www.googleapis.com/plus/v1/people/me", idplace:urlAuthIdplace+"/me"};
+response_type='token';    
 response_type='code';
-
-
-  // Exactly what is idplace (since I am the developer of that too, it might vary)
-urlAuthIdplace="http://localhost:5000";
-urlAuthIdplace="http://192.168.0.5:5000";
-//urlAuthIdplace="http://l750.local:5000";
-//urlAuthIdplace="http://l750.tja:5000";
-//urlAuthIdplace="https://testgavott.herokuapp.com";
-urlAuthIdplace="https://idplace.herokuapp.com";
-urlAuthIdplace="https://idplace.org";
-urlAuthIdplace=rtrim(urlAuthIdplace,'/');
-
-
-UrlOAuth={fb:"https://www.facebook.com/v2.5/dialog/oauth", google:"https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace}
-UrlToken={fb:"https://graph.facebook.com/v2.5/oauth/access_token", google:"https://accounts.google.com/o/oauth2/token", idplace:urlAuthIdplace+"/access_token"}
-UrlGraph={fb:"https://graph.facebook.com/v2.5/me", google:"https://www.googleapis.com/plus/v1/people/me", idplace:urlAuthIdplace+"/me"};
-
-  // If wwwCommon is not set then set it to the first "wwwSite" in "Site"
-if(!wwwCommon) {var keys=Object.keys(Site); wwwCommon=Site[keys[0]].wwwSite; }  
-wwwIcon16=wwwCommon+'/Site/Icon/icon16.png';   wwwIcon114=wwwCommon+'/Site/Icon/icon114.png';    wwwIcon200=wwwCommon+'/Site/Icon/icon200.png';
 
 
 

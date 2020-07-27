@@ -81,7 +81,7 @@ console.log(strGenerator);
 strHtmlText=strEditText;
 
 
-objArg={boTLS:boTLS, www:www, requesterCacheTime:0}
+objArg={boTLS, www, requesterCacheTime:0}
 
 
 var arrNoTX=['writePageFile', 'readPageFile'];  
@@ -111,7 +111,7 @@ generatorWrap=function*(){
     }else if(strGenerator=='getBoTalkExistNeo'){   var objT=yield* app[strGenerator](flow, con, objArg);
     }else if(strGenerator=='getRevisionTableNeo'){   var objT=yield* app[strGenerator](flow, con, objArg);
     }else if(strGenerator=='getLastVersionMeta'){   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='mergePageNeo'){ extend(objArg,{www:www, strName:strName, nChild:5, nImage:6, tNow:0, boAccDefault:true}); var objT=yield* app[strGenerator](flow, con, objArg);
+    }else if(strGenerator=='mergePageNeo'){ extend(objArg,{www, strName, nChild:5, nImage:6, tNow:0, boAccDefault:true}); var objT=yield* app[strGenerator](flow, con, objArg);
     }else if(strGenerator=='saveWhenUploadingImageNeo'){   extend(objArg,{strName:'abc.jpg', data:'aabbcc'});  var objT=yield* app[strGenerator](flow, con, objArg);
     }
     var err=objT[0];

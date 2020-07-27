@@ -38,10 +38,9 @@ padding: 1em;
 border-style:dashed;
 }
 
+html {height:100%}
+body {display:flow-root;font-family:arial, verdana, helvetica;font-size:100%; overscroll-behavior: contain; padding:0px; margin:0px; height:100%; text-align:center; -webkit-text-size-adjust: 100%}
 
-body {font-family:arial, verdana, helvetica;font-size:100%; overscroll-behavior: contain;}
-
-body { -webkit-text-size-adjust: 100%; }
 
 
 *.rota{
@@ -67,15 +66,15 @@ input, textarea, keygen, select, button, isindex  {font-family:arial, verdana, h
   width:100%;
   display: flex;
   flex-direction: column;
-  max-width:800px
+  max-width:var(--maxWidth)
 }
 .contDiv {
-    flex:1 1 auto; 
+    flex:1 1 0; 
     overflow-y:scroll;
     height:100%
 }
 .footDiv {margin: 0em auto;
-    max-width: 800px;
+    max-width: var(--maxWidth);
     width: 100%;
     padding: 1.2em 0 1em;
     border-top: solid 1px;
@@ -105,11 +104,10 @@ background:#ddd;
   height: 1.6em;
   border-radius: 100%;
   border: 1px solid;
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-decoration: none
+  display: inline-block;
+  text-decoration: none;
+  line-height: 1.7em;
+  cursor: default
 }
 .helpButtonGradient {
   background-image: radial-gradient(#daeaff, #8cbdfd, #0064ea);;
@@ -117,8 +115,8 @@ background:#ddd;
   border: 0;
   font-weight: bold;
   font-size: 90%;
-  text-shadow: 0.5px 0.5px #888888
 }
+/*text-shadow: 0.5px 0.5px #888888*/
 
 
 dt {font-weight:bold;}

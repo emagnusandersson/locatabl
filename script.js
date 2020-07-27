@@ -169,7 +169,7 @@ var flow=( function*(){
   }
 
   CacheUri=new CacheUriT();
-  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientKeyFromExternalTrackerSave.js', 'stylesheets/style.css', 'serviceworker.js']; //, 'clientMergeID.js'
+  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientKeyFromExternalTrackerSave.js', 'stylesheets/style.css', 'serviceworker.js', 'lib/foundOnTheInternet/sha1.js']; //, 'clientMergeID.js'
   splitterPlugIn=new SplitterPlugIn();
   for(var i=0;i<StrFilePreCache.length;i++) {
     var [err]=yield *readFileToCache(flow, StrFilePreCache[i]); if(err) {  console.error(err);  return;}
@@ -194,7 +194,7 @@ var flow=( function*(){
 
   ETagImage={};
 
-  regexpLib=RegExp('^/(stylesheets|lib|pluginLib|Site|lang)/');
+  regexpLib=RegExp('^/(stylesheets|lib|pluginLib|sites|lang)/');
   regexpLooseJS=RegExp('^/(lib|libClient|client|clientProt|clientKeyFromExternalTrackerSave|filter|siteSpecific|serviceworker)\\.js'); //|clientMergeID
   regexpPlugin=RegExp('^/plugin(\\w+)\\.js');
 
@@ -252,7 +252,6 @@ var flow=( function*(){
       req.cookies=cookies;
 
 
-
       var boCookieDDOSOK=false; //req.boCookieLaxOK=req.boCookieStrictOK=
       
         // Check if a valid sessionIDDDos-cookie came in
@@ -277,8 +276,12 @@ var flow=( function*(){
       
         // If to many, then ban
       if(boCookieDDOSOK) {  var intCountT=intCount, intDDOSMaxT=intDDOSMax, tDDOSBanT=tDDOSBan;   }   else   {    intCountT=intCountIP; intDDOSMaxT=intDDOSIPMax; tDDOSBanT=tDDOSIPBan;   }
-      if(intCountT>intDDOSMaxT) {res.outCode(429,"Too Many Requests ("+intCountT+"), wait "+tDDOSBanT+"s\n"); return; }
-      
+      if(intCountT>intDDOSMaxT) {
+        var strMess="Too Many Requests ("+intCountT+"), wait "+tDDOSBanT+"s\n";
+        if(pathName=='/'+leafBE){ var reqBE=new ReqBE({req, res}); reqBE.mesEO(strMess,429); }
+        else res.outCode(429,strMess);
+        return;
+      }
       
       req.boCookieOK=false;
         // Check if a valid sessionID-cookie came in
@@ -353,14 +356,11 @@ var flow=( function*(){
       var strScheme='http'+(boTLS?'s':''),   strSchemeLong=strScheme+'://';
       var uDomain=strSchemeLong+req.headers.host;
       var uSite=strSchemeLong+wwwSite;
-      req.site=site;  req.sessionID=sessionID; req.qs=qs; req.objQS=objQS;  req.boTLS=boTLS;  req.strSchemeLong=strSchemeLong;  req.wwwSite=wwwSite;  req.uSite=uSite;  req.pathName=pathName;   req.siteName=siteName;
-      req.uDomain=uDomain;
-      req.rootDomain=RootDomain[site.strRootDomain];
-      //req.app_id=req.rootDomain.fb.app_id;   req.app_secret=req.rootDomain.fb.app_secret;
 
+      extend(req, {site, sessionID, qs, objQS, boTLS, strSchemeLong, wwwSite, uSite, pathName, siteName, uDomain, rootDomain:RootDomain[site.strRootDomain]});
 
       if(levelMaintenance){res.outCode(503, "Down for maintenance, try again in a little while."); return;}
-      var objReqRes={req:req, res:res};
+      var objReqRes={req, res};
       objReqRes.myMySql=new MyMySql(DB[site.db].pool);
       if(pathName=='/'){
         //if("keyFromExternalTracker" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
@@ -371,7 +371,7 @@ var flow=( function*(){
       //else if(pathName=='/'+leafAssign){    var reqAssign=new ReqAssign(req, res);    reqAssign.go();    }
       else if(pathName.indexOf('/image/')==0){      yield* reqImage.call(objReqRes);   } //RegExp('^/image/').test(pathName)
       else if(pathName=='/'+leafBE){        var reqBE=new ReqBE(objReqRes);  yield* reqBE.go();    }
-      else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html'){
+      else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html' || pathName=='/'+leafWebManifest){
         if(pathName=='/conversion.html') res.removeHeader("Content-Security-Policy");
         yield* reqStatic.call(objReqRes);
       }

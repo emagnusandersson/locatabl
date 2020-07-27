@@ -31,7 +31,7 @@ app.SplitterPlugIn=function(){
     text.replace(regB,function(m,n,o){
       StrFile.push('client.js');  Buf.push(n);   //obj.client=n;
     }); 
-    return [err, {StrFile:StrFile, Buf:Buf}];
+    return [err, {StrFile, Buf}];
   }
   
   this.readFileToCacheClientJs=function*(flow){ // Separate readFileToCache for client.js
@@ -59,7 +59,7 @@ app.SplitterPlugIn=function(){
     text.replace(regA,function(m,n,o){
       StrFile.push(n);  Buf.push(o);   //obj[o]=n;
     });
-    return [err, {StrFile:StrFile, Buf:Buf}];
+    return [err, {StrFile, Buf}];
   }
   
   this.readFileToCacheClientJs=function*(flow){ // Separate readFileToCache for client.js
@@ -82,6 +82,10 @@ app.createSiteSpecificClientJSAll=function*(flow) {
     var buf=createSiteSpecificClientJS(siteName);
     var keyCache=siteName+'/'+leafSiteSpecific;
     var [err]=yield *CacheUri.set(flow, keyCache, buf, 'js', true, true);
+
+    var buf=createSiteSpecificWebManifest(siteName);
+    var keyCache=siteName+'/'+leafWebManifest;
+    var [err]=yield *CacheUri.set(flow, keyCache, buf, 'json', true, true);
   }
 }
 
@@ -90,7 +94,6 @@ app.createSiteSpecificClientJS=function(siteName) {
 
   var StrSimplified=["wwwSite", "strRootDomain", "ORole", "siteName", "StrPropE", "StrTransportBool", "KeySel", "StrPlugInNArg", "testWWW", "client_id", "wwwLoginRet", "wwwLoginScope"]; 
   var siteSimplified={}; for(var i=0;i<StrSimplified.length;i++){ var name=StrSimplified[i]; siteSimplified[name]=site[name]; }
-
 
   var Str=[];
   Str.push("var assignSiteSpecific=function(){");
@@ -104,11 +107,25 @@ app.createSiteSpecificClientJS=function(siteName) {
 
   Str.push("}");
 
-
-
-
   var str=Str.join('\n');
   return str;
 }
 
-
+app.createSiteSpecificWebManifest=function(siteName){
+  var site=Site[siteName]; 
+  var uSite="https://"+site.wwwSite;
+  let objOut={theme_color:"#ff0", background_color:"#fff", display:"minimal-ui", prefer_related_applications:false, 
+    short_name:siteName, name:siteName, start_url: uSite,
+    icons:[
+      { src: wsIcon16, type: "image/png", sizes: "16x16" },
+      { src: wsIcon192, type: "image/png", sizes: "192x192" },
+      { src: wsIcon200, type: "image/png", sizes: "200x200" },
+      { src: wsIcon512, type: "image/png", sizes: "512x512", purpose: "any maskable" },
+      { src: wsIcon1024, type: "image/png", sizes: "1024x1024", purpose: "any maskable"}
+    ]
+  }
+  
+  //let str=serialize(objOut);
+  let str=JSON.stringify(objOut);
+  return str;
+}

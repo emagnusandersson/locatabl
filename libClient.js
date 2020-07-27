@@ -11,7 +11,6 @@ var getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!
 var setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
 
 
-
 //
 // Hardware checking
 //
@@ -29,7 +28,7 @@ var getBrowser=function(){
     var brand=match[ 1 ] || "";
     var version=match[ 2 ] || "0";
     
-    return {brand:brand,version:version};
+    return {brand,version};
 };
 var detectIE=function() {
     var ua = window.navigator.userAgent;
@@ -58,7 +57,6 @@ var detectIE=function() {
 }
 
 
-
 var msort=function(compare){
   var length = this.length,  middle = Math.floor(length / 2);
   //if(length < 2) return this;
@@ -83,14 +81,15 @@ var merge=function(left, right, compare){
 }
 
 
-var extend=function(out) {
-  out=out||{};
-  for(var i=1; i<arguments.length; i++) {
-    if(!arguments[i]) continue;
-    for(var key in arguments[i]) {    if(arguments[i].hasOwnProperty(key)) out[key]=arguments[i][key];     }
-  }
-  return out;
-};
+// var extend=function(out) {
+//   out=out||{};
+//   for(var i=1; i<arguments.length; i++) {
+//     if(!arguments[i]) continue;
+//     for(var key in arguments[i]) {    if(arguments[i].hasOwnProperty(key)) out[key]=arguments[i][key];     }
+//   }
+//   return out;
+// };
+var extend=Object.assign;
 
 var deepExtend=function(oA, oB) {
     // Handle the 3 simple types, and null or undefined
@@ -351,15 +350,15 @@ var popupHover=function(elArea,elBubble){
 
 
 
-var vippButtonExtend=function(el){
+var vippButtonExtend=function(el, srcVipp0, srcVipp1){
   el.setStat=function(bo1){
     if(!bo1) {el.css(o0);} else {el.css(o1);}
     el.attr({boOn:bo1});
   }
-  var o0={background:'url('+uVipp0+') no-repeat'}, o1={background:'url('+uVipp1+') no-repeat'};
+  var o0={background:'url('+srcVipp0+') no-repeat'}, o1={background:'url('+srcVipp1+') no-repeat'};
 
   el.attr({boOn:0});
-  el.css({'background':'url('+uVipp0+') no-repeat',height:'33px',width:'90px',zoom:'60%','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
+  el.css({'background':'url('+srcVipp0+') no-repeat',height:'33px',width:'90px',zoom:'60%','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
   el.on('click',function(){var t=1-el.attr('boOn');   el.setStat(t);});
   return el;
 }
@@ -569,11 +568,11 @@ app.urlBase64ToUint8Array=function(base64String){
 
 window.swRegistration=null;
 
-app.registerSW=function(){
-  navigator.serviceWorker.register('serviceworker.js').then(function(swReg){
+app.registerSW=function(uSite){
+  navigator.serviceWorker.register(uSite+'/serviceworker.js').then(function(swReg){
     window.swRegistration=swReg;
-    //navigator.serviceWorker.controller.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
-    //swReg.active.postMessage({langHtml:langHtml, uUserImage:uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+    //navigator.serviceWorker.controller.postMessage({langHtml, uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
+    //swReg.active.postMessage({langHtml, uUserImage}); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
     //navigator.serviceWorker.onmessage=function(e){
       //console.log('Message received from worker: '+JSON.stringify(e.data));
       //if('cbOnMessage' in self) self.cbOnMessage(e.data);
@@ -581,7 +580,7 @@ app.registerSW=function(){
     //navigator.serviceWorker.on('message', function(e){ console.log('Message received from worker: '+JSON.stringify(e.data)); })//addEventListener
   }, (err)=>console.log(err));
   navigator.serviceWorker.ready.then(function(swReg) {
-    const myData={langHtml:langHtml, uUserImage:uUserImage};
+    const myData={langHtml, uUserImage};
     swReg.active.postMessage(myData); //, ucfirst:ucfirst.toString(), calcImageUrl:calcImageUrl.toString()
     navigator.serviceWorker.onmessage=function(e){
       if(e.data=='dataLacking') {swReg.active.postMessage(myData); return;}
@@ -590,7 +589,7 @@ app.registerSW=function(){
     }
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const myData={langHtml:langHtml, uUserImage:uUserImage};
+    const myData={langHtml, uUserImage};
     navigator.serviceWorker.controller.postMessage(myData);
   });
 }

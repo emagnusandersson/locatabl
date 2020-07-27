@@ -83,7 +83,7 @@ window.loginReturn=function(strQS, strHash){
 
 var OAuthT=function(){
   this.createUrlNSetStatVar=function(IP, uRedir, fun, caller, cb){
-    extend(this, {IP:IP, fun:fun, caller:caller, cb:cb});
+    extend(this, {IP, fun, caller, cb});
     this.nonce=randomHash(); //CSRF protection
     var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
     if(IP=='fb')   arrQ.push("display=popup");
@@ -126,12 +126,12 @@ var loginDivExtend=function(el){
   var timerClosePoll=null;
   el.myReset=function(){     mess.empty(); clearInterval(timerClosePoll);   }
 
-  var uLoginImage=window['u'+ucfirst(strIPPrim)];
+  var srcLoginImage=window['ws'+ucfirst(strIPPrim)];
 
   var mess=createElement('span').css({"margin-left":"0.3em"});
   var strButtonSize='2em';
-  var fbIm=createElement('img').on('click', function(){popupWin(strIPPrim);}).prop({src:uLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
-  //var fbHelp=imgHelp.cloneNode().css({margin:'0 0 0 1em'}),  bub=createElement('div').myText(langHtml.helpLoginSeller);     popupHover(fbHelp,bub);  
+  var fbIm=createElement('img').on('click', function(){popupWin(strIPPrim);}).prop({src:srcLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
+  //var fbHelp=imgHelp.cloneNode(1).css({margin:'0 0 0 1em'}),  bub=createElement('div').myText(langHtml.helpLoginSeller);     popupHover(fbHelp,bub);  
 
   var label=createElement('span').myText('Login first, then click yes: ').css({'font-size':'1.3em','font-weight':'bold'});
   el.append(label,fbIm,mess); //,fbHelp
@@ -145,7 +145,7 @@ var yesDivExtend=function(el){
     var boIp=isSet(sessionLoginIdP), boWannaBe=boIp && !boDb; loginDiv.toggle(!boDb);  buttStore.prop({disabled:!boDb}); spanErr.toggle(boWannaBe); 
   }
   var storeF=function(){
-    var vec=[['keyFromExternalTrackerSave',{keyFromExternalTracker:keyFromExternalTracker},retF]];   majax(oAJAX,vec);
+    var vec=[['keyFromExternalTrackerSave',{keyFromExternalTracker},retF]];   majax(oAJAX,vec);
   }
   var retF=function(data){   
     var tmp, strMess="";//boOK=false;
@@ -155,7 +155,7 @@ var yesDivExtend=function(el){
   }
   //var yesSpan=createElement('div').myText('Yes').css({'text-align':'center'});
   var buttStore=createElement('button').myText('Yes').on('click', storeF).prop({disabled:true}).css({'margin-bottom':'1em', 'font-weight':'bold'});
-  var aTmp=createElement('a').attr({href:uSite,target:"_blank"}).myText(wwwSite);
+  var aTmp=createElement('a').attr({href:uSite, target:"_blank", rel:"noopener"}).myText(wwwSite);
   var spanErr=createElement('div').css({'margin-bottom':'.5em'}).myAppend('Not registered! Go to the main page: ',aTmp, ' and register first.').hide();
 
   var divStrMess=createElement('div').css({'margin-top': '1em'});//.hide();
@@ -233,37 +233,40 @@ elBody.css({margin:0, padding:0});
 
 app.boTouch = Number('ontouchstart' in document.documentElement);  //boTouch=1;
 
-var ua = navigator.userAgent.toLowerCase();
-app.boAndroid = ua.indexOf("android") > -1;
-app.boFennec = ua.indexOf("firefox") > -1; 
-app.boIE = ua.indexOf("msie") > -1; 
+var uaLC = navigator.userAgent.toLowerCase();
+app.boAndroid = uaLC.indexOf("android") > -1;
+app.boFennec = uaLC.indexOf("firefox") > -1; 
+app.boIE = uaLC.indexOf("msie") > -1; 
 
-app.boChrome= /chrome/i.test(ua);
-app.boIOS= /iPhone|iPad|iPod/i.test(ua);
+app.boChrome= /chrome/i.test(uaLC);
+app.boIOS= /iPhone|iPad|iPod/i.test(uaLC);
+window.boEdge= /edge/i.test(uaLC);
 
 var strScheme='http'+(boTLS?'s':''),    strSchemeLong=strScheme+'://',    uSite=strSchemeLong+wwwSite,     uCommon=strSchemeLong+wwwCommon,    uBE=uSite+"/"+leafBE;
 
 var wseImageFolder='/'+flImageFolder+'/';
-var uImageFolder=uCommon+wseImageFolder;
+//var uImageFolder=uCommon+wseImageFolder;
 
-var uHelpFile=uImageFolder+'help.png';
-app.uFb=uImageFolder+'fbLogin.png';
-app.uGoogle=uImageFolder+'googleWide.jpg';
-app.uIdplace=uImageFolder+'idPlace.png';
+var wsHelpFile=wseImageFolder+'help.png';
+app.wsFb=wseImageFolder+'fbLogin.png';
+app.waGoogle=wseImageFolder+'googleWide.jpg';
+app.waIdplace=wseImageFolder+'idPlace.png';
 
-var uBusy=uImageFolder+'busy.gif';
+var wsBusy=wseImageFolder+'busy.gif';
 
 
-var imgBusy=createElement('img').attr({src:uBusy});
-var imgHelp=createElement('img').prop({src:uHelpFile}).css({'vertical-align':'-0.4em'});
-
+var imgBusy=createElement('img').attr({src:wsBusy});
+var imgHelp=createElement('img').prop({src:wsHelpFile}).css({'vertical-align':'-0.4em'});
+app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButtonGradient').css({'margin-left':'0.6em'}); //on('click', function(){return false;})    //'pointer-events':'none',
+if(boIOS | boEdge) {hovHelpMy.css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'});}
+imgHelp=hovHelpMy;
 
 var sessionLoginIdP={};
 var userInfoFrDB=extend({}, specialistDefault);
 
 var oAJAX={};
- //uKeyFromExternalTrackerSaveBE
 
+indexAssign();
 assignSiteSpecific();
 langClientFunc();
 
@@ -273,7 +276,7 @@ var loginInfo=loginInfoExtend(createElement('div'));  loginInfo.css({padding:'0e
 
 
 var tmpB=createElement('b').myAppend(wwwSite);
-var aTmp=createElement('a').attr({href:'https://wikipedia.org/wiki/Key_pair',target:"_blank"}).myText('key pair');
+var aTmp=createElement('a').attr({href:'https://wikipedia.org/wiki/Key_pair', target:"_blank", rel:"noreferrer nofollow"}).myText('key pair');
 var strShow='Show key-half', strHide='Hide key-half';
 var buttonShowKey=createElement('button').myText(strShow).prop({'boOn':false}).css({'margin':'0 0.4em'}).on('click', function(){
   var b=this; b.boOn=!b.boOn;  b.myText(b.boOn?strHide:strShow); divKey.toggle(b.boOn);
@@ -283,7 +286,7 @@ var divKey=createElement('div').myText(keyFromExternalTracker).hide().css({'font
 var headA=createElement('div').myAppend('You are now on ',tmpB, '.').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
 
 
-var imgTmp=imgHelp.cloneNode().css({margin:'0 0 0 0em'}),  bub=createElement('div').myHtml("• Position (latitude/longitude)<br>• Visibility (on/off)<br>• hideTimer").css({'text-align':'left'});     popupHover(imgTmp,bub);  
+var imgTmp=imgHelp.cloneNode(1).css({margin:'0 0 0 0em'}),  bub=createElement('div').myHtml("• Position (latitude/longitude)<br>• Visibility (on/off)<br>• hideTimer").css({'text-align':'left'});     popupHover(imgTmp,bub);  
 //var headB=createElement('div').myAppend('Those who created the link that brought you here (those who know the other key-half) will be able change certain data. (Your "visibility" (on/off), position and hideTimer.)');
 var headB=createElement('div').myAppend('Those who created the link that brought you here will be able to write some data ', imgTmp,' on this site. (If you click yes below.)');
 var headC=createElement('div').myAppend('Do you want to store the supplied key?'); //key-half
