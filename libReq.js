@@ -1382,12 +1382,13 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
     END`);
 
 
-      // Create an array from KeyCol/colsDBMask
+      // Create an array from keys in Prop with DBSelOne-bit set
   var SqlColOTmp=[];
   for(var i=0;i<ORole.length;i++) {
     var oR=ORole[i], arrCol=[];
-    for(var j=0;j<oR.nCol;j++) {
-      var name=oR.KeyCol[j], prop=oR.Prop[name], b=prop.b;
+    var KeyPropTmp=Object.keys(oR.Prop), nProp=KeyPropTmp.length;
+    for(var j=0;j<nProp;j++) {
+      var name=KeyPropTmp[j], prop=oR.Prop[name], b=prop.b;
       if(Number(b[oR.bFlip.DBSelOne]))  {   
         var tmp;
         if('selOneF' in prop){tmp=prop.selOneF(name)+" AS `"+name+"`";}

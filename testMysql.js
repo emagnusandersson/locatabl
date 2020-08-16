@@ -1,11 +1,9 @@
 
 http = require("http");
-util =  require('util');
 crypto = require('crypto');
 mysql =  require('mysql');
 path = require("path");
 fs = require("fs");
-extend=util._extend;
 require('./lib.js');
 require('./libServerGeneral.js');
 require('./libServer.js');

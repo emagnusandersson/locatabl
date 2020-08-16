@@ -1,7 +1,5 @@
 "use strict"
 
-//var app=(typeof window==='undefined')?global:window;
-//var app=(typeof window!=='undefined')?window:((typeof global!=='undefined')?global:self);
 var app;  if(typeof window!=='undefined') app=window; else if(typeof global!=='undefined') app=global; else app=self;  // if browser else if server else serviceworker
 
 
@@ -9,6 +7,7 @@ var app;  if(typeof window!=='undefined') app=window; else if(typeof global!=='u
 // Object
 //
 
+app.extend=Object.assign;
 app.copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[name]=b[name]; } return a; }
 app.object_values=function(obj){
   var arr=[];      for(var name in obj) arr.push(obj[name]);
@@ -409,12 +408,6 @@ app.deserialize=function(serializedJavascript){
   return eval('(' + serializedJavascript + ')');
 }
 
-app.print_r=function(o,boHTML){
-  var tmp=JSON.stringify(o,null,'\t');
-  if(typeof(boHTML) !='undefined' && boHTML) tmp=tmp.replace(/\n/g,'<br>').replace(/\t/g,'&nbsp;&nbsp;&nbsp;'); return tmp;
-}
-
-
 app.parseQS=function(str){
   var params = {},      regex = /([^&=]+)=([^&]*)/g, m;
   while (m = regex.exec(str)) {
@@ -423,11 +416,10 @@ app.parseQS=function(str){
   return params;
 }
 
-
 app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for each strKey. Create an array with all strKey where Prop[strKey].b[iBit] is true.
   var KeyAll=Object.keys(Prop)
-  var KeySel=[];  for(var i=0;i<KeyAll.length;i++) { var key=KeyAll[i], b=Prop[key].b;   if(Number(b[iBit])) KeySel.push(key);  }
-  return KeySel;
+  var KeyOut=[];  for(var i=0;i<KeyAll.length;i++) { var key=KeyAll[i], b=Prop[key].b;   if(Number(b[iBit])) KeyOut.push(key);  }
+  return KeyOut;
 }
 
 
@@ -590,7 +582,6 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
 /*
 reload=function(){ confirm('reload'); window.location.reload(); }
 htmlDecode=function(input){ var e = document.createElement('div');    e.innerHTML = input;     return e.childNodes[0].nodeValue;  }
-//getScrollHeight=function(){ var h; if($.browser.msie)  h=document.getElementsByTagName('body')[0].scrollHeight;   else h=document.body.parentNode.scrollHeight;   return h;  }
 getColor = function(val, range){  var s=100, l=50, a=1,    h = 240-Math.round((240 / range) * val);      return "hsla("+h+","+s+"%,"+l+"%,"+a+")";    };
 */
 

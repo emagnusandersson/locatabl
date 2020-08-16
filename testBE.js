@@ -8,7 +8,6 @@ fs = require("fs");
 crypto = require('crypto');
 mysql =  require('mysql');
 gm =  require('gm').subClass({ imageMagick: true });
-util =  require('util');
 concat = require('concat-stream');
 requestMod = require('request');
 querystring = require('querystring');
@@ -20,7 +19,6 @@ ip = require('ip');
 
 
 boDbg=1;
-extend=util._extend;
 require('./lib.js');
 require('./libServerGeneral.js');
 require('./libServer.js');
