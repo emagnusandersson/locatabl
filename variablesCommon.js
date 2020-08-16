@@ -181,7 +181,12 @@ PluginF.general=function(site){
   
 
   
-    // StrOrder: Order of arguments in roleTab (Object.keys may give unpredictable order)
+    // StrOrder: Order of arguments in roleTab.
+    // It correspond to properties in oS.Prop/oC.Prop (PropTmp) with b-bit 6 set.
+    // Properties in PropTmp with bit6 set that is NOT included in StrOrder, will have their property name added to StrOrder in the bottom of this file.
+    // Just for reference I write them down here: (as it is at the time of writing): 
+    //   * geoHash, boWebPushOK, experience
+    //   * donatedAmount, nComplaint, nComplaintCum,  nComplaintGiven, nComplaintGivenCum (Properties denormalized from userTab to roleTab)
   var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'hideTimer', 'tHide', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'keyFromExternalTracker', 'iSeq'
   
   
@@ -729,15 +734,15 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
   var {ORole}=site;
   for(var i=0;i<ORole.length;i++){
     var oRole=ORole[i], Prop=oRole.Prop;
-    oRole.KeyCol=Object.keys(Prop);   oRole.nCol=oRole.KeyCol.length;   oRole.colsFlip=array_flip(oRole.KeyCol);
+    var KeyPropTmp=Object.keys(Prop);   oRole.nCol=KeyPropTmp.length;
     var KeySel=oRole.KeySel=filterPropKeyByB(Prop, oRole.bFlip.DBSel); // KeySel: the data (columns) of MTab that is transfered from server to client
 
     featCalcValExtend(oRole.Prop);
     var arrAllowed=[];for(var name in Prop ){ var arr=Prop[name]; if(Number(arr.b[oRole.bFlip.input])) arrAllowed.push(name);} oRole.arrAllowed=arrAllowed;
       
       // Completeing oRole.StrOrder (The key order of an object varies, so StrOrder is assigned separatly to make the order more predictable.)
-    for(var j=0;j<oRole.KeyCol.length;j++) {
-      var strKey=oRole.KeyCol[j]; if(oRole.StrOrder.indexOf(strKey)==-1) oRole.StrOrder.push(strKey);
+    for(var j=0;j<KeyPropTmp.length;j++) {
+      var strKey=KeyPropTmp[j]; if(oRole.StrOrder.indexOf(strKey)==-1) oRole.StrOrder.push(strKey);
     }
 
     var arrCol=[];

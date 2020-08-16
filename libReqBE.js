@@ -1068,8 +1068,8 @@ ReqBE.prototype.getHist=function*(inObj){
     arg.Where=this.OQueryPart[i].Where;
     arg.strDBPrefix=site.siteName;
 
-    var [err, Hist]=yield* getHist(flow, arg); if(err) return [err];  //Ou.Hist=Hist;
     //var [err, Hist]=yield* getHist(flow, arg); if(err) return [err];
+    var histCalc=new HistCalc(arg);   var [err, Hist]=yield* histCalc.getHist(flow, arg); if(err) return [err];
     Ou.arrHist[i]=Hist;
   }
 

@@ -8,7 +8,6 @@ path = require("path");
 fs = require("fs");
 mysql =  require('mysql');
 gm =  require('gm').subClass({ imageMagick: true });
-util =  require('util');
 concat = require('concat-stream');
 requestMod = require('request');
 //through = require('through')
@@ -34,7 +33,7 @@ serialize = require('serialize-javascript');
 webPush = require('web-push');
 moment = require('moment');
 var argv = require('minimist')(process.argv.slice(2));
-app=(typeof window==='undefined')?global:window;
+app=global;
 
 
 require('./libMath.js');
@@ -47,7 +46,6 @@ require('./lib/foundOnTheInternet/sha1.js');
 
 
 strAppName='tracker';
-extend=util._extend;
 
 strInfrastructure=process.env.strInfrastructure||'local';
 boHeroku=strInfrastructure=='heroku'; 

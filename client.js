@@ -59,13 +59,22 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
 //idPlace
  //Links do not have descriptive text 
 
-//nsVote
-
 //syncAMeeting
  //Links do not have descriptive text
- //non-javascript content
  //Form elements do not have associated labels
  //Tap targets are not sized appropriately
+ 
+ 
+
+// closebymarket: StrFiltAccept not used!?
+// Make histCalc to a class
+
+// closebymarket: StrOrderFilt (oRole.filter.StrProp) is determined on client-side
+// mmmWiki: StrOrderFilt (StrOrderFiltPage/StrOrderFiltImage) is determined on server-side
+// nsVote: StrOrderFilt is determined on server-side
+
+
+//Is it possible to extend windows 10 download link age beyond 24 hours
 
 
 //0123456789abcdef pluginGeneral.js
@@ -1825,9 +1834,12 @@ app.spriteCreator=function(iObj){
  * Some loose functions
  *******************************************************************************************************************/
 
+  // Example:
+  // input: arr=[[strLabelA, strPropA, strPropB], [strLabelB, strPropC, strPropD, strPropE]]
+  // output: objOut={StrProp:[strPropA, strPropB, strPropC, strPropD, strPropE], StrGroupFirst:[strPropA, strPropC], StrGroup:[strLabelA, strLabelB]};
 app.separateGroupLabels=function(arr){
   var objOut={StrProp:[], StrGroupFirst:[], StrGroup:[]};
-  for(var i=0;i<arr.length;i++){
+  for(var i=0;i<arr.length;i++){ // for each subject
     objOut.StrProp=objOut.StrProp.concat(arr[i].slice(1));
     objOut.StrGroupFirst.push(arr[i][1]);
     objOut.StrGroup.push(arr[i][0]);
@@ -2771,7 +2783,7 @@ var viewUploadImagePopCreator=function(){
   }
   var sendFun=function(){
     clearMess();
-    if(typeof FormData=='undefined') {alert("Your browser doesn't support FormData"); return; }
+    if(typeof FormData=='undefined') {alert("This browser doesn't support FormData"); return; }
     var formData = new FormData();
     formData.append("type", 'single');
     formData.append("kind", strKind);
@@ -2984,7 +2996,7 @@ var viewSettingCreator=function(){
   el.ElRole=ElRole;
   
     // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px'}); //if(boIE) roleToggler.css({display:''});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px'});
   
   var buttonSave=createElement('button').on('click', save).myText(langHtml.Save).addClass('flexWidth').css({'margin-right':'.2em'});
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').on('click', historyBack).css({'margin-left':'0.8em','margin-right':'1em'});
@@ -4882,7 +4894,7 @@ var viewMarkSelectorCreator=function(){
   el.ElRole=ElRole;
   
       // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', position:'relative', left:'-2em'}); //if(boIE) roleToggler.css({display:''});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', position:'relative', left:'-2em'});
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').css({'margin-left':'0.8em'}).on('click', historyBack);
   var spanRole=createElement('span');
   var spanLab=createElement('span').myAppend(langHtml.MapMarkers, spanRole).addClass('footDivLabel');
@@ -4986,7 +4998,7 @@ var viewColumnSelectorCreator=function(){
   el.ElRole=ElRole;
   
       // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px'}); //if(boIE) roleToggler.css({display:''});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px'});
   
   var buttDefault=createElement('button').myText(langHtml.Default).on('click', defaultFunc);
   var buttAll=createElement('button').myText(langHtml.All).on('click', allFunc);
@@ -5101,7 +5113,7 @@ var viewColumnSorterCreator=function(){
   var divCont=createElement('div').addClass('contDiv').myAppend(dragSorter);
 
     // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', position:'relative', left:'-2em'}); //if(boIE) roleToggler.css({display:''});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', position:'relative', left:'-2em'});
   var buttonBack=createElement('button').css({'margin-left':'0.8em'}).myText(strBackSymbol).addClass('fixWidth').on('click', historyBack);
   var spanRole=createElement('span');
   var spanLab=createElement('span').myAppend(langHtml.SortColumns, spanRole).addClass('footDivLabel');
@@ -5167,7 +5179,7 @@ var tHeadLabelCreator=function(oRole){
 
 
     for(var i=0;i<ColsTmp.length;i++){
-      var strName=ColsTmp[i], jtmp=oRole.colsFlip[strName];
+      var strName=ColsTmp[i]; 
       //var canvas=headerCanvas[strName], div=createElement('div'); div.append(canvas);
       var colText=calcLabel(langHtml.prop, strName);
       if(strName=='index') colText='';
@@ -5356,7 +5368,7 @@ var viewTableCreator=function(){
   //var tmpImg=createElement('img').prop({src:wsSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
   var buttShowSelect=createElement('button').css({'margin-left':'0.8em'}).prop('title',langHtml.AddRemoveColumns).addClass('fixWidth').on('click', tmpf).myAppend('⚙');
 
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px'}); //if(boIE) roleToggler.css({display:''});
+  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px'});
   
   el.filterButton=filterButtonCreator().css({'margin-left':'0.8em'});
   
@@ -5716,8 +5728,6 @@ var geoError=function(errObj) {
 
   }
   var strB='';
-  if(browser.brand=='mozilla' && strCode!='PERMISSION_DENIED') strB=', Firefox might need Wifi to be on'; //langHtml.worksBetterWithWifi;
-  if(browser.brand=='opera' && strCode!='PERMISSION_DENIED') strB=', Opera might need Wifi to be on';
   if(strCode=='POSITION_UNAVAILABLE') {
     if(boTouch)      strB=', Android: check that sharing of wifi-positioning / gps is enabled on your device.';
     else strB=', Wifi might need to be on.';
@@ -5742,20 +5752,16 @@ window.elHtml=document.documentElement;  window.elBody=document.body
 //elHtml.css({height:'100%'});
 
 
-var browser=getBrowser();
 window.boTouch = Boolean('ontouchstart' in document.documentElement);  //boTouch=1;
 
 var ua=navigator.userAgent, uaLC = ua.toLowerCase(); //alert(ua);
 window.boAndroid = uaLC.indexOf("android") > -1;
 window.boFF = uaLC.indexOf("firefox") > -1;
-//boIE = uaLC.indexOf("msie") > -1;
-var versionIE=detectIE();
-window.boIE=versionIE>0; if(boIE) browser.brand='msie';
 
 app.boChrome= /chrome/.test(uaLC);
 app.boIOS= /iphone|ipad|ipod/.test(uaLC);
 app.boEpiphany=/epiphany/.test(uaLC);    if(boEpiphany && !boAndroid) boTouch=false;  // Ugly workaround
-app.boEdge= /edge/.test(uaLC);
+app.boEdge= /\bedg\b/.test(uaLC);
 app.boUCBrowser = 0;
 
 window.boOpera=RegExp('OPR\\/').test(ua); if(boOpera) boChrome=false; //alert(ua);
@@ -5796,7 +5802,7 @@ window.interpretHashVariables=function(){
 }
 interpretHashVariables();
 
-var strBackSymbol=(boIOS || boIE)?'◄':'◀';
+var strBackSymbol=(boIOS)?'◄':'◀';
 
 var strTable='<span style="transform:scaleX(1.5); display:inline-block; position:relative; left:-2px">┋</span><span style="transform:scaleX(5); display:inline-block; position:relative; left:-1px">┋</span>'
 var strTable='<span style="transform:scaleX(1.5); display:inline-block; position:relative; left:-4px; letter-spacing: -6px; text-align: center;">┋┋ ┋ ┋ ┋</span>'; //┊┋┋┋┋
@@ -5810,7 +5816,7 @@ if(!boHistoryOK) {tmp="This browser doesn't support the history"+tmp+" object, a
 
 if(!navigator.geolocation) { alert('This browers does not support geolocation '); return;}
 
-if(!(typeof sessionStorage=='object' && sessionStorage.getItem)) {alert("Your browser doesn't support sessionStorage"); return;}
+if(!(typeof sessionStorage=='object' && sessionStorage.getItem)) {alert("This browser doesn't support sessionStorage"); return;}
 
 //boTouch=true;
 
@@ -6059,12 +6065,11 @@ app.imgHelp=hovHelpMy;
 //elBody.append(hovHelpMy);
 
 for(var i=0;i<ORole.length;i++){
-  ORole[i].KeyCol=Object.keys(ORole[i].Prop);
-  let nCol=ORole[i].KeyCol.length;
-  ORole[i].colsFlip=array_flip(ORole[i].KeyCol);
+  var KeyTmp=Object.keys(ORole[i].Prop);
+  var nCol=KeyTmp.length;
   ORole[i].helpBub={};
   for(var j=0;j<nCol;j++){
-    var strName=ORole[i].KeyCol[j], text='';
+    var strName=KeyTmp[j], text='';
     if(strName in langHtml.helpBub)  text=langHtml.helpBub[strName];
     if(text!='') { ORole[i].helpBub[strName]=createElement('div').myHtml(text);  }
   }

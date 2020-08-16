@@ -1,4 +1,3 @@
-
 "use strict"
 
 window.rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSetting, iFeat, changeFunc){  
@@ -306,7 +305,7 @@ window.Filt=function(Prop, StrOrderFilt){
   var el=[];  extend(el,Filt.tmpPrototype);
   el.StrOrderFilt=StrOrderFilt; el.Prop=Prop; el.nFeat=StrOrderFilt.length;
   var StrOrderFiltFlip=array_flip(StrOrderFilt);
-  //el.iParent=StrOrderFiltFlip.parent;
+  //el.iParent=StrOrderFiltFlip.parent;  // Uncomment when used in mmmWiki (maybe something needs to be looked over)
   for(var i=0;i<el.nFeat;i++){  
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;
     if(kind[0]=='S') el[i]=[0,len];
