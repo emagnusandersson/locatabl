@@ -25,8 +25,10 @@
 // test viewTeam
 // delete me as buyer resp delete me as driver
 // Ability to see and select image in introPop
-// 👋🌍
-
+// 👋🌍📱
+//   😳
+//😀 😐 😠
+//   😍
 
 
 /**********************************************************************
@@ -52,9 +54,13 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
 
 // base-tag, srcset
 
+
 //closebymarket
  //Requests the geolocation permission on page load
  //in css :root : margin:0, height:100%
+ // closebymarket: StrFiltAccept not used!?
+ // zoom problem
+
  
 //idPlace
  //Links do not have descriptive text 
@@ -64,17 +70,13 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
  //Form elements do not have associated labels
  //Tap targets are not sized appropriately
  
- 
 
-// closebymarket: StrFiltAccept not used!?
-// Make histCalc to a class
-
-// closebymarket: StrOrderFilt (oRole.filter.StrProp) is determined on client-side
-// mmmWiki: StrOrderFilt (StrOrderFiltPage/StrOrderFiltImage) is determined on server-side
-// nsVote: StrOrderFilt is determined on server-side
-
-
-//Is it possible to extend windows 10 download link age beyond 24 hours
+// Should eTag be renamed to strHash in all apps?
+// Should be class?
+  //histCalc
+  //manifest creation
+  
+// SettingTab "name"=> "key"
 
 
 //0123456789abcdef pluginGeneral.js
@@ -318,7 +320,7 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.coordinatePrecisionM, tmpPropProt);  }
     
       // experience
-    extend(oS.Prop.experience, {strType:'number', inpW:4});
+    if(oS.Prop.experience) extend(oS.Prop.experience, {strType:'number', inpW:4}); 
     
 
       // image
@@ -2641,6 +2643,10 @@ var viewUserSettingCreator=function(){
     oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     cbBoGeoWatch.checked=boGeoWatch;
     divIPSetting.setUp();
+    //inpKeyRemoteControl.value=tmp.keyRemoteControl; 
+    //var urlKey=strSchemeLong+tmp.keyRemoteControl+'@'+site.wwwSite;
+    var urlKey=uSite+'#'+tmp.keyRemoteControl;
+    inpKeyRemoteControl.prop({value:urlKey, title:"iSeq: "+tmp.iSeq});
     return true;
   }
   var divIPSetting=divIPSettingCreator().css({background:'lightgrey', margin:'0.2em', border:'1px black solid'});
@@ -2661,28 +2667,51 @@ var viewUserSettingCreator=function(){
   var spanImg, divImage=createElement('div');
     // change PW
   var buttChangePW=createElement('button').myText('Change password').on('click', function(e){ viewChangePWPop.openFunc(); });
-  var divPW=createElement('div').myAppend('Change password: ', buttChangePW);
+  var divPW=createElement('div').myAppend( buttChangePW); //'Change password: ',
 
       // divBoWebPushOK
   var spanBoWebPushOK, divBoWebPushOK=createElement('div');
   divBoWebPushOK.toggle(boEnablePushNotification);
-  
+
     // boGeoWatch
   var strHelp='For continuous tracking to work on mobile devices, the device must be prevented from going to sleep, and the browser must be in the foreground.';
   var strHelp='Note on mobile devices: If the screen goes black (or the webpage leaves forground) then continuous tracking will stop working';
-  var imgH=imgHelp.cloneNode(1); popupHover(imgH,createElement('div').myText(strHelp));
+  var imgH=imgHelp.cloneNode(1).css({'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
   var cbBoGeoWatch=createElement('input').prop({type:'checkbox'}).on('click',function(){
     boGeoWatch=this.checked;
   });
-  var divBoGeoWatch=createElement('div').myAppend('Continuous tracking: ', cbBoGeoWatch, imgH);
+  var divBoGeoWatch=createElement('div').myAppend('Continuous tracking (make sure to read the help):', imgH, cbBoGeoWatch);
+
+    // keyRemoteControl
+  var strHelp="Copy this authentication url to the remote controller.";
+  var imgH=imgHelp.cloneNode(1).css({'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
+  var aLink=createElement('a').myText('more info').prop({href:'https://info.closeby.market/universalTracker'}).css({'margin-right':'0.6em'});
+  var inpKeyRemoteControl=createElement('input').prop({ size:40}).attr({readonly:true}).css({'font-size':'0.8em'}); //placeholder:'Key for external controller',
+  var generateF=function(){
+    var strUUID=myUUID();
+    //var urlKey=strSchemeLong+strUUID+'@'+site.wwwSite;
+    var urlKey=uSite+'#'+strUUID;
+    inpKeyRemoteControl.prop({value:urlKey, title:"iSeq: 0"});
+    var vec=[['keyRemoteControlSave',{keyRemoteControl:strUUID}]];   majax(vec);
+  }
+  var butGenerateKeyRemoteControl=createElement('button').myText('Generate new').on('click',generateF);
+  var copy=function(){
+    inpKeyRemoteControl.select(); inpKeyRemoteControl.setSelectionRange(0, 99999); document.execCommand("copy");
+  }
+  var butCopy=createElement('button').myText('Copy to clipboard').on('click',copy);
+  var divKeyRemoteControl=createElement('div').myAppend('Authentication url for remote controller:', imgH, aLink, inpKeyRemoteControl, butGenerateKeyRemoteControl, butCopy);
+
+  //var divRemoteControl=createElement('div').myAppend(divKeyRemoteControl).css({background:'lightgrey'});
   
       // deleteDiv
   //var imgH=imgHelp.cloneNode(1); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
-  var fragDiv=createFragment(divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, divBoGeoWatch, deleteDiv).cssChildren({'margin-top':'1em'});
-  var divCont=createElement('div').myAppend(fragDiv).addClass('contDiv');
+  var Div=[divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, divBoGeoWatch, divKeyRemoteControl, deleteDiv];
+  Div.forEach(ele=>ele.css({'margin-top':'1em'}));
+  Div.forEach((ele,i)=>{if(i%2==0)ele.css({background:'lightgrey'})});
+  var divCont=createElement('div').myAppend(...Div).addClass('contDiv');
   
     // divFoot
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').on('click', historyBack).css({'margin-left':'0.8em','margin-right':'1em'});
@@ -2945,7 +2974,7 @@ var settingCreator=function(oRole){
     //[...el.querySelectorAll('input,select')].forEach( (ele)=>ele.css({'float':'right',clear:'both'}) );
 
     var checkBoxes=el.querySelectorAll('input[type=checkbox]');
-    var tmp=boAndroid?{'-webkit-transform':'scale(2,2)'}:{width:'1.4em',height:'1.4em'}; extend(tmp,{flex:'0 0 0'});  [...checkBoxes].forEach((ele)=>ele.css(tmp));
+    var tmp=boAndroid?{'-webkit-transform':'scale(2,2)'}:{width:'1.4em',height:'1.4em'}; extend(tmp,{flex:'0 0 auto'});  [...checkBoxes].forEach((ele)=>ele.css(tmp));
 
       // Add labels
     for(var i=0;i<StrGroup.length;i++){
@@ -3360,7 +3389,7 @@ var mainIntroPopCreator=function(oRole){
   var head=createElement('h3').myText(langHtml['introHead'+charRoleUC]);
   //var pBread=createElement('p').myText("These data are shown to everyone. You may want to use a separate phone if you use this service often.");
   var pBread=createElement('h4').myText("Choose how you want to appear...");
-  var pBread2=createElement('h4').myText("...and how you want to be contacted.");  // You may want to use a separate phone if you use this service often.
+  var pBread2=createElement('h4').myText("...and how other users will be able to contact you.");  // You may want to use a separate phone if you use this service often.
   var inpName=createElement('input').prop('type','text').css({width:'70%', 'box-sizing':'border-box'});
   var divName=createElement('p'); divName.myAppend('Name', ': ',inpName);
   
@@ -5818,6 +5847,10 @@ if(!navigator.geolocation) { alert('This browers does not support geolocation ')
 
 if(!(typeof sessionStorage=='object' && sessionStorage.getItem)) {alert("This browser doesn't support sessionStorage"); return;}
 
+//var [err, mess]=(new BrowserFunctionalityTesting()).all();
+var [err, mess]=testBrowserFunctionality();
+if(err) { console.log(mess+':\n'+err); alert(mess+':\n'+err); return; }  
+
 //boTouch=true;
 
 //if(boVideo) boTouch=true;
@@ -6059,8 +6092,7 @@ var tmp=getItem('boFirstVisit'),  boFirstVisit=tmp===null;      setItem('boFirst
 
 // ❓?
 //app.imgHelp=createElement('img').prop({src:wsHelpFile, alt:"help"}).css({'vertical-align':'-0.4em', 'margin-left':'0.6em', height:'fit-content'});
-app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButtonGradient').css({'margin-left':'0.6em'}); //on('click', function(){return false;})    //'pointer-events':'none',
-if(boIOS | boEdge |1) {hovHelpMy.css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'});}
+app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButtonGradient').css({'margin-left':'0.6em'}).css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'}); //on('click', function(){return false;})    //'pointer-events':'none',
 app.imgHelp=hovHelpMy;
 //elBody.append(hovHelpMy);
 

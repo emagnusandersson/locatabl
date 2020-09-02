@@ -21,7 +21,7 @@ app.MyNeo4j=function(){
   var chars = ['\\"', '\\\'', '\\\\'],   tmpStr='[' +chars.join("") +']';  this.regEscape=new RegExp(tmpStr, 'g');
   this.funEscape=function(m){ return "\\"+m;  }
 }
-MyNeo4j.prototype.escape=function(str){  return str.replace(this.regEscape,this.funEscape);    }
+MyNeo4j.prototype.escape=function(str){  if(typeof str=='string') str=str.replace(this.regEscape,this.funEscape);  return str;  }
 
 
 //
@@ -32,6 +32,12 @@ app.ErrorClient=class extends Error {
   constructor(message) {
     super(message);
     this.name = 'ErrorClient';
+  }
+}
+app.ErrorWLab=class extends Error {
+  constructor(strLab, message) {
+    super(message);
+    this.strLab = strLab;
   }
 }
 
@@ -48,7 +54,6 @@ tmp.out301Loc=function(url){  this.writeHead(301, {Location: '/'+url});  this.en
 tmp.out403=function(){ this.outCode(403, "403 Forbidden\n");  }
 tmp.out304=function(){  this.outCode(304);   }
 tmp.out404=function(str){ str=str||"404 Not Found\n"; this.outCode(404, str);    }
-//tmp.out500=function(err){ var errN=(err instanceof Error)?err:(new MyError(err)); console.log(errN.stack); this.writeHead(500, {"Content-Type": MimeType.txt});  this.end(err+ "\n");   }
 tmp.out500=function(e){
   if(e instanceof Error) {var mess=e.name + ': ' + e.message; console.error(e);} else {var mess=e; console.error(mess);} 
   this.writeHead(500, {"Content-Type": MimeType.txt});  this.end(mess+ "\n");
@@ -109,16 +114,6 @@ app.MimeType={
 };
 
 
-
-app.genRandomString=function(len) {
-  var characters = 'abcdefghijklmnopqrstuvwxyz';
-  //var characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  var str ='';    
-  for(var p=0; p<len; p++) {
-    str+=characters[randomInt(0, characters.length-1)];
-  }
-  return str;
-}
 app.md5=function(str){return crypto.createHash('md5').update(str).digest('hex');}
 
 
@@ -184,20 +179,7 @@ app.getIP=function(req){
   return false
 }
 
-//luaCountFunc="\n\
-//local boSessionExist=redis.call('EXISTS',KEYS[1]);\n\
-//local c;\n\
-//if(boSessionExist>0) then c=redis.call('INCR',KEYS[2]); redis.call('EXPIRE',KEYS[2], ARGV[1]);\n\
-//else c=redis.call('INCR',KEYS[3]); redis.call('EXPIRE', KEYS[3], ARGV[1]);\n\
-//end;\n\
-//return c";
-app.luaCountFunc=`
-local boSessionExist=redis.call('EXISTS',KEYS[1]);
-local c;
-if(boSessionExist>0) then c=redis.call('INCR',KEYS[2]); redis.call('EXPIRE',KEYS[2], ARGV[1]);
-else c=redis.call('INCR',KEYS[3]); redis.call('EXPIRE', KEYS[3], ARGV[1]);
-end;
-return {boSessionExist, c}`;
+
 
 app.CacheUriT=function(){
   this.set=function*(flow, key, buf, type, boZip, boUglify){

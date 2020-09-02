@@ -6,8 +6,9 @@
  * reqCurlEnd
  ******************************************************************************/
 app.reqCurlEnd=function*(){  
-  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS; //this.pool=DB[req.site.db].pool
-  var flow=req.flow;
+  var {req, res}=this;
+  var {flow, site, objQS}=req;
+  var siteName=site.siteName;
   
   
   res.setHeader('Content-Type', MimeType.json);
@@ -26,35 +27,38 @@ app.reqCurlEnd=function*(){
     if(req.method=='OPTIONS'){  res.out200('');  return;}
   }
 
-  //var keyFromExternalTracker; if("keyFromExternalTracker" in objQS) { keyFromExternalTracker=objQS.keyFromExternalTracker; }  else{ res.out200('No public key "keyFromExternalTracker" in the query line'); return;}
+  //res.setHeader('Cache-Control', 'no-cache'); // Seem to work fine without this
+
+  
+  //var keyRemoteControl; if("keyRemoteControl" in objQS) { keyRemoteControl=objQS.keyRemoteControl; }  else{ res.out200('No public key "keyRemoteControl" in the query line'); return;}
   //var sixSignature; if("signature" in objQS) { sixSignature=objQS.signature; }  else{ res.out200('No "signature" in the query line'); return;}
-  var {dataFromExternalTracker}=objQS;
+  var {dataFromRemoteControl}=objQS;
   //var data; if("data" in objQS) { data=objQS.data; }  else{ res.out200('No "data" in the query line'); return;}
 
-  //var pemPub=keyFromExternalTracker, sixPub=keyFromExternalTracker.split('\n').slice(1,-2).join('\n');
-  //var pemPub="-----BEGIN PUBLIC KEY-----\n"+keyFromExternalTracker+"-----END PUBLIC KEY-----", sixPub=keyFromExternalTracker;
+  //var pemPub=keyRemoteControl, sixPub=keyRemoteControl.split('\n').slice(1,-2).join('\n');
+  //var pemPub="-----BEGIN PUBLIC KEY-----\n"+keyRemoteControl+"-----END PUBLIC KEY-----", sixPub=keyRemoteControl;
   //var keyTmp = new NodeRSA(pemPub);
   //var boOK=keyTmp.verify(data, sixSignature, 'utf8', 'base64');
   //var boOK; if(!boOK){ res.out200('Message does NOT authenticate'); return;}
   //console.log('boVerifies: '+boOK);
 
   //var inObj=JSON.parse(data);//json_last_error_msg()
-  try{ var inObj=JSON.parse(dataFromExternalTracker); }catch(e){ res.out200('error parsing "dataFromExternalTracker"');  return; }
+  try{ var inObj=JSON.parse(dataFromRemoteControl); }catch(e){ res.out200('error parsing "dataFromRemoteControl"');  return; }
   //inObj=JSON.parse("{iSec:22, lat:59.83934260, lng:17.60569680}");
-  var {keyFromExternalTracker, iSeq:iSeqN, boCheck, boShow, iRole, hideTimer, lat, lng}=inObj;
-  //var keyFromExternalTracker; if("keyFromExternalTracker" in inObj) { keyFromExternalTracker=inObj.iSeq; }  else{  res.out200('"keyFromExternalTracker" is not set'); return;}
+  var {keyRemoteControl, iSeq:iSeqN, boCheck, boShow, iRole, hideTimer, lat, lng}=inObj;
+  //var keyRemoteControl; if("keyRemoteControl" in inObj) { keyRemoteControl=inObj.iSeq; }  else{  res.out200('"keyRemoteControl" is not set'); return;}
   //var iSeqN; if("iSeq" in inObj) { iSeqN=inObj.iSeq; }  else{  res.out200('"iSeq" is not set'); return;}
   
   
-  if(typeof keyFromExternalTracker=='undefined') {  res.out200('"keyFromExternalTracker" is not set'); return;}
-  if(keyFromExternalTracker.length!=32) {  res.out200('The length of keyFromExternalTracker should be 32 (length is '+keyFromExternalTracker.length+')'); return;}
+  if(typeof keyRemoteControl=='undefined') {  res.out200('"keyRemoteControl" is not set'); return;}
+  if(keyRemoteControl.length!=32) {  res.out200('The length of keyRemoteControl should be 32 (length is '+keyRemoteControl.length+')'); return;}
   if(typeof iSeqN=='undefined') {  res.out200('"iSeq" is not set'); return;}
   if(typeof iRole=='undefined') {  res.out200('"iRole" is not set'); return;}
 
-  console.log(moment().format('HH:mm:ss')+' '+req.connection.remoteAddress+' '+keyFromExternalTracker);
+  console.log(moment().format('HH:mm:ss')+' '+req.connection.remoteAddress+' '+keyRemoteControl);
   var Sql=[],Val=[];
   if(boCheck){
-    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, ?, @boShow, @hideTimer, @tDiff, @boOk, @mess);"); Val.push(iRole, keyFromExternalTracker, iSeqN);
+    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, ?, @boShow, @hideTimer, @tDiff, @boOk, @mess);"); Val.push(iRole, keyRemoteControl, iSeqN);
     Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tDiff AS tDiff, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
     var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
@@ -71,7 +75,7 @@ app.reqCurlEnd=function*(){
     hideTimer=bound(hideTimer, 0, intMax);
     var projs=new MercatorProjection(),   [x,y]=projs.fromLatLngToPointV([lat, lng]);
     //var strGeoHash=GeoHash.pWC2GeoHash({x,y});
-    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(iRole, keyFromExternalTracker, iSeqN, x, y, lat, boShow, hideTimer, boAuto);
+    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(iRole, keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boAuto);
     Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
     var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
@@ -85,18 +89,20 @@ app.reqCurlEnd=function*(){
 
 
 /******************************************************************************
- * reqKeyFromExternalTrackerSave
+ * reqKeyRemoteControlSave
  ******************************************************************************/
-app.reqKeyFromExternalTrackerSave=function*(){
-  var req=this.req, res=this.res, site=req.site, siteName=site.siteName, objQS=req.objQS, uSite=req.uSite; //this.pool=DB[site.db].pool;
-  var flow=req.flow;
+app.reqKeyRemoteControlSave=function*(){
+  var {req, res}=this;
+  var {flow, site, objQS, uSite}=req;
+  var siteName=site.siteName;
+
   
   var strT=req.headers['Sec-Fetch-Mode'];
   if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
   
   //this.mesO=mesOMake('\n');
   
-  var keyFromExternalTracker=objQS.keyFromExternalTracker||'';
+  var keyRemoteControl=objQS.keyRemoteControl||'';
   var strLang='en';
 
   //var Str=this.Str=[];
@@ -120,18 +126,18 @@ app.reqKeyFromExternalTrackerSave=function*(){
     // Include site specific JS-files
   var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
 
-  var StrTmp=['lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyFromExternalTrackerSave.js'];
+  var StrTmp=['lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyRemoteControlSave.js'];
   for(var i=0;i<StrTmp.length;i++){
     var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
 
-  var caller="keyFromExternalTrackerSave",  CSRFCode=randomHash();
+  var caller="keyRemoteControlSave",  CSRFCode=randomHash();
   yield* setRedis(flow, req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode, maxUnactivity); 
   
 
   Str.push("<script>");
-  var objOut={CSRFCode, caller, specialistDefault, keyFromExternalTracker, maxList, wwwCommon, leafBE, flImageFolder, UrlOAuth, response_type};
+  var objOut={CSRFCode, caller, specialistDefault, keyRemoteControl, maxList, wwwCommon, leafBE, flImageFolder, UrlOAuth, response_type};
   copySome(objOut,req,['wwwSite', 'boTLS']);
 
   Str.push(`var tmp=`+serialize(objOut)+`;
@@ -153,7 +159,7 @@ function indexAssign(){
  * reqPrev
  ******************************************************************************/
 app.reqPrev=function*() {
-  var req=this.req, res=this.res;
+  var {req, res}=this;
   
   var strT=req.headers['Sec-Fetch-Mode'];
   if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
@@ -178,7 +184,7 @@ app.reqPrev=function*() {
 // Allways same: coordApprox;
 // Not used: strLangBrowser
 app.reqIndex=function*() {
-  var req=this.req, res=this.res;
+  var {req, res}=this;
   
   var strT=req.headers['Sec-Fetch-Mode'];
   if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
@@ -253,23 +259,18 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>`);
 
-var uCommon=req.strSchemeLong+wwwCommon;
-Str.push(`<base href="`+uCommon+`">`);
-Str.push(`<link rel="manifest" href="`+uSite+`/`+leafWebManifest+`"/>`);
+  var uCommon=req.strSchemeLong+wwwCommon;
+  Str.push(`<base href="`+uCommon+`">`);
+  
+  
 
   //<meta name="apple-mobile-web-app-capable" content="yes" /> 
 
-
-  // var tmpIcon=wwwIcon16; if('wwwIcon16' in site) tmpIcon=site.wwwIcon16;  var uIcon16=req.strSchemeLong+tmpIcon;
-  // var tmpIcon=wwwIcon114; if('wwwIcon114' in site) tmpIcon=site.wwwIcon114;  var uIcon114=req.strSchemeLong+tmpIcon;
-  // var tmpIcon=wwwIcon200; if('wwwIcon200' in site) tmpIcon=site.wwwIcon200;  var uIcon200=req.strSchemeLong+tmpIcon;
-
-
-  Str.push('<link rel="icon" type="image/png" href="'+uSite+wsIcon16+'" />');
-  Str.push('<link rel="apple-touch-icon" href="'+uSite+wsIcon114+'"/>');
-
-
-
+  
+  var srcIcon16=site.SrcIcon[IntSizeIconFlip[16]];
+  var srcIcon114=site.SrcIcon[IntSizeIconFlip[114]];
+  Str.push('<link rel="icon" type="image/png" href="'+srcIcon16+'" />');
+  Str.push('<link rel="apple-touch-icon" href="'+srcIcon114+'"/>');
 
 
   var strTmp='';  //if(boAndroid && boFireFox) {  strTmp=", width=device-width'";}    
@@ -288,12 +289,13 @@ Str.push(`<link rel="manifest" href="`+uSite+`/`+leafWebManifest+`"/>`);
 <meta name="keywords" content="`+strKeywords+`"/>
 <link rel="canonical" href="`+uSite+`"/>`);
 
+  var uIcon200=uSite+site.SrcIcon[IntSizeIconFlip[200]];
   var fbTmp=req.rootDomain.fb, fiIdTmp=fbTmp?fbTmp.id:``;
   var tmp=`
 <meta property="og:title" content="`+wwwSite+`"/>
 <meta property="og:type" content="website" />
 <meta property="og:url" content="`+uSite+`"/>
-<meta property="og:image" content="`+uSite+wsIcon200+`"/>
+<meta property="og:image" content="`+uIcon200+`"/>
 <meta property="og:site_name" content="`+wwwSite+`"/>
 <meta property="fb:admins" content="100002646477985"/>
 <meta property="fb:app_id" content="`+fiIdTmp+`"/>
@@ -302,7 +304,17 @@ Str.push(`<link rel="manifest" href="`+uSite+`/`+leafWebManifest+`"/>`);
 <meta property="og:locale:alternate" content="en_US" />`;
   if(!boDbg) Str.push(tmp);
 
-
+    // Testing broser functionality
+  Str.push(`<script> (function(){
+    var err=null, m0="This browser does not support ", m1;
+    try { m1="generators"; eval("(function *(){})");
+      m1="default parameters"; eval("(function(a=0){})");
+      m1="destructuring assignment"; eval("var {a}={a:1};");
+      m1+=" with arrays"; eval("var [a]=[1];");
+      //m1="this obvious nonsens"; eval("function;");
+    } catch(err) { alert(m0+m1+':\\n'+err); }
+  })();</script>`);
+  
   Str.push(`<script>var app=window;</script>`);
 
   var tmp=`
@@ -334,18 +346,6 @@ Str.push(`<link rel="manifest" href="`+uSite+`/`+leafWebManifest+`"/>`);
   var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
   if(typeof boGoogleMap!='undefined' && boGoogleMap) Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
   
-  //function\([^=\)]*=[^=\)]
-  //\[[^\]]*\]=
-  //\{[^\}]*\}=
-  //function\s*\*\(
-  
-
-  Str.push(`<script> (function(){
-try { eval("(function *(){})");} catch(err) { alert("This browser does not support generators:\\n"+ err); return;}
-try { eval("(function(a=0){})");} catch(err) { alert("This browser does not support default parameters:\\n"+ err); return;}
-try { eval("var {a}={a:1};");} catch(err) { alert("This browser does not support destructuring assignment:\\n"+ err); return;}
-try { eval("[a]=[1];");} catch(err) { alert("This browser does not support destructuring assignment with arrays:\\n"+ err); return;}
-})();</script>`);
   //Str.push(`<link rel="preconnect" href="`+uCommon+`">`);
   //Str.push(`<link rel="preconnect" href="https://connect.facebook.net">`);
   
@@ -366,16 +366,19 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
     // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
   var boDbgT=boDbg; if(boIOS || boUC) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
   
+  var keyTmp=siteName+'/'+leafManifest, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     Str.push(`<link rel="manifest" href="`+uSite+`/`+leafManifest+`?v=`+vTmp+`"/>`);
+  var keyTmp='/'+leafServiceWorker, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     const srcServiceWorker=`/`+leafServiceWorker+`?v=`+vTmp;
+  
     // Include stylesheets
-  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css" async >');
+  var pathTmp='/stylesheets/style.css', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css" async >');
 
     // Include site specific JS-files
-  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbgT) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
+  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=boDbgT?0:CacheUri[keyCache].eTag;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
 
     // Include JS-files
-  var StrTmp=['filter.js', 'lib.js', 'libClient.js', 'client.js', 'lang/en.js'];
+  var StrTmp=['lib.js', 'libClient.js', 'lang/en.js', 'filter.js', 'client.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
     // Include plugins
@@ -384,11 +387,11 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
   for(var i=0;i<StrPlugInNArg.length;i++){
     var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
     var Name=ucfirst(nameT); 
-    var pathTmp='/plugin'+Name+'.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
+    var pathTmp='/plugin'+Name+'.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
     // Files with delayed loading
-  var pathTmp='/lib/foundOnTheInternet/sha1.js', vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;   const wsSha1=pathTmp+'?v='+vTmp;
+  var pathTmp='/lib/foundOnTheInternet/sha1.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;   const wsSha1=pathTmp+'?v='+vTmp;
 
 
   var strTracker, tmpID=site.googleAnalyticsTrackingID||null;
@@ -427,7 +430,7 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
 var MainDiv=[];
 var arrViewPop=[];`);
 
-  var objOut={strLang, coordApprox, UrlOAuth, strReCaptchaSiteKey, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification};
+  var objOut={strLang, coordApprox, UrlOAuth, strReCaptchaSiteKey, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
   copySome(objOut, req, ['boTLS']);
   extend(objOut, {wsSha1});
 
@@ -493,10 +496,9 @@ app.reqLoginWLink=function*(){
  * reqImage
  ******************************************************************************/
 app.reqImage=function*() {
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var flow=req.flow;
-  
-  var site=req.site, objQS=req.objQS, uSite=req.uSite, siteName=site.siteName, pathName=req.pathName, id, kind;
+  var {req, res}=this;
+  var {flow, site, objQS, uSite, pathName}=req;
+  var siteName=site.siteName, id, kind;
 
   this.eTagIn=getETag(req.headers);
   var keyCache=siteName+'/'+pathName;
@@ -535,7 +537,7 @@ app.reqImage=function*() {
  * reqLoginBack
  ******************************************************************************/
 app.reqLoginBack=function*(){
-  var req=this.req, res=this.res;
+  var {req, res}=this;
   
   //var strT=req.headers['Sec-Fetch-Mode'];
   //if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
@@ -689,9 +691,8 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
  * reqStatic (request for static files)
  ******************************************************************************/
 app.reqStatic=function*() {
-  var req=this.req, res=this.res;
-  var site=req.site, siteName=site.siteName;
-  var pathName=req.pathName;
+  var {req, res}=this;
+  var {flow, site, pathName}=req, siteName=site.siteName;
 
 
   //var RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(closeby\.market|gavott\.com)")];
@@ -701,10 +702,10 @@ app.reqStatic=function*() {
   if(req.method=='OPTIONS'){ res.end(); return ;}
 
   var eTagIn=getETag(req.headers);
-  var keyCache=pathName; if(pathName==='/'+leafSiteSpecific || pathName==='/'+leafWebManifest) keyCache=siteName+keyCache;
+  var keyCache=pathName; if(pathName==='/'+leafSiteSpecific || pathName==='/'+leafManifest) keyCache=siteName+keyCache;
   if(!(keyCache in CacheUri)){
     var filename=pathName.substr(1);
-    var [err]=yield* readFileToCache(req.flow, filename);
+    var [err]=yield* readFileToCache(flow, filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
       if('host' in req.headers) console.error('Faulty request from'+req.headers.host);
@@ -730,10 +731,11 @@ app.reqStatic=function*() {
  * reqMonitor
  ******************************************************************************/
 app.reqMonitor=function*(){
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+  var {req, res}=this;
+  var {flow, site, objQS}=req;
   var timeCur=unixNow(), boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
-  var site=req.site, siteName=site.siteName, objQS=req.objQS, {userTab, sellerTab, buyerTab}=site.TableName;
-  var flow=req.flow;
+  var siteName=site.siteName, {userTab, sellerTab, buyerTab}=site.TableName;
+
   
   //if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
@@ -811,12 +813,12 @@ var makeTable=function(K,M){
 }
 
 app.reqStat=function*(){
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var flow=req.flow;
+  var {req, res}=this;
+  var {flow, site, objQS}=req;
   
   if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
-  var siteName=site.siteName, objQS=req.objQS, {userTab, buyerTab, sellerTab}=site.TableName;
+  var siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
   
   var iRole=Number(objQS.role=='s');
   var oRole=site.ORole[iRole];
@@ -878,12 +880,12 @@ app.reqStat=function*(){
 
 
 app.reqStatBoth=function*(){
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var flow=req.flow;
+  var {req, res}=this;
+  var {flow, site, objQS}=req;
   
   if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
-  var siteName=site.siteName, objQS=req.objQS, {userTab, buyerTab, sellerTab}=site.TableName;
+  var siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
   
   var charRole=objQS.role||'s';
 
@@ -976,9 +978,9 @@ td:nth-child(n+14){background:lightblue}
 }
 
 app.reqStatTeam=function*(){
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var flow=req.flow;
-  var siteName=site.siteName, objQS=req.objQS;
+  var {req, res}=this;
+  var {flow, site, objQS}=req;
+  var siteName=site.siteName;
   
   if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
   if('code' in objQS && objQS.code=='amfoen') {} else {res.outCode(401, "Not authorized");  return;  }
@@ -1086,7 +1088,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   boImgOwn tinyint(1) NOT NULL DEFAULT 0, 
   displayName VARCHAR(32) NOT NULL DEFAULT '', 
   donatedAmount DOUBLE NOT NULL DEFAULT 0, 
-  keyFromExternalTracker VARCHAR(32) NOT NULL DEFAULT '', 
+  keyRemoteControl VARCHAR(32) NOT NULL DEFAULT '', 
   iSeq int(4) NOT NULL DEFAULT 0, 
   nComplaint int(4) UNSIGNED NOT NULL DEFAULT 0, 
   nComplaintCum int(4) UNSIGNED NOT NULL DEFAULT 0, 
@@ -1152,7 +1154,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
     for(var name in oS.Prop){
       var arr=oS.Prop[name];
       var b=arr.b;
-      if(Number(b[oS.bFlip.sellerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+sellerTab+"("+name+")"); 
+      if(Number(b[oS.bFlip.sellerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+sellerTab+"(`"+name+"`)"); 
     }
   }
 
@@ -1197,7 +1199,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
     for(var name in oB.Prop){
       var arr=oB.Prop[name];
       var b=arr.b;
-      if(Number(b[oB.bFlip.buyerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+buyerTab+"("+name+")");
+      if(Number(b[oB.bFlip.buyerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+buyerTab+"(`"+name+"`)");
     }
   }
   
@@ -1398,7 +1400,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
     }
     SqlColOTmp[i]=arrCol.join(', ');
   }
-  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag, boWebPushOK";
+  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag, boWebPushOK, keyRemoteControl, iSeq";
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboBuyer INT, IboSeller INT, IboBuyerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
@@ -1556,12 +1558,12 @@ CLIENT_FOUND_ROWS
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(32), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, ViSeq INT;
-      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM `+userTab+` WHERE keyFromExternalTracker=Ikey LIMIT 1;
+      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM `+userTab+` WHERE keyRemoteControl=Ikey LIMIT 1;
       SET Vc=FOUND_ROWS();
-      IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('keyFromExternalTracker exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
-      IF Vc=0 THEN SET OboOK=0, Omess='No such keyFromExternalTracker stored!'; LEAVE proc_label; END IF;
+      IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('keyRemoteControl exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
+      IF Vc=0 THEN SET OboOK=0, Omess='No such keyRemoteControl stored!'; LEAVE proc_label; END IF;
 
-      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess='Sequence error, try refresh the key'; LEAVE proc_label; END IF;
+      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error (iSeqServer=', ViSeq, ', iSeqRemoteControl=', iSeqN, ')'); LEAVE proc_label; END IF;
       UPDATE `+userTab+` SET iSeq=iSeqN WHERE idUser=OidUser;
       SET OboOK=1, Omess='';
     END`);
@@ -2184,9 +2186,9 @@ app.SetupSql.prototype.populateSetting=function*(flow, siteName){
 
   // Called when --sql command line option is used
 app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
-  if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); return [new Error(tmp)]; }
+  if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); return [new ErrorWLab('erraticInput', tmp)]; }
   var Match=RegExp("^(drop|create)?(.*?)$").exec(strCreateSql);
-  if(!Match) { debugger;  return [new Error("!Match")]; }
+  if(!Match) { debugger;  return [Error("!Match")]; }
   
   var boDropOnly=false, strMeth=Match[2];
   if(Match[1]=='drop') { boDropOnly=true; strMeth='create'+strMeth;}

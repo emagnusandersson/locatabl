@@ -1,5 +1,20 @@
-
 "use strict"
+
+//
+// Checking browser functionalities
+//
+
+var testBrowserFunctionality=function(){
+  var err=null, m0="This browser does not support ", m1;
+  try { m1="generators"; eval("(function *(){})");
+    m1="default parameters"; eval("(function(a=0){})");
+    m1="destructuring assignment"; eval("var {a}={a:1};");
+    m1="destructuring assignment with arrays"; eval("var [a]=[1];");
+    //m1="this obvious nonsens"; eval("function;");
+  } catch(errT) { err=errT; }
+  return [err, m0+m1]; 
+}
+
 
 //
 // Storage, DOM etc
@@ -9,8 +24,6 @@ var getItem=function(name){    var tmp=localStorage.getItem(name);   if(tmp!==nu
 var setItem=function(name,value){  if(typeof value=='undefined') value=null; localStorage[name]=JSON.stringify(value); }
 var getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!==null) tmp=JSON.parse(tmp);   return tmp;   }
 var setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
-
-
 
 
 var msort=function(compare){
@@ -156,13 +169,13 @@ Element.prototype.toggleClass=function() {this.classList.toggle(...arguments);re
 Element.prototype.hasClass=function() {return this.classList.contains(...arguments);}
 Node.prototype.cssChildren=function(styles){  this.childNodes.forEach(function(elA){ Object.assign(elA.style, styles);  }); return this;  }
 Node.prototype.myText=function(str){
-  if(typeof str=='undefined') { return this.textContent; }
-  if(typeof str!='string') { if(str===null) str=' '; str=str.toString(); }
+  if(arguments.length==0) { return this.textContent; }
+  if(typeof str!='string') { if(str==null) str=' '; str=str.toString(); }
   if(this.childNodes.length==1 && this.firstChild.nodeName=="#text" ) { this.firstChild.nodeValue=str||' ';  return this;} // Being a bit GC-friendly
   this.textContent=str||' '; return this;
 }
 Node.prototype.myHtml=function(str=' '){
-  if(typeof str!='string') { if(str===null) str=' '; str=str.toString(); }
+  if(typeof str!='string') { if(str==null) str=' '; str=str.toString(); }
   this.innerHTML=str||' '; return this;
 }
 Node.prototype.hide=function(){
@@ -220,8 +233,8 @@ var isVisible=function(el) {
 /*******************************************************************************************************************
  * popupHover: popup a elBubble when you hover over elArea
  *******************************************************************************************************************/
-var popupHover=function(elArea,elBubble){
-  elBubble.css({position:'absolute', 'box-sizing':'border-box', margin:'0px'}); //
+var popupHover=function(elArea, elBubble, tClose=4){
+  elBubble.css({position:'absolute', 'box-sizing':'border-box', margin:'0px', 'text-align':'left'}); //
   function setBubblePos(e){
     var xClear=6, yClear=6;
     var x = e.pageX, y = e.pageY;
@@ -264,6 +277,7 @@ var popupHover=function(elArea,elBubble){
     if(boTouch){ 
       elBubble.remove(); 
       if(boIOSTmp) elBlanket.remove();
+      clearTimeout(timer);
     } 
     else { elBubble.remove();  }
   }
@@ -278,7 +292,7 @@ var popupHover=function(elArea,elBubble){
       if(elBubble.parentNode) closeFunc();
       else {
         elBody.append(elBubble); setBubblePos(e);
-        clearTimeout(timer); timer=setTimeout(closeFunc, 4000);
+        clearTimeout(timer);  if(tClose) timer=setTimeout(closeFunc, tClose*1000);
         if(boIOSTmp) elBody.append(elBlanket);
       }
     });

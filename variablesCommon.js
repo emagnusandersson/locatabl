@@ -1,4 +1,4 @@
-// Inactive users may be deleted
+// Inactive users may be deleted. If it happens to you, you can just sign in again, or send a message to get account back.
 
 two31=Math.pow(2,31);  intMax=two31-1;  intMin=-two31; uintMax=Math.pow(2,32)-1;
 sPerDay=24*3600;  sPerMonth=sPerDay*30;
@@ -22,10 +22,10 @@ leafLoginWLink="loginWLink";
 //leafVerifyEmailReturn='verifyEmail';
 leafVerifyPWResetReturn='verifyPWReset';
 leafVerifyEmailNCreateUserReturn='verifyEmailNCreateUser';
-leafWebManifest='webmanifest.json';
+leafManifest='manifest.json';
+leafServiceWorker='serviceworker.js';
 
 
-wsIcon16='/'+wIcon16;  wsIcon114='/'+wIcon114;  wsIcon192='/'+wIcon192;  wsIcon200='/'+wIcon200;  wsIcon512='/'+wIcon512;  wsIcon1024='/'+wIcon1024; 
 
 hideTimerDefault=30*24*3600;
 hideTimerDefault=365*24*3600;
@@ -187,7 +187,7 @@ PluginF.general=function(site){
     // Just for reference I write them down here: (as it is at the time of writing): 
     //   * geoHash, boWebPushOK, experience
     //   * donatedAmount, nComplaint, nComplaintCum,  nComplaintGiven, nComplaintGivenCum (Properties denormalized from userTab to roleTab)
-  var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'hideTimer', 'tHide', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'keyFromExternalTracker', 'iSeq'
+  var StrOrder=['idUser', 'boShow', 'tCreated', 'tPos', 'hideTimer', 'tHide', 'histActive', 'tLastWriteOfTA', 'tAccumulated', 'tel', 'link', 'homeTown', 'currency', 'tLastPriceChange', 'x', 'y', 'displayEmail', 'idTeam', 'idTeamWanted', 'coordinatePrecisionM']; // , 'keyRemoteControl', 'iSeq'
   
   
   
@@ -764,7 +764,8 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
 }
 
 
-
+IntSizeIcon=[16, 114, 192, 200, 512, 1024];
+IntSizeIconFlip=array_flip(IntSizeIcon);
 SiteExtend=function(){
   Site.getSite=function(wwwReq){
     for(var i=0;i<SiteName.length;i++){
@@ -821,6 +822,15 @@ SiteExtend=function(){
     if(typeof wwwLoginRet=='undefined'){     var M=regDomain.exec(site.wwwSite); site.wwwLoginRet=site.wwwSite+"/"+leafLoginBack;      }
     else {      site.wwwLoginRet=wwwLoginRet;  site.wwwLoginScope=wwwLoginScope;    }
 
+
+    site.SrcIcon=Array(IntSizeIcon.length);
+    site.icons=Array(IntSizeIcon.length);
+    var strType='png', wsIconProt=site.wsIconProt || wsIconDefaultProt;
+  
+    IntSizeIcon.forEach((size, ind)=>{
+      site.SrcIcon[ind]=wsIconProt.replace("<size>", size);
+      site.icons[ind]={ src:site.SrcIcon[ind], type: mime.getType(strType), sizes: size+"x"+size, purpose: "any maskable" };
+    });
 
   }
 }

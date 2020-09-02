@@ -69,8 +69,7 @@ app.indexOfMin=function(arr) {
 
 app.arrArrange=function(arrV,arrI){
   var n=arrI.length, arrNew;
-  if(typeof arrV=='string') arrNew=''; else arrNew=Array(n);
-  //for(var i=0;i<arrI.length;i++){    arrNew.push(arrV[arrI[i]]);    }
+  if(typeof arrV=='string') arrNew=" ".repeat(n); else arrNew=Array(n);
   for(var i=0;i<arrI.length;i++){    arrNew[i]=arrV[arrI[i]];    }
   return arrNew;
 }
@@ -123,7 +122,7 @@ app.array_splice=function(arr,st,len,arrIns){
   [].splice.apply(arr, [st,len].concat(arrIns));
 }
 app.array_merge=function(){  return Array.prototype.concat.apply([],arguments);  } // Does not modify origin
-//array_mergeM=function(a,b){  a.push.apply(a,b); return a; } // Modifies origin (first argument)
+//app.array_mergeM=function(a,b){  a.push.apply(a,b); return a; } // Modifies origin (first argument)
 app.array_mergeM=function(){var t=[], a=arguments[0], b=t.slice.call(arguments, 1), c=t.concat.apply([],b); t.push.apply(a,c); return a; } // Modifies origin (first argument)
 
 app.array_flip=function(A){ var B={}; for(var i=0;i<A.length;i++){B[A[i]]=i;} return B;}
@@ -143,7 +142,7 @@ app.eliminateDuplicates=function(arr){
   return out;
 }
 app.arrValMerge=function(arr,val){  var indOf=arr.indexOf(val); if(indOf==-1) arr.push(val); }
-//arrValRemove=function(arr,val){  var indOf=arr.indexOf(val); if(indOf!=-1) arr.splice(indOf,1); }
+//app.arrValRemove=function(arr,val){  var indOf=arr.indexOf(val); if(indOf!=-1) arr.splice(indOf,1); }
 app.arrValRemove=function(arr,val){  var indOf=arr.indexOf(val); if(indOf!=-1) mySplice1(arr,indOf); }
 
 app.stepN=function(start,n,step){ if(typeof step=='undefined') step=1;  var arr=Array(n),ii=start; for(var i=0;i<n;i++){ arr[i]=ii;ii+=step;} return arr; }
@@ -315,9 +314,9 @@ app.makeOrdinalEndingEn=function(n){
 // Random
 //
 
+app.randomInt=function(min, max){    return min + Math.floor(Math.random() * (max - min + 1));  } // Random integer in the intervall [min, max] (That is including both min and max)
 app.randomHash=function(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);}
 
-app.randomInt=function(min, max){    return min + Math.floor(Math.random() * (max - min + 1));  } // Random integer in the intervall [min, max] (That is including both min and max)
 
 app.gauss=function(){   // returns random number with normal distribution N(0,1)  (mean=0,  std dev=1)
   var x=Math.random(), y=Math.random();
@@ -333,8 +332,23 @@ app.gauss=function(){   // returns random number with normal distribution N(0,1)
 app.gauss_ms=function(m=0,s=1){  // returns random number with normal distribution: N(m,s)  (mean=m,  std dev=s)
   return gauss()*s+m;
 }
+app.genRandomString=function(len) {
+  //var characters = 'abcdefghijklmnopqrstuvwxyz';
+  var characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  var str ='';    
+  for(var p=0; p<len; p++) {
+    str+=characters[randomInt(0, characters.length-1)];
+  }
+  return str;
+}
 
-
+app.myUUID=function(){
+  var array = new Uint32Array(4);
+  app.crypto.getRandomValues(array);
+  var Str=Array(4);
+  for (var i = 0; i < array.length; i++) { Str[i]=array[i].toString(16).padStart(8,"0"); }
+  return Str.join("");
+}
 //
 // Dates and time
 //
@@ -421,6 +435,17 @@ app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for
   var KeyOut=[];  for(var i=0;i<KeyAll.length;i++) { var key=KeyAll[i], b=Prop[key].b;   if(Number(b[iBit])) KeyOut.push(key);  }
   return KeyOut;
 }
+
+
+//
+// Escaping data
+//
+
+app.myJSEscape=function(str){return str.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+  // myAttrEscape
+  // Only one of " or ' must be escaped depending on how it is wrapped when on the client.
+app.myAttrEscape=function(str){return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\//g,"&#47;");} // This will keep any single quataions.
+app.myLinkEscape=function(str){ str=myAttrEscape(str); if(str.startsWith('javascript:')) str='javascript&#58;'+str.substr(11); return str; }
 
 
 
@@ -575,13 +600,11 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
 }
 
 
-
 //
 // Obsolete
 //
 /*
 reload=function(){ confirm('reload'); window.location.reload(); }
-htmlDecode=function(input){ var e = document.createElement('div');    e.innerHTML = input;     return e.childNodes[0].nodeValue;  }
 getColor = function(val, range){  var s=100, l=50, a=1,    h = 240-Math.round((240 / range) * val);      return "hsla("+h+","+s+"%,"+l+"%,"+a+")";    };
 */
 

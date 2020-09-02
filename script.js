@@ -32,6 +32,7 @@ validator = require('validator');
 serialize = require('serialize-javascript');
 webPush = require('web-push');
 moment = require('moment');
+mime = require("mime");
 var argv = require('minimist')(process.argv.slice(2));
 app=global;
 
@@ -103,6 +104,7 @@ var flow=( function*(){
   leafLoginBack="loginBack.html"; 
   boVideo=0;
   boUseSSLViaNodeJS=false;
+  wsIconDefaultProt="/Site/Icon/icon<size>.png"
   
   port=argv.p||argv.port||5000;
   if(argv.h || argv.help) {helpTextExit(); return;}
@@ -119,6 +121,8 @@ var flow=( function*(){
   } 
   var strMd5Config=md5(strConfig);
   eval(strConfig);
+  if(typeof strSalt=='undefined') {console.error("typeof strSalt=='undefined'"); return; }
+  
   var redisVar='str'+ucfirst(strAppName)+'Md5Config';
   var tmp=yield *getRedis(flow, redisVar);
   var boNewConfig=strMd5Config!==tmp; 
@@ -161,19 +165,27 @@ var flow=( function*(){
     setupSql.myMySql=new MyMySql(DB.default.pool);
     var [err]=yield* setupSql.doQuery(flow, argv.sql);
     setupSql.myMySql.fin();
-    if(err) {  console.error(err);  return;}
+    if(err) { 
+      if(err.strLab=='erraticInput') {console.log(err.message); process.exit(-1); return;}
+      else {  console.error(err);  return;}
+    }
     console.log('Time elapsed: '+(new Date().getTime()-tTmp)/1000+' s'); 
     process.exit(0);
   }
 
   CacheUri=new CacheUriT();
-  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientKeyFromExternalTrackerSave.js', 'stylesheets/style.css', 'serviceworker.js', 'lib/foundOnTheInternet/sha1.js']; //, 'clientMergeID.js'
+  StrFilePreCache=['filter.js', 'lib.js', 'libClient.js', 'lang/en.js', 'clientKeyRemoteControlSave.js', 'stylesheets/style.css', 'serviceworker.js', 'lib/foundOnTheInternet/sha1.js']; //, 'clientMergeID.js'
   splitterPlugIn=new SplitterPlugIn();
   for(var i=0;i<StrFilePreCache.length;i++) {
     var [err]=yield *readFileToCache(flow, StrFilePreCache[i]); if(err) {  console.error(err);  return;}
   }
   var [err]=yield* splitterPlugIn.readFileToCacheClientJs(flow); if(err) console.error(err);
   yield *createSiteSpecificClientJSAll(flow);
+
+
+    // Write manifest to Cache
+  var [err]=yield* createManifestNStoreToCacheMult(flow, SiteName); if(err) {  console.error(err.message);  return;}
+
 
   if(boDbg){
     fs.watchFile('client.js',function () {
@@ -182,7 +194,7 @@ var flow=( function*(){
         var [err]=yield* splitterPlugIn.readFileToCacheClientJs(flow); if(err) console.error(err);
       })(); flow.next();
     });
-    fs.watch('.', makeWatchCB('.', ['filter.js', 'clientKeyFromExternalTrackerSave.js', 'libClient.js', 'lib.js', 'serviceworker.js']) );
+    fs.watch('.', makeWatchCB('.', ['filter.js', 'clientKeyRemoteControlSave.js', 'libClient.js', 'lib.js', 'serviceworker.js']) );
     fs.watch('stylesheets', makeWatchCB('stylesheets', ['style.css']) );
     fs.watch('lang', makeWatchCB('lang', ['en.js', 'sv.js']) );
   }
@@ -192,8 +204,8 @@ var flow=( function*(){
 
   ETagImage={};
 
-  regexpLib=RegExp('^/(stylesheets|lib|pluginLib|sites|lang)/');
-  regexpLooseJS=RegExp('^/(lib|libClient|client|clientProt|clientKeyFromExternalTrackerSave|filter|siteSpecific|serviceworker)\\.js'); //|clientMergeID
+  regexpLib=RegExp('^/(stylesheets|lib|pluginLib|Site|lang)/');
+  regexpLooseJS=RegExp('^/(lib|libClient|client|clientProt|clientKeyRemoteControlSave|filter|siteSpecific|serviceworker)\\.js'); //|clientMergeID
   regexpPlugin=RegExp('^/plugin(\\w+)\\.js');
 
   regexpHerokuDomain=RegExp("\\.herokuapp\\.com$");
@@ -208,9 +220,9 @@ var flow=( function*(){
     });
   }
 
-  var StrCookiePropProt=["HttpOnly", "Path=/","max-age="+3600*24*30];
-  //if(boDO) { StrCookiePropProt.push("secure"); }
-  if(!boLocal || boUseSSLViaNodeJS) StrCookiePropProt.push("secure");
+  var StrCookiePropProt=["HttpOnly", "Path=/", "Max-Age="+3600*24*30];
+  //if(boDO) { StrCookiePropProt.push("Secure"); }
+  if(!boLocal || boUseSSLViaNodeJS) StrCookiePropProt.push("Secure");
   //app.strCookiePropEmpty=";"+StrCookiePropProt.concat("").join(';');
   //app.strCookiePropNormal=";"+StrCookiePropProt.concat("SameSite=None").join(';');
   app.strCookiePropNormal=";"+StrCookiePropProt.concat("").join(';');
@@ -330,15 +342,15 @@ var flow=( function*(){
       var objReqRes={req, res};
       objReqRes.myMySql=new MyMySql(DB[site.db].pool);
       if(pathName=='/'){
-        //if("keyFromExternalTracker" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
-        if("dataFromExternalTracker" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
-        else if("keyFromExternalTracker" in objQS){      yield* reqKeyFromExternalTrackerSave.call(objReqRes);    }
+        //if("keyRemoteControl" in objQS && "data" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
+        if("dataFromRemoteControl" in objQS) {      yield* reqCurlEnd.call(objReqRes);     }
+        else if("keyRemoteControl" in objQS){      yield* reqKeyRemoteControlSave.call(objReqRes);    }
         else{      yield* reqIndex.call(objReqRes);      }
       }
       //else if(pathName=='/'+leafAssign){    var reqAssign=new ReqAssign(req, res);    reqAssign.go();    }
       else if(pathName.indexOf('/image/')==0){      yield* reqImage.call(objReqRes);   } //RegExp('^/image/').test(pathName)
       else if(pathName=='/'+leafBE){        var reqBE=new ReqBE(objReqRes);  yield* reqBE.go();    }
-      else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html' || pathName=='/'+leafWebManifest){
+      else if(regexpLib.test(pathName) || regexpLooseJS.test(pathName) || regexpPlugin.test(pathName) || pathName=='/conversion.html' || pathName=='/'+leafManifest){
         if(pathName=='/conversion.html') res.removeHeader("Content-Security-Policy");
         yield* reqStatic.call(objReqRes);
       }
