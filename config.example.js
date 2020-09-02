@@ -221,12 +221,6 @@ boEnablePushNotification=true;
 
 if(!wwwCommon) {var keys=Object.keys(Site), nKey=keys.length; wwwCommon=Site[keys[0]].wwwSite; }  
 
-//
-// Icons
-//
-
-wIcon16='sites/icon/icon16.png'; wIcon114='sites/icon/icon114.png'; wIcon192='sites/icon/icon192.png'; wIcon200='sites/icon/icon200.png'; wIcon512='sites/icon/icon512.png'; wIcon1024='sites/icon/icon1024.png';
-
 
 //
 // Endpoint urls for the IdP.

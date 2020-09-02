@@ -14,7 +14,7 @@ MyMySql.prototype.startTransaction=function*(flow){
   this.transactionState='started';
   return [null];
 }
-MyMySql.prototype.query=function*(flow, sql, Val){
+MyMySql.prototype.query=function*(flow, sql, Val=[]){
   if(!this.connection) {var [err]=yield* this.getConnection(flow); if(err) return [err];}
   var err, results, fields;    this.connection.query(sql, Val, function (errT, resultsT, fieldsT) { err=errT; results=resultsT; fields=fieldsT; flow.next(); }); yield;   return [err, results, fields];
 }

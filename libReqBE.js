@@ -96,7 +96,7 @@
 //'str'+ucfirst(strAppName)+'Md5Config'
 
 //req.sessionID+'_CSRFCode'+ucfirst(caller)
-   //libReqBE->go, libReq->reqKeyFromExternalTrackerSave  --->  libReqBE->go
+   //libReqBE->go, libReq->reqKeyRemoteControlSave  --->  libReqBE->go
    
 //req.sessionID+'_UserInfoFrDB'
    //libReqBE->go, loginGetGraph, setupById, UDelete  --->  libReqBE->go
@@ -212,14 +212,14 @@ ReqBE.prototype.go=function*(){
   var req=this.req, flow=req.flow, res=this.res, site=req.site;
   
   var strT=req.headers['Sec-Fetch-Site'];
-  if(strT && strT!='same-origin') { this.mesEO(new Error("Sec-Fetch-Site header is not 'same-origin' ("+strT+")"));  return;}
+  if(strT && strT!='same-origin') { this.mesEO(Error("Sec-Fetch-Site header is not 'same-origin' ("+strT+")"));  return;}
   
-  if('x-requested-with' in req.headers && req.headers['x-requested-with']=="XMLHttpRequest") ; else { this.mesEO(new Error("Ajax-request: req.headers['x-requested-with']!='XMLHttpRequest'"));  return; }
+  if('x-requested-with' in req.headers && req.headers['x-requested-with']=="XMLHttpRequest") ; else { this.mesEO(Error("Ajax-request: req.headers['x-requested-with']!='XMLHttpRequest'"));  return; }
 
   if('referer' in req.headers){
     var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length, referer=req.headers.referer, lMin=Math.min(lTmp, referer.length);
-    if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(new Error("Referer is wrong"));  return; }
-  } else { this.mesEO(new Error("Referer not set"));  return; }
+    if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(Error("Referer is wrong"));  return; }
+  } else { this.mesEO(Error("Referer not set"));  return; }
   
     // Extract input data either 'POST' or 'GET'
   var jsonInput;
@@ -253,7 +253,7 @@ ReqBE.prototype.go=function*(){
 
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
-  if(!req.boCookieOK) {this.mesEO(new Error('Cookie not set'));  return;   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
+  if(!req.boCookieOK) {this.mesEO(Error('Cookie not set'));  return;   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
   
   this.sessionUserInfoFrDB=yield *getRedis(flow, req.sessionID+'_UserInfoFrDB', true);
   //var [err,value]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
@@ -290,7 +290,7 @@ ReqBE.prototype.go=function*(){
   if(caller=='index'){
       // Arrays of functions
     arrCSRF=['UUpdate','RIntroCB','VSetPosCond','RUpdate','RShow','RHide','UDelete','teamLoad','teamSaveName','teamSave',
-    'complaintUpdateComment','complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage', 'setWebPushSubcription', 'sendNotification'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
+    'complaintUpdateComment','complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage', 'setWebPushSubcription', 'sendNotification', 'keyRemoteControlSave'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
     arrNoCSRF=['setupById','setUpCond','setUp','getList','getSingleUser','getGroupList','getHist','complaintOneGet','getComplaintsOnComplainee','getComplaintsFromComplainer','logout','getSetting'];  // ,'testA','testB'
     allowed=arrCSRF.concat(arrNoCSRF);
 
@@ -299,8 +299,8 @@ ReqBE.prototype.go=function*(){
     if(StrComp(StrInFunc,['setUpCond','setUp','getList','getGroupList','getHist']) || StrComp(StrInFunc,['getSetting','setupById','VSetPosCond', 'setUpCond','setUp','getList','getGroupList','getHist']))
         { boCheckCSRF=0; boSetNewCSRF=1; }
     if(StrComp(StrInFunc,['RShow']) || StrComp(StrInFunc,['RHide'])) { boCheckCSRF=0; boSetNewCSRF=0; } // Request from service worker
-  }else if(caller=='keyFromExternalTrackerSave'){
-    arrCSRF=['keyFromExternalTrackerSave','loginGetGraph'];   arrNoCSRF=['setupById','logout'];   allowed=arrCSRF.concat(arrNoCSRF);
+  }else if(caller=='keyRemoteControlSave'){
+    arrCSRF=['keyRemoteControlSave','loginGetGraph'];   arrNoCSRF=['setupById','logout'];   allowed=arrCSRF.concat(arrNoCSRF);
 
       // Assign boCheckCSRF and boSetNewCSRF
     boCheckCSRF=0; boSetNewCSRF=0;   for(var i=0;i<beArr.length; i++){ var row=beArr[i]; if(in_array(row[0],arrCSRF)) {  boCheckCSRF=1; boSetNewCSRF=1;}  }
@@ -610,6 +610,7 @@ ReqBE.prototype.verifyPWReset=function*(inObj){
 }
 
 
+
 /******************************************************************************
  * loginGetGraph
  ******************************************************************************/
@@ -634,7 +635,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   var buf=body;
  
   try{ var objT=JSON.parse(buf.toString()); }catch(e){ return [e]; }
-  if('error' in objT) { var m=objT.error.message; return [new Error(m)]; }
+  if('error' in objT) { var m=objT.error.message; return [Error(m)]; }
   var access_token=this.access_token=objT.access_token;
   //var access_token=this.access_token=inObj.access_token;
 
@@ -660,7 +661,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   this.objGraph=objGraph;
 
     // interpretGraph
-  if('error' in objGraph) {var {type,message}=objGraph.error, tmp='Error accessing data from ID provider: '+type+' '+message+'\n';  return [new Error(tmp)]; }
+  if('error' in objGraph) {var {type,message}=objGraph.error, tmp='Error accessing data from ID provider: '+type+' '+message+'\n';  return [Error(tmp)]; }
 
   var idFB, idIdPlace, idOpenId;
   if(strIP=='fb'){ 
@@ -673,7 +674,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   }
 
   if(typeof email=='undefined') { return [new ErrorClient("Email is required (incase the site changes Id-provider)")];}
-  if(typeof idFB=='undefined') { return [new Error("Error idFB is empty")];}
+  if(typeof idFB=='undefined') { return [Error("Error idFB is empty")];}
   if(typeof nameIP=='undefined' ) {nameIP=idFB;}
   this.sessionLoginIdP={IP:strIP, idFB, idIdPlace, idOpenId, email, nameIP, image};
   yield *setRedis(flow, req.sessionID+'_LoginIdP', this.sessionLoginIdP, maxLoginUnactivity);
@@ -1180,7 +1181,7 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  var c=results[0].affectedRows; if(c>1) return [new Error(c+" userTab rows affected")];
+  var c=results[0].affectedRows; if(c>1) return [Error(c+" userTab rows affected")];
   var idUser=Number(results[1][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
   var boIns=Number(results[3][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewBuyers=boIns;
@@ -1199,7 +1200,7 @@ ReqBE.prototype.RUpdate=function*(inObj){ // writing needSession
   var user=this.sessionUserInfoFrDB.user, objT;
   if(user) objT=user;  else if(isSet(this.sessionLoginIdP)) objT=this.sessionLoginIdP;  else {this.mes('No session'); return [null, [Ou]]; }
   var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objT; 
-  if(typeof idUser=='undefined') {return [new Error('no idUser')];}
+  if(typeof idUser=='undefined') {return [Error('no idUser')];}
   
   var charRole=inObj.charRole; if('bs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
   var roleTab=charRole=='b'?buyerTab:sellerTab;
@@ -1535,18 +1536,19 @@ ReqBE.prototype.deleteImage=function*(inObj){
 }
 
 
-ReqBE.prototype.keyFromExternalTrackerSave=function*(inObj){
+ReqBE.prototype.keyRemoteControlSave=function*(inObj){
   var req=this.req, flow=req.flow, site=req.site;
   var {userTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
-  //var idUser=user.idUser, keyFromExternalTracker=inObj.keyFromExternalTracker;
-  var sql="UPDATE "+userTab+" SET keyFromExternalTracker=?, iSeq=0 WHERE idUser=?",   Val=[myJSEscape(inObj.keyFromExternalTracker),  user.idUser];
+  //var idUser=user.idUser, keyRemoteControl=inObj.keyRemoteControl;
+  var sql="UPDATE "+userTab+" SET keyRemoteControl=?, iSeq=0 WHERE idUser=?",   Val=[myJSEscape(inObj.keyRemoteControl),  user.idUser];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
   //if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
   if(nUpd==1) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
   Ou.boOK=boOK;    Ou.strMess=mestmp;
+  this.mes(mestmp);
   return [null, [Ou]];
 }
 
@@ -1627,7 +1629,7 @@ ReqBE.prototype.uploadImage=function*(inObj){
 
 
   console.log('uploadImage data.length: '+data.length);
-  if(data.length==0) return [new Error('data.length==0')];
+  if(data.length==0) return [Error('data.length==0')];
   
   var Sql=[], Val=[];
   Sql.push("REPLACE INTO "+tab+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);

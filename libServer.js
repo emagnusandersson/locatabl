@@ -83,8 +83,8 @@ app.createSiteSpecificClientJSAll=function*(flow) {
     var keyCache=siteName+'/'+leafSiteSpecific;
     var [err]=yield *CacheUri.set(flow, keyCache, buf, 'js', true, true);
 
-    var buf=createSiteSpecificWebManifest(siteName);
-    var keyCache=siteName+'/'+leafWebManifest;
+    var buf=createManifest(siteName);
+    var keyCache=siteName+'/'+leafManifest;
     var [err]=yield *CacheUri.set(flow, keyCache, buf, 'json', true, true);
   }
 }
@@ -111,21 +111,26 @@ app.createSiteSpecificClientJS=function(siteName) {
   return str;
 }
 
-app.createSiteSpecificWebManifest=function(siteName){
-  var site=Site[siteName]; 
-  var uSite="https://"+site.wwwSite;
-  let objOut={theme_color:"#ff0", background_color:"#fff", display:"minimal-ui", prefer_related_applications:false, 
-    short_name:siteName, name:siteName, start_url: uSite,
-    icons:[
-      { src: wsIcon16, type: "image/png", sizes: "16x16" },
-      { src: wsIcon192, type: "image/png", sizes: "192x192" },
-      { src: wsIcon200, type: "image/png", sizes: "200x200" },
-      { src: wsIcon512, type: "image/png", sizes: "512x512", purpose: "any maskable" },
-      { src: wsIcon1024, type: "image/png", sizes: "1024x1024", purpose: "any maskable"}
-    ]
-  }
-  
+
+app.createManifest=function(siteName){
+  var site=Site[siteName], {wwwSite, icons}=site;
+  var uSite="https://"+wwwSite;
+  let objOut={theme_color:"#ff0", background_color:"#fff", display:"minimal-ui", prefer_related_applications:false, short_name:siteName, name:siteName, start_url: uSite, icons }
+
   //let str=serialize(objOut);
   let str=JSON.stringify(objOut);
   return str;
+}
+
+app.createManifestNStoreToCache=function*(flow, siteName){
+  var strT=createManifest(siteName);
+  var buf=Buffer.from(strT, 'utf8');
+  var [err]=yield* CacheUri.set(flow, siteName+'/'+leafManifest, buf, 'json', true, false);   if(err) return [err];
+  return [null];
+}
+app.createManifestNStoreToCacheMult=function*(flow, SiteName){
+  for(var i=0;i<SiteName.length;i++){
+    var [err]=yield* createManifestNStoreToCache(flow, SiteName[i]);   if(err) return [err];
+  }
+  return [null];
 }
