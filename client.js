@@ -143,7 +143,7 @@ app.CreatorPlugin.general=function(){
     langHtml.theSeller=langHtml.theContractor;   langHtml.theSellers=langHtml.theContractors;
     langHtml.theSellers0=langHtml.theContractors0;
   };
-  app.rewriteLangCustomer=function(){
+  app.rewriteLangBuyerToCustomer=function(){
     langHtml.divLoginInfo.buyer=langHtml.customer;
     langHtml.Buyer=ucfirst(langHtml.customer);
     langHtml.Buyers=ucfirst(langHtml.customers);
@@ -969,7 +969,7 @@ app.CreatorPlugin.taxi=function(){
 
 
   this.rewriteLang=function(){
-    rewriteLangCustomer();
+    rewriteLangBuyerToCustomer();
     rewriteLangDriver();
     var tmp=createElement('span').myHtml(langHtml.helpBub.nExtraSeat);
     tmp.querySelector('img:nth-of-type(1)').prop({src:wsExtraSeat,width:200});
@@ -1070,7 +1070,7 @@ app.CreatorPlugin.transport=function(){
   app.wsSleepy=wseSpecImageFolder+'carSleepy.png';
 
   this.rewriteLang=function(){
-    rewriteLangCustomer();
+    rewriteLangBuyerToCustomer();
     rewriteLangDriver();
     var Tmp=StrTransportBool.slice(0,-1);
     for(var i=0;i<Tmp.length;i++) {
@@ -1154,7 +1154,7 @@ app.CreatorPlugin.cleaner=function(){
   var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    rewriteLangCustomer();
+    rewriteLangBuyerToCustomer();
     rewriteLangContractor();
   };
   this.rewriteObj=function(){
@@ -1225,7 +1225,7 @@ app.CreatorPlugin.windowcleaner=function(){
   var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
 
   this.rewriteLang=function(){
-    rewriteLangCustomer();
+    rewriteLangBuyerToCustomer();
     rewriteLangContractor();
   };
 
@@ -1297,7 +1297,7 @@ app.CreatorPlugin.lawnmowing=function(){
   app.wsDummy=wseSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    rewriteLangCustomer();
+    rewriteLangBuyerToCustomer();
     rewriteLangContractor();
   };
 
@@ -1373,7 +1373,7 @@ app.CreatorPlugin.snowremoval=function(){
   app.wsDummy=wseSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
-    rewriteLangCustomer();
+    rewriteLangBuyerToCustomer();
     rewriteLangContractor();
   };
 
@@ -1585,16 +1585,17 @@ app.inpAsNum=function(){return [null, Number(this.prop('checked'))]; }
 
 app.butTimeStampCreator=function(iRole, colName){ // Used in plugins (in viewTable.ElRole[1].tHeadLabel)
   var el=createElement("button");
-  el.setStat=function(){  var boTmp=ORole[iRole].Prop[colName].boUseTimeDiff;  el.myText(boTmp?'+':'-');  }
+  el.setStat=function(){  var boTmp=prop.boUseTimeDiff;  el.myText(boTmp?'+':'-');  }
   el.on('click', function(e) {
     e.stopPropagation();
-    ORole[iRole].Prop[colName].boUseTimeDiff=1-ORole[iRole].Prop[colName].boUseTimeDiff;
+    prop.boUseTimeDiff=1-prop.boUseTimeDiff;
     el.setStat();
     for(var i=0;i<ORole.length;i++) {
       viewTable.ElRole[i].setCell();
       if(ORole[i].MTab.length){    mapDiv.ArrMarker[i].setMarkers();  mapDiv.ArrMarker[i].drawMarkers();   }
     }
   });
+  var prop=ORole[iRole].Prop[colName];
   el.prop('title',langHtml.tsPopup);
   el.addClass('smallButt');
   el.setStat();
@@ -2022,14 +2023,12 @@ var loginInfoToggleStuff=function(){
     ViewEntry[i].teamApprovedMess.toggle(Boolean(boTeamExist && !boTeamApproved));
     
     var boE=Boolean(userInfoFrDB[strRole]); boAny=boAny||boE; boBoth=boBoth&&boE;
-    viewFront.QuickDiv[i].toggle(boE);
     viewSettingEntry.userDiv.SettingButton[i].toggle(boE);
   }
   viewSettingEntry.userDiv.toggle(boAny);
   
-  for(var i=0;i<2;i++){
-    viewFront.QuickDiv[i].butTogW.toggle(boBoth);
-  }
+  viewFront.quickDiv.setUp(); //userInfoFrDB.user.iRoleActive
+  
 
   var boSubscribed=boE?userInfoFrDB.user.boWebPushOK:false;
   myWebPush.boSubscribed=boSubscribed;
@@ -2141,7 +2140,7 @@ var viewFormLoginCreator=function(){
 
 var divLoginSelectorCreator=function(oRole){
   var el=createElement('div');
-  var {strRole, charRoleUC}=oRole;
+  var {strRole, charRoleUC, ind:iRole}=oRole;
   el.toString=function(){return 'divLoginSelector';}
 
   var strButtonSize='2em';
@@ -2154,9 +2153,7 @@ var divLoginSelectorCreator=function(oRole){
 
       var boE=Boolean(userInfoFrDB[strRole]);
       var tmpIntroPop=strRole=='buyer'?mainIntroPopB:mainIntroPopS;
-      //var tmpQuickDiv=strRole=='buyer'?viewFront.quickDivB:viewFront.quickDivS;
-      var tmpQuickDiv=viewFront.QuickDiv[Number(strRole=='seller')];
-      if(boE) tmpQuickDiv.setUp(); else tmpIntroPop.openFunc(); 
+      if(!boE) tmpIntroPop.openFunc(); 
       history.fastBack(viewFront);
     })(); flow.next();
   });
@@ -2680,12 +2677,12 @@ var viewUserSettingCreator=function(){
   var cbBoGeoWatch=createElement('input').prop({type:'checkbox'}).on('click',function(){
     boGeoWatch=this.checked;
   });
-  var divBoGeoWatch=createElement('div').myAppend('Continuous tracking (make sure to read the help):', imgH, cbBoGeoWatch);
+  var divBoGeoWatch=createElement('div').myAppend('Continuous tracking (screen needs to be on):', imgH, cbBoGeoWatch);
 
     // keyRemoteControl
-  var strHelp="Copy this authentication url to the remote controller.";
+  var strHelp="Copy this url with key to the remote controller.";
   var imgH=imgHelp.cloneNode(1).css({'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
-  var aLink=createElement('a').myText('more info').prop({href:'https://info.closeby.market/universalTracker'}).css({'margin-right':'0.6em'});
+  //var aLink=createElement('a').myText('link to trackerControl').prop({href:'https://emagnusandersson.github.io/trackerControl/'}).css({'margin-left':'0.4em'});
   var inpKeyRemoteControl=createElement('input').prop({ size:40}).attr({readonly:true}).css({'font-size':'0.8em'}); //placeholder:'Key for external controller',
   var generateF=function(){
     var strUUID=myUUID();
@@ -2694,12 +2691,12 @@ var viewUserSettingCreator=function(){
     inpKeyRemoteControl.prop({value:urlKey, title:"iSeq: 0"});
     var vec=[['keyRemoteControlSave',{keyRemoteControl:strUUID}]];   majax(vec);
   }
-  var butGenerateKeyRemoteControl=createElement('button').myText('Generate new').on('click',generateF);
+  var butGenerateKeyRemoteControl=createElement('button').myText('Generate new key').on('click',generateF);
   var copy=function(){
     inpKeyRemoteControl.select(); inpKeyRemoteControl.setSelectionRange(0, 99999); document.execCommand("copy");
   }
   var butCopy=createElement('button').myText('Copy to clipboard').on('click',copy);
-  var divKeyRemoteControl=createElement('div').myAppend('Authentication url for remote controller:', imgH, aLink, inpKeyRemoteControl, butGenerateKeyRemoteControl, butCopy);
+  var divKeyRemoteControl=createElement('div').myAppend('Url with authentication key for remote controller:', imgH, inpKeyRemoteControl, butGenerateKeyRemoteControl, butCopy); //, aLink
 
   //var divRemoteControl=createElement('div').myAppend(divKeyRemoteControl).css({background:'lightgrey'});
   
@@ -2708,7 +2705,7 @@ var viewUserSettingCreator=function(){
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
-  var Div=[divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, divBoGeoWatch, divKeyRemoteControl, deleteDiv];
+  var Div=[divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, divKeyRemoteControl, deleteDiv];  //, divBoGeoWatch
   Div.forEach(ele=>ele.css({'margin-top':'1em'}));
   Div.forEach((ele,i)=>{if(i%2==0)ele.css({background:'lightgrey'})});
   var divCont=createElement('div').myAppend(...Div).addClass('contDiv');
@@ -3108,11 +3105,11 @@ var viewAdminCreator=function(){
 
 var viewTeamCreator=function(oRole){
   var el=createElement('div');
-  var {strRole, charRoleUC}=oRole;
+  var {strRole, charRoleUC, ind:iRole}=oRole;
   el.toString=function(){return 'team'+charRoleUC;}
   el.setUp=function(boShow){
     elId.value='';  elLink.value='';
-    var vec=[['teamLoad',{strRole},disLoadRet]];   majax(vec);
+    var vec=[['teamLoad',{iRole},disLoadRet]];   majax(vec);
     el.boLoaded=1;
   }
   var disLoadRet=function(data){
@@ -3142,11 +3139,11 @@ var viewTeamCreator=function(oRole){
   };
   var save=function(){
     var cb=this, span=cb.parentNode, i=getNodeIndex(span), idUserMember=el.tab[i].idUser;
-    var vec=[['teamSave',{idUser:idUserMember, strRole, boOn:this.checked}]];   majax(vec);
+    var vec=[['teamSave',{idUser:idUserMember, iRole, boOn:this.checked}]];   majax(vec);
   }
   var saveName=function(){
     var link=elLink.value.trim();
-    var vec=[['teamSaveName', {link, strRole}]];   majax(vec);
+    var vec=[['teamSaveName', {link, iRole}]];   majax(vec);
   }
   var calcTeamImageUrl=function(){
     var {idUser, imTag}=userInfoFrDB[strRole+'Team'];  return URoleTeamImage[oRole.ind]+idUser+'?v='+imTag;
@@ -3906,12 +3903,12 @@ var viewInfoCreator=function(oRole){
   }
   el.createContainers=function(){
     for(var i=0;i<StrProp.length;i++){
-      var strName=StrProp[i], prop=(strName in Prop)?Prop[strName]:{};
-      var imgH=''; if(strName in oRole.helpBub && Number(Prop[strName].b[oRole.bFlip.help])) { imgH=imgHelp.cloneNode(1).css({margin:'0em 0.3em 0em 0.4em'});   popupHover(imgH,oRole.helpBub[strName]); }
+      var strName=StrProp[i], prop=(strName in Prop)?Prop[strName]:{}, b=prop.b;
+      var imgH=''; if(strName in oRole.helpBub && Number(b[oRole.bFlip.help])) { imgH=imgHelp.cloneNode(1).css({margin:'0em 0.3em 0em 0.4em'});   popupHover(imgH,oRole.helpBub[strName]); }
 
-      var strDisp,strMargRight,strWW; if(Number(Prop[strName].b[oRole.bFlip.block])) {strDisp='block'; strMargRight='0em'; strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
+      var strDisp,strMargRight,strWW; if(Number(b[oRole.bFlip.block])) {strDisp='block'; strMargRight='0em'; strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
 
-      var strLabel=''; if(Number(Prop[strName].b[oRole.bFlip.label])) { strLabel=calcLabel(langHtml.prop, strName)+': ';      }
+      var strLabel=''; if(Number(b[oRole.bFlip.label])) { strLabel=calcLabel(langHtml.prop, strName)+': ';      }
 
       var spanC=createElement('span').myText(' ').css({'font-weight':'bold',margin:'0 0.2em 0 0em'}).prop({strName, iRole:oRole.ind}).attr({name:strName});
       if('crInfo' in prop) prop.crInfo.call(spanC);
@@ -4671,15 +4668,8 @@ var viewFrontCreator=function(el){
   el.toString=function(){return 'front';}
   
   
-    // QuickDiv
-  var QuickDiv=[];
-  for(var i=0;i<ORole.length;i++){
-    QuickDiv[i]=quickCreator(ORole[i]).css({padding:'0.7em 0.2em 0.1em',margin:'0em 0em 0em',display:'flex','border-top':'solid 1px'});   QuickDiv[i].hide();
-  }
-  el.QuickDiv=QuickDiv;
-  
-  var quickDivOuter=createElement('div').css({flex:'0 0 0'}); quickDivOuter.myAppend.apply(quickDivOuter, QuickDiv);
-  //if(boIOS && boTouch) quickDivOuter.css({padding:'0em 0em 1.7em'});
+    // quickDiv
+  el.quickDiv=quickDivCreator().css({padding:'0.1em 0.2em 0.1em',margin:'0em 0em 0em','border-top':'solid 1px'}).hide();
   
   
     // divFoot
@@ -4688,7 +4678,7 @@ var viewFrontCreator=function(el){
     ga('send', 'event', 'button', 'click', 'setting');
   }
   //var tmpImg=createElement('img').prop({src:wsSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  var settingButton=createElement('button').myAppend('⚙').addClass('fixWidth').css({'margin-left':'0.8em', 'margin-right':'1em'}).prop('title',langHtml.Settings).on('click',settingButtonClick);
+  var settingButton=createElement('button').myAppend('⚙').addClass('fixWidth').css({'margin-left':'0.8em', 'margin-right':'1em','line-height':'1em'}).prop('title',langHtml.Settings).on('click',settingButtonClick);
 
   //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
   var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
@@ -4757,34 +4747,45 @@ var viewFrontCreator=function(el){
   var divFoot=createElement('div').myAppend(settingButton, infoLink, el.tableButton, divFilterButW).addClass('footDiv').css({padding:'0em 0 0em'}); //.css({display:'flex', 'align-items':'center', 'justify-content':'space-between'});
 
   
-  el.append(mapDiv, quickDivOuter, divFoot);
+  el.append(mapDiv, el.quickDiv, divFoot);
 
   el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return el
 }
 
-var quickCreator=function(oRole){
-  var el=createElement('div');
-  var {charRole, strRole}=oRole;
-  
 
+
+
+
+var quickDivCreator=function(){
+  var el=createElement('div');
+  
   el.setUp=function(){
+    var boAny=Boolean(userInfoFrDB.buyer) || Boolean(userInfoFrDB.seller); el.toggle(boAny);
+    if(!boAny) return;
+    var iRole=userInfoFrDB.user.iRoleActive, oRole=ORole[iRole], {strRole}=oRole;
+    butTog.setRole(iRole);
+    var boBoth=Boolean(userInfoFrDB.buyer) && Boolean(userInfoFrDB.seller);  butTog.toggle(boBoth);
+
     var boShow=Number(userInfoFrDB[strRole].boShow); 
     var hideTimer=Number(userInfoFrDB[strRole].hideTimer);
     var tHide=Number(userInfoFrDB[strRole].tPos)+hideTimer, tDiff=tHide-curTime;
     var tDiffForm=getSuitableTimeUnitStr(tDiff);
-    var tmpShow,tmpHide,str; if(boShow) { str=hideTimer==intMax?'∞':tDiffForm; tmpShow='#0f0'; tmpHide=colGray;}else { str=langHtml.On; tmpShow=colGray; tmpHide='#f00'; }
-    butShowWPos.css('background-color', tmpShow); butShowWPos.firstChild.nodeValue=str; buthide.css('background-color', tmpHide);
+    var colShowT=boShow?colGreen:colGray, colHideT=boShow?colGray:colRed;
+    var str; if(boShow) { str=hideTimer==intMax?'∞':tDiffForm; }else { str=langHtml.On;  }
+    butShowWPos.css('background-color', colShowT); butShowWPos.firstChild.nodeValue=str; buthide.css('background-color', colHideT);
     spanDragMess.toggle(Boolean(1-boShow));
 
     var [bestVal, iBest]=closest2Val(arrHideTime, userInfoFrDB[strRole].hideTimer);
     selHideTimer.value=bestVal;
+
+    spanLabel.myText(langHtml[ucfirst(strRole)])
   }
 
-  var colGray='#eee'
+  var colGray='#eee', colGreen='#00ff00', colRed='#ff0000';
   
   var myShow=function(pos){
-    uploadPosNLoadTabStart(pos, Number(selHideTimer.value), oRole);
+    uploadPosNLoadTabStart(pos, Number(selHideTimer.value));
   }
 
   var butShowWPos=createElement('button').myText(langHtml.On).css({'margin-left':'1em'}).on('click', function(){
@@ -4800,10 +4801,10 @@ var quickCreator=function(oRole){
   var buthide=createElement('button').myText(langHtml.Off).css({'margin-left':'1em'}).on('click', function(){
     if(window.navigator.onLine){
       setMess('',null,true);
-      var vec=[['RHide',{charRole}], ['setupById', {Role:strRole}]];  majax(vec); 
+      var vec=[['RHide']];  majax(vec); //,{charRole}   , ['setupById', {Role:strRole}]
     }else{
       if(swRegistration && 'sync' in swRegistration){
-        swRegistration.sync.register(JSON.stringify({url:uBE, vec:[['RHide',{charRole}]]}));
+        swRegistration.sync.register(JSON.stringify({url:uBE, vec:[['RHide']]})); //,{charRole}
         setMess('waiting for sync');
       } else {
         setMess("offline");
@@ -4813,46 +4814,42 @@ var quickCreator=function(oRole){
 
   var divButts=createElement('span').myAppend(butShowWPos,buthide);
   
-  var tu=langHtml.timeUnit, mi=tu.min[1], h=tu.h[1], d=tu.d[1];
-  var selHideTimer=createElement('select');
-  //var arrHideTime=[0.25,1,2, 5,10,15,20,30,40,60,90,2*60,3*60,4*60,5*60,6*60,8*60,10*60,12*60,18*60,24*60,36*60,2*24*60,3*24*60,4*24*60,5*24*60,6*24*60,7*24*60,14*24*60,30*24*60,365*24*60]; // Minutes
-  //for(var i=0;i<arrHideTime.length;i++) arrHideTime[i]*=60;
-  var arrHideTime=[15,60,120, 300,600,15*60,20*60,30*60,40*60,3600,1.5*3600,2*3600,3*3600,4*3600,5*3600,6*3600,8*3600,10*3600,12*3600,18*3600,86400,1.5*86400,2*86400,3*86400,4*86400,5*86400,6*86400,7*86400,14*86400,30*86400,intMax], len=arrHideTime.length;
-  for(var i=0;i<len;i++){  var str=getSuitableTimeUnitStr(arrHideTime[i]); if(i==len-1) str='∞'; var opt=createElement('option').myText(str).prop('value',arrHideTime[i]);   selHideTimer.append(opt);    }
+    // selHideTimer
+  var arrHideTime=[15,60,120, 300,600,15*60,20*60,30*60,40*60,3600,1.5*3600,2*3600,3*3600,4*3600,5*3600,6*3600,8*3600,10*3600,12*3600,18*3600,86400,1.5*86400,2*86400,3*86400,4*86400,5*86400,6*86400,7*86400,14*86400,30*86400,intMax], len=arrHideTime.length, Opt=Array(arrHideTime.length);
+  for(var i=0;i<len;i++){  var str=getSuitableTimeUnitStr(arrHideTime[i]); if(i==len-1) str='∞'; var opt=createElement('option').myText(str).prop('value',arrHideTime[i]);   Opt[i]=opt;    }
+  var selHideTimer=createElement('select').myAppend(...Opt);
 
   var spanDragMess=createElement('span').myText(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();
   
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'1em'});   popupHover(imgH,createElement('div').myHtml(langHtml.quickHelp).css({'text-align':'left'}));
-  var spanLabel=el.spanLabel=createElement('span').myText(langHtml[ucfirst(oRole.strRole)]).addClass('footDivLabel').css({'font-size':'80%', top:'-.1em'});
+  var imgH=imgHelp.cloneNode(1).css({'margin-left':'1em', 'margin-right':'auto'});   popupHover(imgH,createElement('div').myHtml(langHtml.quickHelp).css({'text-align':'left'}));
+  var spanLabel=el.spanLabel=createElement('span').addClass('footDivLabel').css({'font-size':'80%', top:'-.1em'});
   
     // butTog
-  el.ElToggleble=[selHideTimer, divButts, imgH, spanLabel];
-  el.butTog=createElement('button').myText('-').css({'margin-left':'.4em', position:'absolute', right:'0em', 'z-index':'1'}).on('click', function(){
-    var QuickDiv=viewFront.QuickDiv, QDCur=QuickDiv[oRole.ind], QDAlt=QuickDiv[1-oRole.ind] ;
-    //var boVis=QuickDiv[oRole.ind].spanLabel.is(':visible');
-    //var boAltVis=QuickDiv[1-oRole.ind].spanLabel.is(':visible');
-    var boVis=QDCur.spanLabel.style.display!='none';
-    var boAltVis=QuickDiv[1-oRole.ind].spanLabel.style.display!='none';
-    if(boVis && boAltVis){
-      QDCur.ElToggleble.forEach((ele)=>{ele.hide()});  QDCur.butTog.myText('+');  QDCur.css({'padding-top':'.2em'});  QDCur.butTog.css(oRole==oB?'top':'bottom','0em');  QDAlt.butTog.hide();
-    }else {
-      for(var i=0;i<ORole.length;i++) {
-        QuickDiv[i].ElToggleble.forEach((ele)=>{ele.show()});  QuickDiv[i].butTog.myText('-').show();   QuickDiv[i].css({'padding-top':'.7em'});
-        QuickDiv[i].butTog.css(ORole[i]==oB?'top':'bottom','0.3em');
-      }
-    }
+  var DivInButTog=Array(2);
+  var cssOn={'font-weight':'bold', color:'#00ff00'}, cssOff={'font-weight':'', color:'#606060'}
+  DivInButTog[0]=createElement('div').myText('⬤ '+langHtml.Buyer).css(cssOff)
+  DivInButTog[1]=createElement('div').myText('⬤ '+langHtml.Seller).css(cssOff)
+  var butTog=createElement('button').myAppend(...DivInButTog).css({'font-size':'12px', 'text-align':'left', 'line-height':'1.2em', 'background':'#eee'}).on('click', function(){
+    var iRoleActive=1-userInfoFrDB.user.iRoleActive;
+    var vec=[['RHide'], ['USetIRoleActive',{iRoleActive}], ['setupById', {Role:['buyer', 'seller']}]];   majax(vec);
   });
-  el.butTog.css(oRole==oB?'top':'bottom','0.3em');
-  el.butTogW=createElement('span').myAppend(el.butTog);
+  butTog.setRole=function(iRole){
+    DivInButTog[iRole].css(cssOn);
+    DivInButTog[1-iRole].css(cssOff);
+  }
+  
 
-  el.append(...el.ElToggleble);
-  el.append(el.butTogW);
+  el.append(selHideTimer, divButts, imgH, butTog);  //, spanLabel
   
   
-  el.css({position:'relative'});
-  el.css({'text-align':'left', position:'relative', background:oRole.strColor});
+  
+  //el.css({position:'relative', 'text-align':'left', position:'relative'});  //, background:oRole.strColor
+  el.css({display:'flex', 'justify-content':'space-between', 'align-items':'center'});  //, background:oRole.strColor
   return el;
 }
+
+
+
 
 
 
@@ -5247,7 +5244,7 @@ var tHeadLabelCreator=function(oRole){
 var tableCreator=function(oRole){
   var el=createElement('div');
   var {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
-  var {strRole}=oRole;
+  var {ind:iRole}=oRole;
   el.toString=function(){return 'table'+oRole.charRoleUC;}
   el.setIndex=function(){  for(var i=0;i<arrRow.length;i++){var tmp=arrRow[i].querySelector('[name=index]'); if(tmp) tmp.myText(i);} }
   el.setRowDisp=function(){
@@ -5325,7 +5322,7 @@ var tableCreator=function(oRole){
       if(!boTouch) row.on('mouseover',function(){this.css({background:'yellow'});}); row.on('mouseout',function(){this.css({background:''});});
       for(var j=0;j<ColsTmp.length;j++){
         var strName=ColsTmp[j], prop=(strName in oRole.Prop)?oRole.Prop[strName]:{};
-        var td=createElement('td').css({'max-width':'200px','max-height':'40px',overflow:'hidden'}).attr({'name':strName}).prop({strName, iRole:oRole.ind});
+        var td=createElement('td').css({'max-width':'200px','max-height':'40px',overflow:'hidden'}).attr({'name':strName}).prop({strName, iRole});
         if('crTabF' in prop) prop.crTabF.call(td);
         if(j>=oRole.ColsShow.length) td.hide();
         row.append(td);  //,'word-break':'break-all'
@@ -5340,7 +5337,7 @@ var tableCreator=function(oRole){
       var strName=elC.attr('name');
       var iMTab=elC.parentNode.iMTab, val=oRole.MTab[iMTab][strName];
       if(strName=='tel' && val.length || strName=='displayEmail' && val.length || strName=='link' && val.length || strName=='nComplaint' || strName=='boWebPushOK') return;
-      var viewroleInfo=strRole=='buyer'?viewInfoB:viewInfoS;
+      var viewroleInfo=iRole?viewInfoS:viewInfoB;
       viewroleInfo.setContainers(iMTab);
       viewroleInfo.setVis();
       doHistPush({view:viewroleInfo});
@@ -5570,7 +5567,7 @@ app.geoCB=function(pos){
   var charRole=''; if(boB) charRole='b'; else if(boS) charRole='s';
   if(charRole.length==0) {  return; }
   
-  var vec=[['RShow', {x:pC.x, y:pC.y, charRole}]]; majax(vec);
+  var vec=[['RShow', {x:pC.x, y:pC.y}]]; majax(vec);
 }
 app.loadTabStart=function(boSetupById=0){ // Called when mapDiv becomes idle(boSetupById=1), when filter changes, and when pink/blue buttons are clicked on viewFront
   ga('send', 'event', 'tab', 'loadTab');
@@ -5586,8 +5583,9 @@ app.loadTabStart=function(boSetupById=0){ // Called when mapDiv becomes idle(boS
   setMess('',null,true);
 }
 
-var uploadPosNLoadTabStart=function(pos, hideTimer, oRole){ // Called when butShow is clicked
-  var {charRole}=oRole;
+
+
+var uploadPosNLoadTabStart=function(pos, hideTimer){ // Called when butShow is clicked
   var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
   mapDiv.setMe(latlng, 1);
   var o1=mapDiv.getMapStatus(), {pC}=o1;
@@ -5597,20 +5595,17 @@ var uploadPosNLoadTabStart=function(pos, hideTimer, oRole){ // Called when butSh
   
   if(window.navigator.onLine){
     var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-    var vec=[['RUpdate',{hideTimer: hideTimer, charRole}], ['RShow', {x:pC.x, y:pC.y, charRole}],  // copySome(o1, oRole, ['charRole'])],
+    var vec=[['RShow', {x:pC.x, y:pC.y, hideTimer}],
       ['setupById', {Role:arrRole}], ['setUpCond',{CharRole:'bs', OFilt}], ['setUp',o1], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];
     majax(vec);
     setMess('... uploading ...',null,true);
   }else{
     if(swRegistration && 'sync' in swRegistration){
-      swRegistration.sync.register(JSON.stringify({url:uBE, vec:[['RShow',{x:pC.x, y:pC.y, charRole}]]}));
+      swRegistration.sync.register(JSON.stringify({url:uBE, vec:[['RShow',{x:pC.x, y:pC.y, hideTimer}]]}));
       setMess('waiting for sync');
     } else setMess('offline');
-  }
-    
+  } 
 }
-
-
 
 app.majax=function(vecIn){  // Each argument of vecIn is an array: [serverSideFunc, serverSideFuncArg, returnFunc]
   var xhr = new XMLHttpRequest();
@@ -5655,14 +5650,23 @@ var beRet=function(data){
   busyLarge.hide();
 }
 
-
+var userInfoFrDBUpdVideo={
+  user:{displayName: "John Doe", email: "john@example.com", idFB: "100000000000000", idUser: 15, image: "https://taxi.closeby.market/image/u1", nameIP: "John Doe"}
+}
 window.GRet=function(data){
   if('curTime' in data) curTime=data.curTime;
   if('strMessageText' in data) {var strMess=data.strMessageText, tmp=strMess.length?'Server: ':''; setMess(tmp+strMess,10); if(/error/i.test(strMess)) navigator.vibrate(100);}
   //if('CSRFCode' in data) CSRFCode=data.CSRFCode;
   if('CSRFCode' in data) setItem('CSRFCode',data.CSRFCode);
   if('sessionLoginIdP' in data) sessionLoginIdP=data.sessionLoginIdP;
-  var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {  for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  if(tmp.buyer) viewFront.QuickDiv[0].setUp();  if(tmp.seller) viewFront.QuickDiv[1].setUp(); }
+  var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {
+      //for(var key in tmp){ userInfoFrDB[key]=tmp[key]; } 
+      //if(tmp.buyer) viewFront.QuickDiv[0].setUp();  if(tmp.seller) viewFront.QuickDiv[1].setUp();
+      extend(userInfoFrDB, tmp);
+      if(boVideo && userInfoFrDB.user) extend(userInfoFrDB.user, userInfoFrDBUpdVideo.user);
+      if(boVideo && userInfoFrDB.seller) extend(userInfoFrDB.seller, pointDebug);
+      //viewFront.quickDiv.setUp();
+  }
   //if('nBuyerReal' in data) window.nBuyerReal=data.nBuyerReal;
   //if('nSellerReal' in data) window.nSellerReal=data.nSellerReal;
   if('idAutoIncrement' in data) window.idAutoIncrement=data.idAutoIncrement;
@@ -5809,25 +5813,26 @@ var drLev=log2(dr);
 drLev=Math.floor(drLev); //drLev=0;
 dr=Math.pow(2,drLev);
 
-//if(typeof URLSearchParams!='undefined') {
-  //searchParams = new URLSearchParams(window.location.search);
-  //window.boEmulator=searchParams.get('boEmulator');    window.startFilter=searchParams.get('idTeam');
-//} else {
-  //console.log('This browser does not support URLSearchParams');
-  //window.boEmulator=null;    window.startFilter=null;
-//}
-//var objMess={}; if(window.location.hash) {
-  //var jsonHash=decodeURIComponent(window.location.hash.substr(1));
-  //objMess=JSON.parse(jsonHash);
-  //console.log(jsonHash);
-//}
+
+// window.interpretHashVariables=function(){
+//   var strHash=window.location.hash||"&",  params=parseQS(strHash.substring(1));
+//   //window.boEmulator=params.boEmulator||null;
+//   window.StartFilter=[params.idTeamB||null, params.idTeamS||null];   window.boVideo=params.boVideo||null;
+//   window.objMess={}; if('jsonMess' in params) {
+//     try {objMess=JSON.parse(params.jsonMess);} catch(e){ alert(e);  return; }
+//   }
+// }
+
 window.interpretHashVariables=function(){
-  var strHash=window.location.hash||"&",  params=parseQS(strHash.substring(1));
-  //window.boEmulator=params.boEmulator||null;
-  window.StartFilter=[params.idTeamB||null, params.idTeamS||null];   window.boVideo=params.boVideo||null;
-  window.objMess={}; if('jsonMess' in params) {
-    try {objMess=JSON.parse(params.jsonMess);} catch(e){ setMess(e);  return; }
-  }
+  var parsedHash = new URLSearchParams( window.location.hash.substr(1)  );  // skip the first char (#)
+  app.boDbg=Number(parsedHash.get('boDbg'));
+  var idTeamB=parsedHash.get('idTeamB'), idTeamS=parsedHash.get('idTeamS');  if(idTeamB!==null) idTeamB=Number(idTeamB); if(idTeamS!==null) idTeamS=Number(idTeamS);
+  app.StartFilter=[idTeamB, idTeamS];
+  var boVideo=parsedHash.get('boVideo');
+  if(boVideo===null) boVideo=getItemS('boVideo'); else if(boVideo==2) setItemS('boVideo', 1); else if(boVideo==0) setItemS('boVideo', null);
+  app.boVideo=Boolean(Number(boVideo));
+  app.objMess={}; var jsonMess=parsedHash.get('jsonMess');  if(jsonMess) {   try {objMess=JSON.parse(jsonMess);} catch(e){ alert(e);  return; }   }
+  console.log("boDbg="+boDbg);
 }
 interpretHashVariables();
 
@@ -6074,7 +6079,6 @@ app.currencies=[['UAE Dirham','Afghani','Lek','Armenian Dram','Netherlands Antil
 var maxWidth='var(--maxWidth)';
 
 var imgBusy=createElement('img').prop({src:wsBusy, alt:"busy"});
-//var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
 
 var divMessageText=divMessageTextCreate();  copySome(window, divMessageText, ['setMess', 'resetMess', 'appendMess']);
 var divMessageTextWInner=createElement('div').myAppend(divMessageText).css({margin:'0em auto', width:'100%', 'max-width':maxWidth, 'text-align':'center', position:'relative'});
@@ -6492,11 +6496,13 @@ var boFirstLoadTab=1, boGeoApproved=0;
 if(boVideo) {
   var latlngDebug={lat:59.330454370984235, lng:18.059076067697106};
   var posDebug={coords:{latitude:latlngDebug.lat,longitude:latlngDebug.lng}};
+  var pointDebug=merProj.fromLatLngToPoint(latlngDebug);
 }
 
 //ga('send', 'event', 'button', 'click', 'geoOK');
 
 var boGeoWatch=getItem('boGeoWatch');  if(boGeoWatch===null) boGeoWatch=false;
+var boGeoWatch=false;
 
 var semGeoApprox=false, semGeoReal=false, boGeoOK=false;
 var geoCBFirst=function(pos){

@@ -90,10 +90,11 @@ app.createSiteSpecificClientJSAll=function*(flow) {
 }
 
 app.createSiteSpecificClientJS=function(siteName) {
-  var site=Site[siteName], wwwSite=site.wwwSite; 
+  var site=Site[siteName]; 
 
   var StrSimplified=["wwwSite", "strRootDomain", "ORole", "siteName", "StrPropE", "StrTransportBool", "KeySel", "StrPlugInNArg", "testWWW", "client_id", "wwwLoginRet", "wwwLoginScope"]; 
-  var siteSimplified={}; for(var i=0;i<StrSimplified.length;i++){ var name=StrSimplified[i]; siteSimplified[name]=site[name]; }
+  //var siteSimplified={}; for(var i=0;i<StrSimplified.length;i++){ var name=StrSimplified[i]; siteSimplified[name]=site[name]; }
+  var siteSimplified=copySome({},site,StrSimplified);
 
   var Str=[];
   Str.push("var assignSiteSpecific=function(){");

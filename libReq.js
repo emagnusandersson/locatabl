@@ -29,7 +29,7 @@ app.reqCurlEnd=function*(){
 
   //res.setHeader('Cache-Control', 'no-cache'); // Seem to work fine without this
 
-  
+
   //var keyRemoteControl; if("keyRemoteControl" in objQS) { keyRemoteControl=objQS.keyRemoteControl; }  else{ res.out200('No public key "keyRemoteControl" in the query line'); return;}
   //var sixSignature; if("signature" in objQS) { sixSignature=objQS.signature; }  else{ res.out200('No "signature" in the query line'); return;}
   var {dataFromRemoteControl}=objQS;
@@ -53,19 +53,20 @@ app.reqCurlEnd=function*(){
   if(typeof keyRemoteControl=='undefined') {  res.out200('"keyRemoteControl" is not set'); return;}
   if(keyRemoteControl.length!=32) {  res.out200('The length of keyRemoteControl should be 32 (length is '+keyRemoteControl.length+')'); return;}
   if(typeof iSeqN=='undefined') {  res.out200('"iSeq" is not set'); return;}
-  if(typeof iRole=='undefined') {  res.out200('"iRole" is not set'); return;}
+  //if(typeof iRole=='undefined') {  res.out200('"iRole" is not set'); return;}
 
   console.log(moment().format('HH:mm:ss')+' '+req.connection.remoteAddress+' '+keyRemoteControl);
   var Sql=[],Val=[];
   if(boCheck){
-    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, ?, @boShow, @hideTimer, @tDiff, @boOk, @mess);"); Val.push(iRole, keyRemoteControl, iSeqN);
-    Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tDiff AS tDiff, @boOk AS boOK, @mess AS mess;");
+    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, @boShow, @hideTimer, @tDiff, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN);
+    Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tDiff AS tDiff, @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
     var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
-    var {boShow, hideTimer, tDiff, boOK, mess}=results[1][0];
+    var {boShow, hideTimer, tDiff, iRoleActive, boOK, mess}=results[1][0];
     if(!boOK) {res.out200(mess); return;}
-    var str='Hidden';
-    if(boShow){ var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   var str='Visible'; if(hideTimer!=intMax) str+=", Hiding in "+tDiffF+" "+u; };
+    var strRoleActive=iRoleActive?'Seller':'Buyer', strRoleActiveB=' ('+strRoleActive+')';
+    var str='Hidden'+strRoleActiveB;
+    if(boShow){ var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   var str='Visible'+strRoleActiveB; if(hideTimer!=intMax) str+=", Hiding in "+tDiffF+" "+u; };
     res.out200(str);
   }
   else{
@@ -75,14 +76,17 @@ app.reqCurlEnd=function*(){
     hideTimer=bound(hideTimer, 0, intMax);
     var projs=new MercatorProjection(),   [x,y]=projs.fromLatLngToPointV([lat, lng]);
     //var strGeoHash=GeoHash.pWC2GeoHash({x,y});
-    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, ?,  @boOk, @mess);"); Val.push(iRole, keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boAuto);
-    Sql.push("SELECT @boOk AS boOK, @mess AS mess;");
+    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boAuto);
+    Sql.push("SELECT @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
     var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
     //var {boShow, tDiff, boOK, mess}=results[1][0];
-    var {boOK, mess}=results[1][0];
+    var {iRoleActive, boOK, mess}=results[1][0];
     if(!boOK) {res.out200(mess); return;}
-    var str=boShow?'Visible':'Hidden'; res.out200(str);
+    var str=boShow?'Visible':'Hidden';
+    var strRoleActive=iRoleActive?'Seller':'Buyer', strRoleActiveB=' ('+strRoleActive+')';
+    str+=strRoleActiveB
+    res.out200(str);
   }
 }
 
@@ -468,7 +472,7 @@ var arrViewPop=[];`);
  ******************************************************************************/
 app.reqLoginWLink=function*(){
   var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var userTab=site.TableName.userTab;
+  var {userTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var code=objQS.code;
@@ -571,7 +575,7 @@ window.close();
 
 app.reqVerifyEmailReturn=function*() {
   var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var userTab=site.TableName.userTab;
+  var {userTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
@@ -594,7 +598,7 @@ app.reqVerifyEmailReturn=function*() {
 
 app.reqVerifyPWResetReturn=function*() {
   var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
-  var userTab=site.TableName.userTab;
+  var {userTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
@@ -830,11 +834,12 @@ app.reqStat=function*(){
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
-  var strCols="u.idUser, idFB, idIdPlace, idOpenId, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
+  var strCols="u.idUser, idFB, idIdPlace, idOpenId, image, boImgOwn, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+roleTab+" s ON u.idUser=s.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" s ON u.idUser=s.idUser;");
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
+  Sql.push("SELECT now() AS now;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
 
@@ -844,22 +849,49 @@ app.reqStat=function*(){
     site.nTotB=Number(results[1][0].n);
     site.nTotS=Number(results[2][0].n);
   }
-  var matA=results[3];
-  var matB=results[4];
+  var matA=results[3], matB=results[4], curTime=results[5][0].now; 
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<style> table,td,tr {border: solid 1px;border-collapse:collapse}</style>
+<style>
+table,td,tr {border: solid 1px;border-collapse:collapse}
+thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
+</style>
 </head>
 <body>`);
   var nA=matA.length;
   Str.push("user OUTER JOIN "+strRole+" ("+nA+")");
   if(nA>0){
     var Keys=Object.keys(matA[0]);
-    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].tAccumulated); matA[i].tAccumulated=Math.round(ttmp)+u; }
+    for(var i=0;i<matA.length;i++){
+      var row=matA[i]
+      var {idUser, image, boImgOwn, tPos, tLastWriteOfTA, tAccumulated, hideTimer, histActive}=row;
+
+      if(boImgOwn){  row.boImgOwn='<image src="/image/u'+idUser+'">'; }
+      if(histActive===null){ row.histActive='' } else{
+        histActive=histActive.replace(/0/g,'_').replace(/1/g,'1');  row.histActive='<font style="font-size:50%; float:right;">'+histActive+'</font>';
+      }
+      var [ttmp,u]=getSuitableTimeUnit((tPos-curTime)/1000); row.tPos='<font title="'+tPos+'">'+Math.round(ttmp)+u+'</font>';
+      var [ttmp,u]=getSuitableTimeUnit((tLastWriteOfTA-curTime)/1000); row.tLastWriteOfTA='<font title="'+tLastWriteOfTA+'">'+Math.round(ttmp)+u+'</font>';
+
+      row.image='<image src="'+image+'">';
+      for(var j=0;j<Keys.length;j++){
+        var key=Keys[j], t=row[key];
+          // Format t
+        if(t===null){ row[key]=''; continue; }
+        if(/^histActive/.test(key)) {
+            t=t.replace(/0/g,'_');//.replace(/1/g,'￨');
+            row[key]='<font style="font-size:50%; float:right;">'+t+'</font>';
+        }else if(/^(tAccumulated|hideTimer)/.test(key)) {
+          var [ttmp,u]=getSuitableTimeUnit(t); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
+        }else if(t instanceof Date){
+          var [ttmp,u]=getSuitableTimeUnit((t-curTime)/1000); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
+        }
+      }
+    }
     Str.push(makeTable(Keys,matA));
   }
   var nB=matB.length;
@@ -886,15 +918,13 @@ app.reqStatBoth=function*(){
   if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
   var siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
-  
-  var charRole=objQS.role||'s';
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
-  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, displayName, u.boWebPushOK";
+  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, image, boImgOwn, displayName, u.boWebPushOK";
   //var strColsB="b.homeTown, b.currency, b.boShow, b.tPos, CONVERT(BIN(b.histActive),CHAR(30)) AS c_histActive, b.tLastWriteOfTA, b.tAccumulated, b.hideTimer";
   //var strColsS="s.homeTown, s.currency, s.boShow, s.tPos, CONVERT(BIN(s.histActive),CHAR(30)) AS s_histActive, s.tLastWriteOfTA, s.tAccumulated, s.hideTimer";
 
@@ -914,17 +944,16 @@ app.reqStatBoth=function*(){
 
   Sql.push("SELECT "+strColsU+", "+strColsB+" FROM "+userTab+" u RIGHT JOIN "+buyerTab+" b ON u.idUser=b.idUser WHERE u.idUser IS NULL;");
   Sql.push("SELECT "+strColsU+", "+strColsS+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
+  Sql.push("SELECT now() AS now;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
   if('code' in objQS && objQS.code=='amfoen') {
-    if(charRole=='s') site.boGotNewSellers=0; else site.boGotNewBuyers=0;
+    site.boGotNewSellers=0;  site.boGotNewBuyers=0;
     site.nUser=Number(results[0][0].n);
     site.nTotB=Number(results[1][0].n);
     site.nTotS=Number(results[2][0].n);
   }
-  var matA=results[3];
-  var matB=results[4];
-  var matC=results[5];
+  var matA=results[3], matB=results[4], matC=results[5], curTime=results[6][0].now;
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
@@ -932,8 +961,9 @@ app.reqStatBoth=function*(){
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style> table,td,tr {border: solid 1px;border-collapse:collapse}
-td:nth-child(n+6):nth-child(-n+13){background:pink}
-td:nth-child(n+14){background:lightblue}
+td:nth-child(n+9):nth-child(-n+16){background:pink}
+td:nth-child(n+17){background:lightblue}
+thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
 </style>
 </head>
 <body>`);
@@ -943,14 +973,22 @@ td:nth-child(n+14){background:lightblue}
     var Keys=Object.keys(matA[0]);
     for(var i=0;i<matA.length;i++){
       var row=matA[i];
+      var {idUser, image, boImgOwn, idFB, tPos, tLastWriteOfTA, b_tAccumulated, b_hideTimer, s_tAccumulated, s_hideTimer, histActive}=row;
+      row.image='<image src="'+image+'">';
+      if(boImgOwn){  row.boImgOwn='<image src="/image/u'+idUser+'">'; }
+      if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture">'; } else row.idFB='';
+
       for(var j=0;j<Keys.length;j++){
         var key=Keys[j], t=row[key];
           // Format t
-        if(/^[bs]_(tAccumulated|hideTimer)/.test(key)) {
-          var [ttmp,u]=getSuitableTimeUnit(t); row[key]=Math.round(ttmp)+u;
+        if(t===null){ row[key]=''; continue; }
+        if(/^[bs]_(histActive)/.test(key)) {
+          t=t.replace(/0/g,'_');//.replace(/1/g,'￨');
+          row[key]='<font style="font-size:50%; float:right;">'+t+'</font>';
+        }else if(/^[bs]_(tAccumulated|hideTimer)/.test(key)) {
+          var [ttmp,u]=getSuitableTimeUnit(t); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
         }else if(t instanceof Date){
-          var unixT=t.valueOf()/1000;
-          var [ttmp,u]=getSuitableTimeUnit(unixNow()-unixT); row[key]=Math.round(ttmp)+u;
+          var [ttmp,u]=getSuitableTimeUnit((t-curTime)/1000); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
         }
       }
     }
@@ -1095,6 +1133,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   nComplaintGiven int(4) UNSIGNED NOT NULL DEFAULT 0, 
   nComplaintGivenCum int(4) UNSIGNED NOT NULL DEFAULT 0, 
   boWebPushOK BOOL NOT NULL DEFAULT 0,
+  iRoleActive int(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (idUser), 
   UNIQUE KEY (idFB), 
   UNIQUE KEY (idIdPlace), 
@@ -1117,23 +1156,21 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   //var StrProp=Object.keys(oS.Prop);
   var arrCols=[];
   for(var i=0;i<oS.StrOrder.length;i++){
-    var name=oS.StrOrder[i];
-    var arr=oS.Prop[name];
-    var b=arr.b;
+    var name=oS.StrOrder[i], prop=oS.Prop[name], b=prop.b;
     if(Number(b[oS.bFlip.sellerTab])){
-      var strType=arr.type || '';
+      var strType=prop.type || '';
       if(strType=='ENUM'){
         //$tmpName='enum'.ucfirst($name);
         //$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
-        var arra=oS.Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
+        var arra=prop.Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
         strType="ENUM("+str+")";
       }
       var strNull=Number(b[oS.bFlip.notNull])?'NOT NULL':'';
       var strDefault=''; 
-      if('default' in arr){
-        if(arr.type.toUpperCase()=='TIMESTAMP'){strDefault=arr.default;}
+      if('default' in prop){
+        if(prop.type.toUpperCase()=='TIMESTAMP'){strDefault=prop.default;}
         else {
-          if(typeof arr.default=='string') strDefault="'"+arr.default+"'"; else strDefault=arr.default;
+          if(typeof prop.default=='string') strDefault="'"+prop.default+"'"; else strDefault=prop.default;
         }
         strDefault="DEFAULT "+strDefault;
       }
@@ -1152,8 +1189,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   if(boUseDBIndex){
       // Create SellerTab indexes
     for(var name in oS.Prop){
-      var arr=oS.Prop[name];
-      var b=arr.b;
+      var prop=oS.Prop[name], b=prop.b;
       if(Number(b[oS.bFlip.sellerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+sellerTab+"(`"+name+"`)"); 
     }
   }
@@ -1162,23 +1198,21 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   //var StrProp=Object.keys(oB.Prop);
   var arrCols=[];
   for(var i=0;i<oB.StrOrder.length;i++){
-    var name=oB.StrOrder[i];
-    var arr=oB.Prop[name];
-    var b=arr.b;
+    var name=oB.StrOrder[i], prop=oB.Prop[name], b=prop.b;
     if(Number(b[oB.bFlip.buyerTab])){
-      var strType=arr.type || '';
+      var strType=prop.type || '';
       if(strType=='ENUM'){
         //$tmpName='enum'.ucfirst($name);
         //$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
-        var arra=oB.Prop[name].Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
+        var arra=prop.Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
         strType="ENUM("+str+")";
       }
       var strNull=Number(b[oB.bFlip.notNull])?'NOT NULL':'';
       var strDefault=''; 
-      if('default' in arr){
-        if(arr.type.toUpperCase()=='TIMESTAMP'){strDefault=arr.default;}
+      if('default' in prop){
+        if(prop.type.toUpperCase()=='TIMESTAMP'){strDefault=prop.default;}
         else {
-          if(typeof arr.default=='string') strDefault="'"+arr.default+"'"; else strDefault=arr.default;
+          if(typeof prop.default=='string') strDefault="'"+prop.default+"'"; else strDefault=prop.default;
         }
         strDefault="DEFAULT "+strDefault;
       }
@@ -1197,8 +1231,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   if(boUseDBIndex){
       // Create BuyerTab indexes
     for(var name in oB.Prop){
-      var arr=oB.Prop[name];
-      var b=arr.b;
+      var prop=oB.Prop[name], b=prop.b;
       if(Number(b[oB.bFlip.buyerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+buyerTab+"(`"+name+"`)");
     }
   }
@@ -1329,7 +1362,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   //IFun "+siteName+"TimeAccumulatedUpdMult
 
   // If setting boShow then one must call "+siteName+"TimeAccumulatedUpdOne before. Hence tLastWriteOfTA will never be < than tPos
-  var sqlTimeSinceWriteOfTA="UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in sellerTab
+  var sqlTimeSinceLastWriteOfTA="UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in roleTab
   var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)"; // This variable is only used to make the expression sqlTRemaining (below) clearer
   var sqlTRemaining="GREATEST(hideTimer-("+sqlTWritten+"),0)";
   
@@ -1338,8 +1371,8 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdOne(IN IidUser INT)
       BEGIN
         DECLARE VtNow TIMESTAMP DEFAULT now();
-        UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
-        UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
+        UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
+        UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
       END`);
 
     // IFunPoll
@@ -1355,9 +1388,9 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         DECLARE VtNow TIMESTAMP DEFAULT now();
         SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
         IF UNIX_TIMESTAMP(VtNow)>tLastWriteOfBoShow+Itimer THEN
-          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0) 
+          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0) 
             WHERE boShow=1 AND VtNow>tHide;
-          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0)
+          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0)
             WHERE boShow=1 AND VtNow>tHide;
           UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(VtNow) WHERE name='tLastWriteOfBoShow';
         END IF;
@@ -1385,22 +1418,9 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
 
 
       // Create an array from keys in Prop with DBSelOne-bit set
-  var SqlColOTmp=[];
-  for(var i=0;i<ORole.length;i++) {
-    var oR=ORole[i], arrCol=[];
-    var KeyPropTmp=Object.keys(oR.Prop), nProp=KeyPropTmp.length;
-    for(var j=0;j<nProp;j++) {
-      var name=KeyPropTmp[j], prop=oR.Prop[name], b=prop.b;
-      if(Number(b[oR.bFlip.DBSelOne]))  {   
-        var tmp;
-        if('selOneF' in prop){tmp=prop.selOneF(name)+" AS `"+name+"`";}
-        else {const pre=prop.pre||preDefault; tmp=pre+"`"+name+"`"; }
-        arrCol.push(tmp);
-      }
-    }
-    SqlColOTmp[i]=arrCol.join(', ');
-  }
-  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag, boWebPushOK, keyRemoteControl, iSeq";
+  
+  var {SqlColSelOne}=site;
+  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag, boWebPushOK, keyRemoteControl, iSeq, iRoleActive";
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboBuyer INT, IboSeller INT, IboBuyerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
@@ -1422,8 +1442,8 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idOpenId not found: ', IidOpenId) AS mess; LEAVE proc_label; END IF;
         SET IidUser=@idUserTmp;
       END IF;
-      IF IboBuyer THEN     SELECT `+SqlColOTmp[0]+` FROM (`+buyerTab+` ro LEFT JOIN `+buyerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboSeller THEN       SELECT `+SqlColOTmp[1]+` FROM (`+sellerTab+` ro LEFT JOIN `+sellerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboBuyer THEN     SELECT `+SqlColSelOne[0]+` FROM (`+buyerTab+` ro LEFT JOIN `+buyerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboSeller THEN       SELECT `+SqlColSelOne[1]+` FROM (`+sellerTab+` ro LEFT JOIN `+sellerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       IF IboBuyerTeam THEN SELECT * FROM `+buyerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       IF IboSellerTeam THEN   SELECT * FROM `+sellerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       IF IboAdmin THEN        SELECT * FROM `+adminTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
@@ -1555,10 +1575,10 @@ CLIENT_FOUND_ROWS
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetIdUserNSetISeq");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(32), iSeqN INT, OUT OidUser INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(32), iSeqN INT, OUT OidUser INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, ViSeq INT;
-      SELECT SQL_CALC_FOUND_ROWS idUser, iSeq INTO OidUser, ViSeq FROM `+userTab+` WHERE keyRemoteControl=Ikey LIMIT 1;
+      SELECT SQL_CALC_FOUND_ROWS idUser, iRoleActive, iSeq INTO OidUser, OiRoleActive, ViSeq FROM `+userTab+` WHERE keyRemoteControl=Ikey LIMIT 1;
       SET Vc=FOUND_ROWS();
       IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('keyRemoteControl exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
       IF Vc=0 THEN SET OboOK=0, Omess='No such keyRemoteControl stored!'; LEAVE proc_label; END IF;
@@ -1571,52 +1591,46 @@ CLIENT_FOUND_ROWS
 
     // GetValuesToController should return tElapsed instead of tDiff, then one could let hideTimer unsigned int (Mysql can't have unsigned in an expression that end up negative)
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(IiRole INT, Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OboOK INT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OiRoleActive INT, OUT OboOK INT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, VidUser, ViSeq, intMax INT;
       DECLARE VtNow TIMESTAMP DEFAULT now();
-      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess);
+      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OiRoleActive, OboOK, Omess);
       IF OboOK=0 THEN LEAVE proc_label; END IF;
       CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
 
-      IF IiRole=0 THEN
-        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
-        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
+      IF OiRoleActive=0 THEN
         SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tHide)-UNIX_TIMESTAMP(VtNow) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
       ELSE
-        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser WHERE r.idUser=VidUser;
-        #SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, hideTimer-(UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tPos)) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
         SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tHide)-UNIX_TIMESTAMP(VtNow) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
       END IF;
       SET Vc=FOUND_ROWS();
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF;
       IF OtDiff<0 THEN SET OboShow=0; END IF;
       SET OboOK=1, Omess='';
-
     END`);
+    //IiRole INT, 
 
     // boUserButtClick (inverse of boAuto) should be used instead of boAuto
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(IiRole INT, Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboAuto INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboAuto INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE VtNow TIMESTAMP DEFAULT now();
       DECLARE Vc, Vn, VidUser, ViSeq, VresM INT;
       START TRANSACTION;
-      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OboOK, Omess);
+      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OiRoleActive, OboOK, Omess);
       IF OboOK=0 THEN ROLLBACK; LEAVE proc_label; END IF;
       CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
 
       IF IboShow=0 THEN
-        IF IiRole=0 THEN
-          #UPDATE `+buyerTab+` SET boShow=IboShow, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
+        IF OiRoleActive=0 THEN
           UPDATE `+buyerTab+` SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
         ELSE
-          #UPDATE `+sellerTab+` SET boShow=IboShow, tPos=VtNow, tHide=DATE_ADD(VtNow, INTERVAL hideTimer second), histActive=histActive|1 WHERE idUser=VidUser;
           UPDATE `+sellerTab+` SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       ELSE
-        IF IiRole=0 THEN
+        IF OiRoleActive=0 THEN
           SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+buyerTab+` WHERE idUser=VidUser;
         ELSE
           SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+sellerTab+` WHERE idUser=VidUser;
@@ -1627,7 +1641,7 @@ CLIENT_FOUND_ROWS
         CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy);
         SET @bigIntGeoHash=pWC2GeoHash(Ix, Iy);
 
-        IF IiRole=0 THEN
+        IF OiRoleActive=0 THEN
           UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
             tHide=IF(IboAuto, tHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`))) 
             WHERE idUser=VidUser;
@@ -1939,9 +1953,10 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
   for(var iRole=0;iRole<ORole.length;iRole++){
     var Prop=ORole[iRole].Prop;
     for(var name in Prop){
+      var prop=Prop[name];
       if(!(name in PropBucket)){
         PropBucket[name]={};
-        if('Enum' in Prop[name]) PropBucket[name].Enum=Prop[name].Enum.concat([]);
+        if('Enum' in prop) PropBucket[name].Enum=prop.Enum.concat([]);
       }
     }
   }
@@ -1960,24 +1975,27 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
   var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'strUnitDist', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang', 'compassPoint', 'destination', 'fixedPricePerUnitUnit', 'fruit', 'database', 'language'];
         
 
-  
+    //
     // Insert into userTab
+    // arrUser: (user) data that is used to create buyerTab and sellerTab below
+    // SqlAllU: data that is used to create the userTab
+    //
   var arrUser=Array(nData), SqlAllU=Array(nData);
   for(var i=0;i<nData;i++){
     var id=nStart+i+1; 
-    let strName="dummy"+id, strNameUC=ucfirst(strName), email=strName+'@example.com', donatedAmount=makeRandSpanF('donatedAmount'); 
-    arrUser[i]={idFB:strName, email, displayName:strNameUC, tel:"07000000"+id};
+    let strName="dummy"+id, strNameUC=ucfirst(strName), email=strName+'@example.com', donatedAmount=makeRandSpanF('donatedAmount'), iRoleActive=i%2; 
+    arrUser[i]={idFB:strName, email, displayName:strNameUC, tel:"07000000"+id, iRoleActive};
  
     //var SqlT=[id, 'null', 'null', "'"+strNameUC+"'", "'"+email+"'", "'"+strNameUC+"'", "''", "'"+strNameUC+"'", donatedAmount];
     //SqlAllU[i]="("+SqlT.join(', ')+")";
-    var SqlT=[id, null, null, strNameUC, email, strNameUC, "", strNameUC, donatedAmount];
+    var SqlT=[id, null, null, strNameUC, email, strNameUC, "", strNameUC, donatedAmount, iRoleActive];
     var SqlT=DB.default.pool.escape(SqlT);
     SqlAllU[i]="("+SqlT+")";
 
     arrUser[i]=extend(arrUser[i],getRandomPostAddress());
   }
   var tmp=SqlAllU.join(",\n");
-  Sql.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, donatedAmount) VALUES \n"+tmp);
+  Sql.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, donatedAmount, iRoleActive) VALUES \n"+tmp);
   
   
     // Insert into complaintTab
@@ -2008,8 +2026,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
   
   for(var iRole=0;iRole<ORole.length;iRole++){
     var oRole=ORole[iRole];
-    var Prop=oRole.Prop;
-    var {charRole, charRoleUC}=oRole;
+    var {Prop, charRole, charRoleUC}=oRole;
     var roleTab=charRole=='b'?buyerTab:sellerTab;
 
 
