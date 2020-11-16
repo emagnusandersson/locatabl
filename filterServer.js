@@ -59,14 +59,7 @@ app.setUpCond=function(arg){
     }
     Where.push(arrCondInFeat.join(' AND '));
   }
-  // var arrCol=[],ii=0;
-  // for(var i=0;i<KeySel.length;i++) {
-  //   var key=KeySel[i], b=Prop[key].b, pre=Prop[key].pre||preDefault;
-  //   var tmp; if('selF' in Prop[key]) { tmp=Prop[key].selF(pre+key);  }   else tmp=pre+"`"+key+"`";
-  //   arrCol.push(tmp+" AS "+"`"+key+"`"); ii++;
-  // }
-  // var strSel=arrCol.join(', ');
-  // return {strSel, Where}; //, nColTrans:ii
+
   return {Where}; //, nColTrans:ii
 
 }

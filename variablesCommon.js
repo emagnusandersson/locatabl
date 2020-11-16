@@ -747,11 +747,11 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
 
     var arrCol=[];
     for(var j=0;j<KeySel.length;j++) {
-      var key=KeySel[j], b=Prop[key].b, pre=Prop[key].pre||preDefault;
-      var tmp; if('selF' in Prop[key]) { tmp=Prop[key].selF(pre+key);  }   else tmp=pre+"`"+key+"`";
+      var key=KeySel[j], prop=Prop[key], pre=prop.pre||preDefault;
+      var tmp; if('selF' in prop) { tmp=prop.selF(pre+key);  }   else tmp=pre+"`"+key+"`";
       arrCol.push(tmp+" AS "+"`"+key+"`");
     }
-    oRole.strCol=arrCol.join(', ');
+    oRole.sqlColList=arrCol.join(', ');
   }
   
   site.TableName={};   for(var name in TableNameProt){  site.TableName[name+"Tab"]=siteName+'_'+name; }
@@ -831,6 +831,24 @@ SiteExtend=function(){
       site.SrcIcon[ind]=wsIconProt.replace("<size>", size);
       site.icons[ind]={ src:site.SrcIcon[ind], type: mime.getType(strType), sizes: size+"x"+size, purpose: "any maskable" };
     });
+
+      // Create SqlColSelOne
+    site.SqlColSelOne=[];
+    for(var j=0;j<ORole.length;j++) {
+      var oR=ORole[j], arrCol=[];
+      var KeyPropTmp=Object.keys(oR.Prop), nProp=KeyPropTmp.length;
+      for(var k=0;k<nProp;k++) {
+        var name=KeyPropTmp[k], prop=oR.Prop[name], b=prop.b;
+        if(Number(b[oR.bFlip.DBSelOne]))  {   
+          var tmp;
+          if('selOneF' in prop){tmp=prop.selOneF(name)+" AS `"+name+"`";}
+          else {const pre=prop.pre||preDefault; tmp=pre+"`"+name+"`"; }
+          arrCol.push(tmp);
+        }
+      }
+      site.SqlColSelOne[j]=arrCol.join(', ');
+    }
+
 
   }
 }
