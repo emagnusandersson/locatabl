@@ -98,13 +98,14 @@ var flow=( function*(){
   boDbg=0; port=5000; levelMaintenance=0; googleSiteVerification='googleXXX.html';
   wwwCommon='';
   boShowTeam=false;
-  intDDOSMax=100; tDDOSBan=5; 
+  intDDOSMax=100; timeOutDDOSBan=5; 
   maxUnactivity=3600*24;  // Used on _Main, CSRFCode, _UserInfoFrDB
   maxLoginUnactivity=10*60;  // Used on _LoginIdP, _LoginIdUser
   leafLoginBack="loginBack.html"; 
   boVideo=0;
   boUseSSLViaNodeJS=false;
-  wsIconDefaultProt="/Site/Icon/icon<size>.png"
+  wsIconDefaultProt="/Site/Icon/icon<size>.png";
+  boGoogleReview=false;
   
   port=argv.p||argv.port||5000;
   if(argv.h || argv.help) {helpTextExit(); return;}
@@ -281,19 +282,19 @@ var flow=( function*(){
       
         // Increase redisVarDDos 
       var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
-      var [err, intCount]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDos, tDDOSBan]);
+      var [err, intCount]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDos, timeOutDDOSBan]);
       
         // Increase redisVarDDosIP.
       var ipClient=getIP(req), redisVarDDosIP=ipClient+'_DDOS';
       var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
-      var [err, intCountIP]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDosIP, tDDOSIPBan]);
+      var [err, intCountIP]=yield* cmdRedis(req.flow, 'EVAL',[luaCountFunc, 1, redisVarDDosIP, timeOutDDOSIPBan]);
         
       res.setHeader("Set-Cookie", "sessionIDDDos="+sessionIDDDos+strCookiePropNormal);
       
         // If to many, then ban
-      if(boCookieDDOSOK) {  var intCountT=intCount, intDDOSMaxT=intDDOSMax, tDDOSBanT=tDDOSBan;   }   else   {    intCountT=intCountIP; intDDOSMaxT=intDDOSIPMax; tDDOSBanT=tDDOSIPBan;   }
+      if(boCookieDDOSOK) {  var intCountT=intCount, intDDOSMaxT=intDDOSMax, timeOutDDOSBanT=timeOutDDOSBan;   }   else   {    intCountT=intCountIP; intDDOSMaxT=intDDOSIPMax; timeOutDDOSBanT=timeOutDDOSIPBan;   }
       if(intCountT>intDDOSMaxT) {
-        var strMess="Too Many Requests ("+intCountT+"), wait "+tDDOSBanT+"s\n";
+        var strMess="Too Many Requests ("+intCountT+"), wait "+timeOutDDOSBanT+"s\n";
         if(pathName=='/'+leafBE){ var reqBE=new ReqBE({req, res}); reqBE.mesEO(strMess,429); }
         else res.outCode(429,strMess);
         return;
@@ -363,6 +364,8 @@ var flow=( function*(){
       else if(pathName=='/'+leafLoginWLink){  yield* reqLoginWLink.call(objReqRes);  }
       else if(pathName=='/'+leafVerifyPWResetReturn){  yield* reqVerifyPWResetReturn.call(objReqRes);  }
       else if(pathName=='/'+leafVerifyEmailNCreateUserReturn){  yield* reqVerifyEmailNCreateUserReturn.call(objReqRes);  }
+      else if(pathName=='/'+leafDataDelete){  yield* reqDataDelete.call(objReqRes);  }
+      else if(pathName=='/'+leafDataDeleteStatus){  yield* reqDataDeleteStatus.call(objReqRes);  }
       //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
       else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
       else if(pathName=='/debug'){    debugger  }

@@ -2123,7 +2123,7 @@ var viewFormLoginCreator=function(){
     viewCreateUser.setVis();
   });
 
-  var divCont=createElement('div').addClass('contDiv').myAppend(divHead, messDiv, formLogin, divForgot, divSendLink, '<hr>', buttonCreateAccount);
+  var divCont=createElement('div').addClass('contDiv').myAppend(divHead, messDiv, formLogin, divForgot, divSendLink, createElement('hr'), buttonCreateAccount);
 
   
       // divFoot
@@ -2163,7 +2163,6 @@ var divLoginSelectorCreator=function(oRole){
 
   var emailToggleEventF=function(){
     var now=Date.now(); if(now>timeSpecialR+1000*10) {timeSpecialR=now; nSpecialReq=0;}    nSpecialReq++;
-    //if(nSpecialReq==3) { nSpecialReq=0;boAllowEmailLogin=!boAllowEmailLogin; divRight.toggle(boAllowEmailLogin);   }
     if(nSpecialReq==3) { nSpecialReq=0; divRight.toggle();   }
   }
   var timeSpecialR=0, nSpecialReq=0;
@@ -2176,6 +2175,9 @@ var divLoginSelectorCreator=function(oRole){
   });
   var divLeft=createElement('div').css(cssCol).css({'text-align':'center'}).myAppend(imgFb); divLeft.insertAdjacentHTML('beforeend', '<p>Email, name and image are used, although not shown publicly unless you want to.</p><p>Nothing is written to your Facebook flow.</p>' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
   var divRight=createElement('div').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).myAppend( buttonViaEmail);        divRight.hide();
+  //if(boGoogleReview && document.domain.substr(0,4)=='taxi') {divRight.show();}
+  if(boGoogleReview && site.siteName=='taxi') {divRight.show();}
+
   var divRow=createElement('div').myAppend(divLeft, divRight).css({display: 'flex', 'justify-content':'space-around'});  //
 
   divHead.css({display:'block', 'margin':'1em 0em 1em 0.6em'});
@@ -2647,6 +2649,11 @@ var viewUserSettingCreator=function(){
     return true;
   }
   var divIPSetting=divIPSettingCreator().css({background:'lightgrey', margin:'0.2em', border:'1px black solid'});
+
+
+    // Alternative login method  (change PW)
+  var buttChangePW=createElement('button').myText('Change password').on('click', function(e){ viewChangePWPop.openFunc(); });
+  var divPW=createElement('div').myAppend("Alternative login method (with email from IdP):", buttChangePW); //'Change password: ',
   
   var saveDisplayName=function(){ var vec=[['UUpdate',{displayName:inpDisplayName.value.trim()}], ['setupById', {}]];   majax(vec); }
   var inpDisplayName=createElement('input').prop({type:'text'}).on('keypress', function(e){if(e.which==13) {saveDisplayName();return false;}} );
@@ -2662,9 +2669,6 @@ var viewUserSettingCreator=function(){
     divBoWebPushOK.myAppend("Enable Push Messages: ", spanBoWebPushOK);
   }
   var spanImg, divImage=createElement('div');
-    // change PW
-  var buttChangePW=createElement('button').myText('Change password').on('click', function(e){ viewChangePWPop.openFunc(); });
-  var divPW=createElement('div').myAppend( buttChangePW); //'Change password: ',
 
       // divBoWebPushOK
   var spanBoWebPushOK, divBoWebPushOK=createElement('div');
@@ -2705,7 +2709,7 @@ var viewUserSettingCreator=function(){
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
-  var Div=[divIPSetting, divDisplayName, divImage, divPW, divBoWebPushOK, divKeyRemoteControl, deleteDiv];  //, divBoGeoWatch
+  var Div=[divIPSetting, divPW, divDisplayName, divImage, divBoWebPushOK, divKeyRemoteControl, deleteDiv];  //, divBoGeoWatch
   Div.forEach(ele=>ele.css({'margin-top':'1em'}));
   Div.forEach((ele,i)=>{if(i%2==0)ele.css({background:'lightgrey'})});
   var divCont=createElement('div').myAppend(...Div).addClass('contDiv');
@@ -2737,7 +2741,7 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
     return true;
   }
   
-  var divHead=createElement('div').css({'margin-bottom':'0.5em','font-weight':'bold'});  divHead.myText('Data from Id-provider (user info): ')
+  var divHead=createElement('div').css({'margin-bottom':'0.5em','font-weight':'bold'});  divHead.myText('Data from Id-provider (IdP) (Facebook): ')
 
   var wsImagePrim=window['ws'+ucfirst(strIPPrim)+'22'];
   var buttRefetch=createElement('img').prop({src:wsImagePrim, alt:"IdP"}).css({'vertical-align':'middle'}).on('click', function(e){
@@ -2758,13 +2762,13 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   [spanIdFB,spanIdIdPlace,spanIdOpenId].forEach( (ele)=>ele.css({margin:'0 0.2em 0 0', 'font-weight':'bold'}) );
 
   var divIdUser=createElement('div').myAppend(createTextNode('idUser (db): '), spanIdUser);
-  var divIdIP=createElement('div').myAppend('FB: ', spanIdFB); //, ', IdPlace: ', spanIdIdPlace, ', OpenID: ', spanIdOpenId
+  var divIdIP=createElement('div').myAppend('ID from IdP: ', spanIdFB); //, ', IdPlace: ', spanIdIdPlace, ', OpenID: ', spanIdOpenId
   
   var imgImage=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle'}), spanNameIP=createElement('span');
   var divImageName=createElement('div').myAppend(imgImage, spanNameIP);
 
   var spanEmail=createElement('span');
-  var bub=createElement('div').myText("This email is not shown to the public.");
+  var bub=createElement('div').myText("This email is not shown to the public. (Go into Seller/Buyer settings to enter emails displayed to they public)");
   var imgH=imgHelp.cloneNode(1);  popupHover(imgH,bub);
   var divEmail=createElement('div').myAppend('Email: ', spanEmail, imgH);
 

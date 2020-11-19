@@ -514,16 +514,6 @@ var makeMapMultBubble=function(objIn){
 // Other
 //
 
-app.urlBase64ToUint8Array=function(base64String){
-  const padding='='.repeat((4-base64String.length%4) % 4);
-  const base64=(base64String+padding).replace(/\-/g, '+').replace(/_/g, '/');
-
-  const rawData=window.atob(base64);
-  const outputArray=new Uint8Array(rawData.length);
-
-  for(let i=0; i<rawData.length; ++i){ outputArray[i]=rawData.charCodeAt(i); }
-  return outputArray;
-}
 
 
 window.swRegistration=null;
@@ -567,7 +557,7 @@ var MyWebPush=function(){
       if(err){ cbFunW(err); return;}
       
       if(!subscription) {
-        const convertedVapidKey=urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+        const convertedVapidKey=b64UrlDecode(VAPID_PUBLIC_KEY, 1); // in lib.js
           // Subscribe the user (userVisibleOnly allows to specify that we don’t plan to send notifications that don’t have a visible effect for the user).
         var semY=0, semCB=0, err=null;  swRegistration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedVapidKey })
         .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}

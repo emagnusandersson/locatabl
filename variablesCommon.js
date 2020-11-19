@@ -24,6 +24,8 @@ leafVerifyPWResetReturn='verifyPWReset';
 leafVerifyEmailNCreateUserReturn='verifyEmailNCreateUser';
 leafManifest='manifest.json';
 leafServiceWorker='serviceworker.js';
+leafDataDelete='dataDelete';
+leafDataDeleteStatus='dataDeleteStatus';
 
 
 
