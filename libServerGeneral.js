@@ -236,7 +236,7 @@ app.myLinkEscape=function(str){ str=myAttrEscape(str); if(str.startsWith('javasc
 
 
 app.getPost=function*(flow, req){
-  var jsonInput;
+  var strData;
   if('x-type' in req.headers ){ //&& req.headers['x-type']=='single'
     var form = new formidable.IncomingForm();
     form.multiples = true;  
@@ -249,13 +249,13 @@ app.getPost=function*(flow, req){
     this.File=files['fileToUpload[]'];
     if('kind' in fields) this.kind=fields.kind; else this.kind='s';
     if(!(this.File instanceof Array)) this.File=[this.File];
-    jsonInput=fields.vec;
+    strData=fields.vec;
 
   }else{
     var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
-    jsonInput=buf.toString();
+    strData=buf.toString();
   }
-  return jsonInput;
+  return strData;
 }
 
 app.setAccessControlAllowOrigin=function(req, res, RegAllowed){

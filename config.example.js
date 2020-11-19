@@ -10,12 +10,14 @@ ppStoredButt="ABCDEFGHIJKLM";  // Paypal-stored-button
 
 
 intDDOSMax=200; // intDDOSMax: How many requests before DDOSBlocking occurs. 
-tDDOSBan=5; // tDDOSBan: How long in seconds til the blocking is lifted
+timeOutDDOSBan=5; // timeOutDDOSBan: How long in seconds til the blocking is lifted
 intDDOSIPMax=100; // intDDOSIPMax: How many requests before DDOSBlocking occurs. 
-tDDOSIPBan=10; // tDDOSIPBan: How long in seconds til the blocking is lifted
+timeOutDDOSIPBan=10; // timeOutDDOSIPBan: How long in seconds til the blocking is lifted
 
 boUseDBIndex=0;
-intTAccumulatedUpdateTimer=3600; // How long to wait before updating tAccumulated in buyer/seller tabs
+timeOutAccumulatedUpdate=3600; // How long to wait before updating tAccumulated in buyer/seller tabs
+
+timeOutDeleteStatusInfo=3600;
 
   // Needed if you use Google Webmaster Tools  (www.google.com/webmasters)
 googleSiteVerification='googleXXXXXXXXXXXXXXXX.html';

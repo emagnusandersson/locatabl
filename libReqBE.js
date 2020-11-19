@@ -221,36 +221,9 @@ ReqBE.prototype.go=function*(){
     if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(Error("Referer is wrong"));  return; }
   } else { this.mesEO(Error("Referer not set"));  return; }
   
-    // Extract input data either 'POST' or 'GET'
-  var jsonInput;
-  if(req.method=='POST'){ 
-    //jsonInput=yield* app.getPost(req.flow, req);
-    jsonInput=yield* app.getPost.call(this, req.flow, req);
-    
-    //if('x-type' in req.headers ){ //&& req.headers['x-type']=='single'
-      //var form = new formidable.IncomingForm();
-      //form.multiples = true;  
-      ////form.uploadDir='tmp';
-      
-      //var err, fields, files;
-      //var semY=0, semCB=0;  form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
-      ////form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; flow.next();  });  yield;
+  if(req.method!='POST'){ this.mesO('send me a POST'); return; }
   
-      //if(err){this.mesEO(err);  return; } 
-      
-      //this.File=files['fileToUpload[]'];
-      //if('kind' in fields) this.kind=fields.kind; else this.kind='s';
-      //if(!(this.File instanceof Array)) this.File=[this.File];
-      //jsonInput=fields.vec;
-
-    //}else{
-      //var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
-      //jsonInput=buf.toString();
-    //}
-  }
-  else if(1){ this.mesO('send me a POST'); return; }
-  //else if(req.method=='GET'){ var objUrl=url.parse(req.url), qs=objUrl.query||''; jsonInput=urldecode(qs); }
-
+  var jsonInput=yield* app.getPost.call(this, req.flow, req);
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
   if(!req.boCookieOK) {this.mesEO(Error('Cookie not set'));  return;   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
@@ -378,11 +351,16 @@ ReqBE.prototype.sendLoginLink=function*(inObj){
   
   var strTxt=`<h3>Login link to `+wwwSite+`</h3>
 <p>Someone (maybe you) uses `+wwwSite+` and wants to login using `+email+`. Is this you, then click this link to login: <a href="`+uLink+`">`+uLink+`</a> .</p>
-<p>Otherwise neglect this message.</p>`;
+<p>Otherwise ignore this message.</p>`;
 //<p>Note! The link stops working `+expirationTime/60+` minutes after the email was sent.</p>`;
   
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to:email, from:'noreply@'+wwwSite, subject:'Login link',  html:strTxt};    sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Login link',  html:strTxt};  //sgMail.send(msg);
+
+  var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
+  .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
+  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+
   this.mes('Email sent'); Ou.boOK=1;
   
   return [null, [Ou]];
@@ -451,12 +429,17 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
   var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailNCreateUserReturn+'?code='+code;
   var strTxt=`<h3>Email verification / account creation on `+wwwSite+`</h3>
 <p>Someone (maybe you) uses `+wwwSite+` and claims that `+email+` is their email address and they want to become a user. Is this you? If so use the link below to create an account.</p>
-<p>Otherwise neglect this message.</p>
+<p>Otherwise ignore this message.</p>
 <p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Email verification / account creation', html: strTxt }; sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Email verification / account creation', html:strTxt };  //sgMail.send(msg);
+
+  var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
+  .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
+  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+
   this.mes('Email sent');
   Ou.boOK=1;
   return [null, [Ou]];
@@ -559,12 +542,17 @@ ReqBE.prototype.verifyEmail=function*(inObj){
   var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailReturn+'?code='+code;
   var strTxt=`<h3>Email verification on `+wwwSite+`</h3>
 <p>Someone (maybe you) uses `+wwwSite+` and claims that `+email+` is their email address. Is this you? If so use the link below to verify that you are the owner of this email address.</p>
-<p>Otherwise neglect this message.</p>
+<p>Otherwise ignore this message.</p>
 <p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
 
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Email verification', html: strTxt }; sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Email verification', html:strTxt };  //sgMail.send(msg);
+
+  var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
+  .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
+  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+
   this.mes('Email sent');
   Ou.boOK=1;
   return [null, [Ou]];
@@ -597,14 +585,19 @@ ReqBE.prototype.verifyPWReset=function*(inObj){
   var wwwSite=req.wwwSite;
   var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyPWResetReturn+'?code='+code;
   var strTxt=`<h3>Password reset request on `+wwwSite+`</h3>
-<p>Someone (maybe you) tries to reset their `+wwwSite+` password and entered `+email+` as their email.</p>
+<p>Someone (maybe you) tries to reset the password for this email (`+email+`) on `+wwwSite+`.</p>
 <p>Is this you, then use the link below to have a new password generated and sent to you.</p>
-<p>Otherwise neglect this message.</p>
+<p>Otherwise ignore this message.</p>
 <p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to: email, from: 'noreply@'+wwwSite, subject: 'Password reset request', html: strTxt };  sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Password reset request', html:strTxt };  //sgMail.send(msg);
+
+  var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
+  .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
+  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+
   this.mes('Email sent'); Ou.boOK=1;
   return [null, [Ou]];
 }
@@ -851,7 +844,7 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (VPSize
   this.pC=inObj.pC; var xC=Number(this.pC.x), yC=Number(this.pC.y), wVP=Number(this.VPSize[0]), hVP=Number(this.VPSize[1]); 
   //Sql.push("SET @xC="+xC+"; SET @yC="+yC+"; SET @wVP="+wVP+"; SET @hVP="+hVP+";
   
-  Sql.push("CALL "+siteName+"IFunPoll("+intTAccumulatedUpdateTimer+");"); 
+  Sql.push("CALL "+siteName+"IFunPoll("+timeOutAccumulatedUpdate+");"); 
 
   if(boCalcZoom){  
     //Sql.push("SELECT count(u.idUser) AS nBuyerReal FROM "+userTab+" u JOIN "+buyerTab+" ro ON u.idUser=ro.idUser;");

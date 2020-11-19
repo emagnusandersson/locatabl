@@ -437,6 +437,20 @@ app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for
 }
 
 
+app.b64UrlDecode=function(b64UrlString, boUint8Array=false){  // boUint8Array==true => output is in Uint8Array
+  const padding='='.repeat((4-b64UrlString.length%4) % 4);
+  const base64=(b64UrlString+padding).replace(/\-/g, '+').replace(/_/g, '/');
+
+  //const rawData=window.atob(base64);
+  const rawData=Buffer.from(base64, 'base64').toString();
+  if(!boUint8Array) return rawData;
+  const outputArray=new Uint8Array(rawData.length);
+
+  for(let i=0; i<rawData.length; ++i){ outputArray[i]=rawData.charCodeAt(i); }
+  return outputArray;
+}
+
+
 //
 // Escaping data
 //
