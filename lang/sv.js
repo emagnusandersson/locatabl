@@ -321,15 +321,16 @@ ConnectedSince:'Ansluten i',
 
 multCurrencies:'Obs! olika valutor',
 
-// time units [singularShort, pluralShort, singularLong, pluralLong]
+// time units [[singularShort, pluralShort], [singularLong, pluralLong]]
 timeUnit:{
-s:['s','s','sekund','sekunder'],
-min:['min','min','minut','minuter'],
-h:['h','h','timme','timmar'],
-d:['d','d','dag','dagar'],
-mo:['mån','mån','månad','månader'],
-y:['år','år','år','år']
+s:[['s','s'],['sekund','sekunder']],
+m:[['min','min'],['minut','minuter']],
+h:[['h','h'],['timme','timmar']],
+d:[['d','d'],['dag','dagar']],
+M:[['mån','mån'],['månad','månader']],
+y:[['år','år'],['år','år']]
 },
+
 
 //ago:'för <span></span> sedan',
 

@@ -52,6 +52,7 @@ strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
 strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
 apiKeySendGrid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+emailRegisterdUser="noreply@example.com";
 
 
 

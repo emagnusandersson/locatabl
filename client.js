@@ -169,7 +169,7 @@ app.CreatorPlugin.general=function(){
       tmpHead.querySelector('[name=dist]').append(distUnitChoiseT);
       
         // filterDiv
-      let h=langHtml.timeUnit.h[1], mon=langHtml.timeUnit.mo[3];
+      let h=langHtml.timeUnit.h[0][1], mon=langHtml.timeUnit.M[1][1];
       viewFilter.ElRole[i].Unit={tPos:h,tCreated:mon,tAccumulated:mon};
     }
     
@@ -197,7 +197,7 @@ app.CreatorPlugin.general=function(){
     for(let i=0;i<ORole.length;i++){   extend(ORole[i].Prop.tCreated, tmpPropProt);   extend(ORole[i].Prop.tLastPriceChange, tmpPropProt);   extend(ORole[i].Prop.tPos, tmpPropProt);   }
 
       // tAccumulated, IP
-    var tmpF=function(rowMTab){ return getSuitableTimeUnitStr(rowMTab.tAccumulated); };
+    var tmpF=function(rowMTab){ var t=rowMTab.tAccumulated; return t<0?'-':getSuitableTimeUnitStr(t); };
     var tmpPropProt={ setInfo:tmpF, setTabF:tmpF, sortTabF:tmpF, setMapF:tmpF, setMapMF:tmpF };
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.tAccumulated, tmpPropProt); }
 
@@ -525,7 +525,7 @@ app.CreatorPlugin.distNTimePrice=function(){
       inpDist.value=comparePrice.dist;
       inpUnit.value=strUnitDist;
       inpTime.value=comparePrice.time;
-      divTimeLab.firstChild.nodeValue=langHtml.Time+' ('+langHtml.timeUnit[strUnitTime][3]+'): ';
+      divTimeLab.firstChild.nodeValue=langHtml.Time+' ('+langHtml.timeUnit[strUnitTime][1][1]+'): ';
       mess.firstChild.nodeValue='';
       if(typeof extraSaveFuncT!='undefined') extraSaveFunc=extraSaveFuncT; else extraSaveFunc=null;
       doHistPush({view:viewComparePriceDataPop});
@@ -612,13 +612,13 @@ app.CreatorPlugin.distNTimePrice=function(){
   ComparePriceButSpan.tmpPrototype={};
   ComparePriceButSpan.tmpPrototype.arrEl=[];
   //ComparePriceButSpan.tmpPrototype.setUp=function(){
-    //this.elSpan.innerHTML=String.format(this.strFormat, Number(comparePrice.dist).toFixed(2), strUnitDist, comparePrice.time, langHtml.timeUnit[strUnitTime][1]);
+    //this.elSpan.innerHTML=String.format(this.strFormat, Number(comparePrice.dist).toFixed(2), strUnitDist, comparePrice.time, langHtml.timeUnit[strUnitTime][0][1]);
   //};
   ComparePriceButSpan.tmpPrototype.setUp=function(){
     this.elSpan.querySelector('[name=dist]').firstChild.nodeValue=Number(comparePrice.dist).toFixed(2);
     this.elSpan.querySelector('[name=distUnit]').firstChild.nodeValue=strUnitDist;
     this.elSpan.querySelector('[name=time]').firstChild.nodeValue=comparePrice.time;
-    this.elSpan.querySelector('[name=timeUnit]').firstChild.nodeValue=langHtml.timeUnit[strUnitTime][1];
+    this.elSpan.querySelector('[name=timeUnit]').firstChild.nodeValue=langHtml.timeUnit[strUnitTime][0][1];
   };
   ComparePriceButSpan.tmpPrototype.setUpAll=function(){  var arrEl=ComparePriceButSpan.tmpPrototype.arrEl;  for(var i=0;i<arrEl.length;i++){ arrEl[i].setUp(); }  }
 
@@ -688,7 +688,7 @@ app.CreatorPlugin.distNTimePrice=function(){
       // pricePerHour
     extend(oS.Prop.pricePerHour, { strType:'number',inpW:4 });
       // strUnitDist
-    var tmpSetUnitDist=function(rowMTab){this.querySelector('button').firstChild.nodeValue='('+Number(comparePrice.dist).toFixed(2)+' '+strUnitDist+', '+comparePrice.time+' '+langHtml.timeUnit.min[3]+')';};
+    var tmpSetUnitDist=function(rowMTab){this.querySelector('button').firstChild.nodeValue='('+Number(comparePrice.dist).toFixed(2)+' '+strUnitDist+', '+comparePrice.time+' '+langHtml.timeUnit.m[1][1]+')';};
     extend(oS.Prop.strUnitDist, {
       strType:'select',
       crInp:function(){  return createElement('select').myAppend(  createElement('option').myText('km').prop('value',0), createElement('option').myText('mile').prop('value',1)  );  },
@@ -696,7 +696,7 @@ app.CreatorPlugin.distNTimePrice=function(){
     });
       // comparePrice
     var calcComparePrice=function(rowMTab){
-      var divisor=strUnitTime=='min'?60:1; return Number(rowMTab.priceStart)  +tmpSetPricePerDist(rowMTab)*comparePrice.dist  +rowMTab.pricePerHour/divisor*comparePrice.time;
+      var divisor=strUnitTime=='m'?60:1; return Number(rowMTab.priceStart)  +tmpSetPricePerDist(rowMTab)*comparePrice.dist  +rowMTab.pricePerHour/divisor*comparePrice.time;
     };
     var tmpSetComparePriceOneLineWOCur=function(rowMTab){ var tmp=calcComparePrice(rowMTab); return Number(tmp.toFixed(2)); };
     var tmpSetComparePriceOneLineWCur=function(rowMTab){ var tmp=calcComparePrice(rowMTab); return rowMTab.currency+' '+Number(tmp.toFixed(2)); };
@@ -829,7 +829,7 @@ app.CreatorPlugin.shiftEnd=function(){
     //var tmpSetShiftEnd=makeTimeF(oS.ind,'shiftEnd',1);
     oS.Prop.shiftEnd.boUseTimeDiff=1;
     var tmp = butTimeStampCreator(oS.ind, 'shiftEnd').css({padding:'0.3em 0.5em'});    viewTable.ElRole[1].tHeadLabel.querySelector('[name=shiftEnd]').append(tmp);
-    viewFilter.ElRole[1].Unit.shiftEnd=langHtml.timeUnit.h[1];
+    viewFilter.ElRole[1].Unit.shiftEnd=langHtml.timeUnit.h[0][1];
 
     extend(oS.Prop.shiftEnd, {strType:'select',
       crInp:function(){  var c=createElement('select'); for(var i=0;i<225;i++){ var o=createElement('option').myText(' '); c.append(o); }   return c; },
@@ -898,7 +898,7 @@ app.CreatorPlugin.fixedPricePerUnit=function(){
 //0123456789abcdef pluginTaxi.js
 "use strict"
 app.CreatorPlugin.taxi=function(){
-  app.strUnitTime='min';
+  app.strUnitTime='m';
   var StrS=oS.StrPropE;  // ['brand', 'idDriverGovernment', 'nExtraSeat']
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   
@@ -1000,7 +1000,7 @@ app.CreatorPlugin.taxi=function(){
 //0123456789abcdef pluginTransport.js
 "use strict"
 app.CreatorPlugin.transport=function(){
-  app.strUnitTime='min';
+  app.strUnitTime='m';
   var StrS=oS.StrPropE;  // ['brand']
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   var {StrPropE}=site;
@@ -1640,7 +1640,8 @@ app.complaintButtonCreator=function(oRole){
   // For time properties
 var makeTimeF=function(dir){return function(rowMTab){
   var data=rowMTab[this.strName];
-  if(ORole[this.iRole].Prop[this.strName].boUseTimeDiff) data=getSuitableTimeUnitStr(dir*(data-curTime)); else data=UTC2Readable(data); return data;  // this.myText(data);
+  if(ORole[this.iRole].Prop[this.strName].boUseTimeDiff) { var t=dir*(data-curTime);   data=t<0?'-':getSuitableTimeUnitStr(t);  }
+  else data=UTC2Readable(data); return data;  // this.myText(data);
 }; };
 app.propTimeAgo=makeTimeF(-1); app.propTimeRemain=makeTimeF(1);
     
@@ -2175,8 +2176,7 @@ var divLoginSelectorCreator=function(oRole){
   });
   var divLeft=createElement('div').css(cssCol).css({'text-align':'center'}).myAppend(imgFb); divLeft.insertAdjacentHTML('beforeend', '<p>Email, name and image are used, although not shown publicly unless you want to.</p><p>Nothing is written to your Facebook flow.</p>' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
   var divRight=createElement('div').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).myAppend( buttonViaEmail);        divRight.hide();
-  //if(boGoogleReview && document.domain.substr(0,4)=='taxi') {divRight.show();}
-  if(boGoogleReview && site.siteName=='taxi') {divRight.show();}
+  if(boGoogleReview && site.siteName=='demo') {divRight.show();}
 
   var divRow=createElement('div').myAppend(divLeft, divRight).css({display: 'flex', 'justify-content':'space-around'});  //
 
@@ -3209,7 +3209,7 @@ var divEntryBarCreator=function(el){
     viewEntryS.setVis(); doHistPush({view:viewEntryS});
     ga('send', 'event', 'button', 'click', 'entryDivS');
   });
-  if(document.domain.substr(0,4)=='demo') {entryButtonB.hide(); entryButtonS.hide();}
+  //if(site.siteName=='demo') {entryButtonB.hide(); entryButtonS.hide();}
   
   el.css({ display:"flex", "justify-content":"center", 'align-items':'center'}); //, 'border-top':'solid 1px', "justify-content":"space-evenly"
   el.myAppend(entryButtonLabel, entryButtonB, entryButtonS);
@@ -3301,7 +3301,7 @@ var viewEntryCreator=function(oRole){
   }).hide();
 
 
-  if(document.domain.substr(0,4)=='demo') viewbuttLoginSeller.hide();
+  //if(site.siteName=='demo') viewbuttLoginSeller.hide();
 
   var pWiki=createElement('div').myAppend(pSeeAlso);
 
@@ -4774,7 +4774,7 @@ var quickDivCreator=function(){
     var boShow=Number(userInfoFrDB[strRole].boShow); 
     var hideTimer=Number(userInfoFrDB[strRole].hideTimer);
     var tHide=Number(userInfoFrDB[strRole].tPos)+hideTimer, tDiff=tHide-curTime;
-    var tDiffForm=getSuitableTimeUnitStr(tDiff);
+    var tDiffForm=tDiff<0?'-':getSuitableTimeUnitStr(tDiff);
     var colShowT=boShow?colGreen:colGray, colHideT=boShow?colGray:colRed;
     var str; if(boShow) { str=hideTimer==intMax?'∞':tDiffForm; }else { str=langHtml.On;  }
     butShowWPos.css('background-color', colShowT); butShowWPos.firstChild.nodeValue=str; buthide.css('background-color', colHideT);
@@ -4820,7 +4820,7 @@ var quickDivCreator=function(){
   
     // selHideTimer
   var arrHideTime=[15,60,120, 300,600,15*60,20*60,30*60,40*60,3600,1.5*3600,2*3600,3*3600,4*3600,5*3600,6*3600,8*3600,10*3600,12*3600,18*3600,86400,1.5*86400,2*86400,3*86400,4*86400,5*86400,6*86400,7*86400,14*86400,30*86400,intMax], len=arrHideTime.length, Opt=Array(arrHideTime.length);
-  for(var i=0;i<len;i++){  var str=getSuitableTimeUnitStr(arrHideTime[i]); if(i==len-1) str='∞'; var opt=createElement('option').myText(str).prop('value',arrHideTime[i]);   Opt[i]=opt;    }
+  for(var i=0;i<len;i++){  var t=arrHideTime[i], str=getSuitableTimeUnitStr(t); if(i==len-1) str='∞'; var opt=createElement('option').myText(str).prop('value',t);   Opt[i]=opt;    }
   var selHideTimer=createElement('select').myAppend(...Opt);
 
   var spanDragMess=createElement('span').myText(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();

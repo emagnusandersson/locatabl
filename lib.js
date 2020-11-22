@@ -349,6 +349,8 @@ app.myUUID=function(){
   for (var i = 0; i < array.length; i++) { Str[i]=array[i].toString(16).padStart(8,"0"); }
   return Str.join("");
 }
+
+
 //
 // Dates and time
 //
@@ -375,21 +377,11 @@ app.getSuitableTimeUnit=function(t){ // t in seconds
   tabs/=365; // t in years
   return [tsign*tabs,'y'];
 }
-
-app.getSuitableTimeUnitStr=function(tdiff,boLong=0,boArr=0){
-  //var tmp;  tmp=approxTimeDuration(tdiff,boLong,boArr);
-  var [ttmp,indA]=getSuitableTimeUnit(tdiff), n=Math.round(ttmp);
-  if(indA=='m') indA='min';
-  var jSingular=0, jPlural=1; if(boLong==1){jSingular=2; jPlural=3;}
-  var unit=langHtml.timeUnit, units=unit[indA][jSingular]; if(n!=1) units=unit[indA][jPlural];
-
-  if(boArr==1){  return [n,units];  }
-  else{
-    var tmp=n+' '+units;  if(tdiff<0) tmp='-';
-    return tmp;
-  }
+app.getSuitableTimeUnitStr=function(tdiff,objLang=langHtml.timeUnit,boLong=0,boArr=0){
+  var [ttmp,u]=getSuitableTimeUnit(tdiff), n=Math.round(ttmp);
+  var strU=objLang[u][boLong][Number(n!=1)];
+  if(boArr){  return [n,strU];  } else{  return n+' '+strU;   }
 }
-
 
 //
 // Data Formatting
