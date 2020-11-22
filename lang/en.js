@@ -317,14 +317,14 @@ ConnectedSince:'Connected since',
 
 multCurrencies:'Note! different currencies',
 
-// time units [singularShort, pluralShort, singularLong, pluralLong]
+// time units [[singularShort, pluralShort], [singularLong, pluralLong]]
 timeUnit:{
-s:['s','s','second','seconds'],
-min:['min','min','minute','minutes'],
-h:['h','h','hour','hours'],
-d:['d','d','day','days'],
-mo:['mo','mo','month','months'],
-y:['y','y','year','years']
+s:[['s','s'],['second','seconds']],
+m:[['min','min'],['minute','minutes']],
+h:[['h','h'],['hour','hours']],
+d:[['d','d'],['day','days']],
+M:[['mo','mo'],['month','months']],
+y:[['y','y'],['year','years']]
 },
 
 //ago:'<span></span> ago',
@@ -658,6 +658,17 @@ if('programmer' in Site) Site.programmer.langSetup=function(){
 </div>";
 }
 
+if('demo' in Site) Site.demo.langSetup=function(){
+  var serv=this.serv={};
+  serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="(demo) taxi.closeby.market"; 
+  serv.strDescription="Positioning/tracking-tool for finding and comparing taxicabs in the neighborhood";
+  serv.strKeywords="job, work, search tool, tracker, taxi, taxicab, freelance, business, entrepreneurs, jobs, job center";
+  serv.strSummary="<div>\n\
+  <p>This web application uses the positioning system of the customers resp the taxi drivers iphones/androids/computers.</p>\n\
+  <p>The customer can then see on a map where all the vacant taxis in the neighborhood are, and compare latest/current prices, number of seats etc.</p>\n\
+  <p>The taxi driver can change the price between different periods depending on supply and demand.</p>\n\
+</div>";
+}
 
 //Site.bla.langSetup=function(){this.strTitle="App for Sellers"; this.strH1="App for Sellers"; this.strSummary='<div></div>';}
 

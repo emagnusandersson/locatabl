@@ -517,7 +517,7 @@ var arrViewPop=[];`);
   Str.push(`var tmp=`+serialize(objOut)+`;\n Object.assign(window, tmp);`);
   
 
-  var strTmp=boGoogleReview&&siteName=="taxi"?"":"none";
+  var strTmp=boGoogleReview&&siteName=="demo"?"":"none";
   Str.push(`
 </script>
 <form  id=formLogin style="display:${strTmp}">

@@ -441,7 +441,8 @@ PluginF.fixedPricePerUnit=function(site){
  * PluginF (site specific)
  ***********************************************************************************/
 
-//PluginF.taxi=PluginF.demo=PluginF.test=function(){
+//PluginF.taxi=PluginF.demo=PluginF.test=function(site){
+//PluginF.taxi=PluginF.demo=function(site){
 PluginF.taxi=function(site){
   var [oB,oS]=site.ORole;
   
@@ -781,8 +782,10 @@ SiteExtend=function(){
     var ORole=JSON.parse(JSON.stringify(ORoleDefault));
     var tmp={siteName, ORole, oB:ORole[0], oS:ORole[1]};
     var site=extend(Site[siteName],tmp);
-    if(['taxi', 'transport'].indexOf(siteName)!=-1) { // , 'demo', 'test'
-      StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'priceB', 'transportBuyer', 'standingByMethod', 'shiftEnd', siteName];   //if(['demo', 'test'].indexOf(siteName)!=-1) StrPlugInNArg.splice(5,0,'taxi');
+    if(['taxi', 'transport', 'demo'].indexOf(siteName)!=-1) { // , 'test'
+      StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'priceB', 'transportBuyer', 'standingByMethod', 'shiftEnd', siteName];   
+      //if(['demo', 'test'].indexOf(siteName)!=-1) StrPlugInNArg.splice(5,0,'taxi');
+      if(['demo', 'test'].indexOf(siteName)!=-1) {StrPlugInNArg.pop(); StrPlugInNArg.push('taxi');}
     }
     else if(siteName=='cleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', 'shiftEnd', siteName];
     else if(siteName=='windowcleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', siteName];
