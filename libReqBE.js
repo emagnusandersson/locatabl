@@ -214,11 +214,14 @@ ReqBE.prototype.go=function*(){
   var strT=req.headers['Sec-Fetch-Site'];
   if(strT && strT!='same-origin') { this.mesEO(Error("Sec-Fetch-Site header is not 'same-origin' ("+strT+")"));  return;}
   
-  if('x-requested-with' in req.headers && req.headers['x-requested-with']=="XMLHttpRequest") ; else { this.mesEO(Error("Ajax-request: req.headers['x-requested-with']!='XMLHttpRequest'"));  return; }
 
-  if('referer' in req.headers){
+  if('x-requested-with' in req.headers){
+    var str=req.headers['x-requested-with'];   if(str!=="XMLHttpRequest") { this.mesEO(Error("x-requested-with: "+str));  return; }
+  } else {  this.mesEO(Error("x-requested-with not set"));  return;  }
+
+  if('referer' in req.headers) {
     var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length, referer=req.headers.referer, lMin=Math.min(lTmp, referer.length);
-    if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(Error("Referer is wrong"));  return; }
+    if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(Error('Referer does not match,  got: '+referer+', expected: '+urlT));  return;  }
   } else { this.mesEO(Error("Referer not set"));  return; }
   
   if(req.method!='POST'){ this.mesO('send me a POST'); return; }
@@ -226,7 +229,12 @@ ReqBE.prototype.go=function*(){
   var jsonInput=yield* app.getPost.call(this, req.flow, req);
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
-  if(!req.boCookieOK) {this.mesEO(Error('Cookie not set'));  return;   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
+  if(!req.boCookieOK) {
+    var StrTmp=Array(beArr.length);
+    for(var i=0;i<beArr.length;i++){  StrTmp[i]=beArr[i][0]; }
+    console.log("Cookie not set, be.json: "+StrTmp.join(', '));
+    this.mesEO(Error('Cookie not set'));  return
+  } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
   
   this.sessionUserInfoFrDB=yield *getRedis(flow, req.sessionID+'_UserInfoFrDB', true);
   //var [err,value]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
@@ -355,7 +363,7 @@ ReqBE.prototype.sendLoginLink=function*(inObj){
 //<p>Note! The link stops working `+expirationTime/60+` minutes after the email was sent.</p>`;
   
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to:email, from:emailRegisterdUser, subject:'Login link',  html:strTxt};  //sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Login link',  html:strTxt};
 
   var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
   .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
@@ -434,7 +442,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to:email, from:emailRegisterdUser, subject:'Email verification / account creation', html:strTxt };  //sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Email verification / account creation', html:strTxt };
 
   var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
   .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
@@ -547,7 +555,7 @@ ReqBE.prototype.verifyEmail=function*(inObj){
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
 
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to:email, from:emailRegisterdUser, subject:'Email verification', html:strTxt };  //sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Email verification', html:strTxt };
 
   var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
   .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
@@ -592,7 +600,7 @@ ReqBE.prototype.verifyPWReset=function*(inObj){
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
   if(boDbg) wwwSite="closeby.market";
-  const msg = { to:email, from:emailRegisterdUser, subject:'Password reset request', html:strTxt };  //sgMail.send(msg);
+  const msg = { to:email, from:emailRegisterdUser, subject:'Password reset request', html:strTxt };
 
   var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
   .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
@@ -1319,7 +1327,7 @@ ReqBE.prototype.RHide=function*(inObj){  // writing needSession
 
     // Set userInfoFrDB and userInfoFrDBUpd
   var objTmp=results[2][0];
-  var userInfoFrDBUpd={};   if(iRole) userInfoFrDBUpd.sellerTeam=objTmp; else userInfoFrDBUpd.buyerTeam=objTmp;
+  var userInfoFrDBUpd={};   if(iRole) userInfoFrDBUpd.seller=objTmp; else userInfoFrDBUpd.buyer=objTmp;
   extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
   yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
 

@@ -2566,7 +2566,7 @@ var viewSettingEntryCreator=function(){
   for(let i=0;i<2;i++) {
     var oRole=ORole[i], strTmp=i?'Sellers':'Buyers';
     var spanTmp=createElement('span');
-    ButtShowMarkSelect[i]=createElement('button').myAppend(langHtml[strTmp]+' (', spanTmp, ')').css({background:oRole.strColor}).on('click', function(){
+    ButtShowMarkSelect[i]=createElement('button').myAppend('(', spanTmp, ')').css({background:oRole.strColor}).on('click', function(){ //langHtml[strTmp]+
       charRole=ORole[i].charRole; // Temporary
       viewMarkSelector.setVis(); doHistPush({view:viewMarkSelector});
     });
@@ -3055,7 +3055,7 @@ app.spanIdTeamWantedCreator=function(oRole){
 
     var idTeam=userInfoFrDB[strRole].idTeam; spanDisNApproved.toggle(idTmp!=idTeam);
   }
-  var inp=createElement('input').prop('type','text').css({width:'3em'});
+  var inp=createElement('input').prop({'type':'number', min:0}).css({width:'3em'});
   var thumbDis=createElement('img').prop({alt:"team"}).css({'vertical-align':'middle','margin':'0 0.4em'}); //'float':'right',clear:'both'
   var spanDisNApproved=createElement('span').myText(langHtml.NotYetApproved).css({'vertical-align':'middle','margin-right':'0.4em', 'white-space':'nowrap'}); //'float':'right',clear:'both'
   el.myAppend(thumbDis, spanDisNApproved, inp);

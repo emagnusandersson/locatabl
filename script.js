@@ -261,8 +261,7 @@ var flow=( function*(){
       if(boDbg) {console.log(pathName);}
       
       
-      var cookies = parseCookies(req);
-      req.cookies=cookies;
+      var cookies =req.cookies= parseCookies(req);
       //var StrCookieKeys=Object.keys(cookies);
       //if(req.url=='/') console.log('\nReferer: '+req.headers.referer);
       //console.log(req.headers.host+' '+req.url+' '+ JSON.stringify(StrCookieKeys));
@@ -366,6 +365,7 @@ var flow=( function*(){
       else if(pathName=='/'+leafVerifyEmailNCreateUserReturn){  yield* reqVerifyEmailNCreateUserReturn.call(objReqRes);  }
       else if(pathName=='/'+leafDataDelete){  yield* reqDataDelete.call(objReqRes);  }
       else if(pathName=='/'+leafDataDeleteStatus){  yield* reqDataDeleteStatus.call(objReqRes);  }
+      else if(pathName=='/'+leafDeAuthorize){  yield* reqDeAuthorize.call(objReqRes);  }
       //else if(pathName=='/mergeID'){  var reqMergeID=new ReqMergeID(req, res);      reqMergeID.go();      }
       else if(pathName=='/createDumpCommand'){  var str=createDumpCommand(); res.out200(str);     }
       else if(pathName=='/debug'){    debugger  }

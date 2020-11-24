@@ -26,6 +26,7 @@ leafManifest='manifest.json';
 leafServiceWorker='serviceworker.js';
 leafDataDelete='dataDelete';
 leafDataDeleteStatus='dataDeleteStatus';
+leafDeAuthorize='deAuthorize';
 
 
 
