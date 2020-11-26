@@ -406,7 +406,7 @@ tCreated:{label:'Acc­ount age', boRot:0},
 displayName:{label:'Name', boRot:0},
 tel:{label:'☎', boRot:0}, //Tel
 displayEmail:{label:'Email', boRot:0}, //✉
-boWebPushOK:{label:'"Push Not­ifica­tions" enabled', boRot:0},
+boWebPushOK:{label:'Push Not­ifica­tions', boRot:0},
 link:{label:'Link', boRot:0}, //🔗
 homeTown:{label:'Home town', boRot:0},
 standingByMethod:{label:'How is <span nom="theSeller">the seller</span> wait­ing', boRot:0},

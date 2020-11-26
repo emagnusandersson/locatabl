@@ -7,11 +7,22 @@
 // At lat=0 (y=128), a world coordinate unit will be wc2m meters
 // At lat=arccos(0.5), (lat=+-60 or y=128+-53.66), a world coordinate unit will be wc2m/2 meters
 // At lat=arccos(0.25), (lat=+-75.52 or y=128+-84.08), a world coordinate unit will be wc2m/4 meters
-app.roundXY=function(resM,x,y,lat){
-  var resWC=resM2resWC(resM,lat);
-  var xA=Math.round(x/resWC)*resWC,  yA=Math.round(y/resWC)*resWC;  return [xA,yA];
-}
 
+// app.roundXY=function(resM,x,y,lat){
+//   var resWC=resM2resWC(resM,lat);
+//   var xA=Math.round(x/resWC)*resWC,  yA=Math.round(y/resWC)*resWC;  return [xA,yA];
+// }
+
+app.roundNObscure=function(resM,x,y,lat){
+  var resP=resM2resWC(resM,lat);
+  var resWC=resM2resWC(resM,lat);
+  x=Math.round(x/resWC)*resWC;  y=Math.round(y/resWC)*resWC;
+
+  var xNoise=resP*facNoiseCoordinate*(Math.random()-0.5), yNoise=resP*facNoiseCoordinate*(Math.random()-0.5);
+  x+=xNoise, y+=yNoise;
+  [x]=normalizeAng(x, 128, 256);  [y]=normalizeAng(y, 128, 256);
+  return [x,y];
+}
 
 
 //var text=fs.readFileSync(strFileName, 'utf8');

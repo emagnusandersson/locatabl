@@ -18,12 +18,12 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "sql",
+            "name": "createFunction",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/script.js",
-            "args": ["--sql", "createTable"]
+            "args": ["--sql", "createFunction"]
         }
     ]
 }
