@@ -35,6 +35,7 @@ hideTimerDefault=365*24*3600;
 hideTimerDefault=uintMax;
 if(boDbg) hideTimerDefault=30*60;
 hideTimerDefault=intMax;
+hideTimerDefault=30*60;
 
    // DB- TableNameProt
 StrTableKey=["buyerTeamImage","buyerTeam","buyer","sellerTeamImage","sellerTeam","seller","userImage","complaint","admin","webPushSubscription","user","setting"]; 
@@ -76,6 +77,7 @@ m2wc=1/wc2m;
 //var len=arrCoordinatePrecisionM.length;
 //arrCoordinatePrecision=Array(len); for(var i=0;i<len;i++) arrCoordinatePrecision[i]=arrCoordinatePrecisionM[i]*m2wc;
   //arrCoordinatePrecision=array(0.00001,0.00002,0.00005,0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2); 
+facNoiseCoordinate=0.5; // Extra noise so that rounded coordinates ends up on the same place
 
 //Enum=[];
 selEnumF=function(name){  return name+"-1";  };
@@ -110,7 +112,7 @@ maxGroupsInFeat=20;
 preDefault="ro.";
 //snoreLim=12*3600;
 snoreLim=20*24*3600;
-version='367';
+version='369';
 auto_increment_increment=1;
 
 
@@ -177,7 +179,7 @@ PluginF.general=function(site){
   nComplaintCum:       {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
   nComplaintGiven:     {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
   nComplaintGivenCum:  {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
-  coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:1000},
+  coordinatePrecisionM:{b:'111011110',type:'INT(4) UNSIGNED', default:10000},
   dist:                {b:'000010000'},
   experience:          {b:'111011111',type:'INT(4) UNSIGNED', default:0, feat:{kind:'BN'}}
   };
@@ -455,7 +457,8 @@ PluginF.taxi=function(site){
     nWheelChairPlaces:    {b:'111010110',type:'TINYINT', default:0, feat:{kind:'S10',min:[0, 1, 2, 3],span:1}}
   };
 
-  extend(oB.Prop,PropTmp);   extend(oS.Prop, PropTmp);
+  extend(oB.Prop,PropTmp);  oB.Prop.nPassengers.default=1;
+  extend(oS.Prop, PropTmp);
   site.StrPropE=Object.keys(PropTmp);
   array_mergeM(oB.StrFiltAccept, site.StrPropE);   array_mergeM(oS.StrFiltAccept, site.StrPropE); 
   //oB.StrOrder.push('nPassengers', 'nChildSeat', 'nWheelChairPlaces');

@@ -79,6 +79,21 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
 // SettingTab "name"=> "key"
 
 
+// libksane
+// mono
+// jre11
+// mlt
+// ocl
+// qscintilla
+// qt5-location
+// vtk
+// iotop
+// fd
+// broot
+
+
+
+
 //0123456789abcdef pluginGeneral.js
 "use strict"
 app.CreatorPlugin.general=function(){
@@ -207,26 +222,6 @@ app.CreatorPlugin.general=function(){
     var tmpPropProt={crInfo:tmpCrNComplaint, setInfo:tmpSetNComplaint, crTabF:tmpCrNComplaint, setTabF:tmpSetNComplaint};
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.nComplaint, tmpPropProt); }
 
-
-/**********************************************************************
- * Methods of properties (provided by the plugins)
-crInp: no arg, no this, creates and returns el
-crInfo: no arg, uses this (span), nothing returned
-crTabF: no arg, uses this (td), nothing returned
-
-setInp: no arg, uses this, nothing returned
-saveInp: no arg, uses this, returns [err val]
-
-setInfo: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
-setTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
-sortTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
-setMapF, setMapMF: rowMTab as arg, uses this, if something is returned...:
-  ...and is a string, (it is displayed as a string (see more in mapDiv))
-  ...and is an object, (it is used as seen in mapDiv)
-
-crFilterButtF: button index as arg, no this, creates and returns el
-setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
-***********************************************************************/
 
       // idTeam
     const tmpCrIdTeam=function(){  this.append(  thumbTeamCreator(ORole[this.iRole])  );   };
@@ -386,7 +381,8 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
       this.append(butT);
     }
     var tmpSetInfo=function(rowMTab){  const b=this.querySelector('button'); b.disabled=!rowMTab.boWebPushOK;  b.idUser=rowMTab.idUser; b.iRole=this.iRole;};
-    var tmpPropProt={  strType:'span', crInp:tmpCrInp, setInp:tmpSetInp, saveInp:tmpSaveInp, crInfo:tmpCrInfo, setInfo:tmpSetInfo, crTabF:tmpCrInfo, setTabF:tmpSetInfo }
+    var tmpSetMap=function(rowMTab){ return Number(rowMTab[this.strName])?langHtml.Yes:langHtml.No; };
+    var tmpPropProt={  strType:'span', crInp:tmpCrInp, setInp:tmpSetInp, saveInp:tmpSaveInp, crInfo:tmpCrInfo, setInfo:tmpSetInfo, crTabF:tmpCrInfo, setTabF:tmpSetInfo, setMapF:tmpSetMap, setMapMF:tmpSetMap }
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.boWebPushOK, tmpPropProt); }
   };
 };
@@ -771,7 +767,7 @@ app.CreatorPlugin.transportBuyer=function(){
   this.rewriteObj=function(){
       // distStartToGoal
     var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
-    extend(oB.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet });
+    extend(oB.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet, setMapMF:tmpSet });
       // compassPoint
     var tmpSet=function(rowMTab){  return langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; }
     var crInpFunc=function(){
@@ -784,7 +780,7 @@ app.CreatorPlugin.transportBuyer=function(){
       crInp:crInpFunc,
       setInfo:tmpSet,
       setTabF:tmpSet,
-      setMapF:tmpSet,
+      setMapF:tmpSet,setMapMF:tmpSet,
       setFilterButtF:function(span,val,boOn){ var tmp=langHtml.compassPoint[val]; span.firstChild.nodeValue=tmp;  }
     });
       // destination
@@ -927,7 +923,7 @@ app.CreatorPlugin.taxi=function(){
   oB.roleSetting=separateGroupLabels([
   ['Buyer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
   ['Destination', ...StrTransportBuyer],
-  ['Vehicle', ...StrPropE],
+  ['RequestedVehicle', ...StrPropE],
   ['Price', 'currency', 'price']]);
   oS.roleSetting=separateGroupLabels([
   ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'],
@@ -946,10 +942,10 @@ app.CreatorPlugin.taxi=function(){
 
   
     // Default columns
-  oB.ColsShowDefault= ['image', ...StrTransportBuyer, 'idTeam', 'price'];  //'distStartToGoal', 'compassPoint', 'destination'
-  oB.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
-  oB.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'price'];
-  oB.colOneMarkDefault='image';
+  oB.ColsShowDefault= ['image', ...StrTransportBuyer, 'idTeam', 'nPassengers', 'price'];  //'distStartToGoal', 'compassPoint', 'destination'
+  oB.ColsShowDefaultS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'nPassengers', 'price'];
+  oB.ColsShowDefaultRS= ['image', 'distStartToGoal', 'compassPoint', 'idTeam', 'nPassengers', 'price'];
+  oB.colOneMarkDefault='nPassengers';
   
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'brand', 'nPassengers', 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'brand', 'comparePrice'];
@@ -1004,7 +1000,7 @@ app.CreatorPlugin.transport=function(){
   var StrS=oS.StrPropE;  // ['brand']
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
   var {StrPropE}=site;
-  var {StrTransportBuyer}=oB;  // ['distStartToGoal','compassPoint','destination']
+  var {StrTransportBuyer}=oB;  // ['compassPoint','distStartToGoal','destination']
  
 
   //var StrTransportBool=['generalCargo', 'tailLift', 'loaderCrane', 'tipper', 'loadableFromTheSide', 'iso20', 'iso40', 'tiltBed', 'sideLift', 'rollerContainer', 'otherContainer'];
@@ -1053,7 +1049,7 @@ app.CreatorPlugin.transport=function(){
   oB.ColsShowDefault= ['image', ...StrTransportBuyer, 'idTeam', 'price'];
   oB.ColsShowDefaultS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
   oB.ColsShowDefaultRS= ['image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
-  oB.colOneMarkDefault='image';
+  oB.colOneMarkDefault='distStartToGoal';
   
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', 'comparePrice'];
@@ -1282,7 +1278,7 @@ app.CreatorPlugin.lawnmowing=function(){
   oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
   oB.ColsShowDefaultS=['image', 'displayName', ...StrB, 'pricePerHour'];
   oB.ColsShowDefaultRS=['image', ...StrB, 'pricePerHour'];
-  oB.colOneMarkDefault='image';
+  oB.colOneMarkDefault='area';
 
   oS.ColsShowDefault=['image', 'displayName', 'tel', 'vehicleType', ...StrS, 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS=['image', 'displayName', 'vehicleType', ...StrS, 'comparePrice'];
@@ -1358,7 +1354,7 @@ app.CreatorPlugin.snowremoval=function(){
   oB.ColsShowDefault=['image', 'displayName', ...oB.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour'];
   oB.ColsShowDefaultS=['image', 'displayName', ...oB.StrBool, 'area', 'pricePerHour'];
   oB.ColsShowDefaultRS=['image', ...oB.StrBool, 'area', 'pricePerHour'];
-  oB.colOneMarkDefault='image';
+  oB.colOneMarkDefault='area';
 
   oS.ColsShowDefault= ['image', 'displayName', 'tel', 'vehicleType', ...oS.StrBool, 'idTeam', 'comparePrice'];
   oS.ColsShowDefaultS= ['image', 'displayName', 'vehicleType', ...oS.StrBool, 'comparePrice'];
@@ -2001,6 +1997,28 @@ history.fastBack=function(viewGoal, boRefreshHash){
 }
 
 
+  //
+  // divReCaptchaExtend
+  //
+
+var divReCaptchaExtend=function(el){
+  el.loadScript=function(){
+    var scriptRecaptcha=createElement("script").prop({src:uRecaptcha});
+    document.head.myAppend(scriptRecaptcha);
+  }
+  el.setUp=function(){
+    if(typeof grecaptcha=='undefined') {const tmp="typeof grecaptcha=='undefined'"; setMess(tmp); console.log(tmp); return; }
+    if(!('render' in grecaptcha)) {const tmp="!('render' in grecaptcha)"; setMess(tmp); console.log(tmp); return; }
+    if(el.children.length==0){    grecaptcha.render(el, {sitekey:strReCaptchaSiteKey});    } else grecaptcha.reset();
+  }
+  el.isLoaded=function(){
+    if(typeof grecaptcha=='undefined' || !('render' in grecaptcha)) { return false; } return true;
+  }
+  el.addClass("g-recaptcha");
+  
+  return el;
+}
+
 /*******************************************************************************************************************
  *******************************************************************************************************************
  *
@@ -2106,6 +2124,7 @@ var viewFormLoginCreator=function(){
   var divHead=createElement('h3').myText('Sign in using email / password').css({'text-align':'center'});
 
   var formLogin=document.querySelector('#formLogin');
+  if(boGoogleReview&&site.siteName=="demo") formLogin.css({display:"block"});
   var inpEmail=formLogin.querySelector("input[name='email']").css({'max-width':'100%'});
   var inpPass=formLogin.querySelector("input[name='password']").css({'max-width':'100%'});
   var buttLogin=formLogin.querySelector("button[name='submit']").css({"margin-top": "1em"}).on('click',loginWEmail);
@@ -2142,6 +2161,7 @@ var viewFormLoginCreator=function(){
 var divLoginSelectorCreator=function(oRole){
   var el=createElement('div');
   var {strRole, charRoleUC, ind:iRole}=oRole;
+  el.iRole=iRole;
   el.toString=function(){return 'divLoginSelector';}
 
   var strButtonSize='2em';
@@ -2203,7 +2223,7 @@ var viewCreateUserCreator=function(){
     var strTmp=grecaptcha.getResponse(); if(!strTmp) {setMess("Captcha response is empty", 5); return; }
     if(typeof SHA1 == 'undefined') { setMess(strSha1NotLoaded); return;}
     var hashPW=strPassword+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
-    var o={name:strName, email:strEmail, password:hashPW,  'g-recaptcha-response': grecaptcha.getResponse()};
+    var o={name:strName, email:strEmail, password:hashPW, iRole:divLoginSelector.iRole, 'g-recaptcha-response': strTmp};
 
     //var vec=[['createUser',o], ['setupById',{}, el.cb]];   majax(vec);
     var vec=[['sendVerifyEmailNCreateUserMessage', o, saveRet]];   majax(vec);
@@ -2213,7 +2233,7 @@ var viewCreateUserCreator=function(){
   }
   var saveRet=function(data){
     if(data.boOK){
-      var strTmp='Check your mailbox, an email was sent which contains a link which will create the account.';
+      var strTmp='An email was sent which contains a link which will create the account.';
       setMess(strTmp);  messEndDiv.myText(strTmp);
     }
   }
@@ -2221,12 +2241,9 @@ var viewCreateUserCreator=function(){
   var lPWMin=boDbg?2:6;
 
   el.setUp=function(){
-    //if(divReCaptcha.is(':empty')){
-    console.log('Note!! the recaptcha-js-file is not loaded (to increase load speed) (login without fb is not allowed anyway)');
-    if(divReCaptcha.hasChildNodes()){
-      if(typeof grecaptcha=='undefined') var grecaptcha={render:function(){console.log('no grecaptcha');}};
-      grecaptcha.render(divReCaptcha, {sitekey:strReCaptchaSiteKey});
-    }
+    
+    if(divReCaptcha.isLoaded()) { console.log('Setting up recaptcha (divReCaptcha became visible)'); divReCaptcha.setUp(); } // Otherwise cbRecaptcha will fire later
+
     //messDiv.firstChild.nodeValue=' ';  messEndDiv.firstChild.nodeValue=' ';
     messDiv.myText('');  messEndDiv.myText('');
     return true;
@@ -2236,6 +2253,7 @@ var viewCreateUserCreator=function(){
   var h1=createElement('h1').myText('Create account');
 
   var formCreateAccount=document.querySelector('#formCreateAccount');
+  if(boGoogleReview&&site.siteName=="demo") formCreateAccount.css({display:"block"});
   var inpName=formCreateAccount.querySelector("input[name='name']").css({'max-width':'100%'});
   var inpEmail=formCreateAccount.querySelector("input[name='email']").css({'max-width':'100%'});
   var inpPass=formCreateAccount.querySelector("input[name='password']").css({'max-width':'100%'});
@@ -2243,16 +2261,15 @@ var viewCreateUserCreator=function(){
   [...formCreateAccount.querySelectorAll('input[type=text],[type=email],[type=number],[type=password]')].forEach( ele=>ele.css({display:'block', 'margin-bottom':'0.5em'}) );
   inpPass.attr("placeholder", 'at least '+lPWMin+' characters');
 
-  var divReCaptcha=createElement('div');
   el.divDisclaimerW=createElement('div').css({'margin':'0em', 'padding':'0em'});
 
   var messDiv=createElement('div').css({color:'red'});
 
-
+  el.divReCaptcha=createElement('div');
   var buttonVerifyNCreate=createElement('button').myText('Verify email and create account').on('click', save).addClass('flexWidth').css({'margin':'0.5em 0em 0.3em'})
   var messEndDiv=createElement('div');  //=createElement('span').css({'margin-left':'.4em'});
 
-  var divCont=createElement('div').addClass('contDiv').myAppend(h1, el.divDisclaimerW, messDiv,   formCreateAccount, divReCaptcha, buttonVerifyNCreate, messEndDiv);
+  var divCont=createElement('div').addClass('contDiv').myAppend(h1, el.divDisclaimerW, messDiv,   formCreateAccount, el.divReCaptcha, buttonVerifyNCreate, messEndDiv);
   
       // divFoot
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').on('click', historyBack).css({'margin-left':'0.8em','margin-right':'1em'});
@@ -3305,7 +3322,7 @@ var viewEntryCreator=function(oRole){
 
   var pWiki=createElement('div').myAppend(pSeeAlso);
 
-  var divLoginSelector=divLoginSelectorCreator(oRole);
+  app.divLoginSelector=divLoginSelectorCreator(oRole);
 
   //var hovWhyIsFBNeeded=hovHelp.cloneNode().myText(langHtml.WhyIsFBNeededQ).css({margin:'1em 0 0 0', display:'block', 'vertical-align':'middle'}),  bub=createElement('div').myText(langHtml.WhyIsFBNeededA);     popupHover(hovWhyIsFBNeeded,bub,15000);
   //var NothingIsWrittenToYourFBFlow=createElement('div').myText(langHtml.NothingIsWrittenToYourFBFlow);
@@ -4819,8 +4836,8 @@ var quickDivCreator=function(){
   var divButts=createElement('span').myAppend(butShowWPos,buthide);
   
     // selHideTimer
-  var arrHideTime=[15,60,120, 300,600,15*60,20*60,30*60,40*60,3600,1.5*3600,2*3600,3*3600,4*3600,5*3600,6*3600,8*3600,10*3600,12*3600,18*3600,86400,1.5*86400,2*86400,3*86400,4*86400,5*86400,6*86400,7*86400,14*86400,30*86400,intMax], len=arrHideTime.length, Opt=Array(arrHideTime.length);
-  for(var i=0;i<len;i++){  var t=arrHideTime[i], str=getSuitableTimeUnitStr(t); if(i==len-1) str='∞'; var opt=createElement('option').myText(str).prop('value',t);   Opt[i]=opt;    }
+  var arrHideTime=[15,60,120, 300,600,15*60,20*60,30*60,40*60,3600,1.5*3600,2*3600,3*3600,4*3600,5*3600,6*3600,8*3600,10*3600,12*3600,18*3600,86400,1.5*86400,2*86400,3*86400,4*86400,5*86400,6*86400,7*86400,14*86400,30*86400], len=arrHideTime.length, Opt=Array(arrHideTime.length); //,intMax
+  for(var i=0;i<len;i++){  var t=arrHideTime[i], str=getSuitableTimeUnitStr(t); if(t==intMax) str='∞'; var opt=createElement('option').myText(str).prop('value',t);   Opt[i]=opt;    }
   var selHideTimer=createElement('select').myAppend(...Opt);
 
   var spanDragMess=createElement('span').myText(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();
@@ -5662,7 +5679,10 @@ window.GRet=function(data){
   if('strMessageText' in data) {var strMess=data.strMessageText, tmp=strMess.length?'Server: ':''; setMess(tmp+strMess,10); if(/error/i.test(strMess)) navigator.vibrate(100);}
   //if('CSRFCode' in data) CSRFCode=data.CSRFCode;
   if('CSRFCode' in data) setItem('CSRFCode',data.CSRFCode);
-  if('sessionLoginIdP' in data) sessionLoginIdP=data.sessionLoginIdP;
+  if('sessionLoginIdP' in data) {
+    sessionLoginIdP=data.sessionLoginIdP;
+    if(boVideo && sessionLoginIdP) sessionLoginIdP.nameIP=userInfoFrDBUpdVideo.user.nameIP;
+  }
   var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {
       //for(var key in tmp){ userInfoFrDB[key]=tmp[key]; } 
       //if(tmp.buyer) viewFront.QuickDiv[0].setUp();  if(tmp.seller) viewFront.QuickDiv[1].setUp();
@@ -6180,6 +6200,8 @@ if(boFF){
 //window.on('beforeunload', function(){  console.log("beforeunload"); });
 
 
+window.on('beforeinstallprompt', function(e){ e.preventDefault();  });
+
 //oAJAX={
   //url:uBE,
   //global: false,
@@ -6486,6 +6508,13 @@ setTimeout(function(){
   //import(wsSha1); //crossorigin="anonymous"
 },0);
 const strSha1NotLoaded='sha1.js is not loaded yet';
+
+
+window.divReCaptcha=divReCaptchaExtend(viewCreateUser.divReCaptcha);
+window.cbRecaptcha=function(){
+  if(viewCreateUser.style.display!='none') { console.log('Setting up recaptcha (onload)'); divReCaptcha.setUp(); } // Otherwise "render" will occur when viewCreateUser is opened.
+}
+if(boGoogleReview && site.siteName=='demo') divReCaptcha.loadScript();
 
 
 busyLarge.show();

@@ -233,6 +233,11 @@ ReqBE.prototype.go=function*(){
     var StrTmp=Array(beArr.length);
     for(var i=0;i<beArr.length;i++){  StrTmp[i]=beArr[i][0]; }
     console.log("Cookie not set, be.json: "+StrTmp.join(', '));
+    console.log('user-agent: '+req.headers['user-agent']);
+    console.log('host: '+req.headers.host);
+    console.log('origin: '+req.headers.origin);
+    console.log('referer: '+req.headers.referer);
+    console.log('x-requested-with: '+req.headers['x-requested-with']);
     this.mesEO(Error('Cookie not set'));  return
   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
   
@@ -401,15 +406,16 @@ ReqBE.prototype.loginWEmail=function*(inObj){
 ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
   var req=this.req, {flow, site}=req;
   var {userTab}=site.TableName;
-  var {name, email, password}=inObj;
-  
+  var {name, email, password, iRole}=inObj;
+
     // Check reCaptcha with google
+  var strCaptchaIn=inObj['g-recaptcha-response'];
   var uGogCheck = "https://www.google.com/recaptcha/api/siteverify"; 
-  var objForm={  secret:strReCaptchaSecretKey, response:inObj['g-recaptcha-response'], remoteip:req.connection.remoteAddress  };
+  var objForm={  secret:strReCaptchaSecretKey, response:strCaptchaIn, remoteip:req.connection.remoteAddress  };
   var semY=0, semCB=0, err, response, body;
   var reqStream=requestMod.post({url:uGogCheck, form:objForm}, function(errT, responseT, bodyT) { err=errT; response=responseT; body=bodyT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
   var buf=body;
-  try{ var data = JSON.parse(buf.toString()); }catch(e){ return [e]; }
+  try{ var data = JSON.parse(buf.toString()); }catch(e){ debugger; return [e]; }
   //console.log('Data: ', data);
   if(!data.success) return [new ErrorClient('reCaptcha test not successfull')];
   
@@ -429,7 +435,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=function*(inObj){
   var expirationTime=20*60;
   var code=randomHash()+randomHash();
   var redisVar=code+'_verifyEmailNCreateUser';
-  var tmp=yield* setRedis(flow, redisVar, {email, password, name}, expirationTime);
+  var tmp=yield* setRedis(flow, redisVar, {email, password, name, iRole}, expirationTime);
   var Ou={};
 
     // Send email
@@ -616,14 +622,14 @@ ReqBE.prototype.verifyPWReset=function*(inObj){
  * loginGetGraph
  ******************************************************************************/
 ReqBE.prototype.loginGetGraph=function*(inObj){
-  var req=this.req, {flow, site}=req, objQS=req.objQS;
+  var req=this.req, {flow, site, rootDomain}=req, objQS=req.objQS;
   var strFun=inObj.fun;
   var Ou={};
   if(!this.sessionUserInfoFrDB){ this.sessionUserInfoFrDB=extend({},specialistDefault); yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);  }
   
 
   var strIP=inObj.IP;
-  var rootDomain=req.rootDomain, objIPCred=rootDomain[strIP];
+  var objIPCred=rootDomain[strIP];
   var uRedir=req.strSchemeLong+site.wwwLoginRet;
     // getToken
   var objForm={grant_type:'authorization_code', client_id:objIPCred.id, redirect_uri:uRedir, client_secret:objIPCred.secret, code:inObj.code};
@@ -802,13 +808,15 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
   var strGeoHash=GeoHash.pWC2GeoHash({x,y}), bigIntGeoHash=BigInt('0b'+strGeoHash);
   if(seller){
     var {idUser,coordinatePrecisionM}=seller;
-    var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
+    //var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
+    var [xtmp,ytmp]=roundNObscure(coordinatePrecisionM, x, y, lat);
     var sql="UPDATE "+sellerTab+" SET x=?, y=?, geoHash=? WHERE idUser=? ", Val=[xtmp,ytmp,bigIntGeoHash,idUser];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
   if(buyer){
     var {idUser,coordinatePrecisionM}=buyer;
-    var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
+    //var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
+    var [xtmp,ytmp]=roundNObscure(coordinatePrecisionM, x, y, lat);
     var sql="UPDATE "+buyerTab+" SET x=?, y=?, geoHash=? WHERE idUser=? ", Val=[xtmp,ytmp,bigIntGeoHash,idUser];
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   }
@@ -1283,7 +1291,10 @@ ReqBE.prototype.RShow=function*(inObj){  // writing needSession
   var {coordinatePrecisionM}=role;
   var {x, y, hideTimer}=inObj; if(hideTimer==undefined) hideTimer=0;
   var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
-  var [x,y]=roundXY(coordinatePrecisionM, x, y, lat);
+  //var [x,y]=roundXY(coordinatePrecisionM, x, y, lat);
+  var [x,y]=roundNObscure(coordinatePrecisionM, x, y, lat);
+
+
   var strGeoHash=GeoHash.pWC2GeoHash({x,y}), bigIntGeoHash=BigInt('0b'+strGeoHash);
 
 
@@ -1336,6 +1347,22 @@ ReqBE.prototype.RHide=function*(inObj){  // writing needSession
 }
 
 
+ReqBE.prototype.RHide=function*(inObj){  // writing needSession
+  var req=this.req, {flow, site}=req;
+  var Ou={};
+  var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  var {idUser}=user;
+
+  var objArg={site, idUser};
+  var [err, {iRole, objR}]=yield* RHide.call(this, objArg); if(err) return [err];
+  var strRole=site.ORole[iRole].strRole, strRoleUCFirst=ucfirst(strRole); 
+    // Set userInfoFrDB and userInfoFrDBUpd
+  var userInfoFrDBUpd={};  userInfoFrDBUpd[strRole]=objR;
+  extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
+  yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
+  this.mes(strRoleUCFirst+' hidden');
+  return [null, [Ou]];
+}
 //
 // Complaints
 //
