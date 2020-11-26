@@ -13,21 +13,20 @@ app.object_values=function(obj){
   var arr=[];      for(var name in obj) arr.push(obj[name]);
   return arr;
 }
-app.copy=function(o, isdeep){
-    if (o===undefined || o===null || ['string', 'number', 'boolean'].indexOf(typeof o)!==-1)
-        return o;
-    var n= o instanceof Array? [] :{};
-    for (var k in o)
-        if (o.hasOwnProperty(k))
-            n[k]= isdeep? copy(o[k], isdeep) : o[k];
-    return n;
-}
 app.removeProp=function(obj, arrProp){
   if(typeof arrProp=='string') arrProp=[arrProp];
   for(var i=0;i<arrProp.length;i++)  delete obj[arrProp[i]];
 }
-
 app.copyDeep=function(objI) { return JSON.parse(JSON.stringify(objI));};
+app.copyDeepB=function(o, isdeep=true){
+  if (o===undefined || o===null || ['string', 'number', 'boolean'].indexOf(typeof o)!==-1) return o;
+  if(o instanceof Date) return new Date(o.getTime());
+  var n= o instanceof Array? [] :{};
+  for (var k in o)
+      if (o.hasOwnProperty(k))
+          n[k]= isdeep? copyDeepB(o[k], isdeep) : o[k];
+  return n;
+}
 
 /*JSON.myParse=function(str){
     try{
@@ -263,7 +262,7 @@ app.normalizeAng=function(angIn, angCenter=0, lapSize=twoPi){
   
   var upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf;   if(angIn<upper && angIn>=lower){return [angIn,0];}
   var angInRelative=angIn-angCenter;  // angInRelative: angIn relative to angCenter
-  var tmp=angInRelative+lapSizeHalf, nLapsCorrection=Math.floor(tmp/lapSize);
+  var angIn_InCycle=angInRelative+lapSizeHalf, nLapsCorrection=Math.floor(angIn_InCycle/lapSize);
 
   var angOut=angIn-nLapsCorrection*lapSize;  
   return [angOut,nLapsCorrection];
@@ -470,8 +469,8 @@ app.MercatorProjection=function(){
   this.pixelsPerLonRadian_ = TILE_SIZE/(2*Math.PI);
 }
 MercatorProjection.prototype.fromLatLngToPointV=function(latlng){
-  var lat, lng;    if(latlng instanceof Array) {lat=latlng[0]; lng=latlng[1]; } else if(typeof latlng.lat=='function') {lat=latlng.lat(); lng=latlng.lng();} else { lat=latlng.lat; lng=latlng.lng;}
-  var xOrg=this.pOrg.x, yOrg=this.pOrg.y;
+  var lat,lng; if(latlng instanceof Array) {[lat,lng]=latlng;} else if(typeof latlng.lat=='function') {lat=latlng.lat(); lng=latlng.lng();} else {({lat,lng}=latlng);}
+  var {x:xOrg, y:yOrg}=this.pOrg;
   var xOut=xOrg+lng*this.pixelsPerLonDegree_;
 
   var siny = bound(Math.sin(degreesToRadians(lat)), -0.9999, 0.9999);
@@ -480,8 +479,8 @@ MercatorProjection.prototype.fromLatLngToPointV=function(latlng){
 }
 MercatorProjection.prototype.fromLatLngToPoint = function(latlng){  var [x,y]=this.fromLatLngToPointV(latlng);  return {x,y};   };
 MercatorProjection.prototype.fromPointToLatLngV = function(point,noWrap=1){
-  var x, y;    if(point instanceof Array) {x=point[0]; y=point[1]; } else { x=point.x; y=point.y;}
-  var xOrg=this.pOrg.x, yOrg=this.pOrg.y;
+  var x, y;    if(point instanceof Array) {[x,y]=point; } else { ({x,y}=point);}
+  var {x:xOrg, y:yOrg}=this.pOrg;
   var lng = (x-xOrg) / this.pixelsPerLonDegree_;
   var latRadians = (y-yOrg) / -this.pixelsPerLonRadian_;
   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI/2);
@@ -506,7 +505,7 @@ MercatorProjection.prototype.fromYToLat = function(y){
 }
 
 app.resM2resWC=function(resMEquator,lat){
-  var divisor=Math.cos(deg2r*lat), resT=resMEquator/divisor;  if(resT<1)resT=1;
+  var fac=Math.cos(deg2r*lat), resT=resMEquator/fac;  if(resT<1)resT=1;
   var resWC=resT*m2wc; return resWC;
 }  
 

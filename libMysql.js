@@ -29,7 +29,39 @@ MyMySql.prototype.commitNRelease=function*(flow){
 MyMySql.prototype.fin=function(){   if(this.connection) { this.connection.destroy();this.connection=null;};  }
 
 
+app.RHide=function*(objArg){  // writing needSession
+  var req=this.req, {flow}=req;
+  //var Ou={};
+  //var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
+  //var {idUser}=user;
+  var {idUser, idFB, site}=objArg, siteName=site.siteName;
+  var {userTab, buyerTab, sellerTab, buyerTeamTab, sellerTeamTab}=site.TableName;
+  if(idUser) {var idT=idUser, columnT='idUser';} else {var idT=idFB, columnT='idFB';}
 
+     // Get iRole
+  var Sql=[];
+  //Sql.push("SELECT iRoleActive FROM "+userTab+" WHERE idUser=?"); var Val=[idUser];
+  Sql.push("SELECT iRoleActive AS iRole, idUser FROM "+userTab+" WHERE "+columnT+"=?"); var Val=[idT];
+  var sql=Sql.join('\n');
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err, {}];
+  if(results.length==0) { return [Error('No such idUser in the database'), {}];}
+  //var iRole=results[0].iRoleActive
+  var {iRole,idUser}=results[0];
+  var roleTab=iRole?sellerTab:buyerTab;
+  var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
+
+  var Sql=[], Val=[];
+  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
+  Sql.push("UPDATE "+roleTab+" SET tPos=0, tHide=0, histActive=histActive|1, boShow=0 WHERE idUser=?;");
+  Sql.push(`SELECT `+site.SqlColSelOne[iRole]+` FROM (`+roleTab+` ro LEFT JOIN `+roleTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=?;`);
+  Val=[idUser,idUser,idUser];
+  var sql=Sql.join('\n');
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err, {}];
+  //var c=results[1].affectedRows;
+  var objR=results[2][0];
+    
+  return [null, {iRole, objR}];
+} 
 
    
   // accountMerge: The arguments: idUser, idFB, idIdPlace, idOpenId and email may point to different accounts. If so, then those accounts should be merged.

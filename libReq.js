@@ -2,6 +2,7 @@
 "use strict"
 
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
+//https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 
 
 /******************************************************************************
@@ -57,28 +58,37 @@ app.reqCurlEnd=function*(){
   if(typeof iSeqN=='undefined') {  res.out200('"iSeq" is not set'); return;}
   //if(typeof iRole=='undefined') {  res.out200('"iRole" is not set'); return;}
 
-  console.log(moment().format('HH:mm:ss')+' '+req.connection.remoteAddress+' '+keyRemoteControl);
+  //console.log(moment().format('HH:mm:ss')+' '+req.connection.remoteAddress+' '+keyRemoteControl);
   var Sql=[],Val=[];
   if(boCheck){
-    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, @boShow, @hideTimer, @tDiff, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN);
-    Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tDiff AS tDiff, @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
+    //Sql.push("CALL "+siteName+"GetValuesToController(?, ?, @boShow, @hideTimer, @tDiff, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN);
+    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, @boShow, @hideTimer, @tNow, @tPos, @tHide, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN);
+
+    Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tNow AS tNow, @tPos AS tPos, @tHide AS tHide, @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
     var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
-    var {boShow, hideTimer, tDiff, iRoleActive, boOK, mess}=results[1][0];
+    var {boShow, hideTimer, tNow, tPos, tHide, iRoleActive, boOK, mess}=results[1][0];
+    var tDiff=tHide-tNow, tPosDiff=tNow-tPos;
     if(!boOK) {res.out200(mess); return;}
     var strRoleActive=iRoleActive?'Seller':'Buyer', strRoleActiveB=' ('+strRoleActive+')';
     var str='Hidden'+strRoleActiveB;
-    if(boShow){ var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   var str='Visible'+strRoleActiveB; if(hideTimer!=intMax) str+=", Hiding in "+tDiffF+" "+u; };
+    if(boShow){ 
+      var str='Visible'+strRoleActiveB; 
+      var [ttmp,u]=getSuitableTimeUnit(tPosDiff), tDiffF=ttmp.toFixed(0);   
+      str+=", last update "+tDiffF+" "+u+" ago"; 
+      var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   
+      if(hideTimer!=intMax) str+=", hiding in "+tDiffF+" "+u; 
+    };
     res.out200(str);
   }
   else{
-    var {boShow, hideTimer=0, lat=0, lng=0, boAuto=false}=inObj;
+    var {boShow, hideTimer=0, lat=0, lng=0, boSetTHide=false}=inObj;
     if(!("boShow" in inObj)) { res.out200('"boShow" is not set'); return;} 
     if(boShow && !("lat" in inObj || "lng" in inObj)){res.out200('"lng" or "lat" are not set'); return;}
     hideTimer=bound(hideTimer, 0, intMax);
     var projs=new MercatorProjection(),   [x,y]=projs.fromLatLngToPointV([lat, lng]);
     //var strGeoHash=GeoHash.pWC2GeoHash({x,y});
-    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boAuto);
+    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boSetTHide);
     Sql.push("SELECT @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
     var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
@@ -160,11 +170,10 @@ function indexAssign(){
   var str=Str.join('\n');   res.writeHead(200, "OK");   res.end(str); 
 }
 
+
 /******************************************************************************
  * reqDataDelete   // From IdP
  ******************************************************************************/
-
-
 
 function parseSignedRequest(signedRequest, secret) {
   var [b64UrlMac, b64UrlPayload] = signedRequest.split('.', 2);
@@ -179,9 +188,7 @@ function parseSignedRequest(signedRequest, secret) {
 }
 
 app.deleteOne=function*(site,user_id){  //
-  var {req, res}=this;
-  var {flow}=req;
-  var {userTab, buyerTab, sellerTab}=site.TableName;
+  var {req}=this, {flow}=req, {userTab, buyerTab, sellerTab}=site.TableName;
 
   var Sql=[], Val=[];
   //Sql.push("DELETE r FROM "+userTab+" u JOIN "+buyerTab+" r ON u.idUser=r.idUser WHERE idFB=?;"); Val.push(user_id);
@@ -209,7 +216,7 @@ app.reqDataDelete=function*(){  //
   var {req, res}=this;
   var {flow, objQS, uSite}=req;
 
-  //if(req.method=='GET'){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
+  //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
   if(req.method=='POST'){var strData=yield* app.getPost.call(this, req.flow, req);}
   else {res.outCode(400, "Post request wanted"); return; }
   
@@ -219,17 +226,17 @@ app.reqDataDelete=function*(){  //
   var strDataB=Match[1];
 
   var [err, data]=parseSignedRequest(strDataB, req.rootDomain.fb.secret); if(err) { res.outCode(400, "Error in parseSignedRequest: "+err.message); return; }
+  var {user_id}=data;
 
   var StrMess=[];
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i], site=Site[siteName];
-    var [err,c]=yield* deleteOne.call(this, site, data.user_id);
-    //var [err,c]=yield* this.deleteOne(site, data.user_id);
-    if(c) StrMess.push(siteName+': '+c);
+    var [err,c]=yield* deleteOne.call(this, site, user_id);
+    if(c) StrMess.push(siteName+' ('+c+')');
   }
 
-  if(StrMess.length) var mess='User deletion on site(s): '+StrMess.join(', '); else var mess='0 users deleted';
-  console.log('reqDataDelete (id: '+data.user_id+'): '+mess);
+  var mess='User '+user_id+':';     if(StrMess.length) mess+=' deleted on: '+StrMess.join(', '); else mess+=' not found.';
+  console.log('reqDataDelete: '+mess);
   var confirmation_code=genRandomString(32);
   yield *setRedis(flow, confirmation_code+'_DeleteRequest', mess, timeOutDeleteStatusInfo); //3600*24*30
 
@@ -248,34 +255,16 @@ app.reqDataDeleteStatus=function*(){
   else if(mess==null) {
     var [t,u]=getSuitableTimeUnit(timeOutDeleteStatusInfo);
     //var mess="The delete status info is only available for "+t+u+".\nAll delete requests are handled immediately. So if you pressed delete, you are deleted.";
-    var mess="No info of deletion status found, (any info is deleted "+t+u+" after deletion).";
+    var mess="No info of deletion status found, (any info is deleted "+t+u+" after the deletion request).";
   }
   res.end(mess);
 }
-app.hideOne=function*(site,user_id){  //
-  var {req, res}=this;
-  var {flow}=req;
-  var {userTab, buyerTab, sellerTab}=site.TableName;
 
-  var Sql=[], Val=[];
-  //Sql.push("DELETE r FROM "+userTab+" u JOIN "+buyerTab+" r ON u.idUser=r.idUser WHERE idFB=?;"); Val.push(user_id);
-  //Sql.push("DELETE r FROM "+userTab+" u JOIN "+sellerTab+" r ON u.idUser=r.idUser WHERE idFB=?;"); Val.push(user_id);
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
-  Sql.push("DELETE FROM "+userTab+" WHERE idFB=?;"); Val.push(user_id);
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
-  var sql=Sql.join('\n');
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  var c=results[2].affectedRows;
-  return [null, c];
-}
 app.reqDeAuthorize=function*(){  //
   var {req, res}=this;
   var {flow, objQS, uSite}=req;
 
-  if(req.method=='GET'){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
+  //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
   if(req.method=='POST'){var strData=yield* app.getPost.call(this, req.flow, req);}
   else {res.outCode(400, "Post request wanted"); return; }
 
@@ -287,11 +276,13 @@ app.reqDeAuthorize=function*(){  //
   var StrMess=[];
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i], site=Site[siteName];
-    var [err,c]=yield* hideOne.call(this, site, data.user_id);
-    if(c) StrMess.push(siteName+': '+c);
+    var objArg={site, idFB:data.user_id};
+    var [err, {iRole, objR}]=yield* RHide.call(this, objArg); if(err) continue;
+
+    StrMess.push(siteName);
   }
 
-  if(StrMess.length) var mess='User hide on site(s): '+StrMess.join(', '); else var mess='0 users hidden';
+  if(StrMess.length) var mess='Hidden on site(s): '+StrMess.join(', '); else var mess='Nothing hidden';
   console.log('reqDeAuthorize (id: '+data.user_id+'): '+mess);
   
   res.setHeader('Content-Type', MimeType.json); 
@@ -464,7 +455,7 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
       appId      : '`+fiIdTmp+`',
       cookie     : true,
       xfbml      : true,
-      version    : 'v7.0'
+      version    : 'v9.0'
     });
       
     FB.AppEvents.logPageView();   
@@ -548,7 +539,7 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
   }
   Str.push(strTracker);
   
-  //Str.push("<script src='https://www.google.com/recaptcha/api.js?render=explicit' defer></script>");
+  const uRecaptcha='https://www.google.com/recaptcha/api.js?onload=cbRecaptcha&render=explicit';
 
   Str.push("</head>");
   Str.push(`<body>
@@ -570,17 +561,16 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
 var MainDiv=[];
 var arrViewPop=[];`);
 
-  var objOut={strLang, coordApprox, UrlOAuth, strReCaptchaSiteKey, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
+  var objOut={strLang, coordApprox, UrlOAuth, strReCaptchaSiteKey, uRecaptcha, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
   copySome(objOut, req, ['boTLS']);
   extend(objOut, {wsSha1});
 
   Str.push(`var tmp=`+serialize(objOut)+`;\n Object.assign(window, tmp);`);
   
 
-  var strTmp=boGoogleReview&&siteName=="demo"?"":"none";
   Str.push(`
 </script>
-<form  id=formLogin style="display:${strTmp}">
+<form  id=formLogin style="display:none">
 <label name=email>Email</label><input type=email name=email>
 <label name=password>Password</label><input type=password name=password>
 <button type=submit name=submit class=highStyle value="Sign in">Sign in</button> 
@@ -785,23 +775,24 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
   
-  var iRole=Number(objQS.charRole=='s');
-  var oRole=site.ORole[iRole];
-  var {charRole, strRole}=oRole;
-  var roleTab=iRole?sellerTab:buyerTab;
   
   //var objT=yield* getRedis(flow, codeIn+'_verifyEmailNCreateUser', true); if(!objT) { res.out200('No such code'); return;}
   var [err,value]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyEmailNCreateUser']),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
-  var {name, email, password}=objT;
+  var {name, email, password, iRole}=objT;
   name=myJSEscape(name); email=myJSEscape(email); //password=myJSEscape(password);
+
+
+  var oRole=site.ORole[iRole];
+  var {charRole, strRole}=oRole;
+  var roleTab=iRole?sellerTab:buyerTab;
 
   
   var Sql=[], Val=[];
   Sql.push("SET @tNow=now();");
-  Sql.push("INSERT INTO "+userTab+" (email, nameIP, hashPW, tCreated) VALUES (?, ?, ?, @tNow) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
+  Sql.push("INSERT INTO "+userTab+" (email, nameIP, displayName, hashPW, iRoleActive, tCreated) VALUES (?, ?, ?, ?, ?, @tNow) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
-  Val.push(email, name, password, name);
-  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, displayName) VALUES (@idUser, @tNow, @tNow, @tNow, @tNow, 1, ? ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  Val.push(email, name, name, password, iRole);
+  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive) VALUES (@idUser, @tNow, @tNow, @tNow, @tNow, 1 ) ON DUPLICATE KEY UPDATE idUser=idUser;");
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
@@ -828,6 +819,7 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   //Str.push("<a href=\"javascript:window.open('','_self').close();\">close</a>, ");
   //Str.push("<a href=\""+uSite+"\">"+req.wwwSite+"</a>");
   Str.push('</body></html>');
+  res.setHeader('Content-Type', MimeType.html);
   res.end(Str.join('\n'));
 }
 
@@ -1726,7 +1718,8 @@ CLIENT_FOUND_ROWS
       IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('keyRemoteControl exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
       IF Vc=0 THEN SET OboOK=0, Omess='No such keyRemoteControl stored!'; LEAVE proc_label; END IF;
 
-      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error (iSeqServer=', ViSeq, ', iSeqRemoteControl=', iSeqN, ')'); LEAVE proc_label; END IF;
+      #IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error (iSeqServer=', ViSeq, ', iSeqRemoteControl=', iSeqN, ')'); LEAVE proc_label; END IF;
+      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error (', ViSeq-iSeqN+1, ' request(s) behind)'); LEAVE proc_label; END IF;
       UPDATE `+userTab+` SET iSeq=iSeqN WHERE idUser=OidUser;
       SET OboOK=1, Omess='';
     END`);
@@ -1734,29 +1727,30 @@ CLIENT_FOUND_ROWS
 
     // GetValuesToController should return tElapsed instead of tDiff, then one could let hideTimer unsigned int (Mysql can't have unsigned in an expression that end up negative)
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT , OUT OtDiff INT, OUT OiRoleActive INT, OUT OboOK INT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT, OUT OtNow INT, OUT OtPos INT, OUT OtHide INT, OUT OiRoleActive INT, OUT OboOK INT, OUT Omess varchar(128))
     proc_label:BEGIN
-      DECLARE Vc, Vn, VidUser, ViSeq, intMax INT;
+      DECLARE Vc, Vn, VidUser, ViSeq, intMax, VtDiff INT;
       DECLARE VtNow TIMESTAMP DEFAULT now();
+      SET OtNow=UNIX_TIMESTAMP(VtNow);
       CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OiRoleActive, OboOK, Omess);
       IF OboOK=0 THEN LEAVE proc_label; END IF;
       CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
 
       IF OiRoleActive=0 THEN
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tHide)-UNIX_TIMESTAMP(VtNow) INTO OboShow, OhideTimer, OtDiff FROM `+buyerTab+` WHERE idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos), UNIX_TIMESTAMP(tHide) INTO OboShow, OhideTimer, OtPos, Othide FROM `+buyerTab+` WHERE idUser=VidUser;
       ELSE
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tHide)-UNIX_TIMESTAMP(VtNow) INTO OboShow, OhideTimer, OtDiff FROM `+sellerTab+` WHERE idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos), UNIX_TIMESTAMP(tHide) INTO OboShow, OhideTimer, OtPos, OtHide FROM `+sellerTab+` WHERE idUser=VidUser;
       END IF;
       SET Vc=FOUND_ROWS();
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF;
-      IF OtDiff<0 THEN SET OboShow=0; END IF;
+      SET VtDiff=OtHide-OtNow;
+      IF VtDiff<0 THEN SET OboShow=0; END IF;
       SET OboOK=1, Omess='';
     END`);
     //IiRole INT, 
 
-    // boUserButtClick (inverse of boAuto) should be used instead of boAuto
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboAuto INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboSetTHide INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE VtNow TIMESTAMP DEFAULT now();
       DECLARE Vc, Vn, VidUser, ViSeq, VresM INT;
@@ -1781,18 +1775,19 @@ CLIENT_FOUND_ROWS
         SET Vc=FOUND_ROWS();
         IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF;
         IF VresM<1 THEN SET VresM=1; END IF;
-        CALL roundXY(VresM, Ix, Iy, Ilat, Ix, Iy);
+        CALL roundNObscure(VresM, Ix, Iy, Ilat, Ix, Iy);
+
         SET @bigIntGeoHash=pWC2GeoHash(Ix, Iy);
 
         IF OiRoleActive=0 THEN
           UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
-            tHide=IF(IboAuto, tHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`))) 
+            tHide=IF(IboSetTHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), tHide) 
             WHERE idUser=VidUser;
           UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
         ELSE
           UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
           UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
-            tHide=IF(IboAuto, tHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`))) 
+            tHide=IF(IboSetTHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), tHide) 
             WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
@@ -1892,22 +1887,64 @@ app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
     //END`);
 
 
+    app.normalizeAng=function(angIn, angCenter=0, lapSize=twoPi){
+      var lapSizeHalf=lapSize/2;
+    
+      //var upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf, angInRelative=angIn-angCenter;
+      //var tmp, nLapsCorrection;
+      //if(angIn>=upper){tmp=angInRelative+lapSizeHalf; nLapsCorrection=Math.floor(tmp/lapSize);}
+      //else if(angIn<lower){tmp=angInRelative+lapSizeHalf; nLapsCorrection=Math.floor(tmp/lapSize);}
+      //else return [angIn,0];
+      
+      var upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf;   if(angIn<upper && angIn>=lower){return [angIn,0];}
+      var angInRelative=angIn-angCenter;  // angInRelative: angIn relative to angCenter
+      var tmp=angInRelative+lapSizeHalf, nLapsCorrection=Math.floor(tmp/lapSize);
+    
+      var angOut=angIn-nLapsCorrection*lapSize;  
+      return [angOut,nLapsCorrection];
+    }
+
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS normalizeAng");
+  SqlFunction.push(`CREATE PROCEDURE normalizeAng(angIn DOUBLE, angCenter DOUBLE, lapSize DOUBLE, OUT angOut DOUBLE, OUT nLapsCorrection INT)
+  proc_label:BEGIN
+      DECLARE lapSizeHalf, upper, lower, angInRelative, angIn_InCycle DOUBLE;
+      IF angCenter IS NULL THEN SET angCenter=0; END IF;
+      IF lapSize IS NULL THEN SET lapSize=`+twoPi+`; END IF;
+      SET lapSizeHalf=lapSize/2;
+      SET upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf;
+      IF angIn<upper && angIn>=lower THEN SET angOut=angIn, nLapsCorrection=0; LEAVE proc_label; END IF;
+      SET angInRelative=angIn-angCenter;
+      SET angIn_InCycle=angInRelative+lapSizeHalf, nLapsCorrection=FLOOR(angIn_InCycle/lapSize);
+      SET angOut=angIn-nLapsCorrection*lapSize; 
+    END`);
+
   SqlFunctionDrop.push("DROP FUNCTION IF EXISTS resM2resP");
   SqlFunctionDrop.push("DROP FUNCTION IF EXISTS resM2resWC");
   SqlFunction.push(`CREATE FUNCTION resM2resWC(resM DOUBLE, lat DOUBLE) RETURNS DOUBLE DETERMINISTIC
     BEGIN
       DECLARE resT, fac DOUBLE;
       SET fac=COS(`+deg2r+`*lat);
-      SET resT=fac*resM;
+      SET resT=resM/fac;
       IF resT<1 THEN SET resT=1; END IF;
       RETURN resT*`+m2wc+`;
     END`);
+    
+
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS roundXY");
-  SqlFunction.push(`CREATE PROCEDURE roundXY(resM DOUBLE, x DOUBLE, y DOUBLE, lat DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE)
+  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS roundNObscure");
+  SqlFunction.push(`CREATE PROCEDURE roundNObscure(resM DOUBLE, x DOUBLE, y DOUBLE, lat DOUBLE, OUT Ox DOUBLE, OUT Oy DOUBLE)
     proc_label:BEGIN
       DECLARE resP DOUBLE;
-      SET resP=resM2resWC(resM,lat), Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
+      SET resP=resM2resWC(resM,lat);
+      SET Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
+
+      SET @xNoise=resP*`+facNoiseCoordinate+`*(RAND()-0.5), @yNoise=resP*`+facNoiseCoordinate+`*(RAND()-0.5);
+      SET Ox=Ox+@xNoise, Oy=Oy+@yNoise;
+      CALL normalizeAng(Ox, 128, 256, Ox, @trash);
+      CALL normalizeAng(Oy, 128, 256, Oy, @trash);
     END`);
+
+
   
   SqlFunctionDrop.push("DROP FUNCTION IF EXISTS zipperMergeInt");
   SqlFunction.push(`CREATE FUNCTION zipperMergeInt(Ia INT UNSIGNED, Ib INT UNSIGNED) RETURNS BIGINT UNSIGNED DETERMINISTIC
@@ -1960,7 +1997,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
         
   var arrAddress=[];
   //arrAddress.push({country:'Sweden', homeTown:'Uppsala', currency:'SEK', x:140.51976455111, y:74.570362445619, n:5, std:0.1});
-  //arrAddress.push({country:'Sweden', homeTown:'Stockholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+  arrAddress.push({country:'Sweden', homeTown:'Stockholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
 
   if(1){
     /*
@@ -2008,7 +2045,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     //arrAddress.push({country:'China', homeTown:'Beijing', currency:'CNY', x:210.7708451431501, y:96.99141526807438, n:10, std:0.5});
     //arrAddress.push({country:'India', homeTown:'Mumbai', currency:'INR', x:179.7837377942387, y:114.25584433021675, n:10, std:0.5});
     //arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 135.5377777777778, y: 1.46571534506883, n:10, std:20});
-    arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 128, y: 128, n:10, std:128});
+    arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 128, y: 128, n:10, std:64});
 
   }
   //merProj.fromLatLngToPoint({lat:54.6, lng:10.6})
@@ -2066,7 +2103,8 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
     idDriverGovernment:{RandSpanData:[1000,2000]},
     
     hideTimer:{FixedData:3600*24*365},
-    boShow:{Enum:[0,1]},
+    //boShow:{Enum:[0,1]},
+    boShow:{FixedData:0},
     histActive:{FixedData:1},
     coordinatePrecisionM:{FixedData:1},
     //tHide:{FixedData:""},
@@ -2287,8 +2325,8 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
 
   } // end of loop through ORole
   
-  Sql.push(`UPDATE `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount`);
-  Sql.push(`UPDATE `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount`);
+  Sql.push(`UPDATE `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount, r.boShow=(u.iRoleActive=0)`);
+  Sql.push(`UPDATE `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount, r.boShow=(u.iRoleActive=1)`);
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
