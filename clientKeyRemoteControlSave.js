@@ -52,7 +52,7 @@ var divLoginInfoExtend=function(el){
   var spanName=createElement('span'), spanKind=createElement('span').css({'margin':'0,0.4em'}); 
   var logoutButt=createElement('a').prop({href:''}).myText(langHtml.divLoginInfo.logoutButt).css({'float':'right'});
   logoutButt.on('click', function(){ 
-    sessionLoginIdP={}; userInfoFrDB=extend({}, specialistDefault);
+    sessionLoginIdP={}; userInfoFrDB=extend({}, userInfoFrDBZero);
     var vec=[['logout',{}, function(data){yesDiv.setStat();}]];   majax(oAJAX,vec);
     return false;
   });
@@ -260,7 +260,7 @@ app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpBut
 imgHelp=hovHelpMy;
 
 var sessionLoginIdP={};
-var userInfoFrDB=extend({}, specialistDefault);
+var userInfoFrDB=extend({}, userInfoFrDBZero);
 
 var oAJAX={};
 

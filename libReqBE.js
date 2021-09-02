@@ -244,7 +244,7 @@ ReqBE.prototype.go=function*(){
   this.sessionUserInfoFrDB=yield *getRedis(flow, req.sessionID+'_UserInfoFrDB', true);
   //var [err,value]=yield* cmdRedis(flow, 'GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
   if(!this.sessionUserInfoFrDB || typeof this.sessionUserInfoFrDB!='object'  ) {
-    this.sessionUserInfoFrDB=extend({}, specialistDefault);
+    this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);
   }
   yield* setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
 
@@ -276,7 +276,7 @@ ReqBE.prototype.go=function*(){
   if(caller=='index'){
       // Arrays of functions
     arrCSRF=['UUpdate','USetIRoleActive', 'RIntroCB','VSetPosCond','RUpdate','RShow','RHide','UDelete','teamLoad','teamSaveName','teamSave',
-    'complaintUpdateComment', 'complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage', 'setWebPushSubcription', 'sendNotification', 'keyRemoteControlSave'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
+    'complaintUpdateComment', 'complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage', 'uploadImageB64','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage', 'setWebPushSubcription', 'sendNotification', 'keyRemoteControlSave'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
     arrNoCSRF=['setupById','setUpCond','setUp','getList','getSingleUser','getGroupList','getHist','complaintOneGet','getComplaintsOnComplainee','getComplaintsFromComplainer','logout','getSetting'];  // ,'testA','testB'
     allowed=arrCSRF.concat(arrNoCSRF);
 
@@ -625,7 +625,7 @@ ReqBE.prototype.loginGetGraph=function*(inObj){
   var req=this.req, {flow, site, rootDomain}=req, objQS=req.objQS;
   var strFun=inObj.fun;
   var Ou={};
-  if(!this.sessionUserInfoFrDB){ this.sessionUserInfoFrDB=extend({},specialistDefault); yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);  }
+  if(!this.sessionUserInfoFrDB){ this.sessionUserInfoFrDB=extend({},userInfoFrDBZero); yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);  }
   
 
   var strIP=inObj.IP;
@@ -764,11 +764,10 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
   
   var StrRole=null; if(inObj && typeof inObj=='object' && 'Role' in inObj) StrRole=inObj.Role;
   
-  var StrRoleAll=['buyer', 'seller','buyerTeam','sellerTeam','admin','complainer','complainee'];
-  if(typeof StrRole=='undefined' || !StrRole) StrRole=StrRoleAll; 
+  if(typeof StrRole=='undefined' || !StrRole) StrRole=KeySpecialist.concat(); 
   if(typeof StrRole=='string') StrRole=[StrRole];
   var BoTest={};
-  for(var i=0;i<StrRoleAll.length;i++) { var strRole=StrRoleAll[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
+  for(var i=0;i<KeySpecialist.length;i++) { var strRole=KeySpecialist[i]; BoTest[strRole]=StrRole.indexOf(strRole)!=-1; }
   
   var userInfoFrDBUpd={};
   
@@ -792,7 +791,7 @@ ReqBE.prototype.setupById=function*(inObj){ //check  idFB (or idUser) against th
     var res=results[5], c=res.length; if(BoTest.admin) userInfoFrDBUpd.admin=c==1?res[0]:0;
     var n=results[6][0].n;   if(BoTest.complainer) userInfoFrDBUpd.complainer=n?{idUser:userInfoFrDBUpd.user.idUser, n}:0; 
     var n=results[7][0].n;   if(BoTest.complainee) userInfoFrDBUpd.complainee=n?{idUser:userInfoFrDBUpd.user.idUser, n}:0;  
-  } else extend(userInfoFrDBUpd, specialistDefault);
+  } else extend(userInfoFrDBUpd, userInfoFrDBZero);
   
   extend(this.GRet.userInfoFrDBUpd, userInfoFrDBUpd);   extend(this.sessionUserInfoFrDB, userInfoFrDBUpd);
   yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
@@ -827,7 +826,7 @@ ReqBE.prototype.VSetPosCond=function*(inObj){  // writing needSession
 ReqBE.prototype.logout=function*(inObj){
   var req=this.req, flow=req.flow, Ou={};
   var [err,tmp]=yield* cmdRedis(flow, 'DEL', [req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser']);
-  this.sessionLoginIdP={};  this.sessionUserInfoFrDB=extend({}, specialistDefault);  this.GRet.userInfoFrDBUpd=extend({},specialistDefault);
+  this.sessionLoginIdP={};  this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);  this.GRet.userInfoFrDBUpd=extend({},userInfoFrDBZero);
   this.mes('Logged out'); return [null, [Ou]];
 }
 
@@ -1117,8 +1116,8 @@ ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
   var Sql=[], Val=[];
   Sql.push("DELETE FROM "+userTab+" WHERE idUser=?;"); Val.push(idUser);
   
-  this.sessionUserInfoFrDB=extend({}, specialistDefault);    yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
-  extend(this.GRet.userInfoFrDBUpd, specialistDefault); 
+  this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);    yield *setRedis(flow, req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
+  extend(this.GRet.userInfoFrDBUpd, userInfoFrDBZero); 
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
@@ -1139,15 +1138,14 @@ ReqBE.prototype.UDelete=function*(inObj){  // writing needSession
  *********************************************************************************************/
 
 ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
-  var req=this.req, {flow, site}=req, {userTab, buyerTab, sellerTab, webPushSubscriptionTab}=site.TableName;
+  var req=this.req, {flow, site}=req, {userTab, buyerTab, sellerTab, webPushSubscriptionTab, userImageTab}=site.TableName;
   var Ou={}; 
   if(isEmpty(this.sessionLoginIdP)) {this.mes('No session'); return [null, [Ou]]; }
   var {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
 
-  //if(inObj.email) email=inObj.email;
-  var {tel, displayName, currency, charRole, boIdIPImage, displayEmail, strSubscription}=inObj;
+  var {tel, displayName, currency, charRole, displayEmail, strSubscription, base64Img, boUseIdPImg}=inObj;  // boIdIPImage
   tel=myJSEscape(tel); displayName=myJSEscape(displayName); currency=myJSEscape(currency);
-  var boImgOwn=1-Number(boIdIPImage);
+  //var boUseIdPImg=false; //1-Number(boIdIPImage);
   
   if(displayEmail) {
     var boOK=validator.isEmail(displayEmail); if(!boOK) return [new ErrorClient("displayEmail didn't pass validation test.")];
@@ -1161,17 +1159,19 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   var oRole=site.ORole[iRole];
   var {charRole, strRole}=oRole;
   var roleTab=iRole?sellerTab:buyerTab;
+
+  var sqlSetMetaExtra=boUseIdPImg?"":", imTag=imTag+1";
   
   
     // An entry in userTab may exist (if the user is a complainer). However an entry in roleTab is something one can assume does not exist.
   var Sql=[], Val=[];
-  //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK=?, nameIP, image, hashPW, displayName, boImgOwn) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, boWebPushOK=?, nameIP=?, image=?;");
+  //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK=?, nameIP, image, hashPW, displayName, boUseIdPImg) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, boWebPushOK=?, nameIP=?, image=?;");
   //Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
-  //Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boImgOwn,   email, boWebPushOK, nameIP, image);
+  //Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boUseIdPImg,   email, boWebPushOK, nameIP, image);
   
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, hashPW, displayName, boImgOwn, iRoleActive) VALUES (?, ?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=email, boWebPushOK=boWebPushOK, nameIP=nameIP, image=image, iRoleActive=iRoleActive;");
+  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, hashPW, displayName, boUseIdPImg, iRoleActive) VALUES (?, ?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=email, boWebPushOK=boWebPushOK, nameIP=nameIP, image=image, iRoleActive=iRoleActive"+sqlSetMetaExtra+";");
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
-  Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boImgOwn, iRole);
+  Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boUseIdPImg, iRole);
   Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency, displayEmail, boWebPushOK) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser, boWebPushOK=boWebPushOK;");
   Val.push(tel, currency, displayEmail, boWebPushOK);
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
@@ -1180,6 +1180,13 @@ ReqBE.prototype.RIntroCB=function*(inObj){ // writing needSession
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+
+    // base64Img
+  var bufImg = Buffer.from(base64Img.split(",")[1], 'base64');
+  console.log('bufImg.length: '+bufImg.length);
+  if(bufImg.length==0) return [Error('bufImg.length==0')];
+  if(bufImg.length>10000) return [Error('bufImg.length>10000 !?!, aborting!')];
+  Sql.push("REPLACE INTO "+userImageTab+" (idUser,data) VALUES (@idUser,?);"); Val.push(bufImg);
   
   if(boWebPushOK){
     Sql.push("REPLACE INTO "+webPushSubscriptionTab+" VALUES (@idUser, ?);");  Val.push(strSubscription);
@@ -1468,7 +1475,7 @@ ReqBE.prototype.getComplaintsOnComplainee=function*(inObj){
   
   var idComplainee=inObj.idComplainee;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS idComplainer, IF(boImgOwn,'',image) AS image, displayName, boImgOwn, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+complaintTab+" co JOIN "+userTab+" u ON co.idComplainer=u.idUser WHERE idComplainee=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS idComplainer, IF(boUseIdPImg,image,'') AS image, displayName, boUseIdPImg, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+complaintTab+" co JOIN "+userTab+" u ON co.idComplainer=u.idUser WHERE idComplainee=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
   Val.push(idComplainee);
   Sql.push("SELECT FOUND_ROWS() AS n;");
   var sql=Sql.join("\n ");
@@ -1485,7 +1492,7 @@ ReqBE.prototype.getComplaintsFromComplainer=function*(inObj){
 
   var idComplainer=inObj.idComplainer;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser AS idUser, IF(boImgOwn,'',image) AS image, displayName, boImgOwn, imTag, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainer=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser AS idUser, IF(boUseIdPImg,image,'') AS image, displayName, boUseIdPImg, imTag, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainer=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
   Val.push(idComplainer); 
   Sql.push("SELECT FOUND_ROWS() AS n;"); 
   var sql=Sql.join("\n ");
@@ -1558,7 +1565,7 @@ ReqBE.prototype.teamLoad=function*(inObj){  // writing needSession
   
   //copySome(Ou, roleTeam, ['idUser', 'imTag', 'link']);
 
-  var TmpCol=['u.idUser', 'nameIP', 'idTeam', 'image', 'imTag', 'boImgOwn'];
+  var TmpCol=['u.idUser', 'nameIP', 'idTeam', 'image', 'imTag', 'boUseIdPImg'];
   //for(var i=0;i<TmpCol.length;i++){TmpCol[i]+=" AS '"+i+"'";} 
   var strCol=TmpCol.join(', ');
   var sql="SELECT "+strCol+" FROM "+roleTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE idTeamWanted=?";
@@ -1587,7 +1594,7 @@ ReqBE.prototype.deleteImage=function*(inObj){
 
   var Sql=[];
   Sql.push("DELETE FROM "+userImageTab+" WHERE idUser="+idUser+";");
-  Sql.push("UPDATE "+userTab+" SET boImgOwn=0 WHERE idUser="+idUser+";");
+  Sql.push("UPDATE "+userTab+" SET boUseIdPImg=1 WHERE idUser="+idUser+";");
   var sql=Sql.join("\n "), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   var nDel=results[0].affectedRows; 
@@ -1671,39 +1678,77 @@ ReqBE.prototype.uploadImage=function*(inObj){
 
   var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
   
-  var kind=this.kind;
+  var kind=this.kind, sqlSetExtra="";
   if(kind=='u'){
     if(!buyer && !seller) { this.mes('No session'); return [null, [Ou]];}
-    var idUser=user.idUser, tab=userImageTab;
-  }
-  else if(kind=='b'){
+    var idUser=user.idUser, tabImage=userImageTab, tabMeta=userTab, sqlSetExtra="boUseIdPImg=0, ";
+  } else if(kind=='b'){
     if(!buyerTeam) { this.mes('No session'); return [null, [Ou]];}
-    var idUser=buyerTeam.idUser, tab=buyerTeamImageTab;
-  }
-  else if(kind=='s'){
+    var idUser=buyerTeam.idUser, tabImage=buyerTeamImageTab, tabMeta=buyerTeamTab;
+  } else if(kind=='s'){
     if(!sellerTeam) { this.mes('No session'); return [null, [Ou]];}
-    var idUser=sellerTeam.idUser, tab=sellerTeamImageTab;
-  }
-  else return [new ErrorClient("kind="+kind)];
-
+    var idUser=sellerTeam.idUser, tabImage=sellerTeamImageTab, tabMeta=sellerTeamTab;;
+  } else return [new ErrorClient("kind="+kind)];
 
 
   console.log('uploadImage data.length: '+data.length);
   if(data.length==0) return [Error('data.length==0')];
   
   var Sql=[], Val=[];
-  Sql.push("REPLACE INTO "+tab+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
-  if(kind=='u') {    Sql.push("UPDATE "+userTab+" SET boImgOwn=1,imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser);    }
-  else if(kind=='b'){     Sql.push("UPDATE "+buyerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
-  else if(kind=='s'){     Sql.push("UPDATE "+sellerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
-  
-  //var sql='INSERT INTO imgTab SET ?';
+  Sql.push("REPLACE INTO "+tabImage+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
+  Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); Val.push(idUser);
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
   Ou.strMessage="Done";
   return [null, [Ou]];
 }
+
+
+
+ReqBE.prototype.uploadImageB64=function*(inObj){
+  var self=this, req=this.req, {flow, site}=req, siteName=site.siteName;
+  var {userTab, sellerTeamTab, sellerTeamImageTab, buyerTeamTab, buyerTeamImageTab, userImageTab}=site.TableName;
+  var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
+  var Ou={};
+
+  var {kind, base64Img, boUseIdPImg}=inObj;
+
+  
+  var Sql=[], Val=[];
+  var sqlSetExtra="";
+  if(kind=='u'){
+    if(!buyer && !seller) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=user.idUser, tabImage=userImageTab, tabMeta=userTab, sqlSetExtra="boUseIdPImg=?, ";
+  } else if(kind=='b'){
+    if(!buyerTeam) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=buyerTeam.idUser, tabImage=buyerTeamImageTab, tabMeta=buyerTeamTab;
+  } else if(kind=='s'){
+    if(!sellerTeam) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=sellerTeam.idUser, tabImage=sellerTeamImageTab, tabMeta=sellerTeamTab;;
+  } else return [new ErrorClient("kind="+kind)];
+
+
+    // base64Img
+  var data = Buffer.from(base64Img.split(",")[1], 'base64');
+  console.log('data.length: '+data.length);
+  if(data.length==0) return [Error('data.length==0')];
+  if(data.length>10000) return [Error('data.length>10000 !?!, aborting!')];
+
+  
+  Sql.push("REPLACE INTO "+tabImage+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
+  Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); 
+  if(sqlSetExtra) Val.push(boUseIdPImg);      Val.push(idUser);
+  Sql.push("SELECT imTag, boUseIdPImg FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
+  var sql=Sql.join('\n');
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  copySome(Ou,results[2][0],["imTag","boUseIdPImg"]);  
+
+  Ou.strMessage="Image stored";
+  return [null, [Ou]];
+}
+
+
 
 
 
@@ -1759,8 +1804,8 @@ ReqBE.prototype.sendNotification=function*(inObj){
   if(results[0].length==0) return [new ErrorClient("No subscription for that idReceiver")];
   //const subscription = JSON.parse(results[0][0].strSubscription);
   try{ var subscription=JSON.parse(results[0][0].strSubscription); }catch(e){ return [new ErrorClient(e)]; }
-  var objSender=copySome({}, results[1][0], ["idUser", 'displayName', 'boImgOwn', 'image', 'imTag']);
-  if(objSender.boImgOwn) objSender.image='';
+  var objSender=copySome({}, results[1][0], ["idUser", 'displayName', 'boUseIdPImg', 'image', 'imTag']);
+  if(!objSender.boUseIdPImg) objSender.image='';
   
   const payload = JSON.stringify({ objSender, iRole, message, tSent:unixNow(), latlngSender });
   const options = {TTL: 0};

@@ -110,7 +110,7 @@ app.createSiteSpecificClientJS=function(siteName) {
   var Str=[];
   Str.push("var assignSiteSpecific=function(){");
   
-  var StrVar=['boDbg', 'urlPayPal', 'storedButt', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'specialistDefault', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt', 'boGoogleReview'];
+  var StrVar=['boDbg', 'urlPayPal', 'storedButt', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'userInfoFrDBZero', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt', 'boGoogleReview'];
   var objOut=copySome({},app,StrVar);
   //copySome(objOut,site,['wwwSite']);
   objOut.site=siteSimplified;

@@ -10,7 +10,7 @@
 
 // Page for testing if nComplaints and nComplaintsWritten corresponds with complaitsTab
 // nComplaints not reduced when deleteAccount is called
-// nComplaint, nComplaintGiven, donatedAmount, boImgOwn, image, imTag, displayName, tea.link (linkTeam), tea.imTag (imTagTeam) in roleTab
+// nComplaint, nComplaintGiven, donatedAmount, boUseIdPImg, image, imTag, displayName, tea.link (linkTeam), tea.imTag (imTagTeam) in roleTab
 
 // cookies aren't allowed, are they?
 // viewColumnSorterCreator: Can it be used without creating two instances?
@@ -319,32 +319,32 @@ app.CreatorPlugin.general=function(){
     
 
       // image
-    app.calcImageUrl=function(rT){ // Keys of rT: ["idUser", "boImgOwn", "imTag", "image"]
-      var tmp='',  boImgOwn=Number(rT.boImgOwn);
-      if(boImgOwn  || rT.image.length==0)  tmp=uUserImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image;
+    app.calcImageUrl=function(rT){ // Keys of rT: ["idUser", "boUseIdPImg", "imTag", "image"]
+      var tmp='',  boUseIdPImg=Number(rT.boUseIdPImg);
+      if(boUseIdPImg  && rT.image.length)  tmp=rT.image; else tmp=uUserImage+rT.idUser+'?v='+rT.imTag;
       return tmp;
     };
-    var calcImageUrlUser=function(){    return {str:calcImageUrl(userInfoFrDB.user),    boImgOwn:Boolean(Number(userInfoFrDB.user.boImgOwn))};     }
+    var calcImageUrlWUserInfoFrDB=function(){    return {str:calcImageUrl(userInfoFrDB.user),    boUseIdPImg:Boolean(Number(userInfoFrDB.user.boUseIdPImg))};     }
     var tmpCrInp=function(){
       var c=createElement('span');
       var thumb=c.thumb=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle'});
       c.butDeleteImg=createElement('button').myText(langHtml.Delete).on('click', function(){
         var vec=[['deleteImage',{},function(data){
-          if(data.boOK) userInfoFrDB.user.boImgOwn=0;
+          if(data.boOK) userInfoFrDB.user.boUseIdPImg=true;
           //for(var i=0;i<2;i++){viewSetting.ElRole[i].setUp();}
           viewUserSetting.setUp();
         }]];   majax(vec);
       });
       var uploadCallback=function(){
-        userInfoFrDB.user.boImgOwn=1; userInfoFrDB.user.imTag=randomHash(); var tmp=calcImageUrlUser(); thumb.attr({src:tmp.str}); c.butDeleteImg.toggle(tmp.boImgOwn);
+        userInfoFrDB.user.boUseIdPImg=false; userInfoFrDB.user.imTag=randomHash(); var tmp=calcImageUrlWUserInfoFrDB(); thumb.attr({src:tmp.str}); c.butDeleteImg.toggle(!tmp.boUseIdPImg);
       }
       var buttUploadImage=createElement('button').myText(langHtml.uploadNewImg).on('click', function(){viewUploadImagePop.openFunc('u',uploadCallback);});
       c.append(c.thumb, c.butDeleteImg, buttUploadImage);  //langHtml.YourImage+': ',
       return c;
     };
     var tmpSetInp=function(){
-      var tmp=calcImageUrlUser();
-      this.butDeleteImg.toggle(tmp.boImgOwn);
+      var tmp=calcImageUrlWUserInfoFrDB();
+      this.butDeleteImg.toggle(!tmp.boUseIdPImg);
       this.thumb.prop({src:tmp.str});
     };
     var tmpSaveInp=function(){return [null,null];}
@@ -2554,6 +2554,7 @@ var filterButtonCreator=function(){
  *   divLoginInfoCreator
  * viewEntryCreator
  * mainIntroPopCreator
+ *   divSelectImageCreator
  *
  *******************************************************************************************************************
  *******************************************************************************************************************/
@@ -2655,7 +2656,9 @@ var viewUserSettingCreator=function(){
   el.setUp=function(){
     var tmp=userInfoFrDB.user;
     inpDisplayName.value=tmp.displayName;  
-    oB.Prop.image.setInp.call(spanImg);
+    //oB.Prop.image.setInp.call(spanImg);
+    var url=calcImageUrl(userInfoFrDB.user);
+    divImage.setUp({url,boUseIdPImg:userInfoFrDB.user.boUseIdPImg}); //userInfoFrDB.user.image
     oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     cbBoGeoWatch.checked=boGeoWatch;
     divIPSetting.setUp();
@@ -2679,13 +2682,14 @@ var viewUserSettingCreator=function(){
   
 
   el.createDivs=function(){
-    spanImg=oB.Prop.image.crInp();
-    divImage.myAppend('Display image: ', spanImg);
+    //spanImg=oB.Prop.image.crInp();
+    //divImage.myAppend('Display image: ', spanImg);
     
     spanBoWebPushOK=oB.Prop.boWebPushOK.crInp('setting');
     divBoWebPushOK.myAppend("Enable Push Messages: ", spanBoWebPushOK);
   }
-  var spanImg, divImage=createElement('div');
+  //var spanImg, divImage=createElement('div');
+  var divImage=divSelectImageCreator(true);
 
       // divBoWebPushOK
   var spanBoWebPushOK, divBoWebPushOK=createElement('div');
@@ -2920,13 +2924,12 @@ var viewUploadImagePopCreator=function(){
 }
 
 
-
 var viewDeleteAccountPopCreator=function(){
   var el=createElement('div');
   el.toString=function(){return 'deleteAccountPop';}
   var yes=createElement('button').myText(langHtml.Yes).on('click', function(){
     //var vec=[['UDelete',1,function(data){historyBack();historyBack();}]];   majax(vec);
-    sessionLoginIdP={};  userInfoFrDB=extend({}, specialistDefault);
+    sessionLoginIdP={};  userInfoFrDB=extend({}, userInfoFrDBZero);
     var vec=[['UDelete',{}], ['logout',{}, function(data){
       history.fastBack(viewFront,true);
     }]];   majax(vec);
@@ -3257,7 +3260,7 @@ var divLoginInfoCreator=function(){
   //var logoutButt=createElement('a').prop({href:''}).myText(langHtml.divLoginInfo.logoutButt).css({'float':'right'});
   var logoutButt=createElement('button').myText(langHtml.divLoginInfo.logoutButt).css({'margin-left':'auto'});
   logoutButt.on('click', function(){
-    sessionLoginIdP={}; userInfoFrDB=extend({}, specialistDefault);
+    sessionLoginIdP={}; userInfoFrDB=extend({}, userInfoFrDBZero);
     var vec=[['logout', {}, function(data){
       history.fastBack(viewFront,true);
     }]];
@@ -3373,8 +3376,9 @@ var mainIntroPopCreator=function(oRole){
     //if(strTel.length==0) {setMess('tel is empty'); return; }
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
     var nameT=inpName.value.trim();  inpName.value=nameT;
-    var boIdIPImage=Number(cbIdIPImage.prop('checked'));
-    var o1={displayName:nameT, strSubscription:JSON.stringify(myWebPush.subscription), tel:strTel, displayEmail:strEmail, currency:curT, charRole, boIdIPImage};
+    //var boIdIPImage=Number(cbIdIPImage.prop('checked'));
+    var {base64Img, boUseIdPImg}=divImage;
+    var o1={displayName:nameT, strSubscription:JSON.stringify(myWebPush.subscription), tel:strTel, displayEmail:strEmail, currency:curT, charRole, base64Img, boUseIdPImg};
     var vec=[['RIntroCB',o1,function(data){el.closePop();}], ['setupById', {}]];   majax(vec);
 
     // var iframeConversion=createElement('iframe').prop({src:uConversion, scrolling:"no", frameborder:0,  allowTransparency:true}).css({border:'none', overflow:'hidden', width:'292px', height:'62px', display:'none'});
@@ -3383,11 +3387,15 @@ var mainIntroPopCreator=function(oRole){
 
     setMess('',null,true);  
   }
-  el.setUp=function(){
+  el.setUp=async function(){
     inpTel.value=''; inpTel.focus();
     var nameT=isSet(sessionLoginIdP)?sessionLoginIdP.nameIP:'';
     inpName.value=nameT;
-    cbIdIPImage.prop('checked', true);
+    //cbIdIPImage.prop('checked', true);
+    //divImage.image.src=sessionLoginIdP.image;
+    // elBody.myAppend(iframeConversion);
+
+    divImage.setUp({url:sessionLoginIdP.image});
     oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     return true;
   }
@@ -3411,8 +3419,9 @@ var mainIntroPopCreator=function(oRole){
   var inpName=createElement('input').prop('type','text').css({width:'70%', 'box-sizing':'border-box'});
   var divName=createElement('p'); divName.myAppend('Name', ': ',inpName);
   
-  var cbIdIPImage=createElement('input').prop({"type":"checkbox"});
-  var divIdIPImage=createElement('p'); divIdIPImage.myAppend('Use image from ID provider', ': ',cbIdIPImage);
+  //var cbIdIPImage=createElement('input').prop({"type":"checkbox"});
+  //var divImage=createElement('p'); divImage.myAppend('Use image from ID provider', ': ',cbIdIPImage);
+  var divImage=divSelectImageCreator();
   
   //var butToggle=createElement('button').myText('boPushToggle').on('click', function(){this.disabled=true; myWebPush.togglePushNotifications();} );
   
@@ -3426,19 +3435,68 @@ var mainIntroPopCreator=function(oRole){
   var divEmail=createElement('p'); divEmail.myAppend(langHtml.Email, '*: ',inpEmail);
   var strTmp=boEnablePushNotification?"*At least one of these must be enabled/supplied.":"*At least one of these must be supplied.";
   var pBread3=createElement('p').myText(strTmp).css({'font-size':'78%'});
-  //divName.add(divTel).add(divIdIPImage).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
-  //[divName, divTel, divIdIPImage].cssChildren({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
-  [divName, divIdIPImage, divTel, divEmail].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
-  //cssChildren([divName, divTel, divIdIPImage], {display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
+  //divName.add(divTel).add(divImage).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
+  //[divName, divTel, divImage].cssChildren({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
+  [divName, divTel, divEmail].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
+  //cssChildren([divName, divTel, divImage], {display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
 
   var saveButton=createElement('button').myText(langHtml.Continue).on('click', save).css({display:'block', 'margin':'2em auto 1em'});
-  el.myAppend(head, pBread, divName, divIdIPImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton).css({padding:'0.5em'}); //   , divEmail
+  el.myAppend(head, pBread, divName, divImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton).css({padding:'0.5em'}); //   , divEmail
 
   return el;
 }
 
+var divSelectImageCreator=function(boSetting=false){
+  var el=createElement('div');
+  
+  var toggleResetBut=function(boT){   butFB.toggle(Boolean(boT)); }
+  var onChangeFun=async function(){
+    resetMess();
+    var arrFile=this.files;
+    //if(arrFile.length>1) {setMess('Max 1 file',5); toggleResetBut(0); return;}
+    if(arrFile.length==0) { toggleResetBut(0); return;}
+    objFile=arrFile[0];
+    if(objFile.size==0){ setMess("objFile.size==0",5); toggleResetBut(0); return; }
+    var tmpMB=(objFile.size/(1024*1024)).toFixed(2);
 
+    var [err,blob]=await reduceFileSize(objFile, 50, 40, Infinity, 0.9);
+    //el.image.prop({src:urlCreator.createObjectURL(blob)});
+    el.image.src=URL.createObjectURL(blob);
 
+    var base64Img=el.base64Img=await blobToBase64(blob);
+    var boUseIdPImg=el.boUseIdPImg=false;
+
+    toggleResetBut(1);
+    if(boSetting) {var vec=[['uploadImageB64', {kind:'u', base64Img, boUseIdPImg}, uploadRet]];   majax(vec);}
+  }
+  el.setUp=async function(objArg){
+    var {url, boUseIdPImg=true, boUserAction=false}=objArg;
+    var res=await fetch(new Request(url));
+    var blob=await res.blob();
+    el.image.src=URL.createObjectURL(blob);
+    var base64Img=el.base64Img=await blobToBase64(blob);
+    el.boUseIdPImg=boUseIdPImg;
+    toggleResetBut(!boUseIdPImg);
+    inpFile.value="";
+    if(boSetting && boUserAction) {var vec=[['uploadImageB64', {kind:'u', base64Img, boUseIdPImg}, uploadRet]];   majax(vec);}
+  }
+  var uploadRet=function(data){
+    copySome(userInfoFrDB.user, data, ["imTag", "boUseIdPImg"]);
+    var {strMessage}=data;
+    //setMess(strMessage);
+  }
+  //var onClear=function(){el.setUp(sessionLoginIdP.image, true);};
+  var onClear=function(){var url=userInfoFrDB.user.image||sessionLoginIdP.image; el.setUp({url,boUserAction:true});};
+  el.base64Img=null;
+  var objFile;
+  var inpFile=createElement('input').prop({type:'file', name:'file', id:'file', accept:'image/*'}).css({background:'lightgrey'}).on('change',onChangeFun).hide();
+  el.image=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle', margin:"0 .3em"});
+  var head=createElement('span').myText('Display Image:');
+  var but=createElement('button').myText('Change').on('click',function(){ inpFile.click(); });
+  var butFB=createElement('button').myText('Default').hide().on('click',onClear);
+  el.myAppend(head, inpFile, el.image, butFB, but); //, divMess
+  return el;
+}
 
 
 
@@ -3712,7 +3770,8 @@ var viewComplainerCreator=function(){  // Complaints from a certain Complainer
 
     tBody.empty();
     for(var i=0; i<tab.length; i++) {
-      var strTmp=calcImageUrl({idUser:tab[i].idUser, boImgOwn:tab[i].boImgOwn, imTag:tab[i].imTag, image:tab[i].image}); //
+      //var strTmp=calcImageUrl({idUser:tab[i].idUser, boUseIdPImg:tab[i].boUseIdPImg, imTag:tab[i].imTag, image:tab[i].image});
+      var strTmp=calcImageUrl(tab[i]); //
       //var strTmp=tab[i].image;
 
       var img=createElement('img').prop({src:strTmp, alt:"complainee"}).css({'float':'right','border-left':'solid #ff3 15px'});
@@ -4615,12 +4674,12 @@ var mapDivCreator=function(){
   var elImgMe=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}).prop({srcset:srcsetMe, alt:"me"});  // , src:wsMarkerMe
   el.elImgOpponent=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':2}).prop({src:wsMarkerOpponent, alt:"opponent"}).on('click',function(){
     var {objSender, iRole, message, tSent, latlngSender}=this.myData;
-    var {idUser, displayName, boImgOwn, image, imTag}=objSender;
+    var {idUser, displayName, boUseIdPImg, image, imTag}=objSender;
     //var iMTab=null; ORole[iRole].MTab.forEach(function(item,i){ if(item.idUser==idUser) iMTab=i;});
     //if(iMTab==null){ return; }
     var viewInfoT=ViewInfo[iRole];
     //var data=extend({}, userInfoFrDB[ORole[iRole].strRole]);
-    //copySome(data, userInfoFrDB.user, ['boImgOwn', 'image', 'imTag', 'displayName']);
+    //copySome(data, userInfoFrDB.user, ['boUseIdPImg', 'image', 'imTag', 'displayName']);
     //viewInfoT.setContainers(data);
     //viewInfoT.setVis();
     //doHistPush({view:viewInfoT});
@@ -5686,7 +5745,11 @@ window.GRet=function(data){
   var tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {
       //for(var key in tmp){ userInfoFrDB[key]=tmp[key]; } 
       //if(tmp.buyer) viewFront.QuickDiv[0].setUp();  if(tmp.seller) viewFront.QuickDiv[1].setUp();
-      extend(userInfoFrDB, tmp);
+      //extend(userInfoFrDB, tmp);
+      var arrRole=Object.keys(tmp);    arrRole.forEach(role=>{
+        var vO=userInfoFrDB[role], vN=tmp[role];
+        if(vO && vN) extend(vO,vN);  else  userInfoFrDB[role]=vN;
+      });
       if(boVideo && userInfoFrDB.user) extend(userInfoFrDB.user, userInfoFrDBUpdVideo.user);
       if(boVideo && userInfoFrDB.seller) extend(userInfoFrDB.seller, pointDebug);
       //viewFront.quickDiv.setUp();
@@ -6088,7 +6151,7 @@ app.boMultCurrency=0;
 
 
 var sessionLoginIdP={};
-app.userInfoFrDB=extend({}, specialistDefault);
+app.userInfoFrDB=extend({}, userInfoFrDBZero);
 
 //var CSRFCode='';
 
