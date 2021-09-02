@@ -32,6 +32,7 @@ validator = require('validator');
 serialize = require('serialize-javascript');
 webPush = require('web-push');
 moment = require('moment');
+fetch = require('node-fetch');
 mime = require("mime");
 var argv = require('minimist')(process.argv.slice(2));
 app=global;

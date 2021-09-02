@@ -37,6 +37,8 @@ if(boDbg) hideTimerDefault=30*60;
 hideTimerDefault=intMax;
 hideTimerDefault=30*60;
 
+
+
    // DB- TableNameProt
 StrTableKey=["buyerTeamImage","buyerTeam","buyer","sellerTeamImage","sellerTeam","seller","userImage","complaint","admin","webPushSubscription","user","setting"]; 
 StrViewsKey=[]; //"hist"
@@ -69,7 +71,9 @@ sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 //sqlBoBeforeHiding="UNIX_TIMESTAMP(now())<UNIX_TIMESTAMP(tHide)"; // "-" has higher precedence than "<"
 //sqlBoBeforeHiding="now()<tHide"; // "-" has higher precedence than "<"
 
-specialistDefault={user:0,complainer:0,complainee:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0};
+userInfoFrDBZero={user:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0,complainer:0,complainee:0};
+KeyUserInfoFrDB=Object.keys(userInfoFrDBZero);
+KeySpecialist=KeyUserInfoFrDB.filter(k=>k!='user');
 arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
 wc2m=156542;   // wc2m: Point (world coordinate) to meter (at equator) (Should be earthCircumference/256 = 40074784/256 = 156542 [m])
 //wc2m=40074784/256;
@@ -173,7 +177,7 @@ PluginF.general=function(site){
   imTagTeam:           {b:'011000000'},
   idTeam:              {b:'011000111',type:'INT(4) UNSIGNED', default:0, feat:{kind:'BN'}},
   idTeamWanted:        {b:'110000110',type:'INT(4) UNSIGNED', default:0},
-  boImgOwn:            {b:'001000000'},
+  boUseIdPImg:            {b:'001000000'},
   linkTeam:            {b:'101000000'},
   nComplaint:          {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
   nComplaintCum:       {b:'011110110',type:'INT(4) UNSIGNED', default:0, feat:{kind:'S11',min:[0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]}},
@@ -205,7 +209,7 @@ PluginF.general=function(site){
   PropTmp.idIdPlace.pre='u.';
   PropTmp.idOpenId.pre='u.';
   PropTmp.image.pre='u.';
-  PropTmp.boImgOwn.pre='u.';
+  PropTmp.boUseIdPImg.pre='u.';
   PropTmp.displayName.pre='u.';
   PropTmp.imTag.pre='u.';
   

@@ -1,6 +1,9 @@
 
 "use strict"
 
+// globalThis
+
+
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 //https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 
@@ -153,7 +156,7 @@ app.reqKeyRemoteControlSave=function*(){
   
 
   Str.push("<script>");
-  var objOut={CSRFCode, caller, specialistDefault, keyRemoteControl, maxList, wwwCommon, leafBE, flImageFolder, UrlOAuth, response_type};
+  var objOut={CSRFCode, caller, userInfoFrDBZero, keyRemoteControl, maxList, wwwCommon, leafBE, flImageFolder, UrlOAuth, response_type};
   copySome(objOut,req,['wwwSite', 'boTLS']);
 
   Str.push(`var tmp=`+serialize(objOut)+`;
@@ -847,7 +850,7 @@ app.reqStatic=function*() {
     var [err]=yield* readFileToCache(flow, filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
-      if('host' in req.headers) console.error('Faulty request from'+req.headers.host);
+      if('host' in req.headers) console.error('Faulty request to '+req.headers.host+" ("+pathName+")");
       if('Referer' in req.headers) console.error('Referer:'+req.headers.Referer);
       res.out500(err); return;
     }
@@ -930,26 +933,6 @@ app.reqMonitor=function*(){
 /******************************************************************************
  * reqStat (request for status of the tables)
  ******************************************************************************/
-var makeTHead=function(K){
-  var strD=''; 
-  for(var i=0; i<K.length; i++){var d=K[i]; strD+="<th>"+d+"</th>";}
-  var strR="<tr>"+strD+"</tr>";
-  return "<thead>"+strR+"</thead>";
-}
-var makeTBody=function(K,M){
-  var strR=''; 
-  for(var j=0;j<M.length;j++){
-    var r=M[j];
-    var strD='';
-    //for(var i in r){var d=r[i]; strD+="<td>"+d+"</td>";}
-    for(var i=0;i<K.length;i++){var d=r[K[i]]; strD+="<td>"+d+"</td>";}
-    strR+="<tr>"+strD+"</tr>";
-  }
-  return "<tbody>"+strR+"</tbody>";
-}
-var makeTable=function(K,M){
-  return "<table>"+makeTHead(K)+makeTBody(K,M)+"</table>";
-}
 
 app.reqStat=function*(){
   var {req, res}=this;
@@ -969,7 +952,7 @@ app.reqStat=function*(){
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
-  var strCols="u.idUser, idFB, idIdPlace, idOpenId, image, boImgOwn, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
+  var strCols="u.idUser, idFB, idIdPlace, idOpenId, image, boUseIdPImg, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
 
   Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+roleTab+" s ON u.idUser=s.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" s ON u.idUser=s.idUser;");
 
@@ -1003,9 +986,9 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
     var Keys=Object.keys(matA[0]);
     for(var i=0;i<matA.length;i++){
       var row=matA[i]
-      var {idUser, image, boImgOwn, tPos, tLastWriteOfTA, tAccumulated, hideTimer, histActive}=row;
+      var {idUser, image, boUseIdPImg, tPos, tLastWriteOfTA, tAccumulated, hideTimer, histActive}=row;
 
-      if(boImgOwn){  row.boImgOwn='<image src="/image/u'+idUser+'">'; }
+      row.boUseIdPImg=boUseIdPImg?'yes':'<image src="/image/u'+idUser+'">';
       if(histActive===null){ row.histActive='' } else{
         histActive=histActive.replace(/0/g,'_').replace(/1/g,'1');  row.histActive='<font style="font-size:50%; float:right;">'+histActive+'</font>';
       }
@@ -1027,14 +1010,12 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
         }
       }
     }
-    Str.push(makeTable(Keys,matA));
+    Str.push(makeTable(matA));
   }
   var nB=matB.length;
   Str.push("<hr>"+strRole+".idUser with no user.idUser ("+nB+")");
-  if(nB>0){
-    var Keys=Object.keys(matB[0]);
-    Str.push(makeTable(Keys,matB));
-  }
+  Str.push(makeTable(matB));
+  
   
   Str.push("</body></html>");
   var str=Str.join('\n');
@@ -1059,7 +1040,7 @@ app.reqStatBoth=function*(){
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
-  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, image, boImgOwn, displayName, u.boWebPushOK";
+  var strColsU="u.idUser, idFB, idIdPlace, idOpenId, image, boUseIdPImg, displayName, u.boWebPushOK";
   //var strColsB="b.homeTown, b.currency, b.boShow, b.tPos, CONVERT(BIN(b.histActive),CHAR(30)) AS c_histActive, b.tLastWriteOfTA, b.tAccumulated, b.hideTimer";
   //var strColsS="s.homeTown, s.currency, s.boShow, s.tPos, CONVERT(BIN(s.histActive),CHAR(30)) AS s_histActive, s.tLastWriteOfTA, s.tAccumulated, s.hideTimer";
 
@@ -1108,9 +1089,9 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
     var Keys=Object.keys(matA[0]);
     for(var i=0;i<matA.length;i++){
       var row=matA[i];
-      var {idUser, image, boImgOwn, idFB, tPos, tLastWriteOfTA, b_tAccumulated, b_hideTimer, s_tAccumulated, s_hideTimer, histActive}=row;
+      var {idUser, image, boUseIdPImg, idFB, tPos, tLastWriteOfTA, b_tAccumulated, b_hideTimer, s_tAccumulated, s_hideTimer, histActive}=row;
       row.image='<image src="'+image+'">';
-      if(boImgOwn){  row.boImgOwn='<image src="/image/u'+idUser+'">'; }
+      row.boUseIdPImg=boUseIdPImg?'yes':'<image src="/image/u'+idUser+'">';
       if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture">'; } else row.idFB='';
 
       for(var j=0;j<Keys.length;j++){
@@ -1127,20 +1108,16 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
         }
       }
     }
-    Str.push(makeTable(Keys,matA));
+    Str.push(makeTable(matA));
   }
   var nB=matB.length;
   Str.push("<hr>buyers with no user ("+nB+")");
-  if(nB>0){
-    var Keys=Object.keys(matB[0]);
-    Str.push(makeTable(Keys,matB));
-  }
+  Str.push(makeTable(matB));
+  
   var nC=matC.length;
   Str.push("<hr>sellers with no user ("+nC+")");
-  if(nC>0){
-    var Keys=Object.keys(matC[0]);
-    Str.push(makeTable(Keys,matC));
-  }
+  Str.push(makeTable(matC));
+  
   
   Str.push("</body></html>");
   var str=Str.join('\n');
@@ -1154,6 +1131,7 @@ app.reqStatTeam=function*(){
   var {req, res}=this;
   var {flow, site, objQS}=req;
   var siteName=site.siteName;
+  var tNow=new Date();
   
   if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
   if('code' in objQS && objQS.code=='amfoen') {} else {res.outCode(401, "Not authorized");  return;  }
@@ -1172,7 +1150,7 @@ app.reqStatTeam=function*(){
   Sql.push("SELECT count(*) AS n FROM "+buyerTeamImageTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTeamImageTab+";");
   
-  var strCols="u.idUser, u.nameIP";
+  var strCols="u.idUser, u.nameIP, s.tCreated";
 
   //Sql.push("SELECT "+strCols+" FROM "+userTab+" u JOIN "+roleTeamTab+" s ON u.idUser=s.idUser;");
   Sql.push("SELECT "+strCols+", COUNT(*) FROM "+userTab+" u JOIN "+roleTeamTab+" s ON u.idUser=s.idUser LEFT JOIN "+roleTab+" rMember ON u.idUser=rMember.idTeam GROUP BY u.idUser;");
@@ -1198,11 +1176,12 @@ app.reqStatTeam=function*(){
 <body>`);
   var nA=matA.length;
   Str.push("user "+roleTeamTab+" ("+nA+")");
-  if(nA>0){
-    var Keys=Object.keys(matA[0]);
-    for(var i=0;i<matA.length;i++){ var [ttmp,u]=getSuitableTimeUnit(matA[i].tAccumulated); matA[i].tAccumulated=Math.round(ttmp)+u; }
-    Str.push(makeTable(Keys,matA));
+  for(var i=0;i<matA.length;i++){ 
+    var row=matA[i], t=row.tCreated;
+    var [ttmp,u]=getSuitableTimeUnit((tNow-t)/1000); row.tCreated='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>' 
   }
+  Str.push(makeTable(matA));
+  
 
   Str.push("</body></html>");
   var str=Str.join('\n');
@@ -1258,7 +1237,7 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   image varchar(512) CHARSET utf8 NOT NULL DEFAULT '', 
   hashPW char(40) NOT NULL DEFAULT '', 
   imTag int(4) NOT NULL DEFAULT 0, 
-  boImgOwn tinyint(1) NOT NULL DEFAULT 0, 
+  boUseIdPImg tinyint(1) NOT NULL DEFAULT 0, 
   displayName VARCHAR(32) NOT NULL DEFAULT '', 
   donatedAmount DOUBLE NOT NULL DEFAULT 0, 
   keyRemoteControl VARCHAR(32) NOT NULL DEFAULT '', 
@@ -1555,7 +1534,7 @@ app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
       // Create an array from keys in Prop with DBSelOne-bit set
   
   var {SqlColSelOne}=site;
-  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boImgOwn, imTag, boWebPushOK, keyRemoteControl, iSeq, iRoleActive";
+  var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boUseIdPImg, imTag, boWebPushOK, keyRemoteControl, iSeq, iRoleActive";
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboBuyer INT, IboSeller INT, IboBuyerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)

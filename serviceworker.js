@@ -1,9 +1,9 @@
 
 //importScripts('lib.js');
 const ucfirst=function(string){  return string.charAt(0).toUpperCase() + string.slice(1);  } 
-const calcImageUrl=function(rT){ // Keys of rT: ["idUser", "boImgOwn", "imTag", "image"]
-  var tmp='',  boImgOwn=Number(rT.boImgOwn);
-  if(boImgOwn  || rT.image.length==0) tmp=myData.uUserImage+rT.idUser+'?v='+rT.imTag;  else tmp=rT.image;
+const calcImageUrl=function(rT){ // Keys of rT: ["idUser", "boUseIdPImg", "imTag", "image"]
+  var tmp='',  boUseIdPImg=Number(rT.boUseIdPImg);
+  if(boUseIdPImg  && rT.image.length)  tmp=rT.image; else tmp=myData.uUserImage+rT.idUser+'?v='+rT.imTag;
   return tmp;
 };
 const setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }

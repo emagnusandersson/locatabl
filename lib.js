@@ -432,8 +432,8 @@ app.b64UrlDecode=function(b64UrlString, boUint8Array=false){  // boUint8Array==t
   const padding='='.repeat((4-b64UrlString.length%4) % 4);
   const base64=(b64UrlString+padding).replace(/\-/g, '+').replace(/_/g, '/');
 
-  //const rawData=window.atob(base64);
-  const rawData=Buffer.from(base64, 'base64').toString();
+  const rawData=window.atob(base64);
+  //const rawData=Buffer.from(base64, 'base64').toString();
   if(!boUint8Array) return rawData;
   const outputArray=new Uint8Array(rawData.length);
 
@@ -441,7 +441,13 @@ app.b64UrlDecode=function(b64UrlString, boUint8Array=false){  // boUint8Array==t
   return outputArray;
 }
 
-
+app.blobToBase64=function(blob) {
+  return new Promise((resolve, _) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
 //
 // Escaping data
 //
