@@ -11,9 +11,9 @@
 /******************************************************************************
  * reqCurlEnd
  ******************************************************************************/
-app.reqCurlEnd=function*(){  
+app.reqCurlEnd=async function(){  
   var {req, res}=this;
-  var {flow, site, objQS}=req;
+  var {site, objQS}=req;
   var siteName=site.siteName;
   
   
@@ -69,7 +69,7 @@ app.reqCurlEnd=function*(){
 
     Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tNow AS tNow, @tPos AS tPos, @tHide AS tHide, @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
+    var [err, results]=await this.myMySql.query(sql, Val);  if(err){ res.out500(err); return; } 
     var {boShow, hideTimer, tNow, tPos, tHide, iRoleActive, boOK, mess}=results[1][0];
     var tDiff=tHide-tNow, tPosDiff=tNow-tPos;
     if(!boOK) {res.out200(mess); return;}
@@ -94,7 +94,7 @@ app.reqCurlEnd=function*(){
     Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boSetTHide);
     Sql.push("SELECT @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err){ res.out500(err); return; } 
+    var [err, results]=await this.myMySql.query(sql, Val);  if(err){ res.out500(err); return; } 
     //var {boShow, tDiff, boOK, mess}=results[1][0];
     var {iRoleActive, boOK, mess}=results[1][0];
     if(!boOK) {res.out200(mess); return;}
@@ -110,9 +110,9 @@ app.reqCurlEnd=function*(){
 /******************************************************************************
  * reqKeyRemoteControlSave
  ******************************************************************************/
-app.reqKeyRemoteControlSave=function*(){
+app.reqKeyRemoteControlSave=async function(){
   var {req, res}=this;
-  var {flow, site, objQS, uSite}=req;
+  var {site, objQS, uSite}=req;
   var siteName=site.siteName;
 
   
@@ -152,7 +152,7 @@ app.reqKeyRemoteControlSave=function*(){
 
 
   var caller="keyRemoteControlSave",  CSRFCode=randomHash();
-  yield* setRedis(flow, req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode, maxUnactivity); 
+  await setRedis(req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode, maxUnactivity); 
   
 
   Str.push("<script>");
@@ -190,8 +190,8 @@ function parseSignedRequest(signedRequest, secret) {
   return [null,data];
 }
 
-app.deleteOne=function*(site,user_id){  //
-  var {req}=this, {flow}=req, {userTab, buyerTab, sellerTab}=site.TableName;
+app.deleteOne=async function(site,user_id){  //
+  var {req}=this, {userTab, buyerTab, sellerTab}=site.TableName;
 
   var Sql=[], Val=[];
   //Sql.push("DELETE r FROM "+userTab+" u JOIN "+buyerTab+" r ON u.idUser=r.idUser WHERE idFB=?;"); Val.push(user_id);
@@ -203,7 +203,7 @@ app.deleteOne=function*(site,user_id){  //
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   var sql=Sql.join('\n');
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var nTotBO=Number(results[0][0].n);
   var nTotSO=Number(results[1][0].n);
   var c=results[2].affectedRows;
@@ -215,12 +215,12 @@ app.deleteOne=function*(site,user_id){  //
   if(nTotSO!=site.nTotS) site.boGotNewSellers=1;
   return [null, c];
 }
-app.reqDataDelete=function*(){  //
+app.reqDataDelete=async function(){  //
   var {req, res}=this;
-  var {flow, objQS, uSite}=req;
+  var {objQS, uSite}=req;
 
   //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
-  if(req.method=='POST'){var strData=yield* app.getPost.call(this, req.flow, req);}
+  if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
   else {res.outCode(400, "Post request wanted"); return; }
   
   //try{ var obj=JSON.parse(jsonInput); }catch(e){ res.outCode(400, "Error parsing json: "+e);  return; }
@@ -234,26 +234,26 @@ app.reqDataDelete=function*(){  //
   var StrMess=[];
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i], site=Site[siteName];
-    var [err,c]=yield* deleteOne.call(this, site, user_id);
+    var [err,c]=await deleteOne.call(this, site, user_id);
     if(c) StrMess.push(siteName+' ('+c+')');
   }
 
   var mess='User '+user_id+':';     if(StrMess.length) mess+=' deleted on: '+StrMess.join(', '); else mess+=' not found.';
   console.log('reqDataDelete: '+mess);
   var confirmation_code=genRandomString(32);
-  yield *setRedis(flow, confirmation_code+'_DeleteRequest', mess, timeOutDeleteStatusInfo); //3600*24*30
+  await setRedis(confirmation_code+'_DeleteRequest', mess, timeOutDeleteStatusInfo); //3600*24*30
 
   res.setHeader('Content-Type', MimeType.json); 
   //res.end("{ url: '"+uSite+'/'+leafDataDeleteStatus+'?confirmation_code='+confirmation_code+"', confirmation_code: '"+confirmation_code+ "' }");
   res.end(JSON.stringify({ url: uSite+'/'+leafDataDeleteStatus+'?confirmation_code='+confirmation_code, confirmation_code }));
 }
 
-app.reqDataDeleteStatus=function*(){
+app.reqDataDeleteStatus=async function(){
   var {req, res}=this;
-  var {flow, site, objQS, uSite}=req;
+  var {site, objQS, uSite}=req;
   var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=querystring.parse(qs);
   var confirmation_code=objQS.confirmation_code||'';
-  var [err,mess]=yield* cmdRedis(flow, 'GET', [confirmation_code+'_DeleteRequest']); 
+  var [err,mess]=await cmdRedis('GET', [confirmation_code+'_DeleteRequest']); 
   if(err) {var mess=err.message;}
   else if(mess==null) {
     var [t,u]=getSuitableTimeUnit(timeOutDeleteStatusInfo);
@@ -263,12 +263,12 @@ app.reqDataDeleteStatus=function*(){
   res.end(mess);
 }
 
-app.reqDeAuthorize=function*(){  //
+app.reqDeAuthorize=async function(){  //
   var {req, res}=this;
-  var {flow, objQS, uSite}=req;
+  var {objQS, uSite}=req;
 
   //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
-  if(req.method=='POST'){var strData=yield* app.getPost.call(this, req.flow, req);}
+  if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
   else {res.outCode(400, "Post request wanted"); return; }
 
   var Match=strData.match(/signed_request=(.*)/); if(!Match) {res.outCode(400, "String didn't start with \"signed_request=\""); return; }
@@ -280,7 +280,7 @@ app.reqDeAuthorize=function*(){  //
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i], site=Site[siteName];
     var objArg={site, idFB:data.user_id};
-    var [err, {iRole, objR}]=yield* RHide.call(this, objArg); if(err) continue;
+    var [err, {iRole, objR}]=await RHide.call(this, objArg); if(err) continue;
 
     StrMess.push(siteName);
   }
@@ -295,7 +295,7 @@ app.reqDeAuthorize=function*(){  //
 /******************************************************************************
  * reqPrev
  ******************************************************************************/
-app.reqPrev=function*() {
+app.reqPrev=async function() {
   var {req, res}=this;
   
   var strT=req.headers['Sec-Fetch-Mode'];
@@ -320,7 +320,7 @@ app.reqPrev=function*() {
 // Stuff that varies with index call parameters: site, lang, boTLS
 // Allways same: coordApprox;
 // Not used: strLangBrowser
-app.reqIndex=function*() {
+app.reqIndex=async function() {
   var {req, res}=this;
   
   var strT=req.headers['Sec-Fetch-Mode'];
@@ -601,25 +601,25 @@ var arrViewPop=[];`);
 /******************************************************************************
  * reqLoginWLink
  ******************************************************************************/
-app.reqLoginWLink=function*(){
-  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+app.reqLoginWLink=async function(){
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var code=objQS.code;
-  //var email=yield* getRedis(flow, code+'_LoginWLink');
-  var [err,email]=yield* cmdRedis(flow, 'GET', [code+'_LoginWLink']); 
+  //var email=await getRedis(code+'_LoginWLink');
+  var [err,email]=await cmdRedis('GET', [code+'_LoginWLink']); 
   if(!email) {  res.out200('No such code'); return;  }
   //if(email!=inObj.email) {  res.out200('email does not match'); return; }
 
 
   var sql="SELECT idUser FROM "+userTab+" WHERE email=?;", Val=[email];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) {  res.out500(err); return; }
   if(results.length==0) { res.out200('No such email in the database'); return;}
   
   var idUser=results[0].idUser;
-  yield *setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
-  //var [err,tmp]=yield* cmdRedis(flow, 'SET', [req.sessionID+'_LoginIdUser',idUser,'EX', maxLoginUnactivity]);
+  await setRedis(req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  //var [err,tmp]=await cmdRedis('SET', [req.sessionID+'_LoginIdUser',idUser,'EX', maxLoginUnactivity]);
 
   res.end("You are now logged in, close this tab, go back the web app and reload.");
 }
@@ -630,9 +630,9 @@ app.reqLoginWLink=function*(){
 /******************************************************************************
  * reqImage
  ******************************************************************************/
-app.reqImage=function*() {
+app.reqImage=async function() {
   var {req, res}=this;
-  var {flow, site, objQS, uSite, pathName}=req;
+  var {site, objQS, uSite, pathName}=req;
   var siteName=site.siteName, id, kind;
 
   this.eTagIn=getETag(req.headers);
@@ -649,7 +649,7 @@ app.reqImage=function*() {
   else if(kind=='b') tab=buyerTeamImageTab;
   else if(kind=='s')tab=sellerTeamImageTab; 
   var sql = "SELECT data FROM "+tab+" WHERE idUser=?", Val=[id];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) { res.out500(err); return;}
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) { res.out500(err); return;}
   if(results.length>0){
     var strData=results[0].data;
     var eTag=crypto.createHash('md5').update(strData).digest('hex'); 
@@ -671,7 +671,7 @@ app.reqImage=function*() {
 /******************************************************************************
  * reqLoginBack
  ******************************************************************************/
-app.reqLoginBack=function*(){
+app.reqLoginBack=async function(){
   var {req, res}=this;
   
   //var strT=req.headers['Sec-Fetch-Mode'];
@@ -704,14 +704,14 @@ window.close();
 }
 
 
-app.reqVerifyEmailReturn=function*() {
-  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+app.reqVerifyEmailReturn=async function() {
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
-  //var idUser=yield* getRedis(flow, codeIn+'_verifyEmail');
-  var [err,idUser]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyEmail']); 
+  //var idUser=await getRedis(codeIn+'_verifyEmail');
+  var [err,idUser]=await cmdRedis('GET', [codeIn+'_verifyEmail']); 
   
   if(idUser===null) { res.out200('No such code'); return;}
 
@@ -720,21 +720,21 @@ app.reqVerifyEmailReturn=function*() {
   Val.push(idUser);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) {  res.out500(err); return; }
 
   var c=results.affectedRows, mestmp; 
   if(c==1) { mestmp="Email verified"; } else {mestmp="Error (Nothing done)"; }
   res.end(mestmp);
 }
 
-app.reqVerifyPWResetReturn=function*() {
-  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+app.reqVerifyPWResetReturn=async function() {
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
   var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
-  //var email=yield* getRedis(flow, codeIn+'_verifyPWReset');
-  var [err,email]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyPWReset']); 
+  //var email=await getRedis(codeIn+'_verifyPWReset');
+  var [err,email]=await cmdRedis('GET', [codeIn+'_verifyPWReset']); 
   
   if(email===null) { res.out200('No such code'); return;}
 
@@ -747,7 +747,7 @@ app.reqVerifyPWResetReturn=function*() {
   Val.push(hashPW, email);
 
   var sql=Sql.join('\n');
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) {  res.out500(err); return; }
 
   var c=results.affectedRows, mestmp; 
   if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
@@ -760,15 +760,14 @@ app.reqVerifyPWResetReturn=function*() {
   if(boDbg) wwwSite="closeby.market";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset', html:strTxt };
 
-  var semY=0, semCB=0, err=null; sgMail.send(msg).then(function(){if(semY)flow.next(); semCB=1;})
-  .catch(function(errT) { err=errT; if(semY)flow.next(); semCB=1; });    if(!semCB){semY=1; yield;}
+  var [err]=await sgMail.send(msg).toNBP();
   if(err) {res.out500(err); return; }
 
   res.end("A new password has been generated and sent to your email address.");
 }
 
-app.reqVerifyEmailNCreateUserReturn=function*() {
-  var req=this.req, flow=req.flow, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+app.reqVerifyEmailNCreateUserReturn=async function() {
+  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
   var {userTab, buyerTab, sellerTab}=site.TableName;
   
   //var strT=req.headers['Sec-Fetch-Mode'];
@@ -779,8 +778,8 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   var codeIn=objQS.code;
   
   
-  //var objT=yield* getRedis(flow, codeIn+'_verifyEmailNCreateUser', true); if(!objT) { res.out200('No such code'); return;}
-  var [err,value]=yield* cmdRedis(flow, 'GET', [codeIn+'_verifyEmailNCreateUser']),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
+  //var objT=await getRedis(codeIn+'_verifyEmailNCreateUser', true); if(!objT) { res.out200('No such code'); return;}
+  var [err,value]=await cmdRedis('GET', [codeIn+'_verifyEmailNCreateUser']),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
   var {name, email, password, iRole}=objT;
   name=myJSEscape(name); email=myJSEscape(email); //password=myJSEscape(password);
 
@@ -804,9 +803,9 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
   var sql=Sql.join('\n');
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) {  res.out500(err); return; }
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) {  res.out500(err); return; }
   var c=results[1].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
-  var idUser=Number(results[2][0].idUser);    yield* setRedis(flow, req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
+  var idUser=Number(results[2][0].idUser);    await setRedis(req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
   var boIns=Number(results[4][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewBuyers=boIns;
   site.nUser=Number(results[5][0].n);
@@ -832,9 +831,9 @@ app.reqVerifyEmailNCreateUserReturn=function*() {
 /******************************************************************************
  * reqStatic (request for static files)
  ******************************************************************************/
-app.reqStatic=function*() {
+app.reqStatic=async function() {
   var {req, res}=this;
-  var {flow, site, pathName}=req, siteName=site.siteName;
+  var {site, pathName}=req, siteName=site.siteName;
 
 
   //var RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(closeby\.market|gavott\.com)")];
@@ -847,7 +846,7 @@ app.reqStatic=function*() {
   var keyCache=pathName; if(pathName==='/'+leafSiteSpecific || pathName==='/'+leafManifest) keyCache=siteName+keyCache;
   if(!(keyCache in CacheUri)){
     var filename=pathName.substr(1);
-    var [err]=yield* readFileToCache(flow, filename);
+    var [err]=await readFileToCache(filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
       if('host' in req.headers) console.error('Faulty request to '+req.headers.host+" ("+pathName+")");
@@ -872,9 +871,9 @@ app.reqStatic=function*() {
 /******************************************************************************
  * reqMonitor
  ******************************************************************************/
-app.reqMonitor=function*(){
+app.reqMonitor=async function(){
   var {req, res}=this;
-  var {flow, site, objQS}=req;
+  var {site, objQS}=req;
   var timeCur=unixNow(), boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
   var siteName=site.siteName, {userTab, sellerTab, buyerTab}=site.TableName;
 
@@ -891,7 +890,7 @@ app.reqMonitor=function*(){
     Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
 
     var sql=Sql.join('\n'), Val=[];
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return; }
+    var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return; }
     site.nVisB=results[0][0].n;
     site.nTotB=results[1][0].n;
     site.nVisS=results[2][0].n;
@@ -934,32 +933,39 @@ app.reqMonitor=function*(){
  * reqStat (request for status of the tables)
  ******************************************************************************/
 
-app.reqStat=function*(){
+app.reqStat=async function(){
   var {req, res}=this;
-  var {flow, site, objQS}=req;
+  var {site, objQS}=req;
   
   if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
-  var siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
+  var {ORole, siteName}=site;
+  var {userTab, userImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, sellerTab, sellerTeamTab, sellerTeamImageTab}=site.TableName;
   
-  var iRole=Number(objQS.role=='s');
-  var oRole=site.ORole[iRole];
+  var iRole=Number(objQS.role=='s'), iRoleAlt=1-iRole;
+  var oRole=ORole[iRole], oRoleAlt=ORole[iRoleAlt];
   var {charRole, strRole}=oRole;
-  var roleTab=iRole?sellerTab:buyerTab;
+  var roleTab=iRole?sellerTab:buyerTab,   roleAltTab=iRole?buyerTab:sellerTab;
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
   
-  var strCols="u.idUser, idFB, idIdPlace, idOpenId, image, boUseIdPImg, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK";
+  //var strCols="u.idUser, idFB, image, boUseIdPImg, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK"; //, idIdPlace, idOpenId
+  
+  var strCols="u.idUser, idFB, image, boUseIdPImg, displayName, r.homeTown, r.currency, r.boShow, r.tPos, CONVERT(BIN(r.histActive),CHAR(30)) AS histActive, r.tLastWriteOfTA, r.tAccumulated, r.hideTimer, u.boWebPushOK"; //, idIdPlace, idOpenId
+  var strColAlt=", IF(a.idUser,1,'') AS "+"IsAlso"+ucfirst(oRoleAlt.strRole);
 
-  Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+roleTab+" s ON u.idUser=s.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" s ON u.idUser=s.idUser;");
+  //Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+roleTab+" r ON u.idUser=r.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" r ON u.idUser=r.idUser;");
 
-  Sql.push("SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
+  Sql.push("SELECT "+strCols+strColAlt+" FROM "+roleTab+" r LEFT JOIN "+userTab+" u ON u.idUser=r.idUser LEFT JOIN "+roleAltTab+" a ON u.idUser=a.idUser;");
+  //LEFT JOIN "+userImageTab+" i ON u.idUser=u.idUser
+
+  Sql.push("SELECT "+strCols+" FROM "+roleTab+" r LEFT JOIN "+userTab+" u ON u.idUser=r.idUser WHERE u.idUser IS NULL;");
   Sql.push("SELECT now() AS now;");
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
+  var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return;  }
 
   if('code' in objQS && objQS.code=='amfoen') {
     if(iRole) site.boGotNewSellers=0; else site.boGotNewBuyers=0;
@@ -975,20 +981,26 @@ app.reqStat=function*(){
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style>
-table,td,tr {border: solid 1px;border-collapse:collapse}
+table,td,tr,th {border: solid 1px;border-collapse:collapse}
+thead{font-size:85%}
 thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
+tr td:empty { background:#bbb}
 </style>
 </head>
 <body>`);
   var nA=matA.length;
-  Str.push("user OUTER JOIN "+strRole+" ("+nA+")");
+  Str.push(strRole+" LEFT JOIN user ("+nA+")");
   if(nA>0){
     var Keys=Object.keys(matA[0]);
     for(var i=0;i<matA.length;i++){
       var row=matA[i]
-      var {idUser, image, boUseIdPImg, tPos, tLastWriteOfTA, tAccumulated, hideTimer, histActive}=row;
+      var {idUser, idFB, image, boShow, boUseIdPImg, tPos, tLastWriteOfTA, tAccumulated, hideTimer, histActive, boWebPushOK}=row;
 
-      row.boUseIdPImg=boUseIdPImg?'yes':'<image src="/image/u'+idUser+'">';
+      if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture" title='+idFB+'>'; } else row.idFB='';
+      row.idUser='<image src="/image/u'+idUser+'" title='+idUser+'>';
+      row.boUseIdPImg=boUseIdPImg?'1':"";
+      row.boShow=boShow?'1':"";
+      row.boWebPushOK=boWebPushOK?'1':"";
       if(histActive===null){ row.histActive='' } else{
         histActive=histActive.replace(/0/g,'_').replace(/1/g,'1');  row.histActive='<font style="font-size:50%; float:right;">'+histActive+'</font>';
       }
@@ -1012,8 +1024,8 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
     }
     Str.push(makeTable(matA));
   }
-  var nB=matB.length;
-  Str.push("<hr>"+strRole+".idUser with no user.idUser ("+nB+")");
+  var nA=matA.length, nB=matB.length;
+  Str.push("<hr>"+strRole+".idUser with no user.idUser ("+nB+"/"+nA+")");
   Str.push(makeTable(matB));
   
   
@@ -1027,9 +1039,9 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
 
 
 
-app.reqStatBoth=function*(){
+app.reqStatBoth=async function(){
   var {req, res}=this;
-  var {flow, site, objQS}=req;
+  var {site, objQS}=req;
   
   if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
 
@@ -1055,6 +1067,7 @@ app.reqStatBoth=function*(){
     StrRoleCols[i]=StrTmp.join(', ');
   }
   var [strColsB, strColsS]=StrRoleCols;
+  //strColsB="b.boShow";
 
   Sql.push("SELECT "+strColsU+", "+strColsB+", "+strColsS+" FROM "+userTab+" u LEFT JOIN "+buyerTab+" b ON u.idUser=b.idUser LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
 
@@ -1062,7 +1075,7 @@ app.reqStatBoth=function*(){
   Sql.push("SELECT "+strColsU+", "+strColsS+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
   Sql.push("SELECT now() AS now;");
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
+  var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return;  }
   if('code' in objQS && objQS.code=='amfoen') {
     site.boGotNewSellers=0;  site.boGotNewBuyers=0;
     site.nUser=Number(results[0][0].n);
@@ -1076,10 +1089,13 @@ app.reqStatBoth=function*(){
 <html lang="en"><head>
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<style> table,td,tr {border: solid 1px;border-collapse:collapse}
+<style>
+table,td,tr,th {border: solid 1px;border-collapse:collapse}
 td:nth-child(n+9):nth-child(-n+16){background:pink}
 td:nth-child(n+17){background:lightblue}
+thead{font-size:85%}
 thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
+tr td:empty { background:#bbb}
 </style>
 </head>
 <body>`);
@@ -1092,7 +1108,7 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
       var {idUser, image, boUseIdPImg, idFB, tPos, tLastWriteOfTA, b_tAccumulated, b_hideTimer, s_tAccumulated, s_hideTimer, histActive}=row;
       row.image='<image src="'+image+'">';
       row.boUseIdPImg=boUseIdPImg?'yes':'<image src="/image/u'+idUser+'">';
-      if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture">'; } else row.idFB='';
+      if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture" title='+idFB+'>'; } else row.idFB='';
 
       for(var j=0;j<Keys.length;j++){
         var key=Keys[j], t=row[key];
@@ -1127,9 +1143,9 @@ thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(
   Streamify(str).pipe(zlib.createGzip()).pipe(res); 
 }
 
-app.reqStatTeam=function*(){
+app.reqStatTeam=async function(){
   var {req, res}=this;
-  var {flow, site, objQS}=req;
+  var {site, objQS}=req;
   var siteName=site.siteName;
   var tNow=new Date();
   
@@ -1156,7 +1172,7 @@ app.reqStatTeam=function*(){
   Sql.push("SELECT "+strCols+", COUNT(*) FROM "+userTab+" u JOIN "+roleTeamTab+" s ON u.idUser=s.idUser LEFT JOIN "+roleTab+" rMember ON u.idUser=rMember.idTeam GROUP BY u.idUser;");
 
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err){ res.out500(err); return;  }
+  var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return;  }
 
   if(iRole) site.boGotNewSellers=0; else site.boGotNewBuyers=0;
   var nTotB=Number(results[0][0].n);
@@ -1171,7 +1187,12 @@ app.reqStatTeam=function*(){
 <html lang="en"><head>
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<style> table,td,tr {border: solid 1px;border-collapse:collapse}</style>
+<style>
+table,td,tr,th {border: solid 1px;border-collapse:collapse}
+thead{font-size:85%}
+thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
+tr td:empty { background:#bbb}
+</style>
 </head>
 <body>`);
   var nA=matA.length;
@@ -1197,7 +1218,7 @@ app.reqStatTeam=function*(){
  ******************************************************************************/
 app.SetupSql=function(){
 }
-app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
+app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
   var site=Site[siteName]; 
   
   var SqlTabDrop=[], SqlTab=[];
@@ -1450,13 +1471,13 @@ app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
   else var Sql=array_merge(SqlTabDrop, SqlTab);
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   return [null];
 }
 
 
   
-app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
+app.SetupSql.prototype.createFunction=async function(siteName, boDropOnly){
   var site=Site[siteName]; 
 
   var SqlFunctionDrop=[], SqlFunction=[];
@@ -1839,11 +1860,11 @@ CLIENT_FOUND_ROWS
   else var Sql=array_merge(SqlFunctionDrop, SqlFunction);
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   return [null];
 }
 
-app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
+app.SetupSql.prototype.funcGen=async function(boDropOnly){
   var SqlFunction=[], SqlFunctionDrop=[];
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS copyTable");
   SqlFunction.push(`CREATE PROCEDURE copyTable(INameN varchar(128),IName varchar(128))
@@ -1960,7 +1981,7 @@ app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
   
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   return [null];
 }
 
@@ -1968,7 +1989,7 @@ app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
 
 
 
-app.SetupSql.prototype.createDummies=function*(flow, siteName){
+app.SetupSql.prototype.createDummies=async function(siteName){
   var nData=10;
   
 
@@ -2127,7 +2148,7 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
   var sql=Sql.join('\n'), Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   var {n:nStart}=results[0];
   
 
@@ -2308,13 +2329,13 @@ app.SetupSql.prototype.createDummies=function*(flow, siteName){
   Sql.push(`UPDATE `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount, r.boShow=(u.iRoleActive=1)`);
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   return [null];
 }
 
 
 
-app.SetupSql.prototype.truncate=function*(flow, siteName){
+app.SetupSql.prototype.truncate=async function(siteName){
   var site=Site[siteName];
   
   var Sql=[];
@@ -2336,12 +2357,12 @@ app.SetupSql.prototype.truncate=function*(flow, siteName){
   Sql.push('SET FOREIGN_KEY_CHECKS=1');
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   return [null];
 }
 
 
-app.SetupSql.prototype.populateSetting=function*(flow, siteName){
+app.SetupSql.prototype.populateSetting=async function(siteName){
   var site=Site[siteName]; 
   var Sql=[];
   var {TableName}=site, {settingTab}=TableName;
@@ -2356,13 +2377,13 @@ app.SetupSql.prototype.populateSetting=function*(flow, siteName){
 
 
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   return [null];
 }
 
 
   // Called when --sql command line option is used
-app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
+app.SetupSql.prototype.doQuery=async function(strCreateSql){
   if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); return [new ErrorWLab('erraticInput', tmp)]; }
   var Match=RegExp("^(drop|create)?(.*?)$").exec(strCreateSql);
   if(!Match) { debugger;  return [Error("!Match")]; }
@@ -2372,12 +2393,12 @@ app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
   else if(Match[1]=='create')  { strMeth='create'+strMeth; }
   
   if(strMeth=='createFunction'){ 
-    var [err]=yield* this.funcGen(flow, boDropOnly); if(err){  return [err]; }  // Create common functions
+    var [err]=await this.funcGen(boDropOnly); if(err){  return [err]; }  // Create common functions
   }
   for(var iSite=0;iSite<SiteName.length;iSite++){
     var siteName=SiteName[iSite];
     console.log(siteName);
-    var [err]=yield* this[strMeth](flow, siteName, boDropOnly);  if(err){  return [err]; }
+    var [err]=await this[strMeth](siteName, boDropOnly);  if(err){  return [err]; }
   }
   return [null];
 }

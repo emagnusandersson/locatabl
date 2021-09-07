@@ -118,35 +118,41 @@ app.md5=function(str){return crypto.createHash('md5').update(str).digest('hex');
 
 
   // Redis
-app.cmdRedis=function*(flow, strCommand, arr){
+app.cmdRedis=async function(strCommand, arr){
   if(!(arr instanceof Array)) arr=[arr];
-  var err, value; redisClient.send_command(strCommand, arr, function(errT, valueT){  err=errT; value=valueT; flow.next();  }); yield;
-  return [err,value];
+  return await new Promise(resolve=>{
+    redisClient.send_command(strCommand, arr, (...arg)=>resolve(arg)  ); 
+  });
 }
-app.getRedis=function*(flow, strVar, boObj=false){
-  var [err,strTmp]=yield* cmdRedis(flow, 'GET', [strVar]);  if(boObj) return JSON.parse(strTmp); else return strTmp;
+app.getRedis=async function(strVar, boObj=false){
+  var [err,res]=await cmdRedis('GET', [strVar]);  if(boObj) res=JSON.parse(res);  return [err,res];
 }
-app.setRedis=function*(flow, strVar, val, tExpire=-1){
+app.setRedis=async function(strVar, val, tExpire=-1){
   if(typeof val!='string') var strA=JSON.stringify(val); else var strA=val;
-  var arr=[strVar,strA];  if(tExpire>0) arr.push('EX',tExpire);   var [err,strTmp]=yield* cmdRedis(flow, 'SET', arr);
+  var arr=[strVar,strA];  if(tExpire>0) arr.push('EX',tExpire);   var [err,strTmp]=await cmdRedis('SET', arr);
+  return [err,strTmp];
 }
-app.expireRedis=function*(flow, strVar, tExpire=-1){
-  if(tExpire==-1) var [err,strTmp]=yield* cmdRedis(flow, 'PERSIST', [strVar]);
-  else var [err,strTmp]=yield* cmdRedis(flow, 'EXPIRE', [strVar,tExpire]);
+app.expireRedis=async function(strVar, tExpire=-1){
+  if(tExpire==-1) var [err,strTmp]=await cmdRedis('PERSIST', [strVar]);
+  else var [err,strTmp]=await cmdRedis('EXPIRE', [strVar,tExpire]);
+  return [err,strTmp];
 }
-app.delRedis=function*(flow, arr){ 
+app.delRedis=async function(arr){ 
   if(!(arr instanceof Array)) arr=[arr];
-  var [err,strTmp]=yield* cmdRedis(flow, 'DEL', arr);
+  var [err,strTmp]=await cmdRedis('DEL', arr);
+  return [err,strTmp];
 }
+  
+
 
     // closebymarket
   //var StrSuffix=['_Main', '_LoginIdP', '_LoginIdUser', '_UserInfoFrDB', '_Counter'];  var StrCaller=['index'], for(var i=0;i<StrCaller.length;i++){  StrSuffix.push('_CSRFCode'+ucfirst(StrCaller[i])); }
-  //var err=yield* changeSessionId.call(this, sessionIDNew, StrSuffix);
-app.changeSessionId=function*(sessionIDNew, StrSuffix){
+  //var err=await changeSessionId.call(this, sessionIDNew, StrSuffix);
+app.changeSessionId=async function(sessionIDNew, StrSuffix){
   for(var i=0;i<StrSuffix.length;i++){
     var strSuffix=StrSuffix[i];
     var redisVarO=this.req.sessionID+strSuffix, redisVarN=sessionIDNew+strSuffix; 
-    var [err,value]=yield* cmdRedis(this.req.flow, 'rename', [redisVarO, redisVarN]); //if(err) return err;
+    var [err,value]=await cmdRedis('rename', [redisVarO, redisVarN]); //if(err) return err;
   }
   this.req.sessionID=sessionIDNew;
   return null;
@@ -182,40 +188,38 @@ app.getIP=function(req){
 
 
 app.CacheUriT=function(){
-  this.set=function*(flow, key, buf, type, boZip, boUglify){
-    var eTag=crypto.createHash('md5').update(buf).digest('hex'); 
+  this.set=async function(key, buf, type, boZip, boUglify){
+    var eTag=crypto.createHash('md5').update(buf).digest('hex');
     //if(boUglify) { // UglifyJS does not handle ecma6 (when I tested it 2019-05-05).
       //var objU=UglifyJS.minify(buf.toString());
       //buf=new Buffer(objU.code,'utf8');
     //}
     if(boZip){
-      var bufI=buf;
-      var gzip = zlib.createGzip();
-      var err; zlib.gzip(bufI, function(errT, bufT) { err=errT; buf=bufT; flow.next(); });  yield; if(err) return [err];
-    }
+      var [err, buf]=await new Promise( resolve=>{  zlib.gzip(buf, (...arg)=>resolve(arg)  ); });
+    } else{  var err=null; }
     this[key]={buf,type,eTag,boZip,boUglify};
-    return [null];
+    return [err,buf];
   }
 }
 
 var regFileType=RegExp('\\.([a-z0-9]+)$','i'),    regZip=RegExp('^(css|js|txt|html)$'),   regUglify=RegExp('^js$');
-app.readFileToCache=function*(flow, strFileName) {
+app.readFileToCache=async function(strFileName) {
   var type, Match=regFileType.exec(strFileName);    if(Match && Match.length>1) type=Match[1]; else type='txt';
   var boZip=regZip.test(type),  boUglify=regUglify.test(type);
-  var err, buf;
-  fs.readFile(strFileName, function(errT, bufT) {  err=errT; buf=bufT;  flow.next();   });  yield;  if(err) return [err];
-  var [err]=yield* CacheUri.set(flow, '/'+strFileName, buf, type, boZip, boUglify);
+  var [err, buf]=await fsPromises.readFile(strFileName).toNBP();    if(err) return [err];
+  var [err]=await CacheUri.set('/'+strFileName, buf, type, boZip, boUglify);
   return [err];
 }
+
 
 app.makeWatchCB=function(strFolder, StrFile) {
   return function(ev,filename){
     if(StrFile.indexOf(filename)!=-1){
       var strFileName=path.normalize(strFolder+'/'+filename);
       console.log(filename+' changed: '+ev);
-      var flow=( function*(){ 
-        var [err]=yield* readFileToCache(flow, strFileName); if(err) console.error(err);
-      })(); flow.next();
+      (async function(){ 
+        var [err]=await readFileToCache(strFileName); if(err) console.error(err);
+      })();
     }
   }
 }
@@ -235,16 +239,14 @@ app.myAttrEscape=function(str){return str.replace(/&/g,"&amp;").replace(/</g,"&l
 app.myLinkEscape=function(str){ str=myAttrEscape(str); if(str.startsWith('javascript:')) str='javascript&#58;'+str.substr(11); return str; }
 
 
-app.getPost=function*(flow, req){
+app.getPost=async function(req){
   var strData;
   if('x-type' in req.headers ){ //&& req.headers['x-type']=='single'
     var form = new formidable.IncomingForm();
     form.multiples = true;  
     //form.uploadDir='tmp';
-    
-    var err, fields, files;
-    var semY=0, semCB=0;  form.parse(req, function(errT, fieldsT, filesT) { err=errT; fields=fieldsT; files=filesT; if(semY)flow.next(); semCB=1;  }); if(!semCB){semY=1; yield;}
-    if(err){this.mesEO(err);  return; } 
+
+    var [err, fields, files]=await new Promise(resolve=>{  form.parse(req, (...arg)=>resolve(arg));  });     if(err){ this.mesEO(err); return; } 
     
     this.File=files['fileToUpload[]'];
     if('kind' in fields) this.kind=fields.kind; else this.kind='s';
@@ -252,7 +254,8 @@ app.getPost=function*(flow, req){
     strData=fields.vec;
 
   }else{
-    var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
+    //var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
+    var [err,buf]=await new Promise(resolve=>{  var myConcat=concat(bT=>resolve([null,bT]));    req.pipe(myConcat);  });  if(err){ this.mesEO(err); return; }
     strData=buf.toString();
   }
   return strData;
