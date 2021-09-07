@@ -5,32 +5,36 @@
 // 
 
 app.MyMySql=function(pool){ this.pool=pool; this.connection=null;  }
-MyMySql.prototype.getConnection=function*(flow){
-  var err, connection;      this.pool.getConnection(function(errT, connectionT) { err=errT; connection=connectionT; flow.next(); }); yield;   this.connection=connection; return [err];
+MyMySql.prototype.getConnection=async function(){
+  var [err, connection]= await new Promise(resolve=>{   this.pool.getConnection((...arg)=>resolve(arg));    });
+  this.connection=connection; return [err];
 }
-MyMySql.prototype.startTransaction=function*(flow){
-  if(!this.connection) {var [err]=yield* this.getConnection(flow); if(err) return [err];}
-  var err;     this.connection.beginTransaction(function(errT) { err=errT; flow.next(); }); yield;   if(err) return [err];
+MyMySql.prototype.startTransaction=async function(){
+  if(!this.connection) {var [err]=await this.getConnection(); if(err) return [err];}
+  var err=await new Promise(resolve=>{   this.connection.beginTransaction(eT=>resolve(eT));   });     if(err) return [err];
   this.transactionState='started';
   return [null];
 }
-MyMySql.prototype.query=function*(flow, sql, Val=[]){
-  if(!this.connection) {var [err]=yield* this.getConnection(flow); if(err) return [err];}
-  var err, results, fields;    this.connection.query(sql, Val, function (errT, resultsT, fieldsT) { err=errT; results=resultsT; fields=fieldsT; flow.next(); }); yield;   return [err, results, fields];
+MyMySql.prototype.query=async function(sql, Val=[]){
+  if(!this.connection) {var [err]=await this.getConnection(); if(err) return [err];}
+  var [err, results, fields]=await new Promise(resolve=>{    this.connection.query(sql, Val, (...arg)=>resolve(arg) );      });
+  return [err, results, fields];
 }
-MyMySql.prototype.rollback=function*(flow){  this.connection.rollback(function() { flow.next(); }); yield;   }
-MyMySql.prototype.commit=function*(flow){
-  var err; this.connection.commit(function(errT){ err=errT; flow.next(); }); yield;   return [err];
+MyMySql.prototype.rollback=async function(){  await new Promise(resolve=>{this.connection.rollback(()=>resolve());   });   }
+MyMySql.prototype.commit=async function(){
+  var err=await new Promise(resolve=>{   this.connection.commit(eT=>resolve(eT));   });   return [err];
 }
-MyMySql.prototype.rollbackNRelease=function*(flow){  this.connection.rollback(function() { flow.next(); }); yield;  this.connection.release(); }
-MyMySql.prototype.commitNRelease=function*(flow){
-  var err; this.connection.commit(function(errT){ err=errT; flow.next(); }); yield;  this.connection.release();  return [err];
+MyMySql.prototype.rollbackNRelease=async function(){  await new Promise(resolve=>{this.connection.rollback(()=>resolve())});  this.connection.release(); }
+MyMySql.prototype.commitNRelease=async function(){
+  var err=await new Promise(resolve=>{this.connection.commit(eT=>resolve(eT));  });  this.connection.release();  return [err];
 }
 MyMySql.prototype.fin=function(){   if(this.connection) { this.connection.destroy();this.connection=null;};  }
 
 
-app.RHide=function*(objArg){  // writing needSession
-  var req=this.req, {flow}=req;
+
+
+app.RHide=async function(objArg){  // writing needSession
+  var req=this.req;
   //var Ou={};
   //var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   //var {idUser}=user;
@@ -43,7 +47,7 @@ app.RHide=function*(objArg){  // writing needSession
   //Sql.push("SELECT iRoleActive FROM "+userTab+" WHERE idUser=?"); var Val=[idUser];
   Sql.push("SELECT iRoleActive AS iRole, idUser FROM "+userTab+" WHERE "+columnT+"=?"); var Val=[idT];
   var sql=Sql.join('\n');
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err, {}];
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err, {}];
   if(results.length==0) { return [Error('No such idUser in the database'), {}];}
   //var iRole=results[0].iRoleActive
   var {iRole,idUser}=results[0];
@@ -56,7 +60,7 @@ app.RHide=function*(objArg){  // writing needSession
   Sql.push(`SELECT `+site.SqlColSelOne[iRole]+` FROM (`+roleTab+` ro LEFT JOIN `+roleTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=?;`);
   Val=[idUser,idUser,idUser];
   var sql=Sql.join('\n');
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err, {}];
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err, {}];
   //var c=results[1].affectedRows;
   var objR=results[2][0];
     
@@ -66,15 +70,15 @@ app.RHide=function*(objArg){  // writing needSession
    
   // accountMerge: The arguments: idUser, idFB, idIdPlace, idOpenId and email may point to different accounts. If so, then those accounts should be merged.
   // Any of the above mentioned arguments may be null.
-app.accountMerge=function*(objArg){
-  var req=this.req, {flow, site}=req, ORole=site.ORole, {userTab, buyerTab, sellerTab, complaintTab}=site.TableName;
+app.accountMerge=async function(objArg){
+  var req=this.req, {site}=req, ORole=site.ORole, {userTab, buyerTab, sellerTab, complaintTab}=site.TableName;
   var con=this.con;
   var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objArg, Ou={idUser:null};
   var StrMes=[];
   var donatedAmount=0, nComplaint=0, nComplaintCum=0, nComplaintGiven=0, nComplaintGivenCum=0; 
   var sql="SELECT * FROM "+userTab+" WHERE idUser=? OR idFB=? OR idIdPlace=? OR idOpenId=? OR email=? ORDER BY tCreated";
   var Val=[idUser, idFB, idIdPlace, idOpenId, email];
-  var [err, resultsU]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  var [err, resultsU]=await this.myMySql.query(sql, Val); if(err) return [err];
   var nU=resultsU.length;
   //if(nU==0) {
     //if(objArg.boCreate){
@@ -82,7 +86,7 @@ app.accountMerge=function*(objArg){
       //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) );");
       //Sql.push("SELECT LAST_INSERT_ID() AS idUser;");
       //var sql=Sql.join('\n'), Val=[idFB, idIdPlace, idOpenId, email, nameIP, image];
-      //var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+      //var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
       //Ou.idUser=results[1][0].idUser;
     //}
   //}else
@@ -90,7 +94,7 @@ app.accountMerge=function*(objArg){
     var rowT=resultsU[0];
     var sql="UPDATE "+userTab+" SET idFB=IF(? IS NULL, idFB, ?), idIdPlace=IF(? IS NULL, idIdPlace, ?), idOpenId=IF(? IS NULL, idOpenId, ?), email=IF(? IS NULL, email, ?), nameIP=IF(? IS NULL, nameIP, ?), image=IF(? IS NULL, image, ?) WHERE idUser=?;";
     var Val=[idFB, idFB, idIdPlace, idIdPlace, idOpenId, idOpenId, email, email, nameIP, nameIP, image, image,   rowT.idUser]; 
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+    var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
     Ou.idUser=rowT.idUser;
   }else if(nU>1) {
     var tCreatedU=Infinity, iBestU=0, ValU=[];
@@ -110,13 +114,13 @@ app.accountMerge=function*(objArg){
       var roleTab=charRole=='b'?buyerTab:sellerTab;
       var strQMark=array_fill(nU,'?').join(', ');
       var sql="SELECT idUser, coordinatePrecisionM, tCreated, histActive, tAccumulated FROM "+roleTab+" WHERE idUser IN("+strQMark+");";
-      var [err, resultsR]=yield* this.myMySql.query(flow, sql, ValU); if(err) return [err];
+      var [err, resultsR]=await this.myMySql.query(sql, ValU); if(err) return [err];
       var nR=resultsR.length;
       if(nR==1) {
         var rowT=resultsR[0];
         if(idUserUBest!=rowT.idUser) {
           var sql="UPDATE "+roleTab+" SET idUser=? WHERE idUser=?;";  var Val=[idUserUBest, rowT.idUser];
-          var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+          var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
           var c=results.affectedRows; StrMes.push(c+" rows from "+strRole+"Tab changed idUser.");
         }
       } else if(nR>1) {
@@ -135,12 +139,12 @@ app.accountMerge=function*(objArg){
         
         var strQMark=array_fill(nR-1,'?').join(', ');
         var sql="DELETE FROM "+roleTab+" WHERE idUser IN("+strQMark+");";
-        var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+        var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
         var c=results.affectedRows; StrMes.push(c+" rows from "+strRole+"Tab deleted.");
         
         var sql="UPDATE "+roleTab+" SET idUser=?, tCreated=?, coordinatePrecisionM=? WHERE idUser=?;";
         var Val=[idUserUBest, tCreated, coordinatePrecisionM, idUserVBest];
-        var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+        var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
         var c=results.affectedRows; StrMes.push(c+" rows from "+strRole+"Tab updated.");
       }
     }
@@ -163,9 +167,9 @@ app.accountMerge=function*(objArg){
     
     var ValUObs=ValU.concat();  ValUObs.splice(iBestU,1);
     var sql=myParser(sql, {strTab:complaintTab, strColToMerge:'idComplainer', strColAlt:'idComplainee', strToMergeAll:ValU.join(','), strToMergeObs:ValUObs.join(',')});
-    var [err, results]=yield* this.myMySql.query(flow, sql, ValU); if(err) return [err];
+    var [err, results]=await this.myMySql.query(sql, ValU); if(err) return [err];
     var sql=myParser(sql, {strTab:complaintTab, strColToMerge:'idComplainee', strColAlt:'idComplainer', strToMergeAll:ValU.join(','), strToMergeObs:ValUObs.join(',')});
-    var [err, results]=yield* this.myMySql.query(flow, sql, ValU); if(err) return [err];
+    var [err, results]=await this.myMySql.query(sql, ValU); if(err) return [err];
       
       // Update nComplaint and nComplaintGiven
     var Sql=[];
@@ -175,14 +179,14 @@ app.accountMerge=function*(objArg){
     Sql.push('UPDATE '+buyerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
     Sql.push('UPDATE '+sellerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
     var sql=Sql.join('\n'), Val=Array(5).fill(idUserUBest);
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+    var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
     
       
       // As there are multiple user-rows, then delete the surplus ones and update the one to keep.
     ValUObs.splice(iBestU,1);
     var strQMark=array_fill(ValUObs.length,'?').join(', ');
     var sql="DELETE FROM "+userTab+" WHERE idUser IN("+strQMark+");";
-    var [err, results]=yield* this.myMySql.query(flow, sql, ValUObs); if(err) return [err];
+    var [err, results]=await this.myMySql.query(sql, ValUObs); if(err) return [err];
     var c=results.affectedRows; StrMes.push(c+" rows from userTab deleted.");
     
     var Sql=[];
@@ -191,7 +195,7 @@ app.accountMerge=function*(objArg){
     Sql.push("UPDATE "+buyerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
     Sql.push("UPDATE "+sellerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
     var sql=Sql.join('\n'), arrT=[donatedAmount, nComplaintCum, nComplaintGivenCum, idUserUBest];  Val.push(...arrT,...arrT);
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+    var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
     var c=results[0].affectedRows; StrMes.push(c+" rows from userTab updated.");
     Ou.idUser=idUserUBest;
   }

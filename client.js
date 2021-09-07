@@ -1678,32 +1678,7 @@ app.propSetCropLabel=function(rowMTab){var propName=this.strName, str=rowMTab[pr
 //calcLabel=function(Label,strName){ return Label[strName]||ucfirst(strName); }
 app.calcLabel=function(obj,strName){ var objA=obj[strName]; return (objA&&objA.label)?objA.label:ucfirst(strName); }
 
-//var spanMessageTextCreate=function(){
-  //var el=createElement('span');
-  //var spanInner=createElement('span');
-  //el.append(spanInner, imgBusy.hide());
-  //el.resetMess=function(time){
-    //clearTimeout(messTimer);
-    //if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
-    //spanInner.myText(' ');
-    //imgBusy.hide();
-  //}
-  //el.setMess=function(str,time,boRot){
-    //spanInner.myText(str);
-    //clearTimeout(messTimer);
-    //if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
-    //imgBusy.toggle(Boolean(boRot));
-  //};
-  //el.setHtml=function(str,time,boRot){
-    //spanInner.myHtml(str);
-    //clearTimeout(messTimer);
-    //if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
-    //imgBusy.toggle(Boolean(boRot));
-  //};
-  //var messTimer;
-  //el.addClass('message');//.css({'z-index':8100,position:'fixed'});
-  //return el;
-//}
+
 
 
 var divMessageTextCreate=function(){
@@ -2073,13 +2048,15 @@ var createUPop=function(IP, uRedir, nonce){
   //arrQ.push("auth_type=reauthenticate");
   return UrlOAuth[IP]+'?'+arrQ.join('&');
 }
-var getOAuthCode=function*(flow){
+var getOAuthCode=async function(){
   var strQS, nonce=randomHash(), uPop=createUPop(strIPPrim, strSchemeLong+site.wwwLoginRet, nonce);
-  window.loginReturn=function(strQST){ strQS=strQST; flow.next();}
+
   //if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
   if(site.wwwLoginScope) document.domain = site.wwwLoginScope;
   window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
-  yield;
+  var strQS=await new Promise(resolve=>{
+    window.loginReturn=function(strQST){ resolve(strQST); }
+  });
 
   var params=parseQS(strQS.substring(1));
   if(!('state' in params) || params.state !== nonce) {   return ['Invalid state parameter: '+params.state]; }
@@ -2107,14 +2084,15 @@ var viewFormLoginCreator=function(){
 
   var loginWEmail=function(e){
     e.preventDefault();
-    var flow=(function*(){
+    (async function(){
       if(typeof SHA1 == 'undefined') { setMess(strSha1NotLoaded); return;}
       //var tmp=SHA1(inpPass.value+strSalt);
       var hashPW=inpPass.value+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
-      var vec=[['loginWEmail',{email:inpEmail.value, password:hashPW}], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
+      await new Promise(resolve=>{
+        var vec=[['loginWEmail',{email:inpEmail.value, password:hashPW}], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
       history.fastBack(viewFront);
 
-    })(); flow.next();
+    })();
     return false;
   }
   var sendEmail=function(e){
@@ -2166,17 +2144,17 @@ var divLoginSelectorCreator=function(oRole){
 
   var strButtonSize='2em';
   var imgFb=createElement('img').prop({src:wsFb, alt:"fb"}).on('click', function(){
-    var flow=(function*(){
+    (async function(){
       ga('send', 'event', 'button', 'click', 'idPClick');
-      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:strRole+'Fun', caller:'index', code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
+      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
 
       var boE=Boolean(userInfoFrDB[strRole]);
       var tmpIntroPop=strRole=='buyer'?mainIntroPopB:mainIntroPopS;
       if(!boE) tmpIntroPop.openFunc(); 
       history.fastBack(viewFront);
-    })(); flow.next();
+    })();
   });
   imgFb.css({align:'center', display:'block', 'margin': '0.7em auto'}); //     , position:'relative',top:'0.4em',heigth:strButtonSize,width:strButtonSize
 
@@ -2396,22 +2374,22 @@ var viewConvertIDCreator=function(){
   var wsImagePrim=window['ws'+ucfirst(strIPPrim)];
   var imPrim=createElement('img').prop({src:wsImagePrim, alt:"primary IdP"}).css({'vertical-align':'middle'}).on('click', function(e){
     e.stopPropagation();
-    var flow=(function*(){
-      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+    (async function(){
+      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'userFun', caller:'index', code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
-    })(); flow.next();
+      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
+    })();
   });
 
   var wsImageAlt=window['ws'+ucfirst(strIPAlt)];
   var imAlt=createElement('img').prop({src:wsImageAlt, alt:"alt IdP"}).css({'vertical-align':'middle'}).on('click', function(e){
     e.stopPropagation();
-    var flow=(function*(){
-      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+    (async function(){
+      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
       var oT={IP:strIPAlt, fun:'mergeIDFun', caller:'index', code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
+      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
 
-    })(); flow.next();
+    })();
   });
 
   var fragRows=createFragment(pendingMess, cancelMess, headA, headB, imPrim, headC, imAlt).cssChildren({'margin':'1em 0em 1em 0.6em'});
@@ -2767,12 +2745,12 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   var wsImagePrim=window['ws'+ucfirst(strIPPrim)+'22'];
   var buttRefetch=createElement('img').prop({src:wsImagePrim, alt:"IdP"}).css({'vertical-align':'middle'}).on('click', function(e){
     e.stopPropagation();
-    var flow=(function*(){
-      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+    (async function(){
+      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'refetchFun', caller:'index', code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
+      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
       el.setUp();
-    })(); flow.next();
+    })();
     return false;
   });
   var divRefresh=createElement('div'); divRefresh.myAppend('Refetch data: ', buttRefetch);
@@ -3309,14 +3287,14 @@ var viewEntryCreator=function(oRole){
 
   var buttLoginTeam=createElement('button').myText(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).on('click', function(e){
     e.stopPropagation();
-    var flow=(function*(){
-      var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+    (async function(){
+      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
       var oT={IP:strIPPrim, fun:'teamFun', strRole, caller:'index', code};
-      var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
+      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
 
       history.fastBack(viewFront);
 
-    })(); flow.next();
+    })();
     return false;
   }).hide();
 
@@ -3701,14 +3679,14 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
     resetMess(10);
   }
   var complaintCommentButtClick=function(){
-    var flow=(function*(){
+    (async function(){
       if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
-        var [err, code]=yield* getOAuthCode(flow); if(err) {setMess(err); return;}
+        var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
         var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code};
-        var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ flow.next(); }]];   majax(vec);   yield;
+        await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
       }
       doHistPush({view:viewComplaintCommentPop});   viewComplaintCommentPop.openFunc(viewComplainee.idComplainee);
-    })(); flow.next();
+    })();
   }
   
   var oRole;

@@ -27,76 +27,45 @@ app.roundNObscure=function(resM,x,y,lat){
 
 //var text=fs.readFileSync(strFileName, 'utf8');
 
-app.SplitterPlugIn=function(){
-  var regA=RegExp("\n(CreatorPlugin\\.(\\w+)[\\s\\S]*?)//0123456789abcdef",'g');
-  var regB=RegExp("\n//0123456789abcdef client\\.js([\\s\\S]*?)$",'g');
-  var goSplit=function*(flow, strFileName){
-    var StrFile=[], Buf=[];
-    var text, err=null;
-    fs.readFile(strFileName, 'utf8', function(errT, bufT) { err=errT; text=bufT; flow.next(); });  yield;
-    if(err) return [err];
-    text.replace(regA,function(m,n,o){
-      var tmp=ucfirst(o);
-      StrFile.push('plugin'+tmp+'.js');  Buf.push(n);   //obj[o]=n;
-    }); 
-    text.replace(regB,function(m,n,o){
-      StrFile.push('client.js');  Buf.push(n);   //obj.client=n;
-    }); 
-    return [err, {StrFile, Buf}];
-  }
-  
-  this.readFileToCacheClientJs=function*(flow){ // Separate readFileToCache for client.js
-    var [err, tmpObj]= yield *goSplit(flow, 'client.js'); if(err) return [err];
-    var StrFile=tmpObj.StrFile, Buf=tmpObj.Buf;
-    for(var i=0;i<StrFile.length;i++){ 
-      var uriT='/'+lcfirst(StrFile[i]); 
-      //var buf=new Buffer(Buf[i],'utf8');
-      var buf=Buffer.from(Buf[i],'utf8');
-      var [err]=yield *CacheUri.set(flow, uriT, buf, 'js', true, true); if(err) return [err];
-    }
-    return [null];
-  }
-}
+
 
 app.SplitterPlugIn=function(){
   //var regA=RegExp("\n(CreatorPlugin\\.(\\w+)[\\s\\S]*?)//0123456789abcdef",'g');
   //var regB=RegExp("\n//0123456789abcdef client\\.js([\\s\\S]*?)$",'g');
   var regA=RegExp("\n//0123456789abcdef ([a-zA-Z0-9_]+\\.js)([\\s\\S]*?)//0123456789abcdef\\b",'g');
-  var goSplit=function*(flow, strFileName){
+  var goSplit=async function(strFileName){
     var StrFile=[], Buf=[];
-    var text, err=null;
-    fs.readFile(strFileName, 'utf8', function(errT, bufT) { err=errT; text=bufT; flow.next(); });  yield;
-    if(err) return [err];
+    var [err, text]=await fsPromises.readFile(strFileName, 'utf8').toNBP();    if(err) return [err];
     text.replace(regA,function(m,n,o){
       StrFile.push(n);  Buf.push(o);   //obj[o]=n;
     });
     return [err, {StrFile, Buf}];
   }
   
-  this.readFileToCacheClientJs=function*(flow){ // Separate readFileToCache for client.js
-    var [err, tmpObj]= yield *goSplit(flow, 'client.js'); if(err) return [err];
+  this.readFileToCacheClientJs=async function(){ // Separate readFileToCache for client.js
+    var [err, tmpObj]= await goSplit('client.js'); if(err) return [err];
     var StrFile=tmpObj.StrFile, Buf=tmpObj.Buf;
     for(var i=0;i<StrFile.length;i++){ 
       var uriT='/'+lcfirst(StrFile[i]); 
       //var buf=new Buffer(Buf[i],'utf8');
       var buf=Buffer.from(Buf[i],'utf8');
-      var [err]=yield *CacheUri.set(flow, uriT, buf, 'js', true, true); if(err) return [err];
+      var [err]=await CacheUri.set(uriT, buf, 'js', true, true); if(err) return [err];
     }
     return [null];
   }
 }
      
 
-app.createSiteSpecificClientJSAll=function*(flow) {
+app.createSiteSpecificClientJSAll=async function() {
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i];
     var buf=createSiteSpecificClientJS(siteName);
     var keyCache=siteName+'/'+leafSiteSpecific;
-    var [err]=yield *CacheUri.set(flow, keyCache, buf, 'js', true, true);
+    var [err]=await CacheUri.set(keyCache, buf, 'js', true, true);
 
     var buf=createManifest(siteName);
     var keyCache=siteName+'/'+leafManifest;
-    var [err]=yield *CacheUri.set(flow, keyCache, buf, 'json', true, true);
+    var [err]=await CacheUri.set(keyCache, buf, 'json', true, true);
   }
 }
 
@@ -134,15 +103,18 @@ app.createManifest=function(siteName){
   return str;
 }
 
-app.createManifestNStoreToCache=function*(flow, siteName){
+app.createManifestNStoreToCache=async function(siteName){
   var strT=createManifest(siteName);
   var buf=Buffer.from(strT, 'utf8');
-  var [err]=yield* CacheUri.set(flow, siteName+'/'+leafManifest, buf, 'json', true, false);   if(err) return [err];
+  var [err]=await CacheUri.set(siteName+'/'+leafManifest, buf, 'json', true, false);   if(err) return [err];
   return [null];
 }
-app.createManifestNStoreToCacheMult=function*(flow, SiteName){
+app.createManifestNStoreToCacheMult=async function(SiteName){
   for(var i=0;i<SiteName.length;i++){
-    var [err]=yield* createManifestNStoreToCache(flow, SiteName[i]);   if(err) return [err];
+    var [err]=await createManifestNStoreToCache(SiteName[i]);   if(err) return [err];
   }
   return [null];
 }
+
+
+

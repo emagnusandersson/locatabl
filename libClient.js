@@ -648,42 +648,38 @@ app.registerSW=function(uSite){
         
 var MyWebPush=function(){
   var self=this;
-  var subscription=self.subscription=null;
+  //var subscription=self.subscription=null;
+  self.subscription=null;
 
-  self.subscribeUser=function(){
-    var flow=(function*(){
-      const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
-        // Use the PushManager to get the user’s subscription to the push service.
-      var semY=0, semCB=0, err=null;  swRegistration.pushManager.getSubscription()
-      .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
+  self.subscribeUser=async function(){
+      // Use the PushManager to get the user’s subscription to the push service.
+    var [err,subscription]=await swRegistration.pushManager.getSubscription().toNBP();
+    if(err){ cbFunW(err); return;}
+    self.subscription=subscription;
+    
+    if(!self.subscription) {
+      const convertedVapidKey=b64UrlDecode(VAPID_PUBLIC_KEY, 1); // in lib.js
+        // Subscribe the user (userVisibleOnly allows to specify that we don’t plan to send notifications that don’t have a visible effect for the user).
+      var [err,subscription]=await swRegistration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedVapidKey }).toNBP();
       if(err){ cbFunW(err); return;}
-      
-      if(!subscription) {
-        const convertedVapidKey=b64UrlDecode(VAPID_PUBLIC_KEY, 1); // in lib.js
-          // Subscribe the user (userVisibleOnly allows to specify that we don’t plan to send notifications that don’t have a visible effect for the user).
-        var semY=0, semCB=0, err=null;  swRegistration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedVapidKey })
-        .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
-        if(err){ cbFunW(err); return;}
-      }
-      self.boSubscribed=true;  cbFunW(null);
-    })(); flow.next();
+      self.subscription=subscription;
+    }
+    self.boSubscribed=true;  cbFunW(null);
   }
-  self.unsubscribeUser=function(){
-    var flow=(function*(){
-      const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
-        // Use the PushManager to get the user’s subscription to the push service.
-      var semY=0, semCB=0, err=null;  swRegistration.pushManager.getSubscription()
-      .then(function(subscriptionT) { self.subscription=subscription=subscriptionT;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
-      if(err){ cbFunW(err); return;}
-      
-      if(subscription) {
-        var semY=0, semCB=0, err=null;  subscription.unsubscribe()
-        .then(function() { self.subscription=subscription=null;  if(semY) flow.next(); semCB=1; }, funPromiseErr); if(!semCB){semY=1; yield;}
-        if(err){cbFunW(err); return;}
-      }
-      
-      self.boSubscribed=false; cbFunW(null);
-    })(); flow.next();
+  self.unsubscribeUser=async function(){
+    //const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
+      // Use the PushManager to get the user’s subscription to the push service.
+    var [err,subscription]=swRegistration.pushManager.getSubscription().toNBP();
+    if(err){ cbFunW(err); return;}
+    self.subscription=subscription;
+    
+    if(self.subscription) {
+      var [err]=await self.subscription.unsubscribe().toNBP();
+      if(err){cbFunW(err); return;}
+      self.subscription=null;
+    }
+    
+    self.boSubscribed=false; cbFunW(null);
   }
   const cbFunW=function(err){ if('cbFun' in self) self.cbFun(err, self.elSpan);}
   

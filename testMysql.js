@@ -4,6 +4,7 @@ crypto = require('crypto');
 mysql =  require('mysql');
 path = require("path");
 fs = require("fs");
+fsPromises = require("fs/promises");
 require('./lib.js');
 require('./libServerGeneral.js');
 require('./libServer.js');
@@ -85,47 +86,46 @@ objArg={boTLS, www, requesterCacheTime:0}
 var arrNoTX=['writePageFile', 'readPageFile'];  
 var boStartTX=1; if(arrNoTX.indexOf(strGenerator)!=-1){ boStartTX=0; } 
 
-generatorWrap=function*(){
+(async function(){
   
-  var [err,con]=yield*mysqlGetConnection(flow, mysqlPool);  if(err) return [err];
+  var [err,con]=await mysqlGetConnection(mysqlPool);  if(err) return [err];
   
   if(boStartTX){
     
-    var [err]=yield*mysqlStartTransaction(flow, con);  if(err) return [err];
+    var [err]=await mysqlStartTransaction(con);  if(err) return [err];
     
-    if(strGenerator=='deletePageNeo'){  var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='deletePageByMultIDNeo'){ extend(objArg,{IdPage:['Z91YJJD0bSx9r0QA','So9yR8W2iy2hHgAO']});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='saveWhenUploadingNeo'){ extend(objArg,{fileName:"talk:start.txt"});  var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='saveByReplaceNeo'){ extend(objArg,{boVLoggedIn:0,tModBrowser:(new Date).toUnix()});   var objT=yield* app[strGenerator](flow, con, objArg); 
-    }else if(strGenerator=='saveByAddNeo'){ var objT=yield* app[strGenerator](flow, con, objArg); 
-    }else if(strGenerator=='refreshRevNeo'){ extend(objArg,{iRev:-1});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='comparePageNeo'){ extend(objArg,{iRevO:0, iRev:1, boVLoggedIn:1});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='storeImageNeo'){ extend(objArg,{data:'abc', strName:'abc.jpg'});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='getInfoNeo'){  var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='getInfoNDataNeo'){ extend(objArg,{iRev:0,boFront:1});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='parse'){extend(objArg,{boOW:1});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='getTemplateDataNeo'){extend(objArg,{StrTemplate:['tt','ttt','tttt']});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='getExistingSubNeo'){ extend(objArg,{StrSub:['template:tt','template:ttt']});   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='getBoTalkExistNeo'){   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='getRevisionTableNeo'){   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='getLastVersionMeta'){   var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='mergePageNeo'){ extend(objArg,{www, strName, nChild:5, nImage:6, tNow:0, boAccDefault:true}); var objT=yield* app[strGenerator](flow, con, objArg);
-    }else if(strGenerator=='saveWhenUploadingImageNeo'){   extend(objArg,{strName:'abc.jpg', data:'aabbcc'});  var objT=yield* app[strGenerator](flow, con, objArg);
+    if(strGenerator=='deletePageNeo'){  var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='deletePageByMultIDNeo'){ extend(objArg,{IdPage:['Z91YJJD0bSx9r0QA','So9yR8W2iy2hHgAO']});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='saveWhenUploadingNeo'){ extend(objArg,{fileName:"talk:start.txt"});  var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='saveByReplaceNeo'){ extend(objArg,{boVLoggedIn:0,tModBrowser:(new Date).toUnix()});   var objT=await app[strGenerator](con, objArg); 
+    }else if(strGenerator=='saveByAddNeo'){ var objT=await app[strGenerator](con, objArg); 
+    }else if(strGenerator=='refreshRevNeo'){ extend(objArg,{iRev:-1});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='comparePageNeo'){ extend(objArg,{iRevO:0, iRev:1, boVLoggedIn:1});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='storeImageNeo'){ extend(objArg,{data:'abc', strName:'abc.jpg'});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='getInfoNeo'){  var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='getInfoNDataNeo'){ extend(objArg,{iRev:0,boFront:1});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='parse'){extend(objArg,{boOW:1});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='getTemplateDataNeo'){extend(objArg,{StrTemplate:['tt','ttt','tttt']});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='getExistingSubNeo'){ extend(objArg,{StrSub:['template:tt','template:ttt']});   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='getBoTalkExistNeo'){   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='getRevisionTableNeo'){   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='getLastVersionMeta'){   var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='mergePageNeo'){ extend(objArg,{www, strName, nChild:5, nImage:6, tNow:0, boAccDefault:true}); var objT=await app[strGenerator](con, objArg);
+    }else if(strGenerator=='saveWhenUploadingImageNeo'){   extend(objArg,{strName:'abc.jpg', data:'aabbcc'});  var objT=await app[strGenerator](con, objArg);
     }
     var err=objT[0];
-    if(err){ yield*mysqlRollbackNRelease(flow, con); return [err]; } else{ [err]=yield*mysqlCommitNRelease(flow, con); if(err) return [err]; }
+    if(err){ await mysqlRollbackNRelease(con); return [err]; } else{ [err]=await mysqlCommitNRelease(con); if(err) return [err]; }
   }else{
     
-    if(strGenerator=='setUpNeo'){extend(objArg,{aPassword:'123'});   var objT=yield* app[strGenerator](flow, con, objArg);
+    if(strGenerator=='setUpNeo'){extend(objArg,{aPassword:'123'});   var objT=await app[strGenerator](con, objArg);
     }else if(strGenerator=='writePageFile'){
       var strIDPage='abc', strData='abcdåäö';
-      var objT=yield* app[strGenerator](flow, 'editText', strIDPage, strData);
+      var objT=await app[strGenerator]('editText', strIDPage, strData);
     }else if(strGenerator=='readPageFile'){
       var strIDPage='abcd';
-      var objT=yield* app[strGenerator](flow, 'editText',  strIDPage);
+      var objT=await app[strGenerator]('editText',  strIDPage);
     }else{console.log('no such generator');}
   }
   console.log(objT);
-}
-flow=generatorWrap(); flow.next();
+})();
 //flow=app[strGenerator](objArg); flow.flow=flow; flow.next();
