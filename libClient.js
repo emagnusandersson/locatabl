@@ -4,7 +4,7 @@
 // Checking browser functionalities
 //
 
-var testBrowserFunctionality=function(){
+app.testBrowserFunctionality=function(){
   var err=null, m0="This browser does not support ", m1;
   try { m1="generators"; eval("(function *(){})");
     m1="default parameters"; eval("(function(a=0){})");
@@ -20,13 +20,13 @@ var testBrowserFunctionality=function(){
 // Storage, DOM etc
 //
 
-var getItem=function(name){    var tmp=localStorage.getItem(name);   if(tmp!==null) tmp=JSON.parse(tmp);  return tmp;   }
-var setItem=function(name,value){  if(typeof value=='undefined') value=null; localStorage[name]=JSON.stringify(value); }
-var getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!==null) tmp=JSON.parse(tmp);   return tmp;   }
-var setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
+app.getItem=function(name){    var tmp=localStorage.getItem(name);   if(tmp!==null) tmp=JSON.parse(tmp);  return tmp;   }
+app.setItem=function(name,value){  if(typeof value=='undefined') value=null; localStorage[name]=JSON.stringify(value); }
+app.getItemS=function(name){    var tmp=sessionStorage.getItem(name);    if(tmp!==null) tmp=JSON.parse(tmp);   return tmp;   }
+app.setItemS=function(name,value){  sessionStorage[name]=JSON.stringify(value); }
 
 
-var msort=function(compare){
+app.msort=function(compare){
   var length = this.length,  middle = Math.floor(length / 2);
   //if(length < 2) return this;
   if(length==0) return [];
@@ -36,7 +36,7 @@ var msort=function(compare){
   return merge(    msort.call(a,compare),    msort.call(b,compare),    compare    );
 }
 
-var merge=function(left, right, compare){
+app.merge=function(left, right, compare){
   var result = [];
   while (left.length > 0 || right.length > 0){
     if(left.length > 0 && right.length > 0){
@@ -50,7 +50,7 @@ var merge=function(left, right, compare){
 }
 
 
-var deepExtend=function(oA, oB) {
+app.deepExtend=function(oA, oB) {
     // Handle the 3 simple types, and null or undefined
   if(oB==null || typeof oB != "object" ) return oB;
   
@@ -79,7 +79,7 @@ var deepExtend=function(oA, oB) {
  * DOM handling
  *******************************************************************************************************************/
 
-var findPos=function(el) {
+app.findPos=function(el) {
   var rect = el.getBoundingClientRect();
   //return {top:rect.top+document.body.scrollTop, left:rect.left + document.body.scrollLeft};
   return {top:rect.top+window.scrollY, left:rect.left + window.scrollX};
@@ -94,14 +94,14 @@ var findPos=function(el) {
 //}
 
 
-var removeChildren=function(myNode){
+app.removeChildren=function(myNode){
   while (myNode.firstChild) {
       myNode.removeChild(myNode.firstChild);
   }
 }
 
-var scrollTop=function(){ return window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop; }
-var scrollLeft=function(){ return window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft; }
+app.scrollTop=function(){ return window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop; }
+app.scrollLeft=function(){ return window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft; }
 
 EventTarget.prototype.on=function(){ this.addEventListener.apply(this, [...arguments]); return this; }
 EventTarget.prototype.off=function(){ this.removeEventListener.apply(this, [...arguments]); return this; }
@@ -200,11 +200,11 @@ NodeList.prototype.toggle=function(b){
   this.forEach(function(ele){ ele.toggle(b); });
   return this;
 }
-var createTextNode=function(str){ return document.createTextNode(str); }
-var createElement=function(str){ return document.createElement(str); }
-var createFragment=function(){ var fr=document.createDocumentFragment(); if(arguments.length) fr.append(...arguments); return fr; }
+app.createTextNode=function(str){ return document.createTextNode(str); }
+app.createElement=function(str){ return document.createElement(str); }
+app.createFragment=function(){ var fr=document.createDocumentFragment(); if(arguments.length) fr.append(...arguments); return fr; }
 
-var getNodeIndex=function( elm ){ return [...elm.parentNode.childNodes].indexOf(elm); }
+app.getNodeIndex=function( elm ){ return [...elm.parentNode.childNodes].indexOf(elm); }
 Element.prototype.myIndex=function() {return [...this.parentNode.childNodes].indexOf(this);}
 
 Element.prototype.offset=function() {
@@ -222,7 +222,7 @@ Element.prototype.visibilityToggle=function(b){
 
 Node.prototype.detach=function(){ this.remove(); return this; }
 
-var isVisible=function(el) {
+app.isVisible=function(el) {
   return !!( el.offsetWidth || el.offsetHeight || el.getClientRects().length );
 }
 
@@ -233,7 +233,7 @@ var isVisible=function(el) {
 /*******************************************************************************************************************
  * popupHover: popup a elBubble when you hover over elArea
  *******************************************************************************************************************/
-var popupHover=function(elArea, elBubble, tClose=4){
+app.popupHover=function(elArea, elBubble, tClose=4){
   elBubble.css({position:'absolute', 'box-sizing':'border-box', margin:'0px', 'text-align':'left'}); //
   function setBubblePos(e){
     var xClear=6, yClear=6;
@@ -310,7 +310,7 @@ var popupHover=function(elArea, elBubble, tClose=4){
 
 
 
-var vippButtonExtend=function(el, srcVipp0, srcVipp1){
+app.vippButtonExtend=function(el, srcVipp0, srcVipp1){
   el.setStat=function(bo1){
     if(!bo1) {el.css(o0);} else {el.css(o1);}
     el.attr({boOn:bo1});
@@ -323,7 +323,7 @@ var vippButtonExtend=function(el, srcVipp0, srcVipp1){
   return el;
 }
 
-var toggleButtonExtend=function(el){
+app.toggleButtonExtend=function(el){
   el.setStat=function(bo1){
     if(bo1) {el.css(colOn);} else {el.css(colOff);}
     //el.toggleClass('on',Boolean(bo1));
@@ -344,7 +344,7 @@ var toggleButtonExtend=function(el){
 // Canvas
 //
 
-var cloneCanvas=function(oldCanvas){
+app.cloneCanvas=function(oldCanvas){
   //var newCanvas = new Canvas();
   var newCanvas = document.createElement("canvas");
   newCanvas.width=oldCanvas.width;   newCanvas.height=oldCanvas.height
@@ -353,7 +353,7 @@ var cloneCanvas=function(oldCanvas){
   return newCanvas;
 }
 
-var makeMarker=function(strText){
+app.makeMarker=function(strText){
   if(typeof strText !='string') strText=strText.toString();
   var strFont="8pt Arial", leading=10;
   var arrText=strText.split('\n');
@@ -383,7 +383,7 @@ var makeMarker=function(strText){
 }
 
 
-var makeMarkerBubble=function(obj){
+app.makeMarkerBubble=function(obj){
   var strText=obj.text||'text';
   if(typeof strText !='string') strText=strText.toString();
   var strFont="8pt Arial", leading=10;
@@ -421,7 +421,7 @@ var makeMarkerBubble=function(obj){
 
 
 
-var makeTextCanvas=function(strText,rot){
+app.makeTextCanvas=function(strText,rot){
   if(typeof rot=='undefined'){rot=0;}
   var fontHeight=12;
   var strFont=fontHeight+"pt Arial", leading=fontHeight+6;
@@ -455,7 +455,7 @@ var makeTextCanvas=function(strText,rot){
   //var uri=canvas.toDataURL();  return $('<img>').attr(src,uri);
 }
 
-var makeMapMultBubble=function(objIn){
+app.makeMapMultBubble=function(objIn){
   var {arrObj,color}=objIn;
   //var strText=obj.text||'text';
   //if(typeof strText !='string') strText=strText.toString();
@@ -513,7 +513,7 @@ var makeMapMultBubble=function(objIn){
 // Modified from https://stackoverflow.com/a/32490603, cc by-sa 3.0
 // returns an array [error, orientation];
 // orientation = 1..8 (see link above)
-var getExifOrientation=function(abData) { // The input is an ArrayBuffer
+app.getExifOrientation=function(abData) { // The input is an ArrayBuffer
   const intSOI=0xFFD8, APP1=0xFFE1, intExifHeader=0x45786966;
   var view = new DataView(abData);
   if(view.getUint16(0, false) != intSOI) { return [new Error("not jpeg")];   }
@@ -541,7 +541,7 @@ var getExifOrientation=function(abData) { // The input is an ArrayBuffer
 }
 
 // Derived from https://stackoverflow.com/a/40867559, cc by-sa
-var imgToCanvasWithOrientation=function(img, rawWidth, rawHeight, orientation) {
+app.imgToCanvasWithOrientation=function(img, rawWidth, rawHeight, orientation) {
   var canvas = document.createElement('canvas');
   if(orientation > 4) {  canvas.width=rawHeight; canvas.height=rawWidth; }
   else {  canvas.width=rawWidth;  canvas.height=rawHeight;  }
@@ -562,7 +562,7 @@ var imgToCanvasWithOrientation=function(img, rawWidth, rawHeight, orientation) {
   return canvas;
 }
 
-var reduceFileSize=async function(file, acceptFileSize, maxWidth, maxHeight, quality) {
+app.reduceFileSize=async function(file, acceptFileSize, maxWidth, maxHeight, quality) {
   if(file.size <= acceptFileSize) {  return [null, file]; }
 
     // Extract w and h (one could probably read these from the jpeg header more or less as one reads the orientation from the header below. (And doing this would probably be faster))
@@ -591,7 +591,7 @@ var reduceFileSize=async function(file, acceptFileSize, maxWidth, maxHeight, qua
   });
   
     // Extract orientation
-  var orientation=getExifOrientation(abData);     
+  var [err, orientation]=getExifOrientation(abData);  if(err) return [err]   
 
     // Decide new dimensions
   var w=img.width, h=img.height;
@@ -646,7 +646,7 @@ app.registerSW=function(uSite){
   });
 }
         
-var MyWebPush=function(){
+app.MyWebPush=function(){
   var self=this;
   //var subscription=self.subscription=null;
   self.subscription=null;
@@ -729,4 +729,5 @@ class SpanInpWebPushToggle{
     return span;
   }
 }
+globalThis.SpanInpWebPushToggle = SpanInpWebPushToggle;
 SpanInpWebPushToggle.Span=[];

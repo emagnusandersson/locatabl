@@ -2,7 +2,7 @@
 
 //var app;  if(typeof window!=='undefined') app=window; else if(typeof global!=='undefined') app=global; else app=self;  // if browser else if server else serviceworker
 
-var app=globalThis;
+globalThis.app=globalThis;
 
 Promise.prototype.toNBP=function(){   return this.then(a=>{return [null,a];}).catch(e=>{return [e];});   }  // toNodeBackPromise
 
@@ -356,6 +356,7 @@ app.myUUID=function(){
 //
 // Dates and time
 //
+app.mySleepMS=async function(t){      await new Promise(resolve=>{setTimeout(resolve,t); });    }
 
 Date.prototype.toUnix=function(){return Math.round(this.valueOf()/1000);}
 Date.prototype.toISOStringMy=function(){return this.toISOString().substr(0,19);}
@@ -435,7 +436,7 @@ app.b64UrlDecode=function(b64UrlString, boUint8Array=false){  // boUint8Array==t
   const padding='='.repeat((4-b64UrlString.length%4) % 4);
   const base64=(b64UrlString+padding).replace(/\-/g, '+').replace(/_/g, '/');
 
-  const rawData=window.atob(base64);
+  const rawData=globalThis.atob(base64);
   //const rawData=Buffer.from(base64, 'base64').toString();
   if(!boUint8Array) return rawData;
   const outputArray=new Uint8Array(rawData.length);
@@ -451,6 +452,13 @@ app.blobToBase64=function(blob) {
     reader.readAsDataURL(blob);
   });
 }
+
+app.parseQS2=function(qs){
+  var objQS={}, objTmp=new URLSearchParams(qs);
+  for(const [name, value] of objTmp) {  objQS[name]=value;  }
+  return objQS;
+}
+
 //
 // Escaping data
 //

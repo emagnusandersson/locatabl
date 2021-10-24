@@ -43,6 +43,7 @@ tbody,thead {border-width:inherit;border-style:inherit }
 
 input, textarea, keygen, select, button, isindex  {font-family:arial, verdana, helvetica;font-size:inherit}
 
+input[type=email]:not(:placeholder-shown):invalid { color:red; outline-color:red;}
 
 .contDiv {
     flex:1 1 0; 

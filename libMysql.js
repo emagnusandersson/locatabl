@@ -34,11 +34,11 @@ MyMySql.prototype.fin=function(){   if(this.connection) { this.connection.destro
 
 
 app.RHide=async function(objArg){  // writing needSession
-  var req=this.req;
+  var {req}=this;
   //var Ou={};
   //var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   //var {idUser}=user;
-  var {idUser, idFB, site}=objArg, siteName=site.siteName;
+  var {idUser, idFB, site}=objArg, {siteName}=site;
   var {userTab, buyerTab, sellerTab, buyerTeamTab, sellerTeamTab}=site.TableName;
   if(idUser) {var idT=idUser, columnT='idUser';} else {var idT=idFB, columnT='idFB';}
 
@@ -71,7 +71,7 @@ app.RHide=async function(objArg){  // writing needSession
   // accountMerge: The arguments: idUser, idFB, idIdPlace, idOpenId and email may point to different accounts. If so, then those accounts should be merged.
   // Any of the above mentioned arguments may be null.
 app.accountMerge=async function(objArg){
-  var req=this.req, {site}=req, ORole=site.ORole, {userTab, buyerTab, sellerTab, complaintTab}=site.TableName;
+  var {req}=this, {site}=req, ORole=site.ORole, {userTab, buyerTab, sellerTab, complaintTab}=site.TableName;
   var con=this.con;
   var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objArg, Ou={idUser:null};
   var StrMes=[];
