@@ -1,5 +1,8 @@
 
 "use strict"
+
+import http from "http";
+
 app.parseCookies=function(req) {
   var list={}, rc=req.headers.cookie;
   if(typeof rc=='string'){
@@ -62,6 +65,30 @@ tmp.out501=function(){ this.outCode(501, "Not implemented\n");   }
 
 
 
+tmp.setHeaderMy=function(o){
+  for(var k in o) {this.setHeader(k,o[k]);}
+}
+// tmp.addCookie=function(str){
+//   var arr=this.getHeader("Set-Cookie");
+//   if(!arr) {this.setHeader("Set-Cookie",str); return;}
+//   var boStr=typeof arr==='string'
+//   if(boStr) arr=[arr];
+//   arr.push(str);
+//   if(boStr) this.setHeader("Set-Cookie",arr);
+// }
+tmp.replaceCookie=function(strNew){
+  var arr=this.getHeader("Set-Cookie");
+  if(!arr) {this.setHeader("Set-Cookie",strNew); return;}
+  var boStr=typeof arr==='string'
+  if(boStr) arr=[arr];
+  var l=strNew.indexOf("="), strName=strNew.substr(0,l), boWritten=false;
+  for(var i=0;i<arr.length;i++){
+    var strNameCur=arr[i].substr(0,l);
+    if(strName===strNameCur) {arr[i]=strNew; boWritten=true; break;}
+  }
+  if(!boWritten) arr.push(strNew);
+  if(boStr) this.setHeader("Set-Cookie",arr);
+}
 
 app.checkIfLangIsValid=function(langShort){
   for(var i=0; i<arrLang.length; i++){ var langRow=arrLang[i]; if(langShort==langRow[0]){return true;} }  return false;
@@ -189,7 +216,7 @@ app.getIP=function(req){
 
 app.CacheUriT=function(){
   this.set=async function(key, buf, type, boZip, boUglify){
-    var eTag=crypto.createHash('md5').update(buf).digest('hex');
+    var eTag=md5(buf);
     //if(boUglify) { // UglifyJS does not handle ecma6 (when I tested it 2019-05-05).
       //var objU=UglifyJS.minify(buf.toString());
       //buf=new Buffer(objU.code,'utf8');
@@ -254,7 +281,6 @@ app.getPost=async function(req){
     strData=fields.vec;
 
   }else{
-    //var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
     var [err,buf]=await new Promise(resolve=>{  var myConcat=concat(bT=>resolve([null,bT]));    req.pipe(myConcat);  });  if(err){ this.mesEO(err); return; }
     strData=buf.toString();
   }
@@ -324,4 +350,17 @@ globalThis.makeTBody=function(arrObj, StrHead){
 globalThis.makeTable=function(arrObj, StrHead=null){
   if(arrObj.length && !StrHead) StrHead=Object.keys(arrObj[0]);
   return "<table>"+makeTHead(StrHead)+makeTBody(arrObj, StrHead)+"</table>";
+}
+
+
+
+
+app.arrayifyCookiePropObj=function(obj){
+  var K=Object.keys(obj);
+  var O=K.map(k=>{
+    var v=obj[k];
+    if((k=="HttpOnly" || k=="Secure") && v) return k;
+    return k+"="+v;
+  });
+  return O;
 }

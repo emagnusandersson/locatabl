@@ -85,7 +85,7 @@ var OAuthT=function(){
   this.createUrlNSetStatVar=function(IP, uRedir, fun, caller, cb){
     extend(this, {IP, fun, caller, cb});
     this.nonce=randomHash(); //CSRF protection
-    var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type=code"];
+    var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+this.nonce, "response_type="+response_type];
     if(IP=='fb')   arrQ.push("display=popup");
     else if(IP=='google')    arrQ.push("scope=profile");
     else if(IP=='idplace')    arrQ.push("scope=name");
@@ -96,9 +96,10 @@ var OAuthT=function(){
 
 var loginDivExtend=function(el){
   var popupWin=function(IP) {
-    var uPop=OAuth.createUrlNSetStatVar(IP, strSchemeLong+site.wwwLoginRet, strType+'Fun', caller, el.loginReturn);
+    var {wwwLoginRet}=site, uLoginRet=strSchemeLong+wwwLoginRet;
+    var uPop=OAuth.createUrlNSetStatVar(IP, uLoginRet, strType+'Fun', caller, el.loginReturn);
 
-    if(site.wwwLoginScope) document.domain = site.wwwLoginScope;
+    //if(site.wwwLoginScope) document.domain = site.wwwLoginScope;
 
     el.winMy=window.open(uPop, '_blank', 'width=580,height=400');
 

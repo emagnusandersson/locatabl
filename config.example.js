@@ -10,9 +10,9 @@ ppStoredButt="ABCDEFGHIJKLM";  // Paypal-stored-button
 
 
 intDDOSMax=200; // intDDOSMax: How many requests before DDOSBlocking occurs. 
-timeOutDDOSBan=5; // timeOutDDOSBan: How long in seconds til the blocking is lifted
+tDDOSBan=5; // tDDOSBan: How long in seconds til the blocking is lifted
 intDDOSIPMax=100; // intDDOSIPMax: How many requests before DDOSBlocking occurs. 
-timeOutDDOSIPBan=10; // timeOutDDOSIPBan: How long in seconds til the blocking is lifted
+tDDOSIPBan=10; // tDDOSIPBan: How long in seconds til the blocking is lifted
 
 boUseDBIndex=0;
 timeOutAccumulatedUpdate=3600; // How long to wait before updating tAccumulated in buyer/seller tabs
@@ -47,7 +47,7 @@ var createUrlAuthIdPlace=function(strIdPlace="idplace",portIdPlace=5000){
 var www192=ip.address();  // 192.168.0.X;
 if(www192=='127.0.0.1') www192='localhost';
 
-urlAuthIdplace=createUrlAuthIdPlace('idplaceorg');  // Which idplace (local or production etc.)
+var urlAuthIdplace=createUrlAuthIdPlace('idplaceorg');  // Which idplace (local or production etc.)
 strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
 strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
@@ -96,8 +96,8 @@ if(process.env.strInfrastructure=='heroku'){
 
   //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
-  wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
-  wwwLoginScope="closeby.market";
+  //wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
+  //wwwLoginScope="closeby.market";
 
   RegRedir=[
   function(req){
@@ -126,7 +126,7 @@ if(process.env.strInfrastructure=='heroku'){
  
   //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
-  wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;  wwwLoginScope="closeby.market";
+  //wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;  //wwwLoginScope="closeby.market";
 
   RegRedir=[
   function(req){
@@ -147,7 +147,7 @@ else {
   var strIdPlace='192';
   var strIdPlace='local';
   var strIdPlace='idplaceorg';
-  urlAuthIdplace=createUrlAuthIdPlace(strIdPlace,5002);  // Which idplace (local or production etc.)
+  var urlAuthIdplace=createUrlAuthIdPlace(strIdPlace,5002);  // Which idplace (local or production etc.)
   strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
   strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
@@ -187,7 +187,7 @@ else {
     }
   }
 
-  boUseSSLViaNodeJS=true;
+  boUseSelfSignedCert=true;
 
   //port = process.argv[2] || 8081; 
   port = port || 8081;

@@ -24,7 +24,6 @@
 // remove unnesecary label in langHtml
 // test viewTeam
 // delete me as buyer resp delete me as driver
-// Ability to see and select image in introPop
 // 👋🌍📱
 //   😳
 //😀 😐 😠
@@ -168,7 +167,8 @@ app.CreatorPlugin.general=function(){
     langHtml.theBuyer=langHtml.theCustomer;  langHtml.theBuyers=langHtml.theCustomers;
     langHtml.theBuyers0=langHtml.theCustomers0;
   };
-  
+
+
   this.rewriteObj=function(){
 
       // tHeadLabel: Add timeStampButt and distUnitChoise 
@@ -222,6 +222,12 @@ app.CreatorPlugin.general=function(){
     var tmpPropProt={crInfo:tmpCrNComplaint, setInfo:tmpSetNComplaint, crTabF:tmpCrNComplaint, setTabF:tmpSetNComplaint};
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.nComplaint, tmpPropProt); }
 
+
+      // donatedAmount
+    var tmpF=r=>r.donatedAmount+' USD'; 
+    for(let i=0;i<ORole.length;i++){
+      extend(ORole[i].Prop.donatedAmount, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF, setMapMF:tmpF});
+    }
 
       // idTeam
     const tmpCrIdTeam=function(){  this.append(  thumbTeamCreator(ORole[this.iRole])  );   };
@@ -311,11 +317,17 @@ app.CreatorPlugin.general=function(){
       var c=createElement('select'); for(var i=0;i<arrCoordinatePrecisionM.length;i++){ var v=arrCoordinatePrecisionM[i], op=createElement('option').prop('value',v).myText(approxDist(v)); c.append(op); }   return c;
     }
     var tmpSet=function(){  var [bestVal, iBest]=closest2Val(arrCoordinatePrecisionM, userInfoFrDB[ORole[this.iRole].strRole].coordinatePrecisionM); this.value=bestVal;  }
-    var tmpPropProt={strType:'select', crInp:tmpCr, setInp:tmpSet};
+    var tmpSetB=r=>{var n=r.coordinatePrecisionM, str=n<1000?"±"+n+" meter":"±"+n/1000+" km"; return str;};
+    var tmpPropProt={strType:'select', crInp:tmpCr, setInp:tmpSet, setInfo:tmpSetB, setTabF:tmpSetB, setMapF:tmpSetB, setMapMF:tmpSetB};
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.coordinatePrecisionM, tmpPropProt);  }
     
       // experience
-    if(oS.Prop.experience) extend(oS.Prop.experience, {strType:'number', inpW:4}); 
+    if(oS.Prop.experience) {
+      extend(oS.Prop.experience, {strType:'number', inpW:4}); 
+      var tmpF=r=>{var n=r.experience, boPlural=Number(n!=1); return n+' '+langHtml.timeUnit.y[0][boPlural];}; 
+      extend(oS.Prop.experience, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF, setMapMF:tmpF});
+    }
+    
     
 
       // image
@@ -373,7 +385,7 @@ app.CreatorPlugin.general=function(){
     var tmpSetInp=function(){ this.querySelector('span').mySet(); }
     var tmpSaveInp=function(){ return [null, JSON.stringify(myWebPush.subscription)]; }
     var tmpCrInfo=function(){
-      var butT=createElement('button').myText(langHtml.SendPushNotification).on('click', function(){  
+      var butT=createElement('button').css({'font-size':'85%'}).myText(langHtml.SendAPushNotification).on('click', function(){  
         if(!userInfoFrDB.user){ setMess('You need to be logged in to send a message.', 2); return; }
         viewGreeting.setUp(this.idUser, this.iRole); viewGreeting.setVis();
         doHistPush({view:viewGreeting});
@@ -385,6 +397,7 @@ app.CreatorPlugin.general=function(){
     var tmpPropProt={  strType:'span', crInp:tmpCrInp, setInp:tmpSetInp, saveInp:tmpSaveInp, crInfo:tmpCrInfo, setInfo:tmpSetInfo, crTabF:tmpCrInfo, setTabF:tmpSetInfo, setMapF:tmpSetMap, setMapMF:tmpSetMap }
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.boWebPushOK, tmpPropProt); }
   };
+  
 };
 //0123456789abcdef
 
@@ -766,22 +779,22 @@ app.CreatorPlugin.price=function(charRoleUC){
 app.CreatorPlugin.transportBuyer=function(){
   this.rewriteObj=function(){
       // distStartToGoal
-    var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
+    var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPointL[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
     extend(oB.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet, setMapMF:tmpSet });
       // compassPoint
-    var tmpSet=function(rowMTab){  return langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; }
+    var tmpSet=function(rowMTab){  return langHtml.compassPointL[Number(  rowMTab.compassPoint  )]; }
     var crInpFunc=function(){
-      var c=createElement('select'), arrTmp=langHtml.compassPoint;
+      var c=createElement('select'), arrTmp=langHtml.compassPointL;
       for(var i=0;i<arrTmp.length;i++){  var opt=createElement('option').myText(arrTmp[i]).prop('value',i);   c.append(opt);    }
       return c;
     };
     extend(oB.Prop.compassPoint, {
       strType:'select',
       crInp:crInpFunc,
-      setInfo:tmpSet,
+      setInfo:()=>'',
       setTabF:tmpSet,
       setMapF:tmpSet,setMapMF:tmpSet,
-      setFilterButtF:function(span,val,boOn){ var tmp=langHtml.compassPoint[val]; span.firstChild.nodeValue=tmp;  }
+      setFilterButtF:function(span,val,boOn){ var tmp=langHtml.compassPointL[val]; span.firstChild.nodeValue=tmp;  }
     });
       // destination
     extend(oB.Prop.destination, {inpW:8});
@@ -803,12 +816,13 @@ app.CreatorPlugin.standingByMethod=function(){
       for(var i=0;i<arrTmp.length;i++){  var opt=createElement('option').myText(arrTmp[i]).prop('value',i);   c.append(opt);    }
       return c;
     };
+    var setMapF=r=>{  return langHtml.standingByMethodsLong[Number(  r.standingByMethod  )]; };
     extend(oS.Prop.standingByMethod, {
       strType:'select',
       crInp:crInpFunc,
       setInfo:tmpSet,
       setTabF:tmpSet,
-      setMapF:function(rowMTab){  return langHtml.standingByMethodsLong[Number(  rowMTab.standingByMethod  )]; },
+      setMapF:setMapF, setMapMF:setMapF,
       setFilterButtF:function(span,val,boOn){ var tmp=langHtml.standingByMethodsLong[val]; span.firstChild.nodeValue=tmp;  }
     });
   };
@@ -904,41 +918,41 @@ app.CreatorPlugin.taxi=function(){
   
     // oRole.Main: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
-  ['Destination', ...StrTransportBuyer, 'price', 'currency'],
-  ['RequestedVehicle', ...StrPropE],
-  ['Price', 'price', 'currency', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer': StrPropPerson},
+  {'Contact': AMinusB(StrPropContact, ['homeTown'])},
+  {'Destination': StrTransportBuyer}, //, 'price', 'currency'
+  {'RequestedVehicle': StrPropE},
+  {'Price': ['price', 'currency', 'tLastPriceChange']},
+  {'Position': StrPropPos},
+  {'Reputation': StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd', 'idDriverGovernment'],
-  ['Vehicle', 'vehicleType', 'brand', ...StrPropE, 'nExtraSeat'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller': [...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd', 'idDriverGovernment']},
+  {'Vehicle': ['vehicleType', 'brand', ...StrPropE, 'nExtraSeat']},
+  {'Contact': StrPropContact},
+  {'Price': ['currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position': StrPropPos},
+  {'Reputation': StrPropRep}]);
     
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Destination', ...StrTransportBuyer],
-  ['RequestedVehicle', ...StrPropE],
-  ['Price', 'currency', 'price']]);
+  {'Buyer':[ 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Destination':StrTransportBuyer},
+  {'RequestedVehicle':StrPropE},
+  {'Price':[ 'currency', 'price']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'],
-  ['Vehicle', 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat']},
+  {'Price':['currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', ...StrPropE, 'tPos', 'idTeam'],
-  ['Destination', ...StrTransportBuyer],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ ...StrPropE, 'tPos', 'idTeam']},
+  {'Destination':StrTransportBuyer},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
-  ['Vehicle', 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat']},
+  {'Reputation':StrPropRep}]);
 
   
     // Default columns
@@ -979,11 +993,25 @@ app.CreatorPlugin.taxi=function(){
   this.rewriteObj=function(){
       // nPassengers, nChildSeat, nWheelChairPlaces, nExtraSeat
     var tmp={strType:'number', inpW:3, saveInp:posNumOrEmptyF};
+
     for(let i=0;i<ORole.length;i++){
       extend(ORole[i].Prop.nPassengers, tmp);
       extend(ORole[i].Prop.nChildSeat, tmp);
       extend(ORole[i].Prop.nWheelChairPlaces, tmp);
     }
+    var charPassengerB=boSafari?'💺':"🯅"; //🧍🚹𓀠웃🚶🕴️🕺👫👤🯅
+    var charPassengerS='💺';
+    var tmpF=r=>charPassengerB+r.nPassengers;     extend(oB.Prop.nPassengers, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF});
+    var tmpF=r=>charPassengerS+r.nPassengers;     extend(oS.Prop.nPassengers, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF});
+    var tmpF=r=>{return {str:charPassengerB+r.nPassengers}}; extend(oB.Prop.nPassengers, {setMapMF:tmpF});
+    var tmpF=r=>{return {str:charPassengerS+r.nPassengers}}; extend(oS.Prop.nPassengers, {setMapMF:tmpF});
+
+    var charWheelChair=boSafari?'♿︎':"🦽"
+    var tmpF=r=>charWheelChair+r.nWheelChairPlaces, tmp2F=r=>{return {str:charWheelChair+r.nWheelChairPlaces}};; 
+    for(let i=0;i<ORole.length;i++){
+      extend(ORole[i].Prop.nWheelChairPlaces, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF, setMapMF:tmp2F});
+    }
+
     extend(oS.Prop.nExtraSeat, tmp);
       // brand, idDriverGovernment
     extend(oS.Prop.brand, {strType:'text',inpW:6});
@@ -991,6 +1019,24 @@ app.CreatorPlugin.taxi=function(){
   };
 };
 //0123456789abcdef
+
+
+// crInp: no arg, no this, creates and returns el
+// crInfo: no arg, uses this (span), nothing returned
+// crTabF: no arg, uses this (td), nothing returned
+
+// setInp: no arg, uses this, nothing returned
+// saveInp: no arg, uses this, returns [err val]
+
+// setInfo: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// setTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// sortTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// setMapF, setMapMF: rowMTab as arg, uses this, if something is returned...:
+//   ...and is a string, (it is displayed as a string (see more in mapDiv))
+//   ...and is an object, (it is used as seen in mapDiv)
+
+// crFilterButtF: button index as arg, no this, creates and returns el
+// setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
 
 
 //0123456789abcdef pluginTransport.js
@@ -1008,42 +1054,42 @@ app.CreatorPlugin.transport=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
-  ['Destination', ...StrTransportBuyer, 'price', 'currency'],
-  ['RequestedVehicle', ...StrPropE],
-  ['Price', 'price', 'currency', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':StrPropPerson},
+  {'Contact':AMinusB(StrPropContact, ['homeTown'])},
+  {'Destination':StrTransportBuyer}, //, 'price', 'currency'
+  {'RequestedVehicle':StrPropE},
+  {'Price':[ 'price', 'currency', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd'],
-  ['Vehicle', 'vehicleType', ...StrPropE],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Destination', ...StrTransportBuyer],
-  ['Cargo', ...StrPropE],
-  ['Price', 'currency', 'price']]);
+  {'Buyer':[ 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Destination':StrTransportBuyer},
+  {'Cargo':StrPropE},
+  {'Price':[ 'currency', 'price']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'],
-  ['Vehicle', 'vehicleType', ...StrPropE],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE]},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'tPos', 'idTeam'],
-  ['Cargo', ...StrPropE],
-  ['Destination', ...StrTransportBuyer],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'tPos', 'idTeam']},
+  {'Cargo':StrPropE},
+  {'Destination':StrTransportBuyer},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
-  ['Vehicle', 'vehicleType', ...StrPropE],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE]},
+  {'Reputation':StrPropRep}]);
 
     // Default columns
   oB.ColsShowDefault= ['image', ...StrTransportBuyer, 'idTeam', 'price'];
@@ -1100,36 +1146,36 @@ app.CreatorPlugin.cleaner=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...StrPropContact],
-  ['Type', ...StrB],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':StrPropPerson},
+  {'Contact':StrPropContact},
+  {'Type':StrB},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', 'shiftEnd'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType', 'shiftEnd']},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Type', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Type':StrB},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType']},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['Type', ...StrB],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'Type':StrB},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos', 'idTeam'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos', 'idTeam']},
+  {'Reputation':StrPropRep}]);
   
   
     // Default columns
@@ -1170,37 +1216,37 @@ app.CreatorPlugin.windowcleaner=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...StrB],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...StrB]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType'],
-  ['Tools', ...StrS],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType']},
+  {'Tools':StrS},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Other', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Other':StrB},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
-  ['Tools', ...StrS],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType']},
+  {'Tools':StrS},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', 'idTeam'],
-  ['Tools', ...StrS],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'vehicleType', 'tPos', 'idTeam']},
+  {'Tools':StrS},
+  {'Reputation':StrPropRep}]);
   
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
@@ -1246,33 +1292,33 @@ app.CreatorPlugin.lawnmowing=function(){
   
       // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...StrB],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...StrB]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', ...StrS],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType', ...StrS]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB]},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', ...StrS],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', ...StrS]},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS, 'idTeam'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS, 'idTeam']},
+  {'Reputation':StrPropRep}]);
 
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
@@ -1321,34 +1367,34 @@ app.CreatorPlugin.snowremoval=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...oB.StrBool, 'area'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...oB.StrBool, 'area']},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', ...oS.StrBool],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType', ...oS.StrBool]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...oB.StrBool, 'area'],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...oB.StrBool, 'area']},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', ...oS.StrBool, 'vehicleType'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', ...oS.StrBool, 'vehicleType']},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['Tools', 'vehicleType', ...StrS],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'Tools':[ 'vehicleType', ...StrS]},
+  {'Reputation':StrPropRep}]);
   
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', ...oB.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour'];
@@ -1392,33 +1438,33 @@ app.CreatorPlugin.fruitpicker=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...StrB],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...StrB]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType']},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB]},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType']},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos', 'vehicleType', 'idTeam'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'tPos', 'vehicleType', 'idTeam']},
+  {'Reputation':StrPropRep}]);
   
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', 'fruit', 'tel', 'idTeam', 'pricePerHour'];
@@ -1464,40 +1510,40 @@ app.CreatorPlugin.programmer=function(){
 
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...StrPropContact],
-  ['RequestedSkills', ...StrB],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':StrPropPerson},
+  {'Contact':StrPropContact},
+  {'RequestedSkills':StrB},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson],
-  ['Contact', ...StrPropContact],
-  ['Languages', ...StrS],
-  ['Price', 'currency', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':StrPropPerson},
+  {'Contact':StrPropContact},
+  {'Languages':StrS},
+  {'Price':[ 'currency', 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['RequestedSkills', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'RequestedSkills':StrB},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Languages', ...StrS],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Languages':StrS},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['RequestedSkills', ...StrB],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'RequestedSkills':StrB},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['Languages', ...StrS],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'Languages':StrS},
+  {'Reputation':StrPropRep}]);
 
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', 'language', 'database', 'tel', 'idTeam', 'pricePerHour'];
@@ -1822,6 +1868,20 @@ app.separateGroupLabels=function(arr){
   return objOut;
 }
 
+  // Example:
+  // input: arr=[{strLabelA:[strPropA, strPropB]}, {strLabelB:[strPropC, strPropD, strPropE]}]
+  // output: objOut={StrProp:[strPropA, strPropB, strPropC, strPropD, strPropE], StrGroupFirst:[strPropA, strPropC], StrGroup:[strLabelA, strLabelB]};
+app.separateGroupLabels=function(arr){
+  var objOut={StrProp:[], StrGroupFirst:[], StrGroup:[]};
+  for(var i=0;i<arr.length;i++){ // for each subject
+    var obj=arr[i], [k]=Object.keys(obj), [arrV]=Object.values(obj);
+    objOut.StrProp=objOut.StrProp.concat(arrV);
+    objOut.StrGroupFirst.push(arrV[0]);
+    objOut.StrGroup.push(k);
+  }
+  return objOut;
+}
+
 var startPopExtend=function(el){
   el=popUpExtend(el);
   el.css({ width:'14em', padding: '1.1em'});
@@ -2040,25 +2100,40 @@ var loginInfoToggleStuff=function(){
 }
 
 
+app.objToQueryArr=function(o){
+  var K=Object.keys(o), V=Object.values(o), l=K.length, arr=Array(l);
+  for(var i=0; i<l; i++){ arr[i]=K[i]+'='+V[i]; }
+  return arr;
+}
+
 var createUPop=function(IP, uRedir, nonce){
-  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+nonce, "response_type=code"];
-  if(IP=='fb')   arrQ.push("scope=email", "display=popup"); //
+  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+nonce, "response_type="+response_type];
+  if(IP=='fb')   arrQ.push("scope=email"); //, "display=popup"
   else if(IP=='google')    arrQ.push("scope=profile,email");
   else if(IP=='idplace')    arrQ.push("scope=name,image,email");
   //arrQ.push("auth_type=reauthenticate");
   return UrlOAuth[IP]+'?'+arrQ.join('&');
 }
+
 var getOAuthCode=async function(){
-  var strQS, nonce=randomHash(), uPop=createUPop(strIPPrim, strSchemeLong+site.wwwLoginRet, nonce);
+  var strQS, nonce=randomHash(), {wwwLoginRet}=site, uLoginRet=strSchemeLong+wwwLoginRet, uPop=createUPop(strIPPrim, uLoginRet, nonce);
 
-  //if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
-  if(site.wwwLoginScope) document.domain = site.wwwLoginScope;
-  window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
+  var objProp={uSiteLogin:encodeURIComponent(uSite),'max-age':300}
+  var {hostname}=new URL(uSite);
+  var ind=hostname.indexOf('.');  if(ind!=-1) objProp.domain=hostname.substr(ind);  
+  document.cookie=objToQueryArr(objProp).join(';');
+  var URLLoginRet=new URL(uLoginRet);
+
+  window.open(uPop); //, '_blank', 'popup', 'width=580,height=400'
+  //var {strQS,strHash}=await new Promise(resolve=>{ window.loginReturn=resolve; });
   var strQS=await new Promise(resolve=>{
-    window.loginReturn=function(strQST){ resolve(strQST); }
+    window.on("message", (ev)=>{
+      if(ev.origin == URLLoginRet.origin) resolve(ev.data);
+    });
   });
+  var strParams=response_type=='code'?strQS:strHash;
 
-  var params=parseQS(strQS.substring(1));
+  var params=parseQS(strParams.substring(1));
   if(!('state' in params) || params.state !== nonce) {   return ['Invalid state parameter: '+params.state]; }
   if('error' in params) { return [params.error]; }
   if(!('code' in params)) { return ['No "code" parameter in response from IdP']; }
@@ -2143,18 +2218,20 @@ var divLoginSelectorCreator=function(oRole){
   el.toString=function(){return 'divLoginSelector';}
 
   var strButtonSize='2em';
-  var imgFb=createElement('img').prop({src:wsFb, alt:"fb"}).on('click', function(){
-    (async function(){
-      ga('send', 'event', 'button', 'click', 'idPClick');
-      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:strRole+'Fun', caller:'index', code};
-      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
+  var imgFb=createElement('img').prop({src:wsFb, alt:"fb"}).on('click', async function(){
+    ga('send', 'event', 'button', 'click', 'idPClick');
+    var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
+    var oT={IP:strIPPrim, fun:strRole+'Fun', caller:'index', code};
+    await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
 
-      var boE=Boolean(userInfoFrDB[strRole]);
-      var tmpIntroPop=strRole=='buyer'?mainIntroPopB:mainIntroPopS;
-      if(!boE) tmpIntroPop.openFunc(); 
-      history.fastBack(viewFront);
-    })();
+    var boE=Boolean(userInfoFrDB[strRole]);
+    var tmpIntro=strRole=='buyer'?mainIntroB:mainIntroS;
+    //if(!boE) tmpIntro.openFunc(); 
+    if(!boE) { 
+      var fun=function(){history.fastBack(viewFront);}
+      doHistReplace({view:tmpIntro,fun});
+      tmpIntro.setVis();
+    } else {history.fastBack(viewFront);}
   });
   imgFb.css({align:'center', display:'block', 'margin': '0.7em auto'}); //     , position:'relative',top:'0.4em',heigth:strButtonSize,width:strButtonSize
 
@@ -2173,6 +2250,7 @@ var divLoginSelectorCreator=function(oRole){
     viewFormLogin.setVis();
   });
   var divLeft=createElement('div').css(cssCol).css({'text-align':'center'}).myAppend(imgFb); divLeft.insertAdjacentHTML('beforeend', '<p>Email, name and image are used, although not shown publicly unless you want to.</p><p>Nothing is written to your Facebook flow.</p>' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
+  //<p>Facebook is used to encourage uniqness.</p>
   var divRight=createElement('div').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).myAppend( buttonViaEmail);        divRight.hide();
   if(boGoogleReview && site.siteName=='demo') {divRight.show();}
 
@@ -2372,24 +2450,19 @@ var viewConvertIDCreator=function(){
   var timerClosePoll;
 
   var wsImagePrim=window['ws'+ucfirst(strIPPrim)];
-  var imPrim=createElement('img').prop({src:wsImagePrim, alt:"primary IdP"}).css({'vertical-align':'middle'}).on('click', function(e){
+  var imPrim=createElement('img').prop({src:wsImagePrim, alt:"primary IdP"}).css({'vertical-align':'middle'}).on('click', async function(e){
     e.stopPropagation();
-    (async function(){
-      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'userFun', caller:'index', code};
-      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
-    })();
+    var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
+    var oT={IP:strIPPrim, fun:'userFun', caller:'index', code};
+    await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
   });
 
   var wsImageAlt=window['ws'+ucfirst(strIPAlt)];
-  var imAlt=createElement('img').prop({src:wsImageAlt, alt:"alt IdP"}).css({'vertical-align':'middle'}).on('click', function(e){
+  var imAlt=createElement('img').prop({src:wsImageAlt, alt:"alt IdP"}).css({'vertical-align':'middle'}).on('click', async function(e){
     e.stopPropagation();
-    (async function(){
-      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
-      var oT={IP:strIPAlt, fun:'mergeIDFun', caller:'index', code};
-      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
-
-    })();
+    var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
+    var oT={IP:strIPAlt, fun:'mergeIDFun', caller:'index', code};
+    await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
   });
 
   var fragRows=createFragment(pendingMess, cancelMess, headA, headB, imPrim, headC, imAlt).cssChildren({'margin':'1em 0em 1em 0.6em'});
@@ -2531,7 +2604,7 @@ var filterButtonCreator=function(){
  *   divEntryBarCreator
  *   divLoginInfoCreator
  * viewEntryCreator
- * mainIntroPopCreator
+ * mainIntroCreator
  *   divSelectImageCreator
  *
  *******************************************************************************************************************
@@ -2686,7 +2759,7 @@ var viewUserSettingCreator=function(){
   var strHelp="Copy this url with key to the remote controller.";
   var imgH=imgHelp.cloneNode(1).css({'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
   //var aLink=createElement('a').myText('link to trackerControl').prop({href:'https://emagnusandersson.github.io/trackerControl/'}).css({'margin-left':'0.4em'});
-  var inpKeyRemoteControl=createElement('input').prop({ size:40}).attr({readonly:true}).css({'font-size':'0.8em'}); //placeholder:'Key for external controller',
+  var inpKeyRemoteControl=createElement('input').prop({ size:40}).attr({readonly:true}).css({'font-size':'0.8em', 'margin-bottom':'0.7em'}); //placeholder:'Key for external controller',
   var generateF=function(){
     var strUUID=myUUID();
     //var urlKey=strSchemeLong+strUUID+'@'+site.wwwSite;
@@ -2743,14 +2816,12 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   var divHead=createElement('div').css({'margin-bottom':'0.5em','font-weight':'bold'});  divHead.myText('Data from Id-provider (IdP) (Facebook): ')
 
   var wsImagePrim=window['ws'+ucfirst(strIPPrim)+'22'];
-  var buttRefetch=createElement('img').prop({src:wsImagePrim, alt:"IdP"}).css({'vertical-align':'middle'}).on('click', function(e){
+  var buttRefetch=createElement('img').prop({src:wsImagePrim, alt:"IdP"}).css({'vertical-align':'middle'}).on('click', async function(e){
     e.stopPropagation();
-    (async function(){
-      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'refetchFun', caller:'index', code};
-      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
-      el.setUp();
-    })();
+    var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
+    var oT={IP:strIPPrim, fun:'refetchFun', caller:'index', code};
+    await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
+    el.setUp();
     return false;
   });
   var divRefresh=createElement('div'); divRefresh.myAppend('Refetch data: ', buttRefetch);
@@ -3285,16 +3356,13 @@ var viewEntryCreator=function(oRole){
   var pSeeAlso=createElement('p').myAppend(aTOS);
 
 
-  var buttLoginTeam=createElement('button').myText(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).on('click', function(e){
+  var buttLoginTeam=createElement('button').myText(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).on('click', async function(e){
     e.stopPropagation();
-    (async function(){
-      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
-      var oT={IP:strIPPrim, fun:'teamFun', strRole, caller:'index', code};
-      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
+    var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
+    var oT={IP:strIPPrim, fun:'teamFun', strRole, caller:'index', code};
+    await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
 
-      history.fastBack(viewFront);
-
-    })();
+    history.fastBack(viewFront);
     return false;
   }).hide();
 
@@ -3338,9 +3406,10 @@ var viewEntryCreator=function(oRole){
 }
 
 
-var mainIntroPopCreator=function(oRole){
+var mainIntroCreator=function(oRole){
   var el=createElement('div');
   var {charRole, strRole, charRoleUC}=oRole;
+  el.toString=function(){return 'mainIntro'+charRoleUC;}
   var save=function(){ 
     ga('send', 'event', 'button', 'click', 'introCont');
     resetMess();  
@@ -3357,7 +3426,8 @@ var mainIntroPopCreator=function(oRole){
     //var boIdIPImage=Number(cbIdIPImage.prop('checked'));
     var {base64Img, boUseIdPImg}=divImage;
     var o1={displayName:nameT, strSubscription:JSON.stringify(myWebPush.subscription), tel:strTel, displayEmail:strEmail, currency:curT, charRole, base64Img, boUseIdPImg};
-    var vec=[['RIntroCB',o1,function(data){el.closePop();}], ['setupById', {}]];   majax(vec);
+    //var vec=[['RIntroCB',o1,function(data){el.closePop();}], ['setupById', {}]];   majax(vec);
+    var vec=[['RIntroCB',o1,function(data){historyBack();}], ['setupById', {}]];   majax(vec);
 
     // var iframeConversion=createElement('iframe').prop({src:uConversion, scrolling:"no", frameborder:0,  allowTransparency:true}).css({border:'none', overflow:'hidden', width:'292px', height:'62px', display:'none'});
     // elBody.myAppend(iframeConversion);
@@ -3377,14 +3447,15 @@ var mainIntroPopCreator=function(oRole){
     oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     return true;
   }
-  el.openFunc=function(){   el.openPop(); el.setUp(); }
+  //el.openFunc=function(){   el.openPop(); el.setUp(); }
  
   el.createDivs=function(){
     spanBoWebPushOK=oB.Prop.boWebPushOK.crInp('intro');
-    divBoWebPushOK.myAppend("Enable Push Messages*: ", spanBoWebPushOK);
+    var labBoWebPushOK=createElement('span').myAppend("Enable Push Messages*: ");
+    divBoWebPushOK.myAppend(labBoWebPushOK, spanBoWebPushOK);
   }
-  popUpExtend(el);  
-  el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em', 'text-align':'left', 'width':'90%'}); 
+  //popUpExtend(el);  
+  //el.css({'max-width':'20em', padding: '1.2em 0.5em 1.2em 1.2em', 'text-align':'left', 'width':'90%'}); 
 
   
   var helpPopup=createElement('div').myText('You may want to use a separate phone if you use this service often.');
@@ -3394,8 +3465,9 @@ var mainIntroPopCreator=function(oRole){
   //var pBread=createElement('p').myText("These data are shown to everyone. You may want to use a separate phone if you use this service often.");
   var pBread=createElement('h4').myText("Choose how you want to appear...");
   var pBread2=createElement('h4').myText("...and how other users will be able to contact you.");  // You may want to use a separate phone if you use this service often.
-  var inpName=createElement('input').prop('type','text').css({width:'70%', 'box-sizing':'border-box'});
-  var divName=createElement('p'); divName.myAppend('Name', ': ',inpName);
+  var inpName=createElement('input').prop({type:'text', id:'introName'+charRoleUC, name:'name'});// .css({width:'70%', 'box-sizing':'border-box'});
+  var labName=createElement('label').prop({for:'introName'+charRoleUC}).myAppend('Name: ');
+  var divName=createElement('p').myAppend(labName,inpName);
   
   //var cbIdIPImage=createElement('input').prop({"type":"checkbox"});
   //var divImage=createElement('p'); divImage.myAppend('Use image from ID provider', ': ',cbIdIPImage);
@@ -3403,23 +3475,28 @@ var mainIntroPopCreator=function(oRole){
   
   //var butToggle=createElement('button').myText('boPushToggle').on('click', function(){this.disabled=true; myWebPush.togglePushNotifications();} );
   
-  var spanBoWebPushOK, divBoWebPushOK=createElement('div');
+  var spanBoWebPushOK, divBoWebPushOK=createElement('p');
   divBoWebPushOK.toggle(boEnablePushNotification);
   
-  var inpTel=createElement('input').prop('type','tel').css({width:'70%', 'box-sizing':'border-box'});
-  var divTel=createElement('p'); divTel.myAppend(langHtml.Tel, '*: ',inpTel);
+  var inpTel=createElement('input').prop({type:'tel', id:'introTel'+charRoleUC, name:'tel'}); //.css({width:'70%', 'box-sizing':'border-box'});
+  var labTel=createElement('label').prop({for:'introTel'+charRoleUC}).myAppend(langHtml.Tel+'*:');
+  var divTel=createElement('p').myAppend(labTel, inpTel);
   
-  var inpEmail=createElement('input').prop('type','email').css({width:'70%', 'box-sizing':'border-box'});
-  var divEmail=createElement('p'); divEmail.myAppend(langHtml.Email, '*: ',inpEmail);
+  var inpEmail=createElement('input').prop({type:'email', id:'introEmail'+charRoleUC, name:'email'}); //.css({width:'70%', 'box-sizing':'border-box'});
+  var labEmail=createElement('label').prop({for:'introEmail'+charRoleUC}).myAppend(langHtml.Email+'*:');
+  var divEmail=createElement('p').myAppend(labEmail, inpEmail);
   var strTmp=boEnablePushNotification?"*At least one of these must be enabled/supplied.":"*At least one of these must be supplied.";
   var pBread3=createElement('p').myText(strTmp).css({'font-size':'78%'});
   //divName.add(divTel).add(divImage).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
   //[divName, divTel, divImage].cssChildren({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
-  [divName, divTel, divEmail].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
+  [divName, divBoWebPushOK, divTel, divEmail].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
   //cssChildren([divName, divTel, divImage], {display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
 
-  var saveButton=createElement('button').myText(langHtml.Continue).on('click', save).css({display:'block', 'margin':'2em auto 1em'});
-  el.myAppend(head, pBread, divName, divImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton).css({padding:'0.5em'}); //   , divEmail
+  var saveButton=createElement('button').myText(langHtml.CreateAccount).on('click', save).css({display:'block', 'margin':'2em auto 1em'});
+  //el.myAppend(head, pBread, divName, divImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton).css({padding:'0.5em'}); //   , divEmail  , 'font-size':'90%'
+  
+  var divCont=createElement('div').addClass('contDiv').myAppend(head, pBread, divName, divImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton);
+  el.myAppend(divCont).css({'text-align':'left', display:"flex","flex-direction":"column"});
 
   return el;
 }
@@ -3437,7 +3514,7 @@ var divSelectImageCreator=function(boSetting=false){
     if(objFile.size==0){ setMess("objFile.size==0",5); toggleResetBut(0); return; }
     var tmpMB=(objFile.size/(1024*1024)).toFixed(2);
 
-    var [err,blob]=await reduceFileSize(objFile, 50, 40, Infinity, 0.9);
+    var [err,blob]=await reduceFileSize(objFile, 200, 50, 50, 0.9);
     //el.image.prop({src:urlCreator.createObjectURL(blob)});
     el.image.src=URL.createObjectURL(blob);
 
@@ -3468,7 +3545,7 @@ var divSelectImageCreator=function(boSetting=false){
   el.base64Img=null;
   var objFile;
   var inpFile=createElement('input').prop({type:'file', name:'file', id:'file', accept:'image/*'}).css({background:'lightgrey'}).on('change',onChangeFun).hide();
-  el.image=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle', margin:"0 .3em"});
+  el.image=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle', margin:"0 .3em", width:'50px', height:'50px', display:'inline-block', 'object-fit': 'contain'});
   var head=createElement('span').myText('Display Image:');
   var but=createElement('button').myText('Change').on('click',function(){ inpFile.click(); });
   var butFB=createElement('button').myText('Default').hide().on('click',onClear);
@@ -3678,15 +3755,13 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
     spanOffsetInfo.myText('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
     resetMess(10);
   }
-  var complaintCommentButtClick=function(){
-    (async function(){
-      if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
-        var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
-        var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code};
-        await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
-      }
-      doHistPush({view:viewComplaintCommentPop});   viewComplaintCommentPop.openFunc(viewComplainee.idComplainee);
-    })();
+  var complaintCommentButtClick=async function(){
+    if(isEmpty(sessionLoginIdP) && typeof userInfoFrDB.user!='object'){
+      var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
+      var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code};
+      await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
+    }
+    doHistPush({view:viewComplaintCommentPop});   viewComplaintCommentPop.openFunc(viewComplainee.idComplainee);
   }
   
   var oRole;
@@ -4512,11 +4587,10 @@ var mapDivCreator=function(){
       var strName=this.oRole.ColsShow[j], tmp, prop=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
       var rowMTab=this.oRole.MTab[i];
       if('setMapMF' in prop) {  var tmp=prop.setMapMF.call({strName:strName, iRole:this.oRole.ind}, rowMTab);  } else tmp=rowMTab[strName];
-      if(typeof tmp=='string' || typeof tmp=='number') {
-        this.arrFuncOverData[k]=calcLabel(langHtml.prop, strName)+': '+tmp; k++;
-        //tmp=calcLabel(langHtml.prop, strName)+': '+tmp; 
-        //this.arrFuncOverData[k]=tmp; k++;
-      }
+      var str=undefined;
+      if(typeof tmp=='string' || typeof tmp=='number') { str=calcLabel(langHtml.prop, strName)+': '+tmp;}
+      else if(typeof tmp=='object' && tmp!==null) { ({str}=tmp); }
+      if(typeof str!=='undefined') { this.arrFuncOverData[k]=str; k++;}
     }
     this.arrFuncOverData.length=k;
     var tmp=this.arrFuncOverData.join('\n');
@@ -4736,20 +4810,21 @@ var viewFrontCreator=function(el){
     ga('send', 'event', 'button', 'click', 'setting');
   }
   //var tmpImg=createElement('img').prop({src:wsSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  var settingButton=createElement('button').myAppend('⚙').addClass('fixWidth').css({'margin-left':'0.8em', 'margin-right':'1em','line-height':'1em'}).prop('title',langHtml.Settings).on('click',settingButtonClick);
+  var settingButton=createElement('button').myAppend('⚙').addClass('fixWidth').css({'margin':'0 0 0 0.8em','line-height':'1em', padding:'0'}).prop('title',langHtml.Settings).on('click',settingButtonClick);
 
   //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
   var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
-  var infoLink=createElement('a').prop({href:uWikiT}).myText(langHtml.OtherMarkets).on('click', function(){  //.css({'margin':'0em auto'})
+  var infoLink=createElement('a').prop({href:uWikiT}).myText(langHtml.OtherMarkets).on('click', function(){  
     ga('send', 'event', 'button', 'click', 'wiki');
-  });
+  }).css({'margin':'0.4em', 'text-align':'center', 'max-width':'min-content'});
+  //var divLink=createElement('div').myAppend(infoLink);
   
   var tableButtonClick=function(){
     viewTable.setVis();  doHistPush({view:viewTable});
     ga('send', 'event', 'button', 'click', 'table');
   }
   var tmpImg=createElement('img').prop({srcset:srcsetList, alt:"list"}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
-  el.tableButton=createElement('button').myAppend(tmpImg).addClass('fixWidth').css({'margin':'0 0.8em 0 0.4em', padding:'0'}).prop('title',langHtml.ComparisonTable).on('click',tableButtonClick);  // , background:'transparent'
+  el.tableButton=createElement('button').myAppend(tmpImg).addClass('fixWidth').css({'margin':'0em', padding:'0'}).prop('title',langHtml.ComparisonTable).on('click',tableButtonClick);  // , background:'transparent'
   
   
   el.filterButton=filterButtonCreator().css({'margin-left':'0.0em', 'white-space':'nowrap'}); //, background:'transparent'
@@ -4802,7 +4877,7 @@ var viewFrontCreator=function(el){
   var divFilterBut=createElement('div').myAppend(...DivButRole, el.filterButton).css({'box-sizing': 'border-box', flex:'0 0 auto', display:'flex', 'align-items':'stretch', 'justify-content':'space-between'});
   var divFilterButW=createElement('div').myAppend(labelFilterBut, divFilterBut).css({'box-sizing': 'border-box', flex:'0 0 auto', display:'flex', 'align-items':'center', 'justify-content':'space-between', 'flex-direction':'column', background:'#e8e8e8'});  //border:'1px solid black'
   
-  var divFoot=createElement('div').myAppend(settingButton, infoLink, el.tableButton, divFilterButW).addClass('footDiv').css({padding:'0em 0 0em'}); //.css({display:'flex', 'align-items':'center', 'justify-content':'space-between'});
+  var divFoot=createElement('div').myAppend(settingButton, infoLink, el.tableButton, divFilterButW).addClass('footDiv').css({padding:'0em 0 0em'}); //.css({display:'flex', 'align-items':'center', 'justify-content':'space-around'});
 
   
   el.append(mapDiv, el.quickDiv, divFoot);
@@ -5858,6 +5933,7 @@ window.boFF = uaLC.indexOf("firefox") > -1;
 
 app.boChrome= /chrome/.test(uaLC);
 app.boIOS= /iphone|ipad|ipod/.test(uaLC);
+app.boSafari= /safari/.test(uaLC);
 app.boEpiphany=/epiphany/.test(uaLC);    if(boEpiphany && !boAndroid) boTouch=false;  // Ugly workaround
 app.boEdge= /\bedg\b/.test(uaLC);
 app.boUCBrowser = 0;
@@ -5868,6 +5944,7 @@ window.boReallySmall=0;
 if(boTouch){
   if(boIOS) {
     var tmp={"-webkit-overflow-scrolling":"touch", overflow:"hidden"};
+    var tmp={"-webkit-overflow-scrolling":"touch", overflow:"hidden", height:'calc(100vh - 95px)'};
     elBody.css(tmp);  elHtml.css(tmp);
   } 
 }
@@ -5901,7 +5978,7 @@ window.interpretHashVariables=function(){
 }
 interpretHashVariables();
 
-var strBackSymbol=(boIOS)?'◄':'◀';
+var strBackSymbol=(boSafari)?'◄':'◀';
 
 var strTable='<span style="transform:scaleX(1.5); display:inline-block; position:relative; left:-2px">┋</span><span style="transform:scaleX(5); display:inline-block; position:relative; left:-1px">┋</span>'
 var strTable='<span style="transform:scaleX(1.5); display:inline-block; position:relative; left:-4px; letter-spacing: -6px; text-align: center;">┋┋ ┋ ┋ ┋</span>'; //┊┋┋┋┋
@@ -6280,13 +6357,13 @@ var startPopTimer=null;
 
 
 
-  // MainIntroPop, ListCtrlDiv
-app.MainIntroPop=[]; app.ListCtrlDiv=[];
+  // MainIntro, ListCtrlDiv
+app.MainIntro=[]; app.ListCtrlDiv=[];
 for(var i=0;i<ORole.length;i++){
-  MainIntroPop[i]=mainIntroPopCreator(ORole[i]);
+  MainIntro[i]=mainIntroCreator(ORole[i]);
   ListCtrlDiv[i]=listCtrlCreator(ORole[i]).css({display:'inline-block','float':'right'});
 }
-[app.mainIntroPopB, app.mainIntroPopS]=MainIntroPop;  [app.listCtrlDivB, app.listCtrlDivS]=ListCtrlDiv;
+[app.mainIntroB, app.mainIntroS]=MainIntro;  [app.listCtrlDivB, app.listCtrlDivS]=ListCtrlDiv;
 
 
   // mapDiv
@@ -6366,7 +6443,7 @@ for(var i=0;i<ORole.length;i++){
   //ViewColumnSelector[i].createTable();
   viewColumnSelector.ElRole[i].createTable();
   viewMarkSelector.ElRole[i].createTable();
-  MainIntroPop[i].createDivs();
+  MainIntro[i].createDivs();
 }
 setUpStartFilter();
 
@@ -6386,7 +6463,7 @@ viewFront.querySelector('noscript').detach();
 
 
 MainDiv.push(viewFront, viewUserSetting, viewAdmin, viewComplainee, viewComplainer, viewFormLogin, viewConvertID, viewCreateUser, viewSettingEntry, viewDeleteAccountPop, viewComplaintCommentPop, viewComplaintAnswerPop, viewUploadImagePop, viewChangePWPop, viewForgottPWPop, viewColumnSorter, viewColumnSelector, viewTable, viewMarkSelector, viewFilter, viewSetting, viewGreeting);
-MainDiv.push(...ViewTeam, ...ViewEntry, ...ViewInfo);
+MainDiv.push(...ViewTeam, ...ViewEntry, ...ViewInfo, ...MainIntro);
 
 arrViewPop.push(viewDeleteAccountPop, viewUploadImagePop, viewComplaintCommentPop, viewComplaintAnswerPop, viewChangePWPop, viewForgottPWPop);
 AMinusB(MainDiv, arrViewPop).forEach(ele=>ele.addClass('mainDiv'));
@@ -6541,6 +6618,13 @@ viewGreeting.setVis=function(){
   //scalableTog(1);
   //return true;
 //}
+mainIntroB.setVis=
+mainIntroS.setVis=function(){
+  setMainView(this);
+  this.setUp();
+  scalableTog(1);
+  return true;
+}
 
 
 

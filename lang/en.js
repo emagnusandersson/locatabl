@@ -1,7 +1,7 @@
 
 
-langClientFunc=function(){
-langHtml={
+globalThis.langClientFunc=function(){
+globalThis.langHtml={
 Cancel:'Cancel',
 Yes:'Yes',
 No:'No',
@@ -299,6 +299,7 @@ boat:'Boat'
 standingByMethods:['In vehi­cle','At home','5 min','10 min'],
 standingByMethodsLong:['In vehi­cle','At home','Ready in 5 min','Ready in 10 min'],
 compassPoint:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+compassPointL:['-', 'North', 'Northeast', 'East', 'Southeast', 'South', 'Southwest', 'West', 'Northwest'],
 
 ShowNUpdate:'Visible / New pos',
 visible:'visible',
@@ -384,12 +385,11 @@ idTeam:'Team-id'
 },
 
 NotYetApproved:'Not yet approved',
-SendPushNotification:'Send push not­ifica­tion',
+SendAPushNotification:'Send a push not­ifica­tion',
 
 //standingByMethods:['0','1','2','3','4','5','10'],
 //standingByMethodsLong:['0','1','2','3','4','5','10'],
 //setting.standingByMethod:'Standby (ready in ... [min])',
-objCompassPoint:{ N:'North', E:'East', S:'South', W:'West', NE:'Northeast', SE:'Southeast', SW:'Southwest', NW:'Northwest'},
 
 
 
@@ -401,7 +401,7 @@ idFB:{label:'idFB', boRot:0},
 idIdPlace:{label:'idIdPlace', boRot:1},
 idOpenId:{label:'idOpenId', boRot:1},
 terminationDate:{label:'', boRot:1},
-donatedAmount:{label:'Don­ated amo­unt [USD]', boRot:0},
+donatedAmount:{label:'Don­ations to the site', boRot:0},
 tCreated:{label:'Acc­ount age', boRot:0},
 displayName:{label:'Name', boRot:0},
 tel:{label:'☎', boRot:0}, //Tel
@@ -424,7 +424,7 @@ strUnitDist:{label:'Dist­ance unit', boRot:0},
 pricePerDist:{label:'Price per dist', boRot:0},
 pricePerHour:{label:'Price per hour', boRot:0},
 tLastPriceChange:{label:'Price age', boRot:0},
-tPos:{label:'Loc­ation last up­dated', boRot:0},
+tPos:{label:'Position age', boRot:0},
 shiftEnd:{label:'Shift ends in', boRot:0},
 boShow:{label:'', boRot:1},
 x:{label:'', boRot:1},
@@ -442,7 +442,7 @@ tLastWriteOfTA:{label:'', boRot:0},
 hideTimer:{label:'Hide timer', boRot:0},
 hideTime:{label:'Auto­matic­ally hide', boRot:0},
 comparePrice:{label:'Comp­are price', boRot:0},
-coordinatePrecisionM:{label:'Coord­inate prec­ision (±) [m]', boRot:0},
+coordinatePrecisionM:{label:'Coord­inate prec­ision', boRot:0}, //(±) [m]
 dist:{label:'Dist­ance', boRot:0},
 image:{label:'Picture', boRot:0},
 info:{label:'Info', boRot:0},
@@ -477,7 +477,7 @@ skyLift:{label:'Sky­lift', boRot:0},
 nWindow:{label:'Num­ber of Win­dows', boRot:0},
 customerHasEquipment:{label:'Cust­omer has equip­ment', boRot:0},
 area:{label:'Area [m²]', boRot:0},
-experience:{label:'Exper­ience (claim­ed) [years]', boRot:0},
+experience:{label:'Exper­ience (claim­ed)', boRot:0},
 
 pushMower:{label:'Push mower', boRot:0},
 ridingMower:{label:'Ri­ding mower', boRot:0},
@@ -521,7 +521,7 @@ strUnitDist:'',
 pricePerDist:'',
 pricePerHour:'',
 tLastPriceChange:'How long since the price changed. (Good if any of the parts suspects that the price has changed since the agreement was made.)',
-tPos:'How long since the users location was updated. (Helps other users to sort out inactive users)',
+tPos:'How long since the position was updated. (To make it easier to sort away inactive users)',
 shiftEnd:'How long before <span nom="theSeller">the seller</span> ends for the day. (Good for customers who wants to book ahead)',
 boShow:'',
 x:'',
@@ -539,7 +539,7 @@ tLastWriteOfTA:'',
 hideTimer:"Automatically hide after last position upload.",
 hideTime:'Automatically hide at this timepoint.',
 comparePrice:'',
-coordinatePrecisionM:"If the user don't want the exact poition to appear on the map, then it can be rounded off.",
+coordinatePrecisionM:"If the user don't want the exact poition to appear on the map, then it can be rounded off. (m=meter)",
 dist:'',
 image:'',
 info:'',
@@ -569,7 +569,7 @@ skyLift:''
 } // langHtml
 } // function
 
-langServerFunc=function(){
+globalThis.langServerFunc=function(){
 if('taxi' in Site) Site.taxi.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="taxi.closeby.market"; 

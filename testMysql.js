@@ -1,27 +1,26 @@
 
-http = require("http");
-crypto = require('crypto');
-mysql =  require('mysql');
-path = require("path");
-fs = require("fs");
-fsPromises = require("fs/promises");
-require('./lib.js');
-require('./libServerGeneral.js');
-require('./libServer.js');
-require('./libNeo4j.js');
-//require('./libNeo4jImage.js');
-
-app=(typeof window==='undefined')?global:window;
-
-require('./parser.js'); 
-require('./parserTable.js'); 
+global.app=global;
+import http from "http";
+import crypto from 'crypto';
+import mysql from 'mysql';
+import path from "path";
+import fs, {promises as fsPromises} from "fs";
+await import('./lib.js');
+await import('./libServerGeneral.js');
+await import('./libServer.js');
+await import('./libNeo4j.js');
+//await import('./libNeo4jImage.js');
 
 
-boDbg=1;
+await import('./parser.js'); 
+await import('./parserTable.js'); 
 
-uriDB='mysql://root:jh10k@localhost/mmm';
-nDBConnectionLimit=10; nDBQueueLimit=100; nDBRetry=14;
-setUpMysqlPool=function(){
+
+var boDbg=1;
+
+var uriDB='mysql://root:jh10k@localhost/mmm';
+var nDBConnectionLimit=10, nDBQueueLimit=100, nDBRetry=14;
+var setUpMysqlPool=function(){
   var uriObj=url.parse(uriDB); 
   var StrMatch=RegExp('^(.*):(.*)$').exec(uriObj.auth);
   var nameDB=uriObj.pathname.substr(1);
@@ -68,19 +67,19 @@ for(var i=0;i<myArg.length;i++){
 
 if(typeof strGenerator=='undefined') strGenerator='setNewCache';
 if(typeof www=='undefined') www='localhost:5000';
-boTLS=false;
+var boTLS=false;
 
 //var regLink=new RegExp('link:([a-zA-Z:]+)','g'); 
-StrNewLink=[];
+var StrNewLink=[];
 //var match = regLink.exec(strEditText);
 //while (match != null) {  StrNewLink.push(match[1]);       match = regLink.exec(strEditText);  }
 
-StrSubImage=[];
+var StrSubImage=[];
 console.log(strGenerator);
-strHtmlText=strEditText;
+var strHtmlText=strEditText;
 
 
-objArg={boTLS, www, requesterCacheTime:0}
+var objArg={boTLS, www, requesterCacheTime:0}
 
 
 var arrNoTX=['writePageFile', 'readPageFile'];  

@@ -1,8 +1,21 @@
 
 "use strict"
 
-// globalThis
+//When using a device with a small screen such as iphone 5 it was impossible to login because some buttons didn't fit into the screen. I'm guessing this was the problem.
+//So now I have made sure one can use it down to a 280x280 screen.
 
+// globalThis
+// Do extra exchange of fb-token, to get longer exipriation time
+// FB: how to enable public photo
+// test fast zip
+// Ability to set default hideTimer in plugin
+// boUseIdPImg => boUseOwnImg ??
+// blue/pink quickDiv background
+// using geohash at first query
+
+// globSubscription must be stored in a database mustn't it.
+// Should one use dataSet instead of prop when storing data in the DOM
+// Use element.classList.add / toggle etc instead of custom library methods
 
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 //https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
@@ -12,9 +25,7 @@
  * reqCurlEnd
  ******************************************************************************/
 app.reqCurlEnd=async function(){  
-  var {req, res}=this;
-  var {site, objQS}=req;
-  var siteName=site.siteName;
+  var {req, res}=this, {site, objQS}=req, {siteName}=site;
   
   
   res.setHeader('Content-Type', MimeType.json);
@@ -111,13 +122,11 @@ app.reqCurlEnd=async function(){
  * reqKeyRemoteControlSave
  ******************************************************************************/
 app.reqKeyRemoteControlSave=async function(){
-  var {req, res}=this;
-  var {site, objQS, uSite}=req;
-  var siteName=site.siteName;
+  var {req, res}=this, {site, objQS, uSite}=req, {siteName}=site;
 
   
-  var strT=req.headers['Sec-Fetch-Mode'];
-  if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  var strT=req.headers['sec-fetch-mode'];
+  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
   
   //this.mesO=mesOMake('\n');
   
@@ -135,7 +144,7 @@ app.reqKeyRemoteControlSave=async function(){
 <body>`);
 
   var uCommon=req.strSchemeLong+wwwCommon;
-  Str.push(`<script>var app=window;</script>`);
+  Str.push(`<script>window.app=window;</script>`);
   Str.push(`<base href="`+uCommon+`">`);
 
 
@@ -143,11 +152,11 @@ app.reqKeyRemoteControlSave=async function(){
   var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css">');
 
     // Include site specific JS-files
-  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
-
-  var StrTmp=['lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyRemoteControlSave.js'];
+  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
+  
+  var StrTmp=[siteName+'_'+leafSiteSpecific, 'lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyRemoteControlSave.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
 
@@ -216,8 +225,7 @@ app.deleteOne=async function(site,user_id){  //
   return [null, c];
 }
 app.reqDataDelete=async function(){  //
-  var {req, res}=this;
-  var {objQS, uSite}=req;
+  var {req, res}=this, {objQS, uSite, site}=req, {siteName}=site
 
   //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
   if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
@@ -232,11 +240,15 @@ app.reqDataDelete=async function(){  //
   var {user_id}=data;
 
   var StrMess=[];
-  for(var i=0;i<SiteName.length;i++){
-    var siteName=SiteName[i], site=Site[siteName];
-    var [err,c]=await deleteOne.call(this, site, user_id);
-    if(c) StrMess.push(siteName+' ('+c+')');
-  }
+  // for(var i=0;i<SiteName.length;i++){
+  //   var siteName=SiteName[i], site=Site[siteName];
+  //   var [err,c]=await deleteOne.call(this, site, user_id);
+  //   if(c) StrMess.push(siteName+' ('+c+')');
+  // }
+
+  var [err,c]=await deleteOne.call(this, site, user_id); if(err){  res.out500(err); return; }
+  var strC=c>1?' ('+c+' entries deleted?!)':''; // Incase there is more than one
+  if(c) StrMess.push(siteName+strC);
 
   var mess='User '+user_id+':';     if(StrMess.length) mess+=' deleted on: '+StrMess.join(', '); else mess+=' not found.';
   console.log('reqDataDelete: '+mess);
@@ -249,9 +261,8 @@ app.reqDataDelete=async function(){  //
 }
 
 app.reqDataDeleteStatus=async function(){
-  var {req, res}=this;
-  var {site, objQS, uSite}=req;
-  var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=querystring.parse(qs);
+  var {req, res}=this, {site, objQS, uSite}=req;
+  var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
   var confirmation_code=objQS.confirmation_code||'';
   var [err,mess]=await cmdRedis('GET', [confirmation_code+'_DeleteRequest']); 
   if(err) {var mess=err.message;}
@@ -264,8 +275,7 @@ app.reqDataDeleteStatus=async function(){
 }
 
 app.reqDeAuthorize=async function(){  //
-  var {req, res}=this;
-  var {objQS, uSite}=req;
+  var {req, res}=this, {objQS, uSite, site}=req, {siteName}=site
 
   //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
   if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
@@ -277,13 +287,15 @@ app.reqDeAuthorize=async function(){  //
   var [err, data]=parseSignedRequest(strDataB, req.rootDomain.fb.secret); if(err) { res.outCode(400, "Error in parseSignedRequest: "+err.message); return; }
 
   var StrMess=[];
-  for(var i=0;i<SiteName.length;i++){
-    var siteName=SiteName[i], site=Site[siteName];
-    var objArg={site, idFB:data.user_id};
-    var [err, {iRole, objR}]=await RHide.call(this, objArg); if(err) continue;
-
-    StrMess.push(siteName);
-  }
+  // for(var i=0;i<SiteName.length;i++){
+  //   var siteName=SiteName[i], site=Site[siteName];
+  //   var objArg={site, idFB:data.user_id};
+  //   var [err, {iRole, objR}]=await RHide.call(this, objArg); if(err) continue;
+  //   StrMess.push(siteName);
+  // }
+  var objArg={site, idFB:data.user_id};
+  var [err, {iRole, objR}]=await RHide.call(this, objArg); if(err){  res.out500(err); return; }
+  StrMess.push(siteName);
 
   if(StrMess.length) var mess='Hidden on site(s): '+StrMess.join(', '); else var mess='Nothing hidden';
   console.log('reqDeAuthorize (id: '+data.user_id+'): '+mess);
@@ -298,8 +310,8 @@ app.reqDeAuthorize=async function(){  //
 app.reqPrev=async function() {
   var {req, res}=this;
   
-  var strT=req.headers['Sec-Fetch-Mode'];
-  if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  var strT=req.headers['sec-fetch-mode'];
+  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
   
   res.end(`<!DOCTYPE html>
 <html lang="en"><head>
@@ -321,13 +333,11 @@ app.reqPrev=async function() {
 // Allways same: coordApprox;
 // Not used: strLangBrowser
 app.reqIndex=async function() {
-  var {req, res}=this;
+  var {req, res}=this, {site, wwwSite, objQS, uSite}=req, {siteName}=site;
   
-  var strT=req.headers['Sec-Fetch-Mode'];
-  if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  var strT=req.headers['sec-fetch-mode'];
+  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
   
-  var objQS=req.objQS;
-  var site=req.site, siteName=site.siteName, wwwSite=req.wwwSite, uSite=req.uSite;
 
   var ip='';
     // AppFog ipClient
@@ -413,7 +423,7 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
   Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1'/>");
   Str.push('<meta name="theme-color" content="#ff0"/>');
 
-  require('./lang/'+strLang+'.js');  langServerFunc();
+  await import('./lang/'+strLang+'.js');  langServerFunc();
   site.langSetup();
   var {strTitle, strH1, strDescription, strKeywords, strSummary}=site.serv;
 
@@ -449,7 +459,7 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
     } catch(err) { alert(m0+m1+':\\n'+err); }
   })();</script>`);
   
-  Str.push(`<script>var app=window;</script>`);
+  Str.push(`<script>window.app=window;</script>`);
 
   var tmp=`
 <script>
@@ -493,35 +503,37 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
 </style>`);
 
 
-  //Str.push('<script src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
+  //Str.push('<script type="module" src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
   
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
 
     // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
   var boDbgT=boDbg; if(boIOS || boUC) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
   
-  var keyTmp=siteName+'/'+leafManifest, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     Str.push(`<link rel="manifest" href="`+uSite+`/`+leafManifest+`?v=`+vTmp+`"/>`);
+  var keyTmp='/'+siteName+'_'+leafManifest, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;
+  //Str.push(`<link rel="manifest" href="`+uSite+`/`+leafManifest+`?v=`+vTmp+`"/>`);
+  Str.push(`<link rel="manifest" href="`+keyTmp+`?v=`+vTmp+`"/>`);
   var keyTmp='/'+leafServiceWorker, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     const srcServiceWorker=`/`+leafServiceWorker+`?v=`+vTmp;
   
     // Include stylesheets
   var pathTmp='/stylesheets/style.css', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css" async >');
 
     // Include site specific JS-files
-  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=boDbgT?0:CacheUri[keyCache].eTag;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
+  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=boDbgT?0:CacheUri[keyCache].eTag;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
 
     // Include JS-files
-  var StrTmp=['lib.js', 'libClient.js', 'lang/en.js', 'filter.js', 'client.js'];
+  var StrTmp=[siteName+'_'+leafSiteSpecific, 'lib.js', 'libClient.js', 'lang/en.js', 'filter.js', 'client.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
     // Include plugins
-  Str.push("\n<script type=\"text/javascript\" language=\"JavaScript\" charset=\"UTF-8\"> var CreatorPlugin={};</script>");
+  Str.push(`<script> window.CreatorPlugin={};</script>`);
   var StrPlugInNArg=site.StrPlugInNArg;
   for(var i=0;i<StrPlugInNArg.length;i++){
     var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
     var Name=ucfirst(nameT); 
-    var pathTmp='/plugin'+Name+'.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script src="'+pathTmp+'?v='+vTmp+'" async></script>');
+    var pathTmp='/plugin'+Name+'.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
     // Files with delayed loading
@@ -536,11 +548,12 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-  ga('create', '`+tmpID+`', 'auto');
+  ga('create', '`+tmpID+`', { 'storage': 'none' });
   ga('send', 'pageview');
 </script>`;
   }
   Str.push(strTracker);
+  //ga('create', '`+tmpID+`', 'auto');
   
   const uRecaptcha='https://www.google.com/recaptcha/api.js?onload=cbRecaptcha&render=explicit';
 
@@ -564,7 +577,7 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
 var MainDiv=[];
 var arrViewPop=[];`);
 
-  var objOut={strLang, coordApprox, UrlOAuth, strReCaptchaSiteKey, uRecaptcha, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
+  var objOut={strLang, coordApprox, UrlOAuth, response_type, strReCaptchaSiteKey, uRecaptcha, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
   copySome(objOut, req, ['boTLS']);
   extend(objOut, {wsSha1});
 
@@ -602,9 +615,8 @@ var arrViewPop=[];`);
  * reqLoginWLink
  ******************************************************************************/
 app.reqLoginWLink=async function(){
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+  var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
-  var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var code=objQS.code;
   //var email=await getRedis(code+'_LoginWLink');
@@ -631,9 +643,7 @@ app.reqLoginWLink=async function(){
  * reqImage
  ******************************************************************************/
 app.reqImage=async function() {
-  var {req, res}=this;
-  var {site, objQS, uSite, pathName}=req;
-  var siteName=site.siteName, id, kind;
+  var {req, res}=this, {site, objQS, uSite, pathName}=req, {siteName}=site, id, kind;
 
   this.eTagIn=getETag(req.headers);
   var keyCache=siteName+'/'+pathName;
@@ -652,7 +662,7 @@ app.reqImage=async function() {
   var [err, results]=await this.myMySql.query(sql, Val);  if(err) { res.out500(err); return;}
   if(results.length>0){
     var strData=results[0].data;
-    var eTag=crypto.createHash('md5').update(strData).digest('hex'); 
+    var eTag=md5(strData);
     ETagImage[keyCache]=eTag;  if(eTag===this.eTagIn) { res.out304(); return; }
     var maxAge=3600*8760, mimeType=MimeType.jpg;
     res.writeHead(200, {"Content-Type": mimeType, "Content-Length":strData.length, ETag: eTag, "Cache-Control":"public, max-age="+maxAge}); // "Last-Modified": maxModTime.toUTCString(),
@@ -661,10 +671,31 @@ app.reqImage=async function() {
     //res.setHeader("Content-type", MimeType.png);
     id=id%32;
     var tmp; if(kind=='u'){tmp='anonPng'; }else tmp='anonTeamPng';
-    var uNew=uSite+"/lib/image/"+tmp+"/a"+id+".png";
+    var uCommon=req.strSchemeLong+wwwCommon;
+    var uNew=uCommon+"/lib/image/"+tmp+"/a"+id+".png";
     res.writeHead(302, {'Location': uNew});
     res.end();
   }
+}
+
+
+// Need to do server-side-granting rather than client-side-granting (autherization-code-granting rather than implicit-granting). The reason for this is that I want to use window.opener.postMessage (in reqLoginBack) (postMessage is safer than window.opener.[ANY FUNCTION]). And postMessage requires you to know the subdomain of the receiver (if you want things safe). So the subdomain must be stored at the server between the call to reqLogin and reqLoginBack.
+
+/******************************************************************************
+ * reqLogin
+ ******************************************************************************/
+app.reqLogin=async function(){
+  var {req, res}=this, {objQS, uDomain, rootDomain}=req;
+  var sessionIDLogin=randomHash();
+  var state=randomHash(); //CSRF protection
+  var {IP,caller="index"}=objQS,    objT={state, IP, caller};
+  var [err]=await setRedis(sessionIDLogin+'_Login', objT, 300);   if(err) res.out500(err);
+  res.replaceCookie("sessionIDLogin="+sessionIDLogin+StrSessionIDLoginProp[1])
+  var uLoginBack=uDomain+"/"+leafLoginBack;
+  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uLoginBack), "state="+state, 'display=popup', "response_type="+response_type];
+  var uTmp=UrlOAuth.fb+"?client_id="+rootDomain.fb.id+"&redirect_uri="+encodeURIComponent(uLoginBack)+"&state="+state+'&display=popup';
+  var uTmp=UrlOAuth[IP]+"?"+arrQ.join('&');
+  res.writeHead(302, {'Location': uTmp}); res.end();
 }
 
 
@@ -672,32 +703,38 @@ app.reqImage=async function() {
  * reqLoginBack
  ******************************************************************************/
 app.reqLoginBack=async function(){
-  var {req, res}=this;
+  var {req, res}=this, {cookies}=req;
   
-  //var strT=req.headers['Sec-Fetch-Mode'];
-  //if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
+  var strT=req.headers['sec-fetch-mode'];
+  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
+  console.log('sec-fetch-mode: '+strT);
   
-  var wwwLoginScopeTmp=null; if('wwwLoginScope' in req.site) wwwLoginScopeTmp=req.site.wwwLoginScope;
-  var uSite=req.strSchemeLong+req.wwwSite;
-  
+  //var {sessionIDLogin}=cookies; if(!sessionIDLogin) { res.out500("!sessionIDLogin"); return; }
+  //var redisVar=sessionIDLogin+'_Login'; 
+  //var [err, sessionLogin]=await getRedis(redisVar,1); if(err) { res.out500(err); return; }
+  //if(!sessionLogin) { res.out500('!sessionLogin');  return; }
+
+  //var wwwLoginScopeTmp=req.site.wwwLoginScope??null;
+  //var uSite=req.strSchemeLong+req.wwwSite;
+
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html lang="en"><head><meta name='robots' content='noindex'>
-<link rel='canonical' href='`+uSite+`'/>
-</head>
-<body>
-<script>
-var wwwLoginScope=`+JSON.stringify(wwwLoginScopeTmp)+`;
-if(wwwLoginScope) document.domain = wwwLoginScope;
-var strQS=location.search;
-var strHash=location.hash;
+<html lang="en"><head><meta name='robots' content='noindex'></head>
+<body><script>
+const getCookie=(c_name)=>{
+  var arr=document.cookie.split(";");
+  for (var i=0;i<arr.length;i++){
+    var [k,v]=arr[i].split("=");
+    if (k.trim()==c_name){return unescape(v);}   
+  }
+}
+var uSiteLogin=getCookie('uSiteLogin');
+//var uSiteLogin=location.origin;
+var {search:strQS, hash:strHash}=location;
 debugger
-//alert('strHash: '+strHash);
-window.opener.loginReturn(strQS,strHash);
+window.opener.postMessage(strQS, uSiteLogin);
 window.close();
-</script>
-</body>
-</html>
+</script></body></html>
 `);
   res.setHeader('Content-Type', MimeType.html);
   var str=Str.join('\n');  res.end(str);
@@ -705,9 +742,8 @@ window.close();
 
 
 app.reqVerifyEmailReturn=async function() {
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+  var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
-  var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
   //var idUser=await getRedis(codeIn+'_verifyEmail');
@@ -728,9 +764,8 @@ app.reqVerifyEmailReturn=async function() {
 }
 
 app.reqVerifyPWResetReturn=async function() {
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+  var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
-  var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
   //var email=await getRedis(codeIn+'_verifyPWReset');
@@ -767,13 +802,10 @@ app.reqVerifyPWResetReturn=async function() {
 }
 
 app.reqVerifyEmailNCreateUserReturn=async function() {
-  var req=this.req, res=this.res, site=req.site; //this.pool=DB[site.db].pool;
+  var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab, buyerTab, sellerTab}=site.TableName;
   
-  //var strT=req.headers['Sec-Fetch-Mode'];
-  //if(strT && strT!='navigate') { res.outCode(400, "Sec-Fetch-Mode header is not 'navigate' ("+strT+")"); return;}
   
-  var objQS=req.objQS;
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
   
@@ -832,8 +864,7 @@ app.reqVerifyEmailNCreateUserReturn=async function() {
  * reqStatic (request for static files)
  ******************************************************************************/
 app.reqStatic=async function() {
-  var {req, res}=this;
-  var {site, pathName}=req, siteName=site.siteName;
+  var {req, res}=this, {site, pathName}=req, {siteName}=site;
 
 
   //var RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(closeby\.market|gavott\.com)")];
@@ -843,7 +874,8 @@ app.reqStatic=async function() {
   if(req.method=='OPTIONS'){ res.end(); return ;}
 
   var eTagIn=getETag(req.headers);
-  var keyCache=pathName; if(pathName==='/'+leafSiteSpecific || pathName==='/'+leafManifest) keyCache=siteName+keyCache;
+  var keyCache=pathName;
+  //if(pathName==='/'+leafSiteSpecific || pathName==='/'+leafManifest) keyCache=siteName+keyCache;
   if(!(keyCache in CacheUri)){
     var filename=pathName.substr(1);
     var [err]=await readFileToCache(filename);
@@ -872,13 +904,12 @@ app.reqStatic=async function() {
  * reqMonitor
  ******************************************************************************/
 app.reqMonitor=async function(){
-  var {req, res}=this;
-  var {site, objQS}=req;
+  var {req, res}=this, {site, objQS}=req;
   var timeCur=unixNow(), boRefresh=0;   if(site.timerNUserLast<timeCur-5*60) {boRefresh=1; site.timerNUserLast=timeCur;}
-  var siteName=site.siteName, {userTab, sellerTab, buyerTab}=site.TableName;
+  var {siteName}=site, {userTab, sellerTab, buyerTab}=site.TableName;
 
   
-  //if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
+  //if(!req.boGotSessionCookie) {res.outCode(401, "Cookie not set");  return;  }
 
   if(boRefresh){ 
     var Sql=[];
@@ -934,10 +965,9 @@ app.reqMonitor=async function(){
  ******************************************************************************/
 
 app.reqStat=async function(){
-  var {req, res}=this;
-  var {site, objQS}=req;
+  var {req, res}=this, {site, objQS}=req;
   
-  if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
+  if(!req.boGotSessionCookie) {res.outCode(401, "Cookie not set");  return;  }
 
   var {ORole, siteName}=site;
   var {userTab, userImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, sellerTab, sellerTeamTab, sellerTeamImageTab}=site.TableName;
@@ -998,7 +1028,7 @@ tr td:empty { background:#bbb}
 
       if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture" title='+idFB+'>'; } else row.idFB='';
       row.idUser='<image src="/image/u'+idUser+'" title='+idUser+'>';
-      row.boUseIdPImg=boUseIdPImg?'1':"";
+      row.boUseIdPImg=boUseIdPImg?'fr IdP':"own";
       row.boShow=boShow?'1':"";
       row.boWebPushOK=boWebPushOK?'1':"";
       if(histActive===null){ row.histActive='' } else{
@@ -1040,12 +1070,11 @@ tr td:empty { background:#bbb}
 
 
 app.reqStatBoth=async function(){
-  var {req, res}=this;
-  var {site, objQS}=req;
+  var {req, res}=this, {site, objQS}=req;
   
-  if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
+  if(!req.boGotSessionCookie) {res.outCode(401, "Cookie not set");  return;  }
 
-  var siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
+  var {siteName}=site, {userTab, buyerTab, sellerTab}=site.TableName;
 
   var Sql=[];
   Sql.push("SELECT count(*) AS n FROM "+userTab+";");
@@ -1095,7 +1124,7 @@ td:nth-child(n+9):nth-child(-n+16){background:pink}
 td:nth-child(n+17){background:lightblue}
 thead{font-size:85%}
 thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
-tr td:empty { background:#bbb}
+tr td:empty { background:#bbb !important} 
 </style>
 </head>
 <body>`);
@@ -1144,12 +1173,10 @@ tr td:empty { background:#bbb}
 }
 
 app.reqStatTeam=async function(){
-  var {req, res}=this;
-  var {site, objQS}=req;
-  var siteName=site.siteName;
+  var {req, res}=this, {site, objQS}=req, {siteName}=site;
   var tNow=new Date();
   
-  if(!req.boCookieOK) {res.outCode(401, "Cookie not set");  return;  }
+  if(!req.boGotSessionCookie) {res.outCode(401, "Cookie not set");  return;  }
   if('code' in objQS && objQS.code=='amfoen') {} else {res.outCode(401, "Not authorized");  return;  }
   
   var {userTab, userImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, sellerTab, sellerTeamTab, sellerTeamImageTab}=site.TableName;
@@ -1712,15 +1739,15 @@ CLIENT_FOUND_ROWS
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetIdUserNSetISeq");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(32), iSeqN INT, OUT OidUser INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
-      DECLARE Vc, Vn, ViSeq INT;
+      DECLARE Vc, Vn, ViSeq, Vdiff INT;
       SELECT SQL_CALC_FOUND_ROWS idUser, iRoleActive, iSeq INTO OidUser, OiRoleActive, ViSeq FROM `+userTab+` WHERE keyRemoteControl=Ikey LIMIT 1;
       SET Vc=FOUND_ROWS();
       IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('keyRemoteControl exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
       IF Vc=0 THEN SET OboOK=0, Omess='No such keyRemoteControl stored!'; LEAVE proc_label; END IF;
 
-      #IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error (iSeqServer=', ViSeq, ', iSeqRemoteControl=', iSeqN, ')'); LEAVE proc_label; END IF;
-      IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error (', ViSeq-iSeqN+1, ' request(s) behind)'); LEAVE proc_label; END IF;
-      UPDATE `+userTab+` SET iSeq=iSeqN WHERE idUser=OidUser;
+      #SET Vdiff=ViSeq-iSeqN+1;
+      #IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error, ', Vdiff, ' request(s) behind (Server=', ViSeq, ', Client=', iSeqN, ')'); LEAVE proc_label; END IF;
+      #UPDATE `+userTab+` SET iSeq=iSeqN WHERE idUser=OidUser;
       SET OboOK=1, Omess='';
     END`);
 
