@@ -223,6 +223,12 @@ app.CreatorPlugin.general=function(){
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.nComplaint, tmpPropProt); }
 
 
+      // donatedAmount
+    var tmpF=r=>r.donatedAmount+' USD'; 
+    for(let i=0;i<ORole.length;i++){
+      extend(ORole[i].Prop.donatedAmount, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF, setMapMF:tmpF});
+    }
+
       // idTeam
     const tmpCrIdTeam=function(){  this.append(  thumbTeamCreator(ORole[this.iRole])  );   };
     const tmpSetIdTeam=function(rowMTab){   this.querySelector('a').mySet(rowMTab);   };
@@ -311,11 +317,17 @@ app.CreatorPlugin.general=function(){
       var c=createElement('select'); for(var i=0;i<arrCoordinatePrecisionM.length;i++){ var v=arrCoordinatePrecisionM[i], op=createElement('option').prop('value',v).myText(approxDist(v)); c.append(op); }   return c;
     }
     var tmpSet=function(){  var [bestVal, iBest]=closest2Val(arrCoordinatePrecisionM, userInfoFrDB[ORole[this.iRole].strRole].coordinatePrecisionM); this.value=bestVal;  }
-    var tmpPropProt={strType:'select', crInp:tmpCr, setInp:tmpSet};
+    var tmpSetB=r=>{var n=r.coordinatePrecisionM, str=n<1000?"±"+n+" meter":"±"+n/1000+" km"; return str;};
+    var tmpPropProt={strType:'select', crInp:tmpCr, setInp:tmpSet, setInfo:tmpSetB, setTabF:tmpSetB, setMapF:tmpSetB, setMapMF:tmpSetB};
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.coordinatePrecisionM, tmpPropProt);  }
     
       // experience
-    if(oS.Prop.experience) extend(oS.Prop.experience, {strType:'number', inpW:4}); 
+    if(oS.Prop.experience) {
+      extend(oS.Prop.experience, {strType:'number', inpW:4}); 
+      var tmpF=r=>{var n=r.experience, boPlural=Number(n!=1); return n+' '+langHtml.timeUnit.y[0][boPlural];}; 
+      extend(oS.Prop.experience, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF, setMapMF:tmpF});
+    }
+    
     
 
       // image
@@ -373,7 +385,7 @@ app.CreatorPlugin.general=function(){
     var tmpSetInp=function(){ this.querySelector('span').mySet(); }
     var tmpSaveInp=function(){ return [null, JSON.stringify(myWebPush.subscription)]; }
     var tmpCrInfo=function(){
-      var butT=createElement('button').myText(langHtml.SendPushNotification).on('click', function(){  
+      var butT=createElement('button').css({'font-size':'85%'}).myText(langHtml.SendAPushNotification).on('click', function(){  
         if(!userInfoFrDB.user){ setMess('You need to be logged in to send a message.', 2); return; }
         viewGreeting.setUp(this.idUser, this.iRole); viewGreeting.setVis();
         doHistPush({view:viewGreeting});
@@ -766,22 +778,22 @@ app.CreatorPlugin.price=function(charRoleUC){
 app.CreatorPlugin.transportBuyer=function(){
   this.rewriteObj=function(){
       // distStartToGoal
-    var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
+    var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPointL[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
     extend(oB.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet, setMapMF:tmpSet });
       // compassPoint
-    var tmpSet=function(rowMTab){  return langHtml.compassPoint[Number(  rowMTab.compassPoint  )]; }
+    var tmpSet=function(rowMTab){  return langHtml.compassPointL[Number(  rowMTab.compassPoint  )]; }
     var crInpFunc=function(){
-      var c=createElement('select'), arrTmp=langHtml.compassPoint;
+      var c=createElement('select'), arrTmp=langHtml.compassPointL;
       for(var i=0;i<arrTmp.length;i++){  var opt=createElement('option').myText(arrTmp[i]).prop('value',i);   c.append(opt);    }
       return c;
     };
     extend(oB.Prop.compassPoint, {
       strType:'select',
       crInp:crInpFunc,
-      setInfo:tmpSet,
+      setInfo:()=>'',
       setTabF:tmpSet,
       setMapF:tmpSet,setMapMF:tmpSet,
-      setFilterButtF:function(span,val,boOn){ var tmp=langHtml.compassPoint[val]; span.firstChild.nodeValue=tmp;  }
+      setFilterButtF:function(span,val,boOn){ var tmp=langHtml.compassPointL[val]; span.firstChild.nodeValue=tmp;  }
     });
       // destination
     extend(oB.Prop.destination, {inpW:8});
@@ -803,12 +815,13 @@ app.CreatorPlugin.standingByMethod=function(){
       for(var i=0;i<arrTmp.length;i++){  var opt=createElement('option').myText(arrTmp[i]).prop('value',i);   c.append(opt);    }
       return c;
     };
+    var setMapF=r=>{  return langHtml.standingByMethodsLong[Number(  r.standingByMethod  )]; };
     extend(oS.Prop.standingByMethod, {
       strType:'select',
       crInp:crInpFunc,
       setInfo:tmpSet,
       setTabF:tmpSet,
-      setMapF:function(rowMTab){  return langHtml.standingByMethodsLong[Number(  rowMTab.standingByMethod  )]; },
+      setMapF:setMapF, setMapMF:setMapF,
       setFilterButtF:function(span,val,boOn){ var tmp=langHtml.standingByMethodsLong[val]; span.firstChild.nodeValue=tmp;  }
     });
   };
@@ -904,41 +917,41 @@ app.CreatorPlugin.taxi=function(){
   
     // oRole.Main: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
-  ['Destination', ...StrTransportBuyer, 'price', 'currency'],
-  ['RequestedVehicle', ...StrPropE],
-  ['Price', 'price', 'currency', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer': StrPropPerson},
+  {'Contact': AMinusB(StrPropContact, ['homeTown'])},
+  {'Destination': StrTransportBuyer}, //, 'price', 'currency'
+  {'RequestedVehicle': StrPropE},
+  {'Price': ['price', 'currency', 'tLastPriceChange']},
+  {'Position': StrPropPos},
+  {'Reputation': StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd', 'idDriverGovernment'],
-  ['Vehicle', 'vehicleType', 'brand', ...StrPropE, 'nExtraSeat'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller': [...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd', 'idDriverGovernment']},
+  {'Vehicle': ['vehicleType', 'brand', ...StrPropE, 'nExtraSeat']},
+  {'Contact': StrPropContact},
+  {'Price': ['currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position': StrPropPos},
+  {'Reputation': StrPropRep}]);
     
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Destination', ...StrTransportBuyer],
-  ['RequestedVehicle', ...StrPropE],
-  ['Price', 'currency', 'price']]);
+  {'Buyer':[ 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Destination':StrTransportBuyer},
+  {'RequestedVehicle':StrPropE},
+  {'Price':[ 'currency', 'price']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'],
-  ['Vehicle', 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'idDriverGovernment', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat']},
+  {'Price':['currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', ...StrPropE, 'tPos', 'idTeam'],
-  ['Destination', ...StrTransportBuyer],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ ...StrPropE, 'tPos', 'idTeam']},
+  {'Destination':StrTransportBuyer},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
-  ['Vehicle', 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE, 'brand', 'nExtraSeat']},
+  {'Reputation':StrPropRep}]);
 
   
     // Default columns
@@ -979,11 +992,25 @@ app.CreatorPlugin.taxi=function(){
   this.rewriteObj=function(){
       // nPassengers, nChildSeat, nWheelChairPlaces, nExtraSeat
     var tmp={strType:'number', inpW:3, saveInp:posNumOrEmptyF};
+
     for(let i=0;i<ORole.length;i++){
       extend(ORole[i].Prop.nPassengers, tmp);
       extend(ORole[i].Prop.nChildSeat, tmp);
       extend(ORole[i].Prop.nWheelChairPlaces, tmp);
     }
+    var charPassengerB=boIOS?'🕺':"🧍"; //🧍🚹𓀠웃🚶🕴️🕺👫👤
+    var charPassengerS='💺';
+    var tmpF=r=>charPassengerB+r.nPassengers;     extend(oB.Prop.nPassengers, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF});
+    var tmpF=r=>charPassengerS+r.nPassengers;     extend(oS.Prop.nPassengers, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF});
+    var tmpF=r=>{return {str:charPassengerB+r.nPassengers}}; extend(oB.Prop.nPassengers, {setMapMF:tmpF});
+    var tmpF=r=>{return {str:charPassengerS+r.nPassengers}}; extend(oS.Prop.nPassengers, {setMapMF:tmpF});
+
+    var charWheelChair=boIOS?'♿︎':"🦽"
+    var tmpF=r=>charWheelChair+r.nWheelChairPlaces, tmp2F=r=>{return {str:charWheelChair+r.nWheelChairPlaces}};; 
+    for(let i=0;i<ORole.length;i++){
+      extend(ORole[i].Prop.nWheelChairPlaces, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF, setMapMF:tmp2F});
+    }
+
     extend(oS.Prop.nExtraSeat, tmp);
       // brand, idDriverGovernment
     extend(oS.Prop.brand, {strType:'text',inpW:6});
@@ -991,6 +1018,24 @@ app.CreatorPlugin.taxi=function(){
   };
 };
 //0123456789abcdef
+
+
+// crInp: no arg, no this, creates and returns el
+// crInfo: no arg, uses this (span), nothing returned
+// crTabF: no arg, uses this (td), nothing returned
+
+// setInp: no arg, uses this, nothing returned
+// saveInp: no arg, uses this, returns [err val]
+
+// setInfo: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// setTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// sortTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// setMapF, setMapMF: rowMTab as arg, uses this, if something is returned...:
+//   ...and is a string, (it is displayed as a string (see more in mapDiv))
+//   ...and is an object, (it is used as seen in mapDiv)
+
+// crFilterButtF: button index as arg, no this, creates and returns el
+// setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
 
 
 //0123456789abcdef pluginTransport.js
@@ -1008,42 +1053,42 @@ app.CreatorPlugin.transport=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...AMinusB(StrPropContact, ['homeTown'])],
-  ['Destination', ...StrTransportBuyer, 'price', 'currency'],
-  ['RequestedVehicle', ...StrPropE],
-  ['Price', 'price', 'currency', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':StrPropPerson},
+  {'Contact':AMinusB(StrPropContact, ['homeTown'])},
+  {'Destination':StrTransportBuyer}, //, 'price', 'currency'
+  {'RequestedVehicle':StrPropE},
+  {'Price':[ 'price', 'currency', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd'],
-  ['Vehicle', 'vehicleType', ...StrPropE],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'standingByMethod', 'shiftEnd']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Destination', ...StrTransportBuyer],
-  ['Cargo', ...StrPropE],
-  ['Price', 'currency', 'price']]);
+  {'Buyer':[ 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Destination':StrTransportBuyer},
+  {'Cargo':StrPropE},
+  {'Price':[ 'currency', 'price']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM'],
-  ['Vehicle', 'vehicleType', ...StrPropE],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE]},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'tPos', 'idTeam'],
-  ['Cargo', ...StrPropE],
-  ['Destination', ...StrTransportBuyer],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'tPos', 'idTeam']},
+  {'Cargo':StrPropE},
+  {'Destination':StrTransportBuyer},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam'],
-  ['Vehicle', 'vehicleType', ...StrPropE],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam']},
+  {'Vehicle':[ 'vehicleType', ...StrPropE]},
+  {'Reputation':StrPropRep}]);
 
     // Default columns
   oB.ColsShowDefault= ['image', ...StrTransportBuyer, 'idTeam', 'price'];
@@ -1100,36 +1145,36 @@ app.CreatorPlugin.cleaner=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...StrPropContact],
-  ['Type', ...StrB],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':StrPropPerson},
+  {'Contact':StrPropContact},
+  {'Type':StrB},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', 'shiftEnd'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType', 'shiftEnd']},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Type', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Type':StrB},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'shiftEnd', 'coordinatePrecisionM', 'vehicleType']},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['Type', ...StrB],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'Type':StrB},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos', 'idTeam'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'shiftEnd', 'vehicleType', 'tPos', 'idTeam']},
+  {'Reputation':StrPropRep}]);
   
   
     // Default columns
@@ -1170,37 +1215,37 @@ app.CreatorPlugin.windowcleaner=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...StrB],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...StrB]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType'],
-  ['Tools', ...StrS],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType']},
+  {'Tools':StrS},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Other', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Other':StrB},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
-  ['Tools', ...StrS],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType']},
+  {'Tools':StrS},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', 'idTeam'],
-  ['Tools', ...StrS],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'vehicleType', 'tPos', 'idTeam']},
+  {'Tools':StrS},
+  {'Reputation':StrPropRep}]);
   
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
@@ -1246,33 +1291,33 @@ app.CreatorPlugin.lawnmowing=function(){
   
       // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...StrB],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...StrB]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', ...StrS],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType', ...StrS]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB]},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', ...StrS],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType', ...StrS]},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS, 'idTeam'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'vehicleType', 'tPos', ...StrS, 'idTeam']},
+  {'Reputation':StrPropRep}]);
 
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', ...StrB, 'tel', 'idTeam', 'pricePerHour'];
@@ -1321,34 +1366,34 @@ app.CreatorPlugin.snowremoval=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...oB.StrBool, 'area'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...oB.StrBool, 'area']},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType', ...oS.StrBool],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType', ...oS.StrBool]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...oB.StrBool, 'area'],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...oB.StrBool, 'area']},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', ...oS.StrBool, 'vehicleType'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', ...oS.StrBool, 'vehicleType']},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['Tools', 'vehicleType', ...StrS],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'Tools':[ 'vehicleType', ...StrS]},
+  {'Reputation':StrPropRep}]);
   
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', ...oB.StrBool, 'area', 'tel', 'idTeam', 'pricePerHour'];
@@ -1392,33 +1437,33 @@ app.CreatorPlugin.fruitpicker=function(){
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson, ...StrB],
-  ['Contact', ...StrPropContact],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':[ ...StrPropPerson, ...StrB]},
+  {'Contact':StrPropContact},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson, 'experience', 'vehicleType'],
-  ['Contact', ...StrPropContact],
-  ['Price', 'currency', ...StrDistTimePrice, 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ ...StrPropPerson, 'experience', 'vehicleType']},
+  {'Contact':StrPropContact},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM', ...StrB]},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType'],
-  ['Price', 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'experience', 'coordinatePrecisionM', 'vehicleType']},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam'],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', ...StrB, 'idTeam']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos', 'vehicleType', 'idTeam'],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'tPos', 'vehicleType', 'idTeam']},
+  {'Reputation':StrPropRep}]);
   
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', 'fruit', 'tel', 'idTeam', 'pricePerHour'];
@@ -1464,40 +1509,40 @@ app.CreatorPlugin.programmer=function(){
 
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
-  ['Buyer', ...StrPropPerson],
-  ['Contact', ...StrPropContact],
-  ['RequestedSkills', ...StrB],
-  ['Price', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Buyer':StrPropPerson},
+  {'Contact':StrPropContact},
+  {'RequestedSkills':StrB},
+  {'Price':[ 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   oS.Main=separateGroupLabels([
-  ['Seller', ...StrPropPerson],
-  ['Contact', ...StrPropContact],
-  ['Languages', ...StrS],
-  ['Price', 'currency', 'pricePerHour', 'tLastPriceChange'],
-  ['Position', ...StrPropPos],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':StrPropPerson},
+  {'Contact':StrPropContact},
+  {'Languages':StrS},
+  {'Price':[ 'currency', 'pricePerHour', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
   
     // Properties in roleSettingDiv
   oB.roleSetting=separateGroupLabels([
-  ['Buyer', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['RequestedSkills', ...StrB],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Buyer':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'RequestedSkills':StrB},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   oS.roleSetting=separateGroupLabels([
-  ['Seller', ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM'],
-  ['Languages', ...StrS],
-  ['Price', 'currency', 'pricePerHour']]);
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Languages':StrS},
+  {'Price':[ 'currency', 'pricePerHour']}]);
   
 
     // Properties in filterDiv
   oB.filter=separateGroupLabels([
-  ['Buyer', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['RequestedSkills', ...StrB],
-  ['Reputation', 'tCreated', 'donatedAmount', 'nComplaint']]);
+  {'Buyer':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'RequestedSkills':StrB},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
   oS.filter=separateGroupLabels([
-  ['Seller', 'homeTown', 'currency', 'tPos', 'idTeam'],
-  ['Languages', ...StrS],
-  ['Reputation', ...StrPropRep]]);
+  {'Seller':[ 'homeTown', 'currency', 'tPos', 'idTeam']},
+  {'Languages':StrS},
+  {'Reputation':StrPropRep}]);
 
     // Default columns
   oB.ColsShowDefault=['image', 'displayName', 'language', 'database', 'tel', 'idTeam', 'pricePerHour'];
@@ -1822,6 +1867,20 @@ app.separateGroupLabels=function(arr){
   return objOut;
 }
 
+  // Example:
+  // input: arr=[{strLabelA:[strPropA, strPropB]}, {strLabelB:[strPropC, strPropD, strPropE]}]
+  // output: objOut={StrProp:[strPropA, strPropB, strPropC, strPropD, strPropE], StrGroupFirst:[strPropA, strPropC], StrGroup:[strLabelA, strLabelB]};
+app.separateGroupLabels=function(arr){
+  var objOut={StrProp:[], StrGroupFirst:[], StrGroup:[]};
+  for(var i=0;i<arr.length;i++){ // for each subject
+    var obj=arr[i], [k]=Object.keys(obj), [arrV]=Object.values(obj);
+    objOut.StrProp=objOut.StrProp.concat(arrV);
+    objOut.StrGroupFirst.push(arrV[0]);
+    objOut.StrGroup.push(k);
+  }
+  return objOut;
+}
+
 var startPopExtend=function(el){
   el=popUpExtend(el);
   el.css({ width:'14em', padding: '1.1em'});
@@ -2054,9 +2113,7 @@ var getOAuthCode=async function(){
   //if('wwwLoginScope' in site) document.domain = site.wwwLoginScope;
   if(site.wwwLoginScope) document.domain = site.wwwLoginScope;
   window.open(uPop, '_blank', 'width=580,height=400'); //, '_blank', 'popup', 'width=580,height=400'
-  var strQS=await new Promise(resolve=>{
-    window.loginReturn=function(strQST){ resolve(strQST); }
-  });
+  var strQS=await new Promise(resolve=>{ window.loginReturn=resolve; });
 
   var params=parseQS(strQS.substring(1));
   if(!('state' in params) || params.state !== nonce) {   return ['Invalid state parameter: '+params.state]; }
@@ -3437,7 +3494,7 @@ var divSelectImageCreator=function(boSetting=false){
     if(objFile.size==0){ setMess("objFile.size==0",5); toggleResetBut(0); return; }
     var tmpMB=(objFile.size/(1024*1024)).toFixed(2);
 
-    var [err,blob]=await reduceFileSize(objFile, 50, 40, Infinity, 0.9);
+    var [err,blob]=await reduceFileSize(objFile, 200, 50, 50, 0.9);
     //el.image.prop({src:urlCreator.createObjectURL(blob)});
     el.image.src=URL.createObjectURL(blob);
 
@@ -4512,11 +4569,10 @@ var mapDivCreator=function(){
       var strName=this.oRole.ColsShow[j], tmp, prop=(strName in this.oRole.Prop)?this.oRole.Prop[strName]:{};
       var rowMTab=this.oRole.MTab[i];
       if('setMapMF' in prop) {  var tmp=prop.setMapMF.call({strName:strName, iRole:this.oRole.ind}, rowMTab);  } else tmp=rowMTab[strName];
-      if(typeof tmp=='string' || typeof tmp=='number') {
-        this.arrFuncOverData[k]=calcLabel(langHtml.prop, strName)+': '+tmp; k++;
-        //tmp=calcLabel(langHtml.prop, strName)+': '+tmp; 
-        //this.arrFuncOverData[k]=tmp; k++;
-      }
+      var str=undefined;
+      if(typeof tmp=='string' || typeof tmp=='number') { str=calcLabel(langHtml.prop, strName)+': '+tmp;}
+      else if(typeof tmp=='object' && tmp!==null) { ({str}=tmp); }
+      if(typeof str!=='undefined') { this.arrFuncOverData[k]=str; k++;}
     }
     this.arrFuncOverData.length=k;
     var tmp=this.arrFuncOverData.join('\n');

@@ -1,5 +1,8 @@
 
 "use strict"
+
+import http from "http";
+
 app.parseCookies=function(req) {
   var list={}, rc=req.headers.cookie;
   if(typeof rc=='string'){
@@ -189,7 +192,7 @@ app.getIP=function(req){
 
 app.CacheUriT=function(){
   this.set=async function(key, buf, type, boZip, boUglify){
-    var eTag=crypto.createHash('md5').update(buf).digest('hex');
+    var eTag=md5(buf);
     //if(boUglify) { // UglifyJS does not handle ecma6 (when I tested it 2019-05-05).
       //var objU=UglifyJS.minify(buf.toString());
       //buf=new Buffer(objU.code,'utf8');
@@ -254,7 +257,6 @@ app.getPost=async function(req){
     strData=fields.vec;
 
   }else{
-    //var buf, myConcat=concat(function(bufT){ buf=bufT; flow.next();  });    req.pipe(myConcat);    yield;
     var [err,buf]=await new Promise(resolve=>{  var myConcat=concat(bT=>resolve([null,bT]));    req.pipe(myConcat);  });  if(err){ this.mesEO(err); return; }
     strData=buf.toString();
   }

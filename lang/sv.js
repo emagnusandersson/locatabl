@@ -1,7 +1,7 @@
 
 
-langClientFunc=function(){
-langHtml={
+globalThis.langClientFunc=function(){
+globalThis.langHtml={
 Cancel:'Avbryt',
 Yes:'Ja',
 No:'Nej',
@@ -303,6 +303,7 @@ boat:'Båt'
 standingByMethods:['I fordon','Hemma','5 min','10 min'],
 standingByMethodsLong:['I fordon','Hemma','Redo om 5 min','Redo om 10 min'],
 compassPoint:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+compassPointL:['-', 'Nord', 'Nordost', 'Öst', 'Sydost', 'Syd', 'Sydväst', 'Väst', 'Nordväst'],
 
 ShowNUpdate:'Synlig / Ny pos',
 visible:'synlig',
@@ -388,10 +389,9 @@ idTeam:'idTeam'
 },
 
 NotYetApproved:'Ej godkänd än',
-SendPushNotification:'Skicka med­delande',
+SendAPushNotification:'Skicka ett med­delande',
 
 
-objCompassPoint:{ N:'Nord', E:'Öst', S:'Syd', W:'Väst', NE:'Nordost', SE:'Sydost', SW:'Sydväst', NW:'Nordväst'},
 
 label:{
 index:'index',
@@ -401,7 +401,7 @@ idFB:'idFB',
 idIdPlace:'idIdPlace',
 idOpenId:'idOpenId',
 terminationDate:'',
-donatedAmount:'Donationer [USD]',
+donatedAmount:'Donationer till sajten',
 tCreated:'Kontoålder',
 displayName:'Namn',
 tel:'Tel',
@@ -424,7 +424,7 @@ strUnitDist:'distansenhet',
 pricePerDist:'Pris per dist.',
 pricePerHour:'Pris per timme',
 tLastPriceChange:'Prisålder',
-tPos:'Position senast updaterad',
+tPos:'Positionsålder',
 shiftEnd:'Skift slutar om',
 boShow:'',
 x:'',
@@ -477,7 +477,7 @@ skyLift:'Skylift',
 nWindow:'Antal fönster',
 customerHasEquipment:'Kunden har utrustning',
 area:'Area [m²]',
-experience:'Erfarenhet [år]',
+experience:'Erfarenhet',
 
 pushMower:'Vanlig gräsklippare',
 ridingMower:'Åkgräsklippare',
@@ -521,7 +521,7 @@ strUnitDist:'',
 pricePerDist:'',
 pricePerHour:'',
 tLastPriceChange:'Hur länge sedan priset ändrades. (Kan vara bra om någon misstänker att priset har ändrats.)',
-tPos:'När updaterades användarens position senast. (För att underlätta att sortera bort inaktiva användare.)',
+tPos:'När updaterades positionen senast. (För att underlätta att sortera bort inaktiva användare.)',
 shiftEnd:'Hur länge dröjer det innan <span nom="theSeller">säljaren</span> slutar för dagen. (Bra för kunder som vill boka i förskott)',
 boShow:'',
 x:'',
@@ -569,7 +569,7 @@ skyLift:''
 } // langHtml
 } // function
 
-langServerFunc=function(){
+globalThis.langServerFunc=function(){
 if('taxi' in Site) Site.taxi.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Taxitracker, Hitta taxi, få taxijobb"; serv.strH1="taxi.closeby.market"; 

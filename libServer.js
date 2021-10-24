@@ -25,8 +25,6 @@ app.roundNObscure=function(resM,x,y,lat){
 }
 
 
-//var text=fs.readFileSync(strFileName, 'utf8');
-
 
 
 app.SplitterPlugIn=function(){
@@ -43,8 +41,8 @@ app.SplitterPlugIn=function(){
   }
   
   this.readFileToCacheClientJs=async function(){ // Separate readFileToCache for client.js
-    var [err, tmpObj]= await goSplit('client.js'); if(err) return [err];
-    var StrFile=tmpObj.StrFile, Buf=tmpObj.Buf;
+    var [err, objT]= await goSplit('client.js'); if(err) return [err];
+    var {StrFile, Buf}=objT;
     for(var i=0;i<StrFile.length;i++){ 
       var uriT='/'+lcfirst(StrFile[i]); 
       //var buf=new Buffer(Buf[i],'utf8');
@@ -60,11 +58,11 @@ app.createSiteSpecificClientJSAll=async function() {
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i];
     var buf=createSiteSpecificClientJS(siteName);
-    var keyCache=siteName+'/'+leafSiteSpecific;
+    var keyCache='/'+siteName+'_'+leafSiteSpecific;
     var [err]=await CacheUri.set(keyCache, buf, 'js', true, true);
 
     var buf=createManifest(siteName);
-    var keyCache=siteName+'/'+leafManifest;
+    var keyCache='/'+siteName+'_'+leafManifest;
     var [err]=await CacheUri.set(keyCache, buf, 'json', true, true);
   }
 }
@@ -76,17 +74,17 @@ app.createSiteSpecificClientJS=function(siteName) {
   //var siteSimplified={}; for(var i=0;i<StrSimplified.length;i++){ var name=StrSimplified[i]; siteSimplified[name]=site[name]; }
   var siteSimplified=copySome({},site,StrSimplified);
 
-  var Str=[];
-  Str.push("var assignSiteSpecific=function(){");
   
-  var StrVar=['boDbg', 'urlPayPal', 'storedButt', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'userInfoFrDBZero', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt', 'boGoogleReview'];
+  var StrVar=['boDbg', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'userInfoFrDBZero', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt', 'boGoogleReview'];  //, 'storedButt', 'urlPayPal'
   var objOut=copySome({},app,StrVar);
   //copySome(objOut,site,['wwwSite']);
   objOut.site=siteSimplified;
 
-  Str.push(`var tmp=`+serialize(objOut)+`;\n extend(window, tmp);`);
-
-  Str.push("}");
+  var Str=[];
+  Str.push(`globalThis.assignSiteSpecific=function(){
+var tmp=`+serialize(objOut)+`;
+extend(window, tmp);
+}`);
 
   var str=Str.join('\n');
   return str;
@@ -106,7 +104,7 @@ app.createManifest=function(siteName){
 app.createManifestNStoreToCache=async function(siteName){
   var strT=createManifest(siteName);
   var buf=Buffer.from(strT, 'utf8');
-  var [err]=await CacheUri.set(siteName+'/'+leafManifest, buf, 'json', true, false);   if(err) return [err];
+  var [err]=await CacheUri.set('/'+siteName+'_'+leafManifest, buf, 'json', true, false);   if(err) return [err];
   return [null];
 }
 app.createManifestNStoreToCacheMult=async function(SiteName){

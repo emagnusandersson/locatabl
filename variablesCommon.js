@@ -1,49 +1,47 @@
 // Inactive users may be deleted. If it happens to you, you can just sign in again, or send a message to get account back.
 
-two31=Math.pow(2,31);  intMax=two31-1;  intMin=-two31; uintMax=Math.pow(2,32)-1;
-sPerDay=24*3600;  sPerMonth=sPerDay*30;
+app.two31=Math.pow(2,31);  app.intMax=two31-1;  app.intMin=-two31; app.uintMax=Math.pow(2,32)-1;
+app.sPerDay=24*3600;  app.sPerMonth=sPerDay*30;
 
 
 
-fsWebRootFolder=process.cwd();
-flLibFolder='lib';
+var fsWebRootFolder=process.cwd();
+var flLibFolder='lib';
 
-flFoundOnTheInternetFolder=flLibFolder+"/foundOnTheInternet";
-flImageFolder=flLibFolder+"/image";  
+var flFoundOnTheInternetFolder=flLibFolder+"/foundOnTheInternet";
+app.flImageFolder=flLibFolder+"/image";  
 //flLogFolder="log";
 
   // Files: 
-leafBE='be.json';
-leafBEUpload='beUpload.json'; 
-leafUploadFront="upload.html"; 
-//leafAssign='assign.js'; 
-leafSiteSpecific='siteSpecific.js';
-leafLoginWLink="loginWLink";
-//leafVerifyEmailReturn='verifyEmail';
-leafVerifyPWResetReturn='verifyPWReset';
-leafVerifyEmailNCreateUserReturn='verifyEmailNCreateUser';
-leafManifest='manifest.json';
-leafServiceWorker='serviceworker.js';
-leafDataDelete='dataDelete';
-leafDataDeleteStatus='dataDeleteStatus';
-leafDeAuthorize='deAuthorize';
+extend(app,{
+leafBE:'be.json',
+leafBEUpload:'beUpload.json', 
+leafUploadFront:"upload.html", 
+//leafAssign:'assign.js', 
+leafSiteSpecific:'siteSpecific.js',
+leafLoginWLink:"loginWLink",
+//leafVerifyEmailReturn:'verifyEmail',
+leafVerifyPWResetReturn:'verifyPWReset',
+leafVerifyEmailNCreateUserReturn:'verifyEmailNCreateUser',
+leafManifest:'manifest.json',
+leafServiceWorker:'serviceworker.js',
+leafDataDelete:'dataDelete',
+leafDataDeleteStatus:'dataDeleteStatus',
+leafDeAuthorize:'deAuthorize',
+});
 
 
 
-hideTimerDefault=30*24*3600;
-hideTimerDefault=365*24*3600;
-hideTimerDefault=uintMax;
-if(boDbg) hideTimerDefault=30*60;
-hideTimerDefault=intMax;
-hideTimerDefault=30*60;
+var hideTimerDefault=intMax;
+var hideTimerDefault=30*60;
 
 
 
    // DB- TableNameProt
-StrTableKey=["buyerTeamImage","buyerTeam","buyer","sellerTeamImage","sellerTeam","seller","userImage","complaint","admin","webPushSubscription","user","setting"]; 
-StrViewsKey=[]; //"hist"
-TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
-ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
+var StrTableKey=["buyerTeamImage","buyerTeam","buyer","sellerTeamImage","sellerTeam","seller","userImage","complaint","admin","webPushSubscription","user","setting"]; 
+var StrViewsKey=[]; //"hist"
+var TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
+var ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
 
 
 //StrTableKey=["sellerTab","sellerTeamTab","sellerTeamImageTab","buyerTab","buyerTeamTab","buyerTeamImageTab","userImageTab","complaintTab","adminTab","settingTab","userTab"]; 
@@ -52,43 +50,43 @@ ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i
 //ViewName={};for(var i=0;i<StrViewsKey.length;i++) {var name=StrViewsKey[i]; ViewName[name]=strDBPrefix+'_'+name.slice(0,-4);}
 
 
-lenGZ=100;
-nHash=1000;
+app.lenGZ=100;
+app.nHash=1000;
 
 
-EnumUnitDist=['km','mile']
+//var EnumUnitDist=['km','mile']
 
   // histActive variables
-lenHistActive=30;
+app.lenHistActive=30;
 var maskHistActive=(1<<lenHistActive)-1;
-sqlMaskHistActive="& "+maskHistActive; if(lenHistActive==64) sqlMaskHistActive='';
+app.sqlMaskHistActive="& "+maskHistActive; if(lenHistActive==64) sqlMaskHistActive='';
 var sqlDayDiff="floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )  -  floor( UNIX_TIMESTAMP(tPos)/"+sPerDay+" )";
 var sqlHistActiveCol="histActive<<"+sqlDayDiff+"  "+sqlMaskHistActive;
 //sqlHistActiveColUpd="histActive= (histActive<<"+sqlDayDiff+" | 1) "+sqlMaskHistActive; // "<<" has higher precedence than "|"
-sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
+var sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
 
 //sqlBoBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer"; // "-" has higher precedence than "<"
 //sqlBoBeforeHiding="UNIX_TIMESTAMP(now())<UNIX_TIMESTAMP(tHide)"; // "-" has higher precedence than "<"
 //sqlBoBeforeHiding="now()<tHide"; // "-" has higher precedence than "<"
 
-userInfoFrDBZero={user:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0,complainer:0,complainee:0};
-KeyUserInfoFrDB=Object.keys(userInfoFrDBZero);
-KeySpecialist=KeyUserInfoFrDB.filter(k=>k!='user');
-arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
-wc2m=156542;   // wc2m: Point (world coordinate) to meter (at equator) (Should be earthCircumference/256 = 40074784/256 = 156542 [m])
+app.userInfoFrDBZero={user:0,buyer:0,seller:0,buyerTeam:0,sellerTeam:0,admin:0,complainer:0,complainee:0};
+var KeyUserInfoFrDB=Object.keys(userInfoFrDBZero);
+app.KeySpecialist=KeyUserInfoFrDB.filter(k=>k!='user');
+app.arrCoordinatePrecisionM=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
+app.wc2m=156542;   // wc2m: Point (world coordinate) to meter (at equator) (Should be earthCircumference/256 = 40074784/256 = 156542 [m])
 //wc2m=40074784/256;
-m2wc=1/wc2m;
+app.m2wc=1/wc2m;
 //var len=arrCoordinatePrecisionM.length;
 //arrCoordinatePrecision=Array(len); for(var i=0;i<len;i++) arrCoordinatePrecision[i]=arrCoordinatePrecisionM[i]*m2wc;
   //arrCoordinatePrecision=array(0.00001,0.00002,0.00005,0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2); 
-facNoiseCoordinate=0.5; // Extra noise so that rounded coordinates ends up on the same place
+  app.facNoiseCoordinate=0.5; // Extra noise so that rounded coordinates ends up on the same place
 
 //Enum=[];
-selEnumF=function(name){  return name+"-1";  };
-selTimeF=function(name){  return "UNIX_TIMESTAMP("+name+")";  };
+var selEnumF=function(name){  return name+"-1";  };
+var selTimeF=function(name){  return "UNIX_TIMESTAMP("+name+")";  };
 //updEnumBoundF=function(name,v){ v=bound( v, 0, Enum[name].length-1)+1;   return ['?', v];  };
-updEnumBoundF=function(name,v){ v=bound( v, 0, this[name].Enum.length-1)+1;   return ['?', v];  };
-updTimeF=function(name,v){  return [  'FROM_UNIXTIME(?)', v ];  };
+var updEnumBoundF=function(name,v){ v=bound( v, 0, this[name].Enum.length-1)+1;   return ['?', v];  };
+var updTimeF=function(name,v){  return [  'FROM_UNIXTIME(?)', v ];  };
 //updPriceF=function(name,v){  return [  "tLastPriceChange= IF("+name+"="+v+",tLastPriceChange,now()), "+name+"="+v, v ];  };
 
 
@@ -108,16 +106,17 @@ for(var i=0;i<ORoleDefault.length;i++){
   oRole.ind=i;
 }
 
-maxList=30;
+app.maxList=30;
 
 //date_default_timezone_set('UTC');
-arrLang=[['sv','Svenska'],['en','English']]; arrLangShort=[]; for(var i=0;i<arrLang.length;i++){    arrLangShort[i]=arrLang[i][0];    }
-maxGroupsInFeat=20;
-preDefault="ro.";
+app.arrLang=[['sv','Svenska'],['en','English']];
+var arrLangShort=[];   for(var i=0;i<arrLang.length;i++){    arrLangShort[i]=arrLang[i][0];    }
+app.maxGroupsInFeat=20;
+app.preDefault="ro.";
 //snoreLim=12*3600;
-snoreLim=20*24*3600;
-version='369';
-auto_increment_increment=1;
+app.snoreLim=20*24*3600;
+app.version='369';
+// var auto_increment_increment=1;
 
 
 /***********************************************************************************
@@ -128,7 +127,7 @@ auto_increment_increment=1;
 
 // Both in userTab and roleTab: tCreated, boWebPushOK, donatedAmount, nComplaintGivenCum, nComplaintGiven, nComplaintCum, nComplaint
 
-PluginF={};
+var PluginF={};
 PluginF.general=function(site){
   var [oB,oS]=site.ORole;
     // Both ////////////////////
@@ -343,7 +342,7 @@ PluginF.transportBuyer=function(site){
   //                         012345678
   var PropTmp={
     compassPoint:        {b:'111000110',type:'ENUM', default:tmpEnumCompassPoint[0], feat:{kind:'BF',bucket:tmpEnumCompassPoint}},
-    distStartToGoal:     {b:'111010111',type:'SMALLINT(2)',default:4, feat:{kind:'S11',min:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40],span:1}},
+    distStartToGoal:     {b:'111000111',type:'SMALLINT(2)',default:4, feat:{kind:'S11',min:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40],span:1}},
     destination:         {b:'111110110',type:'VARCHAR(65)', default:'', feat:{kind:'B'}},
     //price:               {b:'111011111',type:'DECIMAL(10,2)', default:0}
   };
@@ -353,7 +352,7 @@ PluginF.transportBuyer=function(site){
   Prop.compassPoint.selF=selEnumF;
   Prop.compassPoint.selOneF=selEnumF;
   Prop.compassPoint.roleUpdF=updEnumBoundF;
-  oB.StrTransportBuyer=['compassPoint','distStartToGoal','destination']; // ,'price'
+  oB.StrTransportBuyer=['distStartToGoal','compassPoint','destination']; // ,'price'
   var StrTmp=Object.keys(PropTmp);
   array_mergeM(oB.StrFiltAccept, StrTmp);
   array_mergeM(oB.StrOrder, StrTmp);
@@ -456,9 +455,9 @@ PluginF.taxi=function(site){
     // Both ////////////////////
   //                           012345678
   var PropTmp={
-    nPassengers:          {b:'111010111',type:'SMALLINT(2)',default:4, feat:{kind:'S11',min:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40],span:1}},
+    nPassengers:          {b:'111000111',type:'SMALLINT(2)',default:4, feat:{kind:'S11',min:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40],span:1}},
     nChildSeat:           {b:'111011110',type:'TINYINT', default:0, feat:{kind:'S10',min:[0, 1, 2, 3],span:1}},
-    nWheelChairPlaces:    {b:'111010110',type:'TINYINT', default:0, feat:{kind:'S10',min:[0, 1, 2, 3],span:1}}
+    nWheelChairPlaces:    {b:'111000110',type:'TINYINT', default:0, feat:{kind:'S10',min:[0, 1, 2, 3],span:1}}
   };
 
   extend(oB.Prop,PropTmp);  oB.Prop.nPassengers.default=1;
@@ -706,7 +705,7 @@ PluginF.programmer=function(site){
 }
 
 
-featCalcValExtend=function(Prop){
+var featCalcValExtend=function(Prop){
   for(var name in Prop){
     var prop=Prop[name];
     if(!('feat' in prop)) continue;
@@ -741,7 +740,7 @@ featCalcValExtend=function(Prop){
  * SiteExtend
  ***************************************************************************/
 
-siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculated from the other properties
+var siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculated from the other properties
   var {ORole}=site;
   for(var i=0;i<ORole.length;i++){
     var oRole=ORole[i], Prop=oRole.Prop;
@@ -775,9 +774,9 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
 }
 
 
-IntSizeIcon=[16, 114, 192, 200, 512, 1024];
-IntSizeIconFlip=array_flip(IntSizeIcon);
-SiteExtend=function(){
+var IntSizeIcon=[16, 114, 192, 200, 512, 1024];
+app.IntSizeIconFlip=array_flip(IntSizeIcon);
+app.SiteExtend=function(){
   Site.getSite=function(wwwReq){
     for(var i=0;i<SiteName.length;i++){
       var siteName=SiteName[i];   var tmp; if(tmp=Site[siteName].testWWW(wwwReq)) {return {siteName, wwwSite:tmp};  }
@@ -867,10 +866,9 @@ SiteExtend=function(){
 }
 
 
-nDBConnectionLimit=10; nDBQueueLimit=100;
-nDBRetry=14;
+var nDBConnectionLimit=10, nDBQueueLimit=100, nDBRetry=14;
 
-DBExtend=function(){
+app.DBExtend=function(){
   var StrDB=Object.keys(UriDB);
   for(var i=0;i<StrDB.length;i++){
     var name=StrDB[i], uriDB=UriDB[name];
@@ -896,23 +894,6 @@ DBExtend=function(){
 }
 
 
-TLSDataExtend=function(){
-  this.getContext=function(domainName){
-    for(var i=0;i<this.length;i++){
-      if(this[i].testDomain(domainName)) return this[i].context;
-    }
-    return undefined;
-    //return false;
-  }
-  
-  for(var i=0;i<this.length;i++){
-    var item=this[i];
-    if('domainReg' in item) {  item.regexp=RegExp(item.domainReg);       item.testDomain=function(domain){ return this.regexp.test(domain);};    } 
-    else item.testDomain=function(domain){ return this.domain===domain;};
-    //item.context=crypto.createCredentials({        key:  item.strKey,        cert: item.strCert      }).context;
-    item.context=tls.createSecureContext({        key:  item.strKey,        cert: item.strCert      });//.context;
-  }
-}
 
 
 

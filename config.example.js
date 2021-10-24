@@ -47,7 +47,7 @@ var createUrlAuthIdPlace=function(strIdPlace="idplace",portIdPlace=5000){
 var www192=ip.address();  // 192.168.0.X;
 if(www192=='127.0.0.1') www192='localhost';
 
-urlAuthIdplace=createUrlAuthIdPlace('idplaceorg');  // Which idplace (local or production etc.)
+var urlAuthIdplace=createUrlAuthIdPlace('idplaceorg');  // Which idplace (local or production etc.)
 strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
 strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
@@ -147,7 +147,7 @@ else {
   var strIdPlace='192';
   var strIdPlace='local';
   var strIdPlace='idplaceorg';
-  urlAuthIdplace=createUrlAuthIdPlace(strIdPlace,5002);  // Which idplace (local or production etc.)
+  var urlAuthIdplace=createUrlAuthIdPlace(strIdPlace,5002);  // Which idplace (local or production etc.)
   strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
   strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 

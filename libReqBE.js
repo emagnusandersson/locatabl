@@ -209,10 +209,10 @@ ReqBE.prototype.mesEO=function(e, statusCode=500){
 
 
 ReqBE.prototype.go=async function(){
-  var req=this.req, res=this.res, site=req.site;
+  var {req, res}=this, {site}=req;
   
-  var strT=req.headers['Sec-Fetch-Site'];
-  if(strT && strT!='same-origin') { this.mesEO(Error("Sec-Fetch-Site header is not 'same-origin' ("+strT+")"));  return;}
+  var strT=req.headers['sec-fetch-site'];
+  if(strT && strT!='same-origin') { this.mesEO(Error("sec-fetch-site header is not 'same-origin' ("+strT+")"));  return;}
   
 
   if('x-requested-with' in req.headers){
@@ -229,7 +229,7 @@ ReqBE.prototype.go=async function(){
   var jsonInput=await app.getPost.call(this, req);
   try{ var beArr=JSON.parse(jsonInput); }catch(e){ this.mesEO(e);  return; }
   
-  if(!req.boCookieOK) {
+  if(!req.boGotSessionCookie) {
     var StrTmp=Array(beArr.length);
     for(var i=0;i<beArr.length;i++){  StrTmp[i]=beArr[i][0]; }
     console.log("Cookie not set, be.json: "+StrTmp.join(', '));
@@ -240,6 +240,7 @@ ReqBE.prototype.go=async function(){
     console.log('x-requested-with: '+req.headers['x-requested-with']);
     this.mesEO(Error('Cookie not set'));  return
   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
+  // Hmm!! When tested 20211010 on the idPlace app (on IOS), it worked to log in (and that javascript is also called from a popup-window). So perhaps the iOS sends the strict cookie now.
   
   var [err,val]=await getRedis(req.sessionID+'_UserInfoFrDB', true); if(err) { this.mesEO(err);  return; }   this.sessionUserInfoFrDB=val;
   //var [err,value]=await cmdRedis('GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
@@ -260,6 +261,8 @@ ReqBE.prototype.go=async function(){
   
   
   res.setHeader("Content-type", MimeType.json);
+  res.setHeader("X-Robots-Tag", 'noindex, nofollow');
+  
 
 
     // Remove 'CSRFCode' and 'caller' form beArr
@@ -341,7 +344,7 @@ ReqBE.prototype.go=async function(){
  ******************************************************************************/
 
 ReqBE.prototype.sendLoginLink=async function(inObj){
-  var req=this.req, {site}=req, userTab=site.TableName.userTab;
+  var {req}=this, {site}=req, userTab=site.TableName.userTab;
 
   var expirationTime=20*60;
   var Ou={};
@@ -380,7 +383,7 @@ ReqBE.prototype.sendLoginLink=async function(inObj){
 
 
 ReqBE.prototype.loginWEmail=async function(inObj){
-  var req=this.req, {site}=req, Ou={};
+  var {req}=this, {site}=req, Ou={};
   var {userTab}=site.TableName;
   var Sql=[], Val=[];
   var StrRequired=['email', 'password'];
@@ -403,7 +406,7 @@ ReqBE.prototype.loginWEmail=async function(inObj){
 
 
 ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var {userTab}=site.TableName;
   var {name, email, password, iRole}=inObj;
 
@@ -460,7 +463,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
 }
 
 //ReqBE.prototype.createUser=async function(inObj){ // writing needSession
-  //var req=this.req, {site}=req;
+  //var {req}=this, {site}=req;
   //var {userTab}=site.TableName;
   //var Ou={}; //debugger
 
@@ -502,7 +505,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
 
 
 ReqBE.prototype.changePW=async function(inObj){ 
-  var req=this.req, {site}=req, siteName=site.siteName;
+  var {req}=this, {site}=req, {siteName}=site;
   var {userTab}=site.TableName;
   var Ou={boOK:0};
   //if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
@@ -530,7 +533,7 @@ ReqBE.prototype.changePW=async function(inObj){
 }
 
 ReqBE.prototype.verifyEmail=async function(inObj){ 
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var {userTab}=site.TableName;
   //if(typeof this.sessionUserInfoFrDB!='object' || !('idUser' in this.sessionUserInfoFrDB.user)) { return [new ErrorClient('No session')];}
   //var idUser=this.sessionUserInfoFrDB.user.idUser;
@@ -574,7 +577,7 @@ ReqBE.prototype.verifyEmail=async function(inObj){
 
 
 ReqBE.prototype.verifyPWReset=async function(inObj){
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var {userTab}=site.TableName;
   var Ou={boOK:0};
 
@@ -620,7 +623,7 @@ ReqBE.prototype.verifyPWReset=async function(inObj){
  * loginGetGraph
  ******************************************************************************/
 ReqBE.prototype.loginGetGraph=async function(inObj){
-  var req=this.req, {site, rootDomain}=req, objQS=req.objQS;
+  var {req}=this, {site, rootDomain}=req;
   var strFun=inObj.fun;
   var Ou={};
   if(!this.sessionUserInfoFrDB){ this.sessionUserInfoFrDB=extend({},userInfoFrDBZero); await setRedis(req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);  }
@@ -697,7 +700,7 @@ ReqBE.prototype.sellerFun=async function(){
   return [null, Ou];
 }
 //ReqBE.prototype.teamFun=async function(inObj){
-  //var req=this.req, {site}=req, {userTab, buyerTeamTab, sellerTeamTab}=site.TableName;
+  //var {req}=this, {site}=req, {userTab, buyerTeamTab, sellerTeamTab}=site.TableName;
   //var Ou={};
   //var objT=this.sessionLoginIdP, [err, results]=await accountMerge.call(this, objT); if(err) return [err];
   
@@ -717,7 +720,7 @@ ReqBE.prototype.sellerFun=async function(){
   //return [null, Ou];
 //}
 ReqBE.prototype.adminFun=async function(){
-  var req=this.req, {site}=req, {userTab, adminTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, adminTab}=site.TableName;
   var Ou={};
   var objT=this.sessionLoginIdP, [err, results]=await accountMerge.call(this, objT); if(err) return [err];
   
@@ -731,7 +734,7 @@ ReqBE.prototype.adminFun=async function(){
   return [null, Ou];
 }
 ReqBE.prototype.refetchFun=async function(){
-  var req=this.req, {site}=req, {userTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab}=site.TableName;
   var Ou={};
   var objT=this.sessionLoginIdP, [err, results]=await accountMerge.call(this, objT); if(err) return [err];
   
@@ -747,7 +750,7 @@ ReqBE.prototype.refetchFun=async function(){
 
 
 ReqBE.prototype.setupById=async function(inObj){ //check  idFB (or idUser) against the seller-table and return diverse data
-  var req=this.req, {site}=req, siteName=site.siteName, Ou={};
+  var {req}=this, {site}=req, {siteName}=site, Ou={};
   
   var StrRole=null; if(inObj && typeof inObj=='object' && 'Role' in inObj) StrRole=inObj.Role;
   
@@ -787,7 +790,7 @@ ReqBE.prototype.setupById=async function(inObj){ //check  idFB (or idUser) again
 }
 
 ReqBE.prototype.VSetPosCond=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req, Ou={}, {buyerTab, sellerTab}=site.TableName;
+  var {req}=this, {site}=req, Ou={}, {buyerTab, sellerTab}=site.TableName;
   var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!buyer && !seller) {  return [null, [Ou]];}  // this.mes('No session');  // VSetPosCond is allways called when page is loaded (for sellers as well as any visitor) 
   var {x,y}=inObj;
   var projs=new MercatorProjection(),  lat=projs.fromYToLat(y);
@@ -811,14 +814,14 @@ ReqBE.prototype.VSetPosCond=async function(inObj){  // writing needSession
 
 
 ReqBE.prototype.logout=async function(inObj){
-  var req=this.req, Ou={};
+  var {req}=this, Ou={};
   var [err,tmp]=await cmdRedis('DEL', [req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser']);
   this.sessionLoginIdP={};  this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);  this.GRet.userInfoFrDBUpd=extend({},userInfoFrDBZero);
   this.mes('Logged out'); return [null, [Ou]];
 }
 
 ReqBE.prototype.setUpCond=async function(inObj){
-  var site=this.req.site, req=this.req, {ORole}=site;
+  var {req}=this, {site}=req, {ORole}=site;
 
     // Check OFilt input
   if(!(inObj.OFilt instanceof Array)) return [new ErrorClient('!(inObj.OFilt instanceof Array)')]; 
@@ -835,7 +838,7 @@ ReqBE.prototype.setUpCond=async function(inObj){
   return [null, [Ou]];
 } 
 ReqBE.prototype.setUp=async function(inObj){  // Set up some properties etc.  (VPSize, pC, zoom).
-  var req=this.req, {site}=req, siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
+  var {req}=this, {site}=req, {siteName}=site, {userTab, buyerTab, sellerTab}=site.TableName;
   
   var Ou={},  Sql=[];
   Sql.push("SELECT UNIX_TIMESTAMP(now()) AS now;");
@@ -905,7 +908,7 @@ ReqBE.prototype.setUp=async function(inObj){  // Set up some properties etc.  (V
 
 
 ReqBE.prototype.getList=async function(inObj){
-  var req=this.req, {site}=req, siteName=site.siteName, {userTab, sellerTab, sellerTeamTab, buyerTab, buyerTeamTab, complaintTab}=site.TableName;
+  var {req}=this, {site}=req, {siteName}=site, {userTab, sellerTab, sellerTeamTab, buyerTab, buyerTeamTab, complaintTab}=site.TableName;
 
   var Ou={};
   var xl,xh,yl,yh,xho,yho;  // o for "open set" 
@@ -971,7 +974,7 @@ ReqBE.prototype.getList=async function(inObj){
   return [null, [Ou]];
 } 
 ReqBE.prototype.getSingleUser=async function(inObj){  // Not really used: Used in mapDiv elImgOpponent.
-  var req=this.req, {site}=req, {userTab, sellerTab, sellerTeamTab, buyerTab, buyerTeamTab, complaintTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, sellerTab, sellerTeamTab, buyerTab, buyerTeamTab, complaintTab}=site.TableName;
 
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
@@ -998,7 +1001,7 @@ ReqBE.prototype.getSingleUser=async function(inObj){  // Not really used: Used i
 
 
 ReqBE.prototype.getGroupList=async function(inObj){  
-  var req=this.req, {site}=req, siteName=site.siteName, {userTab, buyerTab, sellerTab}=site.TableName;
+  var {req}=this, {site}=req, {siteName}=site, {userTab, buyerTab, sellerTab}=site.TableName;
   
   //var zoomFac=Math.pow(2,this.zoom-4.3);
   var zoomFac=Math.pow(2,this.zoom-5);
@@ -1026,7 +1029,7 @@ ReqBE.prototype.getGroupList=async function(inObj){
 
 
 ReqBE.prototype.getHist=async function(inObj){
-  var req=this.req, {site}=req, {userTab, buyerTab, sellerTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, buyerTab, sellerTab}=site.TableName;
   var Ou={arrHist:[]};
   for(var i=0;i<2;i++){
     var oRole=site.ORole[i];
@@ -1057,7 +1060,7 @@ ReqBE.prototype.getHist=async function(inObj){
  *********************************************************************************************/
 
 ReqBE.prototype.UUpdate=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var {userTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
@@ -1075,7 +1078,7 @@ ReqBE.prototype.UUpdate=async function(inObj){  // writing needSession
   return [null, [Ou]];
 }
 ReqBE.prototype.USetIRoleActive=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var {userTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
@@ -1094,7 +1097,7 @@ ReqBE.prototype.USetIRoleActive=async function(inObj){  // writing needSession
 }
 
 ReqBE.prototype.UDelete=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var {userTab, buyerTab, sellerTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
@@ -1125,7 +1128,7 @@ ReqBE.prototype.UDelete=async function(inObj){  // writing needSession
  *********************************************************************************************/
 
 ReqBE.prototype.RIntroCB=async function(inObj){ // writing needSession
-  var req=this.req, {site}=req, {userTab, buyerTab, sellerTab, webPushSubscriptionTab, userImageTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, buyerTab, sellerTab, webPushSubscriptionTab, userImageTab}=site.TableName;
   var Ou={}; 
   if(isEmpty(this.sessionLoginIdP)) {this.mes('No session'); return [null, [Ou]]; }
   var {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
@@ -1194,7 +1197,7 @@ ReqBE.prototype.RIntroCB=async function(inObj){ // writing needSession
 
 
 ReqBE.prototype.RUpdate=async function(inObj){ // writing needSession
-  var req=this.req, {site}=req, [oB, oS]=site.ORole, {userTab, buyerTab, sellerTab}=site.TableName;
+  var {req}=this, {site}=req, [oB, oS]=site.ORole, {userTab, buyerTab, sellerTab}=site.TableName;
   var Ou={}; 
 
   var user=this.sessionUserInfoFrDB.user, objT;
@@ -1265,7 +1268,7 @@ ReqBE.prototype.RUpdate=async function(inObj){ // writing needSession
 }
 
 ReqBE.prototype.RShow=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req, siteName=site.siteName;
+  var {req}=this, {site}=req, {siteName}=site;
   var {userTab, buyerTab, sellerTab}=site.TableName;
   var Ou={};
   var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
@@ -1304,7 +1307,7 @@ ReqBE.prototype.RShow=async function(inObj){  // writing needSession
   return [null, [Ou]];
 }
 ReqBE.prototype.RHide=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req, siteName=site.siteName;
+  var {req}=this, {site}=req, {siteName}=site;
   var {userTab, buyerTab, sellerTab, buyerTeamTab, sellerTeamTab}=site.TableName;
   var Ou={};
   var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
@@ -1342,7 +1345,7 @@ ReqBE.prototype.RHide=async function(inObj){  // writing needSession
 
 
 ReqBE.prototype.RHide=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var Ou={};
   var {user, buyer, seller}=this.sessionUserInfoFrDB; if(!user || (!buyer && !seller)) { this.mes('No session'); return [null, [Ou,'errFunc']];}
   var {idUser}=user;
@@ -1362,7 +1365,7 @@ ReqBE.prototype.RHide=async function(inObj){  // writing needSession
 //
 
 ReqBE.prototype.complaintUpdateComment=async function(inObj){
-  var req=this.req, {site}=req, siteName=site.siteName;
+  var {req}=this, {site}=req, {siteName}=site;
   var {userTab,complaintTab}=site.TableName;
   var Ou={};
   var objT=this.sessionUserInfoFrDB.user||this.sessionLoginIdP;  if(isEmpty(objT)) {this.mes('No session'); return [null, [Ou]]; }
@@ -1407,7 +1410,7 @@ ReqBE.prototype.complaintUpdateComment=async function(inObj){
   return [null, [Ou]];
 }
 ReqBE.prototype.complaintUpdateAnswer=async function(inObj){
-  var req=this.req, {site}=req, siteName=site.siteName;
+  var {req}=this, {site}=req, {siteName}=site;
   var complaintTab=site.TableName.complaintTab;
   var Ou={};
   //var {user, seller}=this.sessionUserInfoFrDB; if(!user || !seller) { this.mes('No session'); return [null, [Ou]];}
@@ -1437,7 +1440,7 @@ ReqBE.prototype.complaintUpdateAnswer=async function(inObj){
 }
 
 ReqBE.prototype.complaintOneGet=async function(inObj){
-  var req=this.req, {site}=req, {userTab, complaintTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, complaintTab}=site.TableName;
   var Ou={};   
   //debugger
   var {user}=this.sessionUserInfoFrDB; //if(!user) { this.mes('No session'); return [null, [Ou]];}
@@ -1456,7 +1459,7 @@ ReqBE.prototype.complaintOneGet=async function(inObj){
 }
 
 ReqBE.prototype.getComplaintsOnComplainee=async function(inObj){
-  var req=this.req, {site}=req, {userTab, complaintTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, complaintTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
   
@@ -1473,7 +1476,7 @@ ReqBE.prototype.getComplaintsOnComplainee=async function(inObj){
   return [null, [Ou]];
 }
 ReqBE.prototype.getComplaintsFromComplainer=async function(inObj){
-  var req=this.req, {site}=req, {userTab, sellerTab, complaintTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, sellerTab, complaintTab}=site.TableName;
   var Ou={};   
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
 
@@ -1497,7 +1500,7 @@ ReqBE.prototype.getComplaintsFromComplainer=async function(inObj){
 //
 
 ReqBE.prototype.teamSaveName=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var Ou={};
   var {link,iRole}=inObj;
   if(!Number.isInteger(iRole)) { this.mes('iRole is not an integer'); return [null, [Ou,'errFunc']];}
@@ -1518,7 +1521,7 @@ ReqBE.prototype.teamSaveName=async function(inObj){  // writing needSession
   return [null, [Ou]];
 }
 ReqBE.prototype.teamSave=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var Ou={};
   var {idUser, iRole, boOn}=inObj;
   if(!Number.isInteger(iRole)) { this.mes('iRole is not an integer'); return [null, [Ou,'errFunc']];}
@@ -1538,7 +1541,7 @@ ReqBE.prototype.teamSave=async function(inObj){  // writing needSession
 }
 
 ReqBE.prototype.teamLoad=async function(inObj){  // writing needSession
-  var req=this.req, {site}=req, {userTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab}=site.TableName;
   var Ou={};
   var {iRole}=inObj;
   if(!Number.isInteger(iRole)) { this.mes('iRole is not an integer'); return [null, [Ou,'errFunc']];}
@@ -1574,7 +1577,7 @@ ReqBE.prototype.teamLoad=async function(inObj){  // writing needSession
 
 
 ReqBE.prototype.deleteImage=async function(inObj){
-  var req=this.req, {site}=req, {userTab, userImageTab}=site.TableName;
+  var {req}=this, {site}=req, {userTab, userImageTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
@@ -1591,7 +1594,7 @@ ReqBE.prototype.deleteImage=async function(inObj){
 
 
 ReqBE.prototype.keyRemoteControlSave=async function(inObj){
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var {userTab}=site.TableName;
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
@@ -1608,7 +1611,7 @@ ReqBE.prototype.keyRemoteControlSave=async function(inObj){
 
 
 ReqBE.prototype.getSetting=async function(inObj){ 
-  var req=this.req, {site}=req;
+  var {req}=this, {site}=req;
   var Var=inObj.Var;
   var settingTab=site.TableName.settingTab;
   var Ou={};
@@ -1618,7 +1621,7 @@ ReqBE.prototype.getSetting=async function(inObj){
   return [null, [Ou]];
 }
 ReqBE.prototype.setSetting=async function(inObj){ 
-  var req=this.req, {site}=req; 
+  var {req}=this, {site}=req; 
   var settingTab=site.TableName.settingTab;
   var Ou={};
   var StrApp=[],  StrServ=[];
@@ -1634,7 +1637,7 @@ ReqBE.prototype.setSetting=async function(inObj){
 
 
 ReqBE.prototype.uploadImage=async function(inObj){
-  var self=this, req=this.req, {site}=req, siteName=site.siteName;
+  var self=this, {req}=this, {site}=req, {siteName}=site;
   var {userTab, sellerTeamTab, sellerTeamImageTab, buyerTeamTab, buyerTeamImageTab, userImageTab}=site.TableName;
   var Ou={};
   var regImg=RegExp("^(png|jpeg|jpg|gif|svg)$");
@@ -1698,7 +1701,7 @@ ReqBE.prototype.uploadImage=async function(inObj){
 
 
 ReqBE.prototype.uploadImageB64=async function(inObj){
-  var self=this, req=this.req, {site}=req, siteName=site.siteName;
+  var self=this, {req}=this, {site}=req, {siteName}=site;
   var {userTab, sellerTeamTab, sellerTeamImageTab, buyerTeamTab, buyerTeamImageTab, userImageTab}=site.TableName;
   var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
   var Ou={};
@@ -1744,7 +1747,7 @@ ReqBE.prototype.uploadImageB64=async function(inObj){
 
 
 ReqBE.prototype.setWebPushSubcription=async function(inObj){
-  var self=this, req=this.req, {site}=req, siteName=site.siteName;
+  var self=this, {req}=this, {site}=req, {siteName}=site;
   var {userTab, sellerTab, buyerTab, webPushSubscriptionTab}=site.TableName;
   var Ou={};
 
@@ -1778,7 +1781,7 @@ ReqBE.prototype.setWebPushSubcription=async function(inObj){
 }
 
 ReqBE.prototype.sendNotification=async function(inObj){
-  var self=this, req=this.req, {site}=req, siteName=site.siteName;
+  var self=this, {req}=this, {site}=req, {siteName}=site;
   var {userTab, sellerTab, buyerTab, webPushSubscriptionTab}=site.TableName;
   var Ou={};
   var {idReceiver, iRole, message, latlngSender}=inObj;

@@ -1,48 +1,49 @@
 
 
 
-http = require("http");
-url = require("url");
-path = require("path");
-fs = require("fs");
-fsPromises = require("fs/promises");
-crypto = require('crypto');
-mysql =  require('mysql');
-gm =  require('gm').subClass({ imageMagick: true });
-concat = require('concat-stream');
-//requestMod = require('request');
-querystring = require('querystring');
-redis = require("redis");
-UglifyJS = require("uglify-js");
-sgMail = require('@sendgrid/mail');
-ip = require('ip');
+global.app=global;
+
+import http from "http";
+import url from "url";
+import path from "path";
+import fs, {promises as fsPromises} from "fs";
+import crypto from 'crypto';
+import mysql from 'mysql';
+import concat from 'concat-stream';
+import redis from "redis";
+import UglifyJS from "uglify-js";
+import sgMail from '@sendgrid/mail';
+import ip from 'ip';
+import gmTmp from 'gm';
+app.gm=gmTmp.subClass({ imageMagick: true });
+var argv = minimist(process.argv.slice(2));
+
+app.extend=Object.assign;
 
 
+var boDbg=1;
+await import('./lib.js');
+await import('./libServerGeneral.js');
+await import('./libServer.js');
+await import('./libMysql.js');
+await import('./testLib.js');
 
-boDbg=1;
-require('./lib.js');
-require('./libServerGeneral.js');
-require('./libServer.js');
-require('./libMysql.js');
-require('./testLib.js');
 
-app=(typeof window==='undefined')?global:window;
+var vPassword=aPassword='123'; strSalt='abc'
+await import('./filterServer.js'); 
+await import('./variablesCommon.js');
+await import('./libReqBE.js');
+await import('./libReq.js'); 
 
-vPassword=aPassword='123'; strSalt='abc'
-require('./filterServer.js'); 
-require('./variablesCommon.js');
-require('./libReqBE.js');
-require('./libReq.js'); 
+var port=5000
 
-boDbg=0; port=5000
-
-UriDB={default:'mysql://root:jh10k@localhost/mmm'};
+app.UriDB={default:'mysql://root:jh10k@localhost/mmm'};
 var www192=ip.address(), www192WPort=www192+':'+port
-Site={
-    transport:{wwwSite:www192WPort+'/transport', strRootDomain:"192Loc", googleAnalyticsTrackingID:"", db:"default"}
-  }
-
-DBExtend(DB={});
+app.Site={
+  transport:{wwwSite:www192WPort+'/transport', strRootDomain:"192Loc", googleAnalyticsTrackingID:"", db:"default"}
+}
+app.DB={}
+DBExtend(DB);
 
 
 // node --inspect --debug-brk testNeo4j.js --gengetInfoNDataNeo
@@ -71,18 +72,18 @@ for(var i=0;i<myArg.length;i++){
 
 if(typeof strGenerator=='undefined') strGenerator='littleTester';
 if(typeof www=='undefined') www='localhost:5000';
-boTLS=false;
+var boTLS=false;
 
 
 console.log(strGenerator);
 
-headers={'if-none-match':'', "if-modified-since":0};
-req={method:'GET', boTLS, www, headers, site:Site.transport};  //, objUrl, strSchemeLong, pathName
+var headers={'if-none-match':'', "if-modified-since":0};
+var req={method:'GET', boTLS, www, headers, site:Site.transport};  //, objUrl, strSchemeLong, pathName
 
-tmpf=function(){};
+var tmpf=function(){};
 //thisObj={req, res, GRet:{}, mesEO:tmpf, tModBrowser:(new Date()).toUnix(), Str:[]};
 
-objArg={boTLS, www, requesterCacheTime:0}
+var objArg={boTLS, www, requesterCacheTime:0}
 
 
 
