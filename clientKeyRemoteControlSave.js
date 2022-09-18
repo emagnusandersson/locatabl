@@ -236,11 +236,11 @@ app.boTouch = Number('ontouchstart' in document.documentElement);  //boTouch=1;
 
 var uaLC = navigator.userAgent.toLowerCase();
 app.boAndroid = uaLC.indexOf("android") > -1;
-app.boFennec = uaLC.indexOf("firefox") > -1; 
+//app.boFennec = uaLC.indexOf("firefox") > -1; 
 
 app.boChrome= /chrome/i.test(uaLC);
 app.boIOS= /iPhone|iPad|iPod/i.test(uaLC);
-window.boEdge= /\bedg\b/i.test(uaLC);
+//window.boEdge= /\bedg\b/i.test(uaLC);
 
 var strScheme='http'+(boTLS?'s':''),    strSchemeLong=strScheme+'://',    uSite=strSchemeLong+wwwSite,     uCommon=strSchemeLong+wwwCommon,    uBE=uSite+"/"+leafBE;
 

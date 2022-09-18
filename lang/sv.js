@@ -192,7 +192,7 @@ labOrdinal:'Logga in nu och bli användare nummer <span></span>.',
 Info:'Info',
 OtherJobs:'Andra jobb/tjänster...',
 OtherMapApps:'Andra kartappar...',
-OtherMarkets:'Andra marknader',
+OtherSites:'Andra sajter',
 ComparisonTable:'Jämförelse tabell',
 FilterTitle:'Filter (dölj ointressanta användare)',
 ToggleBetweenBuyerAndSeller:'Växla mellan köpare och <span nom="sellers">säljare</span>',
@@ -572,7 +572,7 @@ skyLift:''
 globalThis.langServerFunc=function(){
 if('taxi' in Site) Site.taxi.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Taxitracker, Hitta taxi, få taxijobb"; serv.strH1="taxi.closeby.market"; 
+  serv.strTitle="Taxitracker, Hitta taxi, få taxijobb"; serv.strH1="taxi.locatabl.com"; 
   serv.strDescription="Trackersajt för taxibilar/taxiförare.";
   serv.strKeywords="taxi, taxijobb, taxitracker";
   serv.strSummary="<div>\n\
@@ -584,7 +584,7 @@ if('taxi' in Site) Site.taxi.langSetup=function(){
 
 if('transport' in Site) Site.transport.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Budbilstracker, Hitta budbilar, få budbilsjobb"; serv.strH1="transport.closeby.market"; 
+  serv.strTitle="Budbilstracker, Hitta budbilar, få budbilsjobb"; serv.strH1="transport.locatabl.com"; 
   serv.strDescription="Trackersajt för budbilar.";
   serv.strKeywords="budbilar, chaufförer, chaufförsjobb, lastbilschaufför, transportjobb, förartracker";
   serv.strSummary="<div>\n\
@@ -596,7 +596,7 @@ if('transport' in Site) Site.transport.langSetup=function(){
 
 if('cleaner' in Site) Site.cleaner.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Städartracker, Hitta städare/städarbete"; serv.strH1="cleaner.closeby.market"; 
+  serv.strTitle="Städartracker, Hitta städare/städarbete"; serv.strH1="cleaner.locatabl.com"; 
   serv.strDescription="Trackersajt för städare.";
   serv.strKeywords="städare, städjobb, tracker";
   serv.strSummary="<div>\n\
@@ -606,7 +606,7 @@ if('cleaner' in Site) Site.cleaner.langSetup=function(){
 }
 if('windowcleaner' in Site) Site.windowcleaner.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Hitta fönsterputsare"; serv.strH1="windowcleaner.closeby.market"; 
+  serv.strTitle="Hitta fönsterputsare"; serv.strH1="windowcleaner.locatabl.com"; 
   serv.strDescription="Trackersajt för fönsterputsare.";
   serv.strKeywords="fönsterputsare, fönsterputsarjobb, tracker";
   serv.strSummary="<div>\n\
@@ -617,7 +617,7 @@ if('windowcleaner' in Site) Site.windowcleaner.langSetup=function(){
 
 if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Tracker av frukt och grönsaksplockare"; serv.strH1="fruitpicker.closeby.market"; 
+  serv.strTitle="Tracker av frukt och grönsaksplockare"; serv.strH1="fruitpicker.locatabl.com"; 
   serv.strDescription="Trackersajt av frukt och grönsaksplockare.";
   serv.strKeywords="tracker frukt och grönsaksplockare, jobb";
   serv.strSummary="<div>\n\
@@ -628,7 +628,7 @@ if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
 
 if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Tracker av gräsklipparentreprenörer"; serv.strH1="lawnmowing.closeby.market"; 
+  serv.strTitle="Tracker av gräsklipparentreprenörer"; serv.strH1="lawnmowing.locatabl.com"; 
   serv.strDescription="Trackersajt av gräsklipparentreprenörer.";
   serv.strKeywords="tracker gräsklipparentreprenörer, jobb";
   serv.strSummary="<div>\n\
@@ -639,7 +639,7 @@ if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
 
 if('programmer' in Site) Site.programmer.langSetup=function(){ 
   var serv=this.serv={};
-  serv.strTitle="Tracker av programmerare, Hitta programmerare/programmeringsjobb"; serv.strH1="programmer.closeby.market"; 
+  serv.strTitle="Tracker av programmerare, Hitta programmerare/programmeringsjobb"; serv.strH1="programmer.locatabl.com"; 
   serv.strDescription="Trackersajt för programmerare.";
   serv.strKeywords="Programmerare, programmeringsjobb, tracker, frilans";
   serv.strSummary="<div>\n\

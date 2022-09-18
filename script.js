@@ -159,7 +159,7 @@ sgMail.setApiKey(apiKeySendGrid);
 
 
   // Set up webPush
-webPush.setVapidDetails('https://closeby.market', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+webPush.setVapidDetails('https://locatabl.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 await import('./filterServer.js'); 
 await import('./variablesCommon.js');

@@ -6,7 +6,7 @@ CALL demodupMake();   CALL taxidupMake();   CALL transportdupMake();   CALL clea
 
 -- Upload new version
 
--- https://taxi.closeby.market/sql/createTableAll  https://taxi.closeby.market/sql/createFunctionAll
+-- https://taxi.locatabl.com/sql/createTableAll  https://taxi.locatabl.com/sql/createFunctionAll
 
 CALL demodupTrunkOrgNCopyBack();   CALL taxidupTrunkOrgNCopyBack();   CALL transportdupTrunkOrgNCopyBack();   CALL cleanerdupTrunkOrgNCopyBack();   CALL windowcleanerdupTrunkOrgNCopyBack();   CALL fruitpickerdupTrunkOrgNCopyBack();  CALL lawnmowerdupTrunkOrgNCopyBack();   CALL snowremovaldupTrunkOrgNCopyBack();   CALL programmerdupTrunkOrgNCopyBack();
 

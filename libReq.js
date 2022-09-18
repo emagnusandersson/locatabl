@@ -14,8 +14,16 @@
 // using geohash at first query
 
 // globSubscription must be stored in a database mustn't it.
-// Should one use dataSet instead of prop when storing data in the DOM
-// Use element.classList.add / toggle etc instead of custom library methods
+// Should one use dataSet instead of prop when storing data in the DOM.
+// Use element.classList.add / toggle etc instead of custom library methods.
+// inert attribute
+// Reduce the need of user-agent-string
+// SanitizerAPI (only supported by chrome)
+// Element.isVisible (not yet supported by safari and firefox)
+// Use Navigation API instead of History API (only supported by chrome)
+// dotenv
+// nodemon
+// test dbeaver and posman
 
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 //https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
@@ -37,7 +45,7 @@ app.reqCurlEnd=async function(){
     //var boAllowDbg=boDbg && RegExp("^http\:\/\/(localhost|192\.168\.0)").test(http_origin);
     var boAllowDbg=boDbg && RegExp("^https?\:\/\/(localhost|192\.168\.0)").test(http_origin);
     //boAllowDbg=1;
-    if(boAllowDbg || http_origin == "https://control.closeby.market" || http_origin == "https://controlclosebymarket.herokuapp.com" || http_origin == "https://emagnusandersson.github.io" ){
+    if(boAllowDbg || http_origin == "https://control.locatabl.com" || http_origin == "https://controllocatabl.herokuapp.com" || http_origin == "https://emagnusandersson.github.io" ){
         res.setHeader("Access-Control-Allow-Origin", http_origin);
         res.setHeader("Vary", "Origin"); 
     }
@@ -793,7 +801,7 @@ app.reqVerifyPWResetReturn=async function() {
   var strTxt=`<h3>New password on `+wwwSite+`</h3>
 <p>Your new password on `+wwwSite+` is `+password+`</p>`;
   
-  if(boDbg) wwwSite="closeby.market";
+  if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset', html:strTxt };
 
   var [err]=await sgMail.send(msg).toNBP();
@@ -868,7 +876,7 @@ app.reqStatic=async function() {
   var {req, res}=this, {site, pathName}=req, {siteName}=site;
 
 
-  //var RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(closeby\.market|gavott\.com)")];
+  //var RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(locatabl\.com|gavott\.com)")];
   //var RegAllowedOriginOfStaticFile=[RegExp("^http\:\/\/(localhost|192\.168\.0)")];
   var RegAllowedOriginOfStaticFile=[];
   setAccessControlAllowOrigin(req, res, RegAllowedOriginOfStaticFile);
@@ -2106,7 +2114,7 @@ app.SetupSql.prototype.createDummies=async function(siteName){
     vehicleType:{Enum:['sedan']},
     
     brand:{Enum:['Volvo','Saab','VW','Toyota','Ford','Hyundai','Mercedes','Fiat','Dodge','Mazda','BMW','Audi','Lloyd','Opel','Skoda','Ferrari','Lamborgini','Seat','Chrysler','Chevrolet','Scania','Aston Martin','Bentley','Jaguar','Land Rover','Honda','Nissan','Rolls Royce']},
-    link:{Enum:['example.com','www.example.com','closeby.market','gavott.com','example.com','']},
+    link:{Enum:['example.com','www.example.com','locatabl.com','gavott.com','example.com','']},
     nPassengers:{Enum:range(2,20,1)},
     nChildSeat:{Enum:[0,1,2]}, nExtraSeat:{Enum:[0,1,2]}, nWheelChairPlaces:{Enum:[0,1,2]},
     idTeam:{Enum:[1,2,3]}, idTeamWanted:{Enum:[1,2,3]},

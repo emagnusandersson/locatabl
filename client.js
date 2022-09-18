@@ -54,10 +54,10 @@ setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
 // base-tag, srcset
 
 
-//closebymarket
+//locatabl
  //Requests the geolocation permission on page load
  //in css :root : margin:0, height:100%
- // closebymarket: StrFiltAccept not used!?
+ // locatabl: StrFiltAccept not used!?
  // zoom problem
 
  
@@ -999,14 +999,16 @@ app.CreatorPlugin.taxi=function(){
       extend(ORole[i].Prop.nChildSeat, tmp);
       extend(ORole[i].Prop.nWheelChairPlaces, tmp);
     }
-    var charPassengerB=boSafari?'💺':"🯅"; //🧍🚹𓀠웃🚶🕴️🕺👫👤🯅
-    var charPassengerS='💺';
+    //var charPassengerB=boSafari?'💺':"🯅"; //🧍🚹𓀠웃🚶🕴️🕺👫👤🯅
+    var charPassengerB='🚹'
+    var charPassengerS='🚹';  //💺
     var tmpF=r=>charPassengerB+r.nPassengers;     extend(oB.Prop.nPassengers, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF});
     var tmpF=r=>charPassengerS+r.nPassengers;     extend(oS.Prop.nPassengers, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF});
     var tmpF=r=>{return {str:charPassengerB+r.nPassengers}}; extend(oB.Prop.nPassengers, {setMapMF:tmpF});
     var tmpF=r=>{return {str:charPassengerS+r.nPassengers}}; extend(oS.Prop.nPassengers, {setMapMF:tmpF});
 
-    var charWheelChair=boSafari?'♿︎':"🦽"
+    //var charWheelChair=boSafari?'♿︎':"🦽"
+    var charWheelChair='♿︎'
     var tmpF=r=>charWheelChair+r.nWheelChairPlaces, tmp2F=r=>{return {str:charWheelChair+r.nWheelChairPlaces}};; 
     for(let i=0;i<ORole.length;i++){
       extend(ORole[i].Prop.nWheelChairPlaces, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF, setMapMF:tmp2F});
@@ -2715,7 +2717,9 @@ var viewUserSettingCreator=function(){
     divIPSetting.setUp();
     //inpKeyRemoteControl.value=tmp.keyRemoteControl; 
     //var urlKey=strSchemeLong+tmp.keyRemoteControl+'@'+site.wwwSite;
-    var urlKey=uSite+'#'+tmp.keyRemoteControl;
+    var {keyRemoteControl}=tmp
+    var boDisableCopy=keyRemoteControl.length==0;  butCopy.prop("disabled",boDisableCopy);
+    var urlKey=uSite+'#'+keyRemoteControl;
     inpKeyRemoteControl.prop({value:urlKey, title:"iSeq: "+tmp.iSeq});
     return true;
   }
@@ -2766,6 +2770,7 @@ var viewUserSettingCreator=function(){
     var urlKey=uSite+'#'+strUUID;
     inpKeyRemoteControl.prop({value:urlKey, title:"iSeq: 0"});
     var vec=[['keyRemoteControlSave',{keyRemoteControl:strUUID}]];   majax(vec);
+    butCopy.prop("disabled",false);
   }
   var butGenerateKeyRemoteControl=createElement('button').myText('Generate new key').on('click',generateF);
   var copy=function(){
@@ -3378,9 +3383,9 @@ var viewEntryCreator=function(oRole){
   //var YouCanUseCustomImage=createElement('div').myText(langHtml.YouCanUseCustomImage);
   var NoteYouCanDeleteYourAccount=createElement('div').myText(langHtml.NoteYouCanDeleteYourAccount);
   //var FBToPreventMultipleAccounts=createElement('div').myText(langHtml.FBToPreventMultipleAccounts);
-  //var aPrivacyPolicy=createElement('a').prop({href:'https://info.closeby.market/Privacy_policy_2016-Oct-12'}).myText("Privacy policy 2016-Oct-12");
-  //var aDisclaimer=createElement('a').prop({href:'https://info.closeby.market/Disclaimer_2016-Oct-12'}).myText("Disclaimer 2016-Oct-12").css({display:'block'});
-  var aMoreAboutWhyAnIdPIsUsed=createElement('a').prop({href:'https://info.closeby.market/WhyIsAnIdPUsed'}).myText(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
+  //var aPrivacyPolicy=createElement('a').prop({href:'https://info.locatabl.com/Privacy_policy_2016-Oct-12'}).myText("Privacy policy 2016-Oct-12");
+  //var aDisclaimer=createElement('a').prop({href:'https://info.locatabl.com/Disclaimer_2016-Oct-12'}).myText("Disclaimer 2016-Oct-12").css({display:'block'});
+  var aMoreAboutWhyAnIdPIsUsed=createElement('a').prop({href:'https://info.locatabl.com/WhyIsAnIdPUsed'}).myText(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
 
   
   el.teamApprovedMess=createElement('div').css({display:'block'}).myText('Team/brand not approved, Contact '+domainName+' to become approved.');
@@ -4814,7 +4819,7 @@ var viewFrontCreator=function(el){
 
   //var uWikiT=uWiki,tmp='trackerSites'; if(strLang!='en') tmp+='_'+strLang; uWikiT+='/'+tmp;
   var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
-  var infoLink=createElement('a').prop({href:uWikiT}).myText(langHtml.OtherMarkets).on('click', function(){  
+  var infoLink=createElement('a').prop({href:uWikiT}).myText(langHtml.OtherSites).on('click', function(){  
     ga('send', 'event', 'button', 'click', 'wiki');
   }).css({'margin':'0.4em', 'text-align':'center', 'max-width':'min-content'});
   //var divLink=createElement('div').myAppend(infoLink);
@@ -5784,7 +5789,7 @@ var beRet=function(data){
 }
 
 var userInfoFrDBUpdVideo={
-  user:{displayName: "John Doe", email: "john@example.com", idFB: "100000000000000", idUser: 15, image: "https://taxi.closeby.market/image/u1", nameIP: "John Doe"}
+  user:{displayName: "John Doe", email: "john@example.com", idFB: "100000000000000", idUser: 15, image: "https://taxi.locatabl.com/image/u1", nameIP: "John Doe"}
 }
 window.GRet=function(data){
   if('curTime' in data) curTime=data.curTime;
@@ -5935,7 +5940,7 @@ app.boChrome= /chrome/.test(uaLC);
 app.boIOS= /iphone|ipad|ipod/.test(uaLC);
 app.boSafari= /safari/.test(uaLC);
 app.boEpiphany=/epiphany/.test(uaLC);    if(boEpiphany && !boAndroid) boTouch=false;  // Ugly workaround
-app.boEdge= /\bedg\b/.test(uaLC);
+//app.boEdge= /\bedg\b/.test(uaLC);
 app.boUCBrowser = 0;
 
 window.boOpera=RegExp('OPR\\/').test(ua); if(boOpera) boChrome=false; //alert(ua);
@@ -6072,7 +6077,7 @@ app.wsOnePixTransparent=wseImageFolder+'dummy.png';
 
 
 
-var uWiki='https://info.closeby.market';
+var uWiki='https://info.locatabl.com';
 
 
 var WCMIN=0, WCMAX=256, WCMID=WCMAX/2;

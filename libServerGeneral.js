@@ -172,7 +172,7 @@ app.delRedis=async function(arr){
   
 
 
-    // closebymarket
+    // locatabl
   //var StrSuffix=['_Main', '_LoginIdP', '_LoginIdUser', '_UserInfoFrDB', '_Counter'];  var StrCaller=['index'], for(var i=0;i<StrCaller.length;i++){  StrSuffix.push('_CSRFCode'+ucfirst(StrCaller[i])); }
   //var err=await changeSessionId.call(this, sessionIDNew, StrSuffix);
 app.changeSessionId=async function(sessionIDNew, StrSuffix){
@@ -297,14 +297,14 @@ app.setAccessControlAllowOrigin=function(req, res, RegAllowed){
     else {
       for(var i=0;i<RegAllowed.length;i++){ boAllowed=RegAllowed[i].test(http_origin); if(boAllowed) break; }
     }
-    //if(boAllowDbg || http_origin == "https://control.closeby.market" || http_origin == "https://controlclosebymarket.herokuapp.com" || http_origin == "https://emagnusandersson.github.io" ){
+    //if(boAllowDbg || http_origin == "https://control.locatabl.com" || http_origin == "https://controllocatabl.herokuapp.com" || http_origin == "https://emagnusandersson.github.io" ){
     if(boAllowed){
       res.setHeader("Access-Control-Allow-Origin", http_origin);
       res.setHeader("Vary", "Origin"); 
     }
   }
 }
-//RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(control\.closeby\.market|controlclosebymarket\.herokuapp\.com|emagnusandersson\.github\.io)")];
+//RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(control\.locatabl\.com|controllocatabl\.herokuapp\.com|emagnusandersson\.github\.io)")];
 //if(boDbg) RegAllowedOriginOfStaticFile.push(RegExp("^http\:\/\/(localhost|192\.168\.0)"));
 //setAccessControlAllowOrigin(res, req, RegAllowedOriginOfStaticFile);
 

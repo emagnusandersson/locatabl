@@ -1,6 +1,6 @@
 {
   "type": "module",
-  "name": "closebymarket",
+  "name": "locatabl",
   "version": "0.0.0",
   "description": "Tracking and comparisson tool for people in different commercial roles",
   "main": "script.js",

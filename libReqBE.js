@@ -20,7 +20,7 @@
 //     reqVerifyPWResetReturn (Return from email)
 
 
-// closebymarket:
+// locatabl:
 //   client.js
 //     $loginWLinkDiv (calls sendLoginLink)
 //     $loginWEmailDiv (calls loginWEmail)
@@ -33,7 +33,7 @@
 
 
 
-// closebymarketNew:
+// locatablNew:
 //   client.js
 //     $loginSelectorDiv
 //       $formLogin (calls loginWEmail or sendLoginLink) 
@@ -168,7 +168,7 @@ ReqBE.prototype.mesO=function(e){
   this.Str.push(strEBrowser);
   this.GRet.strMessageText=this.Str.join(', '); 
    
-    // closebymarket-specific
+    // locatabl-specific
   this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
   var objOut=copySome({}, this, ["dataArr", "GRet"]);
@@ -198,7 +198,7 @@ ReqBE.prototype.mesEO=function(e, statusCode=500){
   this.Str.push(strEBrowser);
   this.GRet.strMessageText=this.Str.join(', ');
   
-    // closebymarket-specific
+    // locatabl-specific
   this.GRet.sessionLoginIdP=this.sessionLoginIdP;
   
   //res.writeHead(500, {"Content-Type": MimeType.txt}); 
@@ -370,7 +370,7 @@ ReqBE.prototype.sendLoginLink=async function(inObj){
 <p>Otherwise ignore this message.</p>`;
 //<p>Note! The link stops working `+expirationTime/60+` minutes after the email was sent.</p>`;
   
-  if(boDbg) wwwSite="closeby.market";
+  if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Login link',  html:strTxt};
 
   var [err]=await sgMail.send(msg).toNBP();
@@ -451,7 +451,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
 <p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
-  if(boDbg) wwwSite="closeby.market";
+  if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Email verification / account creation', html:strTxt };
 
   var [err]=await sgMail.send(msg).toNBP();
@@ -564,7 +564,7 @@ ReqBE.prototype.verifyEmail=async function(inObj){
 <p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
 
-  if(boDbg) wwwSite="closeby.market";
+  if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Email verification', html:strTxt };
 
   var [err]=await sgMail.send(msg).toNBP();
@@ -608,7 +608,7 @@ ReqBE.prototype.verifyPWReset=async function(inObj){
 <p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
 //<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
   
-  if(boDbg) wwwSite="closeby.market";
+  if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset request', html:strTxt };
 
   if(err) {console.log(err); return [new ErrorClient(err.body)]; }

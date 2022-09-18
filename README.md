@@ -1,6 +1,6 @@
-closebymarket - Tracker software (web app) (like a taxi app)
+locatabl - Tracker software (web app) (like a taxi app)
 ======================
 
 Using Node.js, MySQL (mariaDB) and Redis.
 
-See more info at https://closeby.market/
+See more info at https://locatabl.com/

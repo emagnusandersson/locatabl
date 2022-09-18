@@ -97,12 +97,12 @@ if(process.env.strInfrastructure=='heroku'){
   //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
   //wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;
-  //wwwLoginScope="closeby.market";
+  //wwwLoginScope="locatabl.com";
 
   RegRedir=[
   function(req){
     var Str=RegExp('^([^\\.]+)\\.tracker\\.center$').exec(req.headers.host);
-    if(Str) {    return 'https://'+Str[1]+'closeby.market/'+req.url;   }
+    if(Str) {    return 'https://'+Str[1]+'locatabl.com/'+req.url;   }
     return null;
   }
   ];
@@ -126,12 +126,12 @@ if(process.env.strInfrastructure=='heroku'){
  
   //LevelMaintenance={ taxi:0, transport:0, cleaner:0, windowcleaner:0, fruitpicker:0, lawnmowing:0, snowremoval:0, programmer:0};
   levelMaintenance=0;
-  //wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;  //wwwLoginScope="closeby.market";
+  //wwwLoginRet=Site.taxi.wwwSite+"/"+leafLoginBack;  //wwwLoginScope="locatabl.com";
 
   RegRedir=[
   function(req){
     var Str=RegExp('^([^\\.]+)\\.tracker\\.center$').exec(req.headers.host);
-    if(Str) {    return 'https://'+Str[1]+'closeby.market/'+req.url;   }
+    if(Str) {    return 'https://'+Str[1]+'locatabl.com/'+req.url;   }
     return null;
   }
   ];

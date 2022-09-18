@@ -222,7 +222,7 @@ Element.prototype.visibilityToggle=function(b){
 
 Node.prototype.detach=function(){ this.remove(); return this; }
 
-app.isVisible=function(el) {
+app.isVisible=function(el) {  // Could be replaced with el.isVisible ?!?
   return !!( el.offsetWidth || el.offsetHeight || el.getClientRects().length );
 }
 
@@ -516,14 +516,14 @@ app.makeMapMultBubble=function(objIn){
 app.getExifOrientation=function(abData) { // The input is an ArrayBuffer
   const intSOI=0xFFD8, APP1=0xFFE1, intExifHeader=0x45786966;
   var view = new DataView(abData);
-  if(view.getUint16(0, false) != intSOI) { return [new Error("not jpeg")];   }
-
+  if(view.getUint16(0, false) != intSOI) { return [new Error("notJpeg")];   }
   var length = view.byteLength, offset = 2;
   while(offset < length) {
+    if(view.getUint16(offset+2, false) <= 8) return [new Error("notDefined")];
     var marker = view.getUint16(offset, false);
     offset += 2;
     if(marker == APP1) {
-      if(view.getUint32(offset += 2, false) != intExifHeader) { return [new Error("not defined")];  }
+      if(view.getUint32(offset += 2, false) != intExifHeader) { return [new Error("notDefined")];  }
       var little = view.getUint16(offset += 6, false) == 0x4949;
       offset += view.getUint32(offset + 4, little);
       var tags = view.getUint16(offset, little);
@@ -536,9 +536,9 @@ app.getExifOrientation=function(abData) { // The input is an ArrayBuffer
     else if((marker & 0xFF00) != 0xFF00) break;
     else offset += view.getUint16(offset, false);
   }
-  return [new Error("not defined")]; 
-
+  return [new Error("notDefined")];
 }
+
 
 // Derived from https://stackoverflow.com/a/40867559, cc by-sa
 app.imgToCanvasWithOrientation=function(img, rawWidth, rawHeight, orientation) {
@@ -591,7 +591,12 @@ app.reduceFileSize=async function(file, acceptFileSize, maxWidth, maxHeight, qua
   });
   
     // Extract orientation
-  var [err, orientation]=getExifOrientation(abData);  if(err) return [err]   
+  var [err, orientation]=getExifOrientation(abData);
+  if(err) {
+    var {message}=err
+    if(message=="notDefined" || message=="notJpeg") orientation=1;
+    else  return [err]  
+  }
 
     // Decide new dimensions
   var w=img.width, h=img.height;
@@ -609,8 +614,6 @@ app.reduceFileSize=async function(file, acceptFileSize, maxWidth, maxHeight, qua
 
   return [null, blob];
 }
-
-
 
 
 

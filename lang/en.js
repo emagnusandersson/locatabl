@@ -188,7 +188,7 @@ labOrdinal:'Join now and be user number <span></span>.',
 Info:'Info',
 OtherJobs:'Other jobs/services...',
 OtherMapApps:'Other map apps',
-OtherMarkets:'Other markets',
+OtherSites:'Other sites',
 ComparisonTable:'Comparison table',
 FilterTitle:'Filter (hide uninteresting users)',
 ToggleBetweenBuyerAndSeller:'Toggle between buyers and <span nom="sellers">sellers</span>',
@@ -572,7 +572,7 @@ skyLift:''
 globalThis.langServerFunc=function(){
 if('taxi' in Site) Site.taxi.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="taxi.closeby.market"; 
+  serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="taxi.locatabl.com"; 
   serv.strDescription="Positioning/tracking-tool for finding and comparing taxicabs in the neighborhood";
   serv.strKeywords="job, work, search tool, tracker, taxi, taxicab, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -584,7 +584,7 @@ if('taxi' in Site) Site.taxi.langSetup=function(){
 
 if('transport' in Site) Site.transport.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Couriers / Truckers, Jobs"; serv.strH1="transport.closeby.market"; 
+  serv.strTitle="Couriers / Truckers, Jobs"; serv.strH1="transport.locatabl.com"; 
   serv.strDescription="Positioning/tracking-tool for finding and comparing couriers and goods transports";
   serv.strKeywords="job, work, search tool, tracker, truckers, couriers, drivers, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -596,7 +596,7 @@ if('transport' in Site) Site.transport.langSetup=function(){
 
 if('cleaner' in Site) Site.cleaner.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Cleaners / Janitors / Chars, Jobs"; serv.strH1="cleaner.closeby.market";
+  serv.strTitle="Cleaners / Janitors / Chars, Jobs"; serv.strH1="cleaner.locatabl.com";
   serv.strDescription="Positioning/tracking-tool for finding and comparing cleaners/janitors/chars";
   serv.strKeywords="job, work, search tool, tracker, cleaners, chars, janitors, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -606,7 +606,7 @@ if('cleaner' in Site) Site.cleaner.langSetup=function(){
 }
 if('windowcleaner' in Site) Site.windowcleaner.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Window Cleaners, Jobs"; serv.strH1="windowcleaner.closeby.market";
+  serv.strTitle="Window Cleaners, Jobs"; serv.strH1="windowcleaner.locatabl.com";
   serv.strDescription="Positioning/tracking-tool for finding and comparing window cleaners";
   serv.strKeywords="job, work, search tool, tracker, window cleaners, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -617,7 +617,7 @@ if('windowcleaner' in Site) Site.windowcleaner.langSetup=function(){
 
 if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Fruit / Vegetable Pickers, Jobs"; serv.strH1="fruitpicker.closeby.market";
+  serv.strTitle="Fruit / Vegetable Pickers, Jobs"; serv.strH1="fruitpicker.locatabl.com";
   serv.strDescription="Positioning/tracking-tool for finding and comparing fruit/vegetable-pickers.";
   serv.strKeywords="job, work, search tool, tracker, fruit, vegetable,  pickers, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -628,7 +628,7 @@ if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
 
 if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Lawn Mower Drivers, Jobs"; serv.strH1="lawnmowing.closeby.market";
+  serv.strTitle="Lawn Mower Drivers, Jobs"; serv.strH1="lawnmowing.locatabl.com";
   serv.strDescription="Positioning/tracking-tool for finding and comparing lawn mowing entrepreneurs / people ready mow lawns";
   serv.strKeywords="job, work, search tool, tracker, lawn mowing, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -638,7 +638,7 @@ if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
 }
 if('snowremoval' in Site) Site.snowremoval.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Snow Removal, Jobs"; serv.strH1="snowremoval.closeby.market";
+  serv.strTitle="Snow Removal, Jobs"; serv.strH1="snowremoval.locatabl.com";
   serv.strDescription="Positioning/tracking-tool for finding and comparing snow shovelers/plowers ...";
   serv.strKeywords="job, work, search tool, tracker, snow removal, shoveling, plowing, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -649,7 +649,7 @@ if('snowremoval' in Site) Site.snowremoval.langSetup=function(){
 
 if('programmer' in Site) Site.programmer.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Programmers, Jobs"; serv.strH1="programmer.closeby.market";
+  serv.strTitle="Programmers, Jobs"; serv.strH1="programmer.locatabl.com";
   serv.strDescription="Positioning/tracking-tool for finding and comparing programmers.";
   serv.strKeywords="job, work, search tool, tracker, programmers, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\
@@ -660,7 +660,7 @@ if('programmer' in Site) Site.programmer.langSetup=function(){
 
 if('demo' in Site) Site.demo.langSetup=function(){
   var serv=this.serv={};
-  serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="(demo) taxi.closeby.market"; 
+  serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="(demo) taxi.locatabl.com"; 
   serv.strDescription="Positioning/tracking-tool for finding and comparing taxicabs in the neighborhood";
   serv.strKeywords="job, work, search tool, tracker, taxi, taxicab, freelance, business, entrepreneurs, jobs, job center";
   serv.strSummary="<div>\n\

@@ -9,7 +9,7 @@
             "localRoot": "${workspaceFolder}",
             "name": "Attach to Remote",
             "port": 9229,
-            "remoteRoot": "~/closebymarket/",
+            "remoteRoot": "~/locatabl/",
             "request": "attach",
             "skipFiles": [
                 "<node_internals>/**"
@@ -37,6 +37,26 @@
             ],
             "program": "${workspaceFolder}/script.js",
             "args": ["--sql", "createFunction"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "createTable",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "createTable"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "populateSetting",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "populateSetting"]
         }
     ]
 }
