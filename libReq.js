@@ -11,9 +11,11 @@
 // Ability to set default hideTimer in plugin
 // boUseIdPImg => boUseOwnImg ??
 // blue/pink quickDiv background
-// using geohash at first query
+// usage of geohash:
+//   boCalcZoom: 2-dim search seam slow but I don't think one can use geohash.
+//   getRectangleSelection could be called on client side (although boCalcZoom has to be done i a separate request)
 
-// globSubscription must be stored in a database mustn't it.
+// globSubscription must be stored in a database mustn't it. (It seams to work, when tested with multiple users.) 
 // Should one use dataSet instead of prop when storing data in the DOM.
 // Use element.classList.add / toggle etc instead of custom library methods.
 // inert attribute
@@ -24,6 +26,7 @@
 // dotenv
 // nodemon
 // test dbeaver and posman
+
 
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 //https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
@@ -804,10 +807,11 @@ app.reqVerifyPWResetReturn=async function() {
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset', html:strTxt };
 
-  var [err]=await sgMail.send(msg).toNBP();
-  if(err) {res.out500(err); return; }
-
-  res.end("A new password has been generated and sent to your email address.");
+  //var [err]=await sgMail.send(msg).toNBP();
+  // if(err) {res.out500(err); return; }
+  // res.end("A new password has been generated and sent to your email address.");
+  let sendResult=await smtpTransport.sendMail(msg)
+  res.end(sendResult.response);
 }
 
 app.reqVerifyEmailNCreateUserReturn=async function() {

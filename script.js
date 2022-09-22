@@ -1,5 +1,5 @@
 
-global.app=global;
+globalThis.app=globalThis;
 import http from "http";
 import https from 'https';
 import url from "url";
@@ -16,7 +16,7 @@ import Streamify from 'streamify-string';
 import validator from 'validator';
 import serialize from 'serialize-javascript';
 import UglifyJS from "uglify-js";
-import sgMail from '@sendgrid/mail';
+//import sgMail from '@sendgrid/mail';
 import ip from 'ip';
 import webPush from 'web-push';
 import mime from "mime";
@@ -24,11 +24,15 @@ import mysql from 'mysql';
 import minimist from 'minimist';
 import gmTmp from 'gm';
 app.gm=gmTmp.subClass({ imageMagick: true });
+import nodemailer from 'nodemailer';
+//import dotenv from 'dotenv';
+//dotenv.config()
+
 var argv = minimist(process.argv.slice(2));
 
 app.extend=Object.assign;
-extend(app, {http, url, path, fsPromises, concat, fetch, formidable, crypto, zlib, redis, Streamify, validator, serialize, UglifyJS, sgMail, ip, webPush, mime, mysql, gm});
-
+extend(app, {http, url, path, fsPromises, concat, fetch, formidable, crypto, zlib, redis, Streamify, validator, serialize, UglifyJS, ip, webPush, mime, mysql, gm});
+//, sgMail
 
 await import('./lib.js')
 await import('./libMath.js');;
@@ -89,7 +93,7 @@ maxLoginUnactivity:10*60,  // Used on _LoginIdP, _LoginIdUser
 boVideo:0,
 boUseSelfSignedCert:false,
 wsIconDefaultProt:"/Site/Icon/icon<size>.png",
-boGoogleReview:false,
+boAllowEmailLoginOnSomeSites:false,
 intDDOSMax:100, // intDDOSMax: How many requests before DDOSBlocking occurs. 
 tDDOSBan:5, // tDDOSBan: How long in seconds til the blocking is lifted
 intDDOSIPMax:200, // intDDOSIPMax: How many requests before DDOSBlocking occurs. 
@@ -101,7 +105,7 @@ RegRedir:[],
 strSalt:'abcdefghijklmnopqrstuvxyz', // Random letters to prevent that the hashed passwords looks the same as on other sites.
 strIPPrim:'fb', 
 strIPAlt:'idplace',
-apiKeySendGrid:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+//apiKeySendGrid:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 emailRegisterdUser:"mail@example.com",
 RootDomain:{},
 Site:{},
@@ -154,9 +158,12 @@ app.SiteName=Object.keys(Site);
 
 
   // Set up mail
-sgMail.setApiKey(apiKeySendGrid);
-//objSendgrid  = sendgrid(sendgridName, sendgridPassword);
-
+//sgMail.setApiKey(apiKeySendGrid);
+app.smtpTransport=nodemailer.createTransport({
+  host:'smtp-relay.sendinblue.com',
+  port:587,
+  auth:objSendinblueAuth
+})
 
   // Set up webPush
 webPush.setVapidDetails('https://locatabl.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);

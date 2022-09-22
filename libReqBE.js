@@ -320,7 +320,7 @@ ReqBE.prototype.go=async function(){
   for(var k=0; k<beArr.length; k++){
     var strFun=beArr[k][0];
     if(in_array(strFun,allowed)) {
-      var inObj=beArr[k][1],     tmpf; if(strFun in this) tmpf=this[strFun]; else tmpf=global[strFun];
+      var inObj=beArr[k][1],     tmpf; if(strFun in this) tmpf=this[strFun]; else tmpf=globalThis[strFun];
       if(typeof inObj=='undefined' || typeof inObj=='object') {} else {this.mesO('inObj should be of type object or undefined'); return;}
       var fT=[tmpf,inObj];   Func.push(fT);
     }
@@ -373,10 +373,14 @@ ReqBE.prototype.sendLoginLink=async function(inObj){
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Login link',  html:strTxt};
 
-  var [err]=await sgMail.send(msg).toNBP();
-  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  // var [err]=await sgMail.send(msg).toNBP();
+  // if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  // this.mes('Email sent');
 
-  this.mes('Email sent'); Ou.boOK=1;
+  let sendResult=await smtpTransport.sendMail(msg)
+  this.mes(sendResult.response);
+  
+  Ou.boOK=1;
   
   return [null, [Ou]];
 }
@@ -454,10 +458,13 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Email verification / account creation', html:strTxt };
 
-  var [err]=await sgMail.send(msg).toNBP();
-  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  // var [err]=await sgMail.send(msg).toNBP();
+  // if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  // this.mes('Email sent');
 
-  this.mes('Email sent');
+  let sendResult=await smtpTransport.sendMail(msg)
+  this.mes(sendResult.response);
+
   Ou.boOK=1;
   return [null, [Ou]];
 }
@@ -567,10 +574,13 @@ ReqBE.prototype.verifyEmail=async function(inObj){
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Email verification', html:strTxt };
 
-  var [err]=await sgMail.send(msg).toNBP();
-  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  // var [err]=await sgMail.send(msg).toNBP();
+  // if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  // this.mes('Email sent');
 
-  this.mes('Email sent');
+  let sendResult=await smtpTransport.sendMail(msg)
+  this.mes(sendResult.response);
+
   Ou.boOK=1;
   return [null, [Ou]];
 }

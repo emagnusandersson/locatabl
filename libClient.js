@@ -672,7 +672,7 @@ app.MyWebPush=function(){
   self.unsubscribeUser=async function(){
     //const funPromiseErr=function(errT) { err=errT; if(semY) flow.next(); semCB=1; }
       // Use the PushManager to get the user’s subscription to the push service.
-    var [err,subscription]=swRegistration.pushManager.getSubscription().toNBP();
+    var [err,subscription]=await swRegistration.pushManager.getSubscription().toNBP();
     if(err){ cbFunW(err); return;}
     self.subscription=subscription;
     

@@ -386,6 +386,7 @@ idTeam:'Team-id'
 
 NotYetApproved:'Not yet approved',
 SendAPushNotification:'Send a push not­ifica­tion',
+YouCanNotReceivePushNotifications:'Note! You can currently not receive push notifications. Enable them in "⚙">"User Settings".',
 
 //standingByMethods:['0','1','2','3','4','5','10'],
 //standingByMethodsLong:['0','1','2','3','4','5','10'],

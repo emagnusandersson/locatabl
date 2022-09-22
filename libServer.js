@@ -75,16 +75,17 @@ app.createSiteSpecificClientJS=function(siteName) {
   var siteSimplified=copySome({},site,StrSimplified);
 
   
-  var StrVar=['boDbg', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'userInfoFrDBZero', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt', 'boGoogleReview'];  //, 'storedButt', 'urlPayPal'
+  var StrVar=['boDbg', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'userInfoFrDBZero', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt', 'boAllowEmailLoginOnSomeSites'];  //, 'storedButt', 'urlPayPal'
   var objOut=copySome({},app,StrVar);
   //copySome(objOut,site,['wwwSite']);
   objOut.site=siteSimplified;
 
   var Str=[];
-  Str.push(`globalThis.assignSiteSpecific=function(){
-var tmp=`+serialize(objOut)+`;
-extend(window, tmp);
-}`);
+//   Str.push(`globalThis.assignSiteSpecific=function(){
+// var tmp=`+serialize(objOut)+`;
+// extend(window, tmp);
+// }`);
+  Str.push(`globalThis.objSiteSpecific=`+serialize(objOut)+`;`);
 
   var str=Str.join('\n');
   return str;

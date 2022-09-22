@@ -377,7 +377,7 @@ app.CreatorPlugin.general=function(){
     var tmpCrInp=function(strType){
       const tmpF=function(){ this.mySet(); }
       const tmpFOne=function(err){ if(!err) myWebPush.uploadFun(); }
-      var spanInpToggle=new SpanInpWebPushToggle(tmpF,strType=='setting'?tmpFOne:undefined).css({display:'inline-block'});
+      var spanInpToggle=new SpanInpWebPushToggle(tmpF, strType=='setting'?tmpFOne:undefined).css({display:'inline-block'});
       //var butToggle=createElement('button').myText('boPushToggle').on('click', cbToggle );
       //myWebPush.ButToggle.push(butToggle);
       var c=createElement('span').myAppend(spanInpToggle); return c;
@@ -2179,7 +2179,7 @@ var viewFormLoginCreator=function(){
   var divHead=createElement('h3').myText('Sign in using email / password').css({'text-align':'center'});
 
   var formLogin=document.querySelector('#formLogin');
-  if(boGoogleReview&&site.siteName=="demo") formLogin.css({display:"block"});
+  if(boAllowEmailLogin) formLogin.css({display:"block"});
   var inpEmail=formLogin.querySelector("input[name='email']").css({'max-width':'100%'});
   var inpPass=formLogin.querySelector("input[name='password']").css({'max-width':'100%'});
   var buttLogin=formLogin.querySelector("button[name='submit']").css({"margin-top": "1em"}).on('click',loginWEmail);
@@ -2254,7 +2254,7 @@ var divLoginSelectorCreator=function(oRole){
   var divLeft=createElement('div').css(cssCol).css({'text-align':'center'}).myAppend(imgFb); divLeft.insertAdjacentHTML('beforeend', '<p>Email, name and image are used, although not shown publicly unless you want to.</p><p>Nothing is written to your Facebook flow.</p>' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
   //<p>Facebook is used to encourage uniqness.</p>
   var divRight=createElement('div').css(cssCol).css({'border-left':'2px solid grey', 'text-align':'center'}).myAppend( buttonViaEmail);        divRight.hide();
-  if(boGoogleReview && site.siteName=='demo') {divRight.show();}
+  if(boAllowEmailLogin) {divRight.show();}
 
   var divRow=createElement('div').myAppend(divLeft, divRight).css({display: 'flex', 'justify-content':'space-around'});  //
 
@@ -2311,7 +2311,7 @@ var viewCreateUserCreator=function(){
   var h1=createElement('h1').myText('Create account');
 
   var formCreateAccount=document.querySelector('#formCreateAccount');
-  if(boGoogleReview&&site.siteName=="demo") formCreateAccount.css({display:"block"});
+  if(boAllowEmailLogin) formCreateAccount.css({display:"block"});
   var inpName=formCreateAccount.querySelector("input[name='name']").css({'max-width':'100%'});
   var inpEmail=formCreateAccount.querySelector("input[name='email']").css({'max-width':'100%'});
   var inpPass=formCreateAccount.querySelector("input[name='password']").css({'max-width':'100%'});
@@ -5615,6 +5615,7 @@ var viewGreetingCreator=function(){
     var strMess='';
     if(strGeoErrCode) strMess='Geolocation must be enabled and work. ('+strGeoErrCode+', '+strGeoErrMessage+')';
     divDisabledMess.toggle(Boolean(strGeoErrCode)).myText(strMess);
+    divRemember.toggle(!myWebPush.boSubscribed)
   }
   el.setUpB=function(){ // Called in setVis
     butSendMess.disabled=true;  elText.value=''; elText.focus();
@@ -5641,8 +5642,9 @@ var viewGreetingCreator=function(){
 
   //.cssChildren({'margin':'1em 0em 1em 0.6em'});;
    
+  var divRemember=createElement('div').myText(langHtml.YouCanNotReceivePushNotifications)
 
-  var divCont=createElement('div').addClass('contDiv').myAppend(elText, butSendMess, divDisabledMess);
+  var divCont=createElement('div').addClass('contDiv').myAppend(divRemember, elText, butSendMess, divDisabledMess);
 
       // divFoot
   var buttonBack=createElement('button').myText(strBackSymbol).addClass('fixWidth').on('click', historyBack).css({'margin-left':'0.8em','margin-right':'1em'});
@@ -6007,7 +6009,11 @@ if(err) { console.log(mess+':\n'+err); alert(mess+':\n'+err); return; }
 
 //if(boVideo) boTouch=true;
 
-assignSiteSpecific();
+//assignSiteSpecific();
+extend(app, objSiteSpecific);
+
+app.boAllowEmailLogin=objSiteSpecific.boAllowEmailLoginOnSomeSites&&site.siteName=="demo"
+
 console.log('boDbg='+boDbg);
 
 app.ORole=site.ORole;
@@ -6644,7 +6650,7 @@ window.divReCaptcha=divReCaptchaExtend(viewCreateUser.divReCaptcha);
 window.cbRecaptcha=function(){
   if(viewCreateUser.style.display!='none') { console.log('Setting up recaptcha (onload)'); divReCaptcha.setUp(); } // Otherwise "render" will occur when viewCreateUser is opened.
 }
-if(boGoogleReview && site.siteName=='demo') divReCaptcha.loadScript();
+if(boAllowEmailLogin) divReCaptcha.loadScript();
 
 
 busyLarge.show();

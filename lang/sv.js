@@ -390,6 +390,7 @@ idTeam:'idTeam'
 
 NotYetApproved:'Ej godkänd än',
 SendAPushNotification:'Skicka ett med­delande',
+YouCanNotReceivePushNotifications:'Obs! Du har inte tillåtit inkommande meddelanden. Gå till "⚙">"Användarinställningar" för att tillåta dem.',
 
 
 

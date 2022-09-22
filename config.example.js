@@ -51,8 +51,9 @@ var urlAuthIdplace=createUrlAuthIdPlace('idplaceorg');  // Which idplace (local 
 strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
 strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
-apiKeySendGrid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-emailRegisterdUser="noreply@example.com";
+//apiKeySendGrid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+objSendinblueAuth={ user:"noreply@example.com", pass:"XXXXXXXXXXXXXX" }
+emailRegisterdUser=objSendinblueAuth.user;
 
 
 
