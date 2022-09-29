@@ -20,12 +20,27 @@
 // Use element.classList.add / toggle etc instead of custom library methods.
 // inert attribute
 // Reduce the need of user-agent-string
-// SanitizerAPI (only supported by chrome)
-// Element.isVisible (not yet supported by safari and firefox)
-// Use Navigation API instead of History API (only supported by chrome)
 // dotenv
 // nodemon
 // test dbeaver and posman
+// substr depricated ?!?!?
+// sendgrid to sendinblue in idPlace
+// In client.js: Use viewUploadImagePopCreator (with reduceImageSize) instead of viewUploadImagePop. (In viewTeamCreator and image.crInp )
+// Instead of idTeam, strKey (more easy to remember) should be used.
+// in taxi_sellerTeam ... id should be idSeller ... instead of idUser
+// test dialog
+// After a push-message has arrived, and one clicks "Activate" the latest tab opens (I think) not necessarily the tab with a map on.
+// Some times a push-message is sent, the image doesn't come along (sec-fetch-mode header not allowed (no-cors)) (only when debugger window is closed)
+// Should perhaps use onDomContentLoaded instead of onLoad  +  use defer instead of async
+
+// How to attach Chrome DevTools to node --inspect
+// Sampling heap profiler (heap-profile module)
+
+// Not on all browsers:
+// SanitizerAPI (only supported by chrome)
+// Element.isVisible (not yet supported by safari and firefox)
+// Use Navigation API instead of History API (only supported by chrome)
+// cqi, cqw
 
 
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
@@ -862,7 +877,7 @@ app.reqVerifyEmailNCreateUserReturn=async function() {
 </head><body>`];
   var uSite=req.strSchemeLong+req.wwwSite
   //if(boIns) Str.push("An account has been created. Go back to <a href=\""+uSite+"\">"+req.wwwSite+"</a>."); else Str.push("Your account was updated."); //and you can login with the email / password you 
-  if(boIns) Str.push("Account created! Please return to your previous browser / tab and hit reload to continue."); else Str.push("Your account was updated."); //and you can login with the email / password you selected
+  if(boIns) Str.push("<b>Account created!</b><p>Now close this tab, go back, and login with your new account."); else Str.push("Your account was updated."); //and you can login with the email / password you selected
   //Str.push("<a href=\"javascript:window.open('','_self').close();\">close</a>, ");
   //Str.push("<a href=\""+uSite+"\">"+req.wwwSite+"</a>");
   Str.push('</body></html>');
@@ -1149,7 +1164,7 @@ tr td:empty { background:#bbb !important}
       var row=matA[i];
       var {idUser, image, boUseIdPImg, idFB, tPos, tLastWriteOfTA, b_tAccumulated, b_hideTimer, s_tAccumulated, s_hideTimer, histActive}=row;
       row.image='<image src="'+image+'">';
-      row.boUseIdPImg=boUseIdPImg?'yes':'<image src="/image/u'+idUser+'">';
+      row.boUseIdPImg=boUseIdPImg?'<div style="background:lightgreen">yes</div>':'<image style="background:pink" src="/image/u'+idUser+'">';
       if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture" title='+idFB+'>'; } else row.idFB='';
 
       for(var j=0;j<Keys.length;j++){

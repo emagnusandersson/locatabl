@@ -25,10 +25,12 @@ import minimist from 'minimist';
 import gmTmp from 'gm';
 app.gm=gmTmp.subClass({ imageMagick: true });
 import nodemailer from 'nodemailer';
+//import v8 from 'v8'
 //import dotenv from 'dotenv';
 //dotenv.config()
 
 var argv = minimist(process.argv.slice(2));
+
 
 app.extend=Object.assign;
 extend(app, {http, url, path, fsPromises, concat, fetch, formidable, crypto, zlib, redis, Streamify, validator, serialize, UglifyJS, ip, webPush, mime, mysql, gm});
@@ -220,8 +222,17 @@ if(boDbg){
   fs.watch('.', makeWatchCB('.', ['filter.js', 'clientKeyRemoteControlSave.js', 'libClient.js', 'lib.js', 'serviceworker.js']) );
   fs.watch('stylesheets', makeWatchCB('stylesheets', ['style.css']) );
   fs.watch('lang', makeWatchCB('lang', ['en.js', 'sv.js']) );
+
 }
 
+// process.on('SIGUSR2', signal => {
+//   console.log(`Received signal ${signal}. Writing heapsnapshot.`);
+//   if(global.gc) { 
+//     console.log(`garbage collecting`);
+//     global.gc();
+//   }
+//   v8.writeHeapSnapshot();
+// });
 
 app.tIndexMod=new Date(); tIndexMod.setMilliseconds(0);
 

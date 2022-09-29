@@ -236,7 +236,7 @@ app.CreatorPlugin.general=function(){
     const tmpSetMapF=function(rowMTab){
       var {idTeam, imTagTeam}=rowMTab, tmp;
       if(idTeam) { //&& idTeam.length>0 && idTeam!==0
-        var strTmp=URoleTeamImage[this.iRole]+idTeam+'?v='+imTagTeam;
+        var strTmp=URoleTeamImageProt[this.iRole]+idTeam+'?v='+imTagTeam;
         tmp = {url:strTmp, boUseFrame:true};
       } else tmp=(this.iRole?langHtml.IndependentSeller:langHtml.IndependentBuyer).replace("<br>","\n");
       return tmp;
@@ -341,7 +341,7 @@ app.CreatorPlugin.general=function(){
       var c=createElement('span');
       var thumb=c.thumb=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle'});
       c.butDeleteImg=createElement('button').myText(langHtml.Delete).on('click', function(){
-        var vec=[['deleteImage',{},function(data){
+        var vec=[['clearUserImage',{},function(data){
           if(data.boOK) userInfoFrDB.user.boUseIdPImg=true;
           //for(var i=0;i<2;i++){viewSetting.ElRole[i].setUp();}
           viewUserSetting.setUp();
@@ -1646,15 +1646,15 @@ app.butTimeStampCreator=function(iRole, colName){ // Used in plugins (in viewTab
   return el;
 }
 
+
 app.thumbTeamCreator=function(oRole){
   var el=createElement('a');
-  //var uRoleTeamImage=oRole==oB?uBuyerTeamImage:uSellerTeamImage;
   el.mySet=function(rT){
     //var rT=oRole.MTab[iMTab];
     var data=rT.idTeam, tag=rT.imTagTeam;
     if(data!=0) {
       el.show();
-      var strTmp=URoleTeamImage[oRole.ind]+data+'?v='+tag;
+      var strTmp=URoleTeamImageProt[oRole.ind]+data+'?v='+tag;
       img.prop({src:strTmp});
       var url=rT.linkTeam;  if(url && url.length && !RegExp("^https?:\/\/","i").test(url)) { url='http://'+url; }      el.prop({href:url});
     }else el.hide();
@@ -2490,13 +2490,15 @@ var viewConvertIDCreator=function(){
  *******************************************************************************************************************
  *******************************************************************************************************************/
 
+
+
 app.butTeamImgCreator=function(oRole){
   var el=createElement('span');
   el.mySet=function(idTeam,boOn){
     var boId=Number(idTeam)!=0;
     spanIndependent.toggle(!boId);   im.toggle(boId);
     if(boId){
-      var strTmp=URoleTeamImage[oRole.ind]+idTeam;
+      var strTmp=URoleTeamImageProt[oRole.ind]+idTeam;
       im.prop({src:strTmp});
     }
     let opacity=boOn?1:0.4; im.css({opacity: opacity});
@@ -2596,7 +2598,6 @@ var filterButtonCreator=function(){
  * viewSettingEntryCreator
  *   viewUserSettingCreator
  *       divIPSettingCreator
- *     viewUploadImagePopCreator
  *     viewDeleteAccountPopCreator
  *   viewSettingCreator
  *       spanIdTeamWantedCreator
@@ -2607,7 +2608,7 @@ var filterButtonCreator=function(){
  *   divLoginInfoCreator
  * viewEntryCreator
  * mainIntroCreator
- *   divSelectImageCreator
+ *   divSelectImageIdPOrCustomCreator
  *
  *******************************************************************************************************************
  *******************************************************************************************************************/
@@ -2711,7 +2712,7 @@ var viewUserSettingCreator=function(){
     inpDisplayName.value=tmp.displayName;  
     //oB.Prop.image.setInp.call(spanImg);
     var url=calcImageUrl(userInfoFrDB.user);
-    divImage.setUp({url,boUseIdPImg:userInfoFrDB.user.boUseIdPImg}); //userInfoFrDB.user.image
+    divSelectImageIdPOrCustom.setUpWUrl(url, userInfoFrDB.user.boUseIdPImg); //userInfoFrDB.user.image
     oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     cbBoGeoWatch.checked=boGeoWatch;
     divIPSetting.setUp();
@@ -2738,13 +2739,13 @@ var viewUserSettingCreator=function(){
 
   el.createDivs=function(){
     //spanImg=oB.Prop.image.crInp();
-    //divImage.myAppend('Display image: ', spanImg);
+    //divSelectImageIdPOrCustom.myAppend('Display image: ', spanImg);
     
     spanBoWebPushOK=oB.Prop.boWebPushOK.crInp('setting');
     divBoWebPushOK.myAppend("Enable Push Messages: ", spanBoWebPushOK);
   }
-  //var spanImg, divImage=createElement('div');
-  var divImage=divSelectImageCreator(true);
+  //var spanImg, divSelectImageIdPOrCustom=createElement('div');
+  var divSelectImageIdPOrCustom=divSelectImageIdPOrCustomCreator(false);
 
       // divBoWebPushOK
   var spanBoWebPushOK, divBoWebPushOK=createElement('div');
@@ -2786,7 +2787,7 @@ var viewUserSettingCreator=function(){
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
-  var Div=[divIPSetting, divPW, divDisplayName, divImage, divBoWebPushOK, divKeyRemoteControl, deleteDiv];  //, divBoGeoWatch
+  var Div=[divIPSetting, divPW, divDisplayName, divSelectImageIdPOrCustom, divBoWebPushOK, divKeyRemoteControl, deleteDiv];  //, divBoGeoWatch
   Div.forEach(ele=>ele.css({'margin-top':'1em'}));
   Div.forEach((ele,i)=>{if(i%2==0)ele.css({background:'lightgrey'})});
   var divCont=createElement('div').myAppend(...Div).addClass('contDiv');
@@ -2864,124 +2865,11 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
 
 
 
-var viewUploadImagePopCreator=function(){
-  var el=createElement('div');
-  el.toString=function(){return 'uploadImage';}
-  var progressHandlingFunction=function(e){      if(e.lengthComputable){   progress.attr({value:e.loaded,max:e.total});      }      }
-  var errorFunc=function(jqXHR, textStatus, errorThrown){
-    setMess('responseText: '+jqXHR.responseText+', textStatus: '+' '+textStatus+', errorThrown: '+errorThrown);     throw 'bla';
-  }
-
-  var setMess=function(str) {divMess.myText(str);}
-  var clearMess=function() {divMess.myText(' ');}
-  var toggleVerified=function(boT){  boT=Boolean(boT);   uploadButton.prop("disabled",!boT); }
-  var verifyFun=function(){
-    clearMess();
-    var arrFile=this.files;
-    if(arrFile.length>1) {setMess('Max 1 file',5); toggleVerified(0); return;}
-    if(arrFile.length==0) {setMess('No file selected',5); toggleVerified(0); return;}
-    objFile=arrFile[0];
-    if(objFile.size==0){ setMess("objFile.size==0",5); toggleVerified(0); return; }
-    var tmpMB=(objFile.size/(1024*1024)).toFixed(2);
-
-    toggleVerified(1);
-  }
-  var sendFun=function(){
-    clearMess();
-    if(typeof FormData=='undefined') {alert("This browser doesn't support FormData"); return; }
-    var formData = new FormData();
-    formData.append("type", 'single');
-    formData.append("kind", strKind);
-    formData.append("fileToUpload[]", objFile);
-
-
-
-    //var vecIn=[['uploadImage', {}], ['CSRFCode',CSRFCode]];
-    var vecIn=[['uploadImage', {}], ['CSRFCode',getItem('CSRFCode')]];
-    var arrRet=[sendFunRet];
-    formData.append('vec', JSON.stringify(vecIn));
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', uBE, true);
-    xhr.setRequestHeader('X-Requested-With','XMLHttpRequest'); 
-    var dataOut=formData;
-    xhr.setRequestHeader('x-type','single');
-    
-    progress.visible(); //progress.visible();
-    xhr.onprogress=progressHandlingFunction;
-    xhr.onload=function() {
-      var dataFetched=this.response;
-      var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
-      
-      
-      var dataArr=data.dataArr||[];  // Each argument of dataArr is an array, either [argument] or [altFuncArg,altFunc]
-      delete data.dataArr;
-      beRet(data);
-      for(var i=0;i<dataArr.length;i++){
-        var r=dataArr[i];
-        //if(r.length) { if('strMessage' in r[0]) setMess(r[0].strMessage);   }
-        if(r.length==1) {var f=arrRet[i]; if(f) f(r[0]);} else { window[r[1]].call(window,r[0]);   }
-      }
-      progress.attr({value:0});  progress.invisible(); 
-    }
-    xhr.onerror=function(e){ progress.invisible(); errorFunc.call(this,arguments); }
-    
-    xhr.send(dataOut); 
-    busyLarge.show();
-
-
-    //majax(oAJAXL,[['uploadImage',formData,sendFunRet]], true);
-    setMess('Uploading ...');
-    uploadButton.prop("disabled",true);
-  }
-  var sendFunRet=function(data){
-      if('strMessage' in data) setMess(data.strMessage); progress.invisible(); uploadButton.prop("disabled",false);
-      callback();
-  }
-  el.openFunc=function(strKindT, callbackT){
-    strKind=strKindT; callback=callbackT; setMess('');  inpFile.value='';
-    doHistPush({view:viewUploadImagePop});
-    el.setVis();
-  };
-  el.setVis=function(){
-    el.show();
-    return true;
-  }
-  var strKind='u', callback;
-  //el.css({'max-width':'20em', padding: '0.3em 0.5em 1.2em 0.6em'});
-
-  var head=createElement('h3').myText('Upload Image: ').css({'font-weight':'bold'});
-  var formFile=createElement('form'); //enctype="multipart/form-data"
-  var inpFile=createElement('input').prop({type:'file', name:'file', id:'file', accept:'image/*'}).css({background:'lightgrey'});
-  //var inpUploadButton=createElement('input type="button" value="Upload"');
-  var uploadButton=createElement('button').myText('Upload').prop("disabled",true).css({'margin-right':'0.5em'});
-  var progress=createElement('progress').prop({max:100,value:0}).css({'display':'block','margin-top':'1em'}).invisible();
-  var divMess=createElement('div').css({'margin-top':'1.2em', 'min-height':'1em'});
-
-  var objFile;
-  inpFile.on('change',verifyFun).on('click', function(){uploadButton.prop("disabled",true);});
-  formFile.myAppend(inpFile);   formFile.css({display:'inline'});
-
-
-  var closeButton=createElement('button').myText('Close').on('click', historyBack);
-  var menuBottom=createElement('div').myAppend(closeButton, uploadButton).css({'margin-top':'1.2em'});
-
-  //el.myAppend(head, formFile, progress, divMess, menuBottom);
-
-  var blanket=createElement('div').addClass("blanket");
-  var centerDiv=createElement('div').myAppend(head, formFile, progress, divMess, menuBottom);
-  centerDiv.addClass("Center").css({'max-width':'21em', padding: '0.3em 0.5em 1.2em 0.6em'});
-  el.addClass("Center-Container").myAppend(centerDiv,blanket); //
-
-  uploadButton.on('click', sendFun);
-  el.css({'text-align':'left'});
-  return el;
-}
-
 
 var viewDeleteAccountPopCreator=function(){
   var el=createElement('div');
   el.toString=function(){return 'deleteAccountPop';}
-  var yes=createElement('button').myText(langHtml.Yes).on('click', function(){
+  var butYes=createElement('button').myText(langHtml.Yes).on('click', function(){
     //var vec=[['UDelete',1,function(data){historyBack();historyBack();}]];   majax(vec);
     sessionLoginIdP={};  userInfoFrDB=extend({}, userInfoFrDBZero);
     var vec=[['UDelete',{}], ['logout',{}, function(data){
@@ -2996,7 +2884,7 @@ var viewDeleteAccountPopCreator=function(){
   }
   var h1=createElement('div').myText(langHtml.deleteBox.regret);
   var blanket=createElement('div').addClass("blanket");
-  var centerDiv=createElement('div').myAppend(h1,cancel,yes);
+  var centerDiv=createElement('div').myAppend(h1,cancel,butYes);
   centerDiv.addClass("Center").css({padding:'1.1em'});
   el.addClass("Center-Container").myAppend(centerDiv,blanket); 
   el.css({'text-align':'left'});
@@ -3116,16 +3004,16 @@ var viewSettingCreator=function(){
 
 
 
-
-
 app.spanIdTeamWantedCreator=function(oRole){
   var el=createElement('span');
   var strRole=oRole.strRole;
-  //var uRoleTeamImage=strRole=='buyer'?uBuyerTeamImage:uSellerTeamImage;
   el.setStat=function(){
     var idTmp=userInfoFrDB[strRole].idTeamWanted, tag=userInfoFrDB[strRole].imTagTeam;
-    if(idTmp!=0){ var strTmp=URoleTeamImage[oRole.ind]+idTmp+'?v='+tag; thumbDis.prop({src:strTmp}); thumbDis.show(); spanDisNApproved.show(); inp.value=idTmp;}
-    else { thumbDis.hide(); spanDisNApproved.hide(); inp.value='';}
+    if(idTmp!=0){ 
+      var strTmp=URoleTeamImageProt[oRole.ind]+idTmp+'?v='+tag;
+      //var strTmp=calcTeamImageUrl(oRole.ind)
+      thumbDis.prop({src:strTmp}); thumbDis.show(); spanDisNApproved.show(); inp.value=idTmp;
+    } else { thumbDis.hide(); spanDisNApproved.hide(); inp.value='';}
 
     var idTeam=userInfoFrDB[strRole].idTeam; spanDisNApproved.toggle(idTmp!=idTeam);
   }
@@ -3180,7 +3068,6 @@ var viewAdminCreator=function(){
 }
 
 
-
 var viewTeamCreator=function(oRole){
   var el=createElement('div');
   var {strRole, charRoleUC, ind:iRole}=oRole;
@@ -3191,10 +3078,11 @@ var viewTeamCreator=function(oRole){
     el.boLoaded=1;
   }
   var disLoadRet=function(data){
-    var {idUser, link}=userInfoFrDB[strRole+'Team'];
-    elId.myText(idUser);
-    //thumb.attr({src:uRoleTeamImage+idUser+'?v='+imTag});
-    thumb.attr({src:calcTeamImageUrl()});
+    var {idUser:idTeamTmp, link, imTag:imTagTeam}=userInfoFrDB[strRole+'Team'];
+    elId.myText(idTeamTmp);
+    //thumb.attr({src:calcTeamImageUrl()});
+    var urlImg=URoleTeamImageProt[iRole]+idTeamTmp+'?v='+imTagTeam;
+    divSelectTeamImage.setUpWUrl(urlImg)
     elLink.value=link;
     //var tmp=data.link;   if(typeof tmp==="undefined")  tmp='';
     //var tmp=data.tab;  if(typeof tmp==='undefined') tmp=[]; el.tab=tmp;
@@ -3206,7 +3094,7 @@ var viewTeamCreator=function(oRole){
       var {nameIP, idTeam}=el.tab[i];
       //var id=createElement('span').myAppend(idFB);
       //var boTmp=Boolean(Number(idTeam==idTeamWanted));
-      var boTmp=idTeam==idUser;
+      var boTmp=idTeam==idTeamTmp;
       var cb=createElement('input').prop('type','checkbox').on('click', save).prop('checked',boTmp).css({'margin-right':'0.4em', 'vertical-align':'middle'});
       var img=createElement('img').prop({src:calcImageUrl(rT), alt:"user"}).css({'margin-left':'0.4em', 'vertical-align':'middle'});
       var row=createElement('div').myAppend(cb, nameIP, img);
@@ -3223,19 +3111,15 @@ var viewTeamCreator=function(oRole){
     var link=elLink.value.trim();
     var vec=[['teamSaveName', {link, iRole}]];   majax(vec);
   }
-  var calcTeamImageUrl=function(){
-    var {idUser, imTag}=userInfoFrDB[strRole+'Team'];  return URoleTeamImage[oRole.ind]+idUser+'?v='+imTag;
-  }
-  //var uRoleTeamImage=strRole=='buyer'?uBuyerTeamImage:uSellerTeamImage;
   el.boLoaded=0;
   var elId=createElement('span').css({'font-weight':'bold'});
   var elLink=createElement('input').attr({type:'text',size:10}).on('keypress', function(e){ if(e.which==13) {saveName();return false;}} );
-  var thumb=createElement('img').css({'vertical-align':'middle', alt:"team"});
-  var uploadCallback=function(){
-    userInfoFrDB[strRole+'Team'].imTag=randomHash(); thumb.attr({src:calcTeamImageUrl()});
-    //var tmpF=function(){thumb.attr({src:calcTeamImageUrl()});};    var vec=[ ['setupById',{Role:'team'},tmpF]];   majax(vec);
-  }
-  var buttUploadImage=createElement('button').myText('Upload image').on('click', function(){viewUploadImagePop.openFunc(oRole.charRole, uploadCallback);}).css({'margin-right':'0.4em'});
+  //var thumb=createElement('img').css({'vertical-align':'middle', alt:"team"});
+  // var uploadCallback=function(){
+  //   userInfoFrDB[strRole+'Team'].imTag=randomHash(); thumb.attr({src:calcTeamImageUrl(iRole)});
+  // }
+  //var buttUploadImage=createElement('button').myText('Upload image').on('click', function(){viewUploadImagePop.openFunc(oRole.charRole, uploadCallback);}).css({'margin-right':'0.4em'});
+  var divSelectTeamImage=divSelectTeamImageCreator(oRole);
   var buttSaveName=createElement('button').myText('Save link').on('click', saveName).css({'margin-left':'0.4em'});
   el.divList=createElement('div');
 
@@ -3247,7 +3131,8 @@ var viewTeamCreator=function(oRole){
   var hImg0=imgHelp.cloneNode(1).css({'margin-left':'1em'}), hImg1=imgHelp.cloneNode(1).css({'margin-left':'1em'}), hImg2=imgHelp.cloneNode(1).css({'margin-left':'1em'});
   popupHover(hImg0,hId);   popupHover(hImg1,hLink);   popupHover(hImg2,hList);
   var divA=createElement('div').myAppend('Team-Id: ',elId,',',hImg0);
-  var divB=createElement('div').myAppend('Thumb image: ',thumb,' ',buttUploadImage,' (will be shrunk to fit a 50 x 50 pixel square)');
+  //var divB=createElement('div').myAppend('Thumb image: ',thumb,' ',buttUploadImage,' (will be shrunk to fit a 50 x 50 pixel square)');
+  var divB=divSelectTeamImage;
   var divC=createElement('div').myAppend('Link: (optional)',elLink,buttSaveName,hImg1);
   
   var divHeadUserList=createElement('div').myAppend('List of users', hImg2).css({'font-weight':'bold'});
@@ -3429,7 +3314,7 @@ var mainIntroCreator=function(oRole){
     var curT; if(strLang=='sv') curT='SEK'; else curT='USD';
     var nameT=inpName.value.trim();  inpName.value=nameT;
     //var boIdIPImage=Number(cbIdIPImage.prop('checked'));
-    var {base64Img, boUseIdPImg}=divImage;
+    var {base64Img, boUseIdPImg}=divSelectImageIdPOrCustom;
     var o1={displayName:nameT, strSubscription:JSON.stringify(myWebPush.subscription), tel:strTel, displayEmail:strEmail, currency:curT, charRole, base64Img, boUseIdPImg};
     //var vec=[['RIntroCB',o1,function(data){el.closePop();}], ['setupById', {}]];   majax(vec);
     var vec=[['RIntroCB',o1,function(data){historyBack();}], ['setupById', {}]];   majax(vec);
@@ -3445,10 +3330,10 @@ var mainIntroCreator=function(oRole){
     var nameT=isSet(sessionLoginIdP)?sessionLoginIdP.nameIP:'';
     inpName.value=nameT;
     //cbIdIPImage.prop('checked', true);
-    //divImage.image.src=sessionLoginIdP.image;
+    //divSelectImageIdPOrCustom.image.src=sessionLoginIdP.image;
     // elBody.myAppend(iframeConversion);
 
-    divImage.setUp({url:sessionLoginIdP.image});
+    divSelectImageIdPOrCustom.setUpWUrl(sessionLoginIdP.image, true);
     oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     return true;
   }
@@ -3475,8 +3360,8 @@ var mainIntroCreator=function(oRole){
   var divName=createElement('p').myAppend(labName,inpName);
   
   //var cbIdIPImage=createElement('input').prop({"type":"checkbox"});
-  //var divImage=createElement('p'); divImage.myAppend('Use image from ID provider', ': ',cbIdIPImage);
-  var divImage=divSelectImageCreator();
+  //var divSelectImageIdPOrCustom=createElement('p'); divSelectImageIdPOrCustom.myAppend('Use image from ID provider', ': ',cbIdIPImage);
+  var divSelectImageIdPOrCustom=divSelectImageIdPOrCustomCreator(true);
   
   //var butToggle=createElement('button').myText('boPushToggle').on('click', function(){this.disabled=true; myWebPush.togglePushNotifications();} );
   
@@ -3492,24 +3377,24 @@ var mainIntroCreator=function(oRole){
   var divEmail=createElement('p').myAppend(labEmail, inpEmail);
   var strTmp=boEnablePushNotification?"*At least one of these must be enabled/supplied.":"*At least one of these must be supplied.";
   var pBread3=createElement('p').myText(strTmp).css({'font-size':'78%'});
-  //divName.add(divTel).add(divImage).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
-  //[divName, divTel, divImage].cssChildren({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
+  //divName.add(divTel).add(divSelectImageIdPOrCustom).css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
+  //[divName, divTel, divSelectImageIdPOrCustom].cssChildren({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
   [divName, divBoWebPushOK, divTel, divEmail].forEach((ele)=>ele.css({display:'flex', 'justify-content':'space-between', margin:'0.8em 0'}));
-  //cssChildren([divName, divTel, divImage], {display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
+  //cssChildren([divName, divTel, divSelectImageIdPOrCustom], {display:'flex', 'justify-content':'space-between', margin:'0.8em 0'});
 
   var saveButton=createElement('button').myText(langHtml.CreateAccount).on('click', save).css({display:'block', 'margin':'2em auto 1em'});
-  //el.myAppend(head, pBread, divName, divImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton).css({padding:'0.5em'}); //   , divEmail  , 'font-size':'90%'
+  //el.myAppend(head, pBread, divName, divSelectImageIdPOrCustom, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton).css({padding:'0.5em'}); //   , divEmail  , 'font-size':'90%'
   
-  var divCont=createElement('div').addClass('contDiv').myAppend(head, pBread, divName, divImage, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton);
+  var divCont=createElement('div').addClass('contDiv').myAppend(head, pBread, divName, divSelectImageIdPOrCustom, pBread2, divBoWebPushOK, divTel, divEmail, pBread3, saveButton);
   el.myAppend(divCont).css({'text-align':'left', display:"flex","flex-direction":"column"});
 
   return el;
 }
 
-var divSelectImageCreator=function(boSetting=false){
+var divSelectImageIdPOrCustomCreator=function(boIntro){  // Selector between IdP-image and custom image
   var el=createElement('div');
   
-  var toggleResetBut=function(boT){   butFB.toggle(Boolean(boT)); }
+  var toggleResetBut=function(boT){   butDefault.toggle(Boolean(boT)); }
   var onChangeFun=async function(){
     resetMess();
     var arrFile=this.files;
@@ -3519,46 +3404,118 @@ var divSelectImageCreator=function(boSetting=false){
     if(objFile.size==0){ setMess("objFile.size==0",5); toggleResetBut(0); return; }
     var tmpMB=(objFile.size/(1024*1024)).toFixed(2);
 
-    var [err,blob]=await reduceFileSize(objFile, 200, 50, 50, 0.9);
-    //el.image.prop({src:urlCreator.createObjectURL(blob)});
+    var [err,blob]=await reduceImageSize(objFile, 200, 50, 50, 0.9);
     el.image.src=URL.createObjectURL(blob);
-
     var base64Img=el.base64Img=await blobToBase64(blob);
-    var boUseIdPImg=el.boUseIdPImg=false;
-
-    toggleResetBut(1);
-    if(boSetting) {var vec=[['uploadImageB64', {kind:'u', base64Img, boUseIdPImg}, uploadRet]];   majax(vec);}
+    el.boUseIdPImg=0;  toggleResetBut(true);
+    inpFile.value="";
+    if(!boIntro) {
+      var vec=[['uploadImageB64', {kind:'u', base64Img, boUseIdPImg:false}, uploadRet]];   majax(vec);
+    }
   }
-  el.setUp=async function(objArg){
-    var {url, boUseIdPImg=true, boUserAction=false}=objArg;
+  el.getBlob=async function(url){
     var res=await fetch(new Request(url));
     var blob=await res.blob();
-    el.image.src=URL.createObjectURL(blob);
-    var base64Img=el.base64Img=await blobToBase64(blob);
-    el.boUseIdPImg=boUseIdPImg;
-    toggleResetBut(!boUseIdPImg);
+    return blob
+  }
+  el.setUpWUrl=async function(url, boUseIdPImg){
+    el.image.src=url;
+    el.boUseIdPImg=boUseIdPImg;   toggleResetBut(!boUseIdPImg);
     inpFile.value="";
-    if(boSetting && boUserAction) {var vec=[['uploadImageB64', {kind:'u', base64Img, boUseIdPImg}, uploadRet]];   majax(vec);}
   }
   var uploadRet=function(data){
     copySome(userInfoFrDB.user, data, ["imTag", "boUseIdPImg"]);
     var {strMessage}=data;
     //setMess(strMessage);
   }
-  //var onClear=function(){el.setUp(sessionLoginIdP.image, true);};
-  var onClear=function(){var url=userInfoFrDB.user.image||sessionLoginIdP.image; el.setUp({url,boUserAction:true});};
+  var clearRet=function(data){
+    var {boOK}=data;
+    if(!boOK) return
+    userInfoFrDB.user.boUseIdPImg=1;
+    el.image.src=userInfoFrDB.user.image
+  }
+  var onClear=async function(){
+    if(boIntro){
+      var blob=await el.getBlob(userInfoFrDB.user.image||sessionLoginIdP.image);
+      el.image.src=URL.createObjectURL(blob);
+      el.boUseIdPImg=1;  toggleResetBut(false);
+      inpFile.value="";
+      var base64Img=el.base64Img=await blobToBase64(blob);
+      var vec=[['uploadImageB64', {kind:'u', base64Img, boUseIdPImg:true}, uploadRet]];   majax(vec);
+    } else{
+      var vec=[['clearUserImage', {}, clearRet]];   majax(vec);
+    }
+  };
   el.base64Img=null;
   var objFile;
   var inpFile=createElement('input').prop({type:'file', name:'file', id:'file', accept:'image/*'}).css({background:'lightgrey'}).on('change',onChangeFun).hide();
   el.image=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle', margin:"0 .3em", width:'50px', height:'50px', display:'inline-block', 'object-fit': 'contain'});
   var head=createElement('span').myText('Display Image:');
   var but=createElement('button').myText('Change').on('click',function(){ inpFile.click(); });
-  var butFB=createElement('button').myText('Default').hide().on('click',onClear);
-  el.myAppend(head, inpFile, el.image, butFB, but); //, divMess
+  var butDefault=createElement('button').myText('Default').hide().on('click',onClear);
+  el.myAppend(head, inpFile, el.image, butDefault, but); //, divMess
   return el;
 }
 
+var divSelectTeamImageCreator=function(oRole){  // Selector between default-image and custom image
+  var el=createElement('div');
+  
+  //var toggleResetBut=function(boT){   butDefault.toggle(Boolean(boT)); }
+  var onChangeFun=async function(){
+    resetMess();
+    var arrFile=this.files;
+    //if(arrFile.length>1) {setMess('Max 1 file',5); toggleResetBut(0); return;}
+    if(arrFile.length==0) { toggleResetBut(0); return;}
+    objFile=arrFile[0];
+    if(objFile.size==0){ setMess("objFile.size==0",5); toggleResetBut(0); return; }
+    var tmpMB=(objFile.size/(1024*1024)).toFixed(2);
 
+    var [err,blob]=await reduceImageSize(objFile, 200, 50, 50, 0.9);
+    await el.setUpWBlobNUpload(blob, false);
+  }
+  el.getBlob=async function(url){
+    var res=await fetch(new Request(url));
+    var blob=await res.blob();
+    return blob
+  }
+  el.setUpWUrl=async function(url, boUseIdPImg){
+    el.image.src=url;
+    //el.boUseIdPImg=boUseIdPImg;   toggleResetBut(!boUseIdPImg);
+    inpFile.value="";
+  }
+  el.setUpWBlobNUpload=async function(blob, boUseIdPImg){
+    el.image.src=URL.createObjectURL(blob);
+    var base64Img=el.base64Img=await blobToBase64(blob);
+    //el.boUseIdPImg=boUseIdPImg; toggleResetBut(!boUseIdPImg);
+    inpFile.value="";
+    var vec=[['uploadImageB64', {kind:oRole.charRole, base64Img, boUseIdPImg:false}, uploadRet]];   majax(vec);
+  }
+  var uploadRet=function(data){
+    //copySome(userInfoFrDB.user, data, ["imTag", "boUseIdPImg"]); var {strMessage}=data;   //setMess(strMessage);
+  }
+  var clearRet=function(data){
+    if("imTag" in data){} else {setMess("no imTag in data"); return; }
+    var {imTag:imTagTeam, strMessage}=data;
+    setMess(strMessage);
+    userInfoFrDB.user.imTagTeam=imTagTeam;  userInfoFrDB[oRole.strRole+'Team'].imTag=imTagTeam;
+    //var url=calcTeamImageUrl(iRole)
+    var {idUser:idTeamTmp, imTag:imTagTeam}=userInfoFrDB[oRole.strRole+'Team'];
+    var url=URoleTeamImageProt[oRole.ind]+idTeamTmp+'?v='+imTagTeam
+    el.image.src=url;
+  }
+  var onClear=async function(){
+    var vec=[['clearTeamImage', {kind:oRole.charRole}, clearRet]];   majax(vec);
+  };
+  el.base64Img=null;
+  var objFile;
+  var inpFile=createElement('input').prop({type:'file', name:'file', id:'file', accept:'image/*'}).css({background:'lightgrey'}).on('change',onChangeFun).hide();
+  el.image=createElement('img').prop({alt:"user"}).css({'vertical-align':'middle', margin:"0 .3em", width:'50px', height:'50px', display:'inline-block', 'object-fit': 'contain'});
+  var head=createElement('span').myText('Image:');
+  var but=createElement('button').myText('Change').on('click',function(){ inpFile.click(); });
+  var butDefault=createElement('button').myText('Default').on('click',onClear); // .hide()
+  el.myAppend(head, inpFile, el.image, butDefault, but); //, divMess
+  return el;
+}
 
 
 /*******************************************************************************************************************
@@ -4021,7 +3978,7 @@ var listCtrlCreator=function(oRole){ // The little map and up/down arrows
 }
 
 
-var viewInfoCreator=function(oRole){
+var viewInfoCreator=function(oRole){ // All the detailed info of a user.
   var el=createElement('div');
   var {strRole, Prop, charRoleUC}=oRole, {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
   el.indRole=oRole.ind;
@@ -6013,6 +5970,7 @@ if(err) { console.log(mess+':\n'+err); alert(mess+':\n'+err); return; }
 extend(app, objSiteSpecific);
 
 app.boAllowEmailLogin=objSiteSpecific.boAllowEmailLoginOnSomeSites&&site.siteName=="demo"
+//app.boAllowEmailLogin=objSiteSpecific.boAllowEmailLoginOnSomeSites&&site.siteName=="taxi"
 
 console.log('boDbg='+boDbg);
 
@@ -6034,12 +5992,8 @@ var uCanonical=uSite;
 
 var uConversion=uSite+'/conversion.html';
 app.uEmptyImage='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs%3D'; // Using "" as source will make show an "broken image" if you have "alt" specified.
-//var uTeamImage=uSite+'/image/t';
-//var uSellerImage=uSite+'/image/s';
 app.uUserImage=uSite+'/image/u';
-app.uBuyerTeamImage=uSite+'/image/b';
-app.uSellerTeamImage=uSite+'/image/s';
-app.URoleTeamImage=[uBuyerTeamImage, uSellerTeamImage];
+app.URoleTeamImageProt=[uSite+'/image/b', uSite+'/image/s'];
 
 app.wseImageFolder='/'+flImageFolder+'/';
 //app.uImageFolder=uCommon+wseImageFolder;
@@ -6384,7 +6338,6 @@ app.mapDiv=mapDivCreator().css({overflow:'hidden', flex:"auto"});  // "overflow-
   // view divs (main divs having its own history state)
 app.viewUserSetting=viewUserSettingCreator();
 app.viewDeleteAccountPop=viewDeleteAccountPopCreator();
-app.viewUploadImagePop=viewUploadImagePopCreator();
 app.viewAdmin=viewAdminCreator();
 
 app.viewComplainee=viewComplaineeCreator();
@@ -6473,10 +6426,10 @@ if(boTouch) h1.detach(); else h1.show();
 viewFront.querySelector('noscript').detach();
 
 
-MainDiv.push(viewFront, viewUserSetting, viewAdmin, viewComplainee, viewComplainer, viewFormLogin, viewConvertID, viewCreateUser, viewSettingEntry, viewDeleteAccountPop, viewComplaintCommentPop, viewComplaintAnswerPop, viewUploadImagePop, viewChangePWPop, viewForgottPWPop, viewColumnSorter, viewColumnSelector, viewTable, viewMarkSelector, viewFilter, viewSetting, viewGreeting);
+MainDiv.push(viewFront, viewUserSetting, viewAdmin, viewComplainee, viewComplainer, viewFormLogin, viewConvertID, viewCreateUser, viewSettingEntry, viewDeleteAccountPop, viewComplaintCommentPop, viewComplaintAnswerPop, viewChangePWPop, viewForgottPWPop, viewColumnSorter, viewColumnSelector, viewTable, viewMarkSelector, viewFilter, viewSetting, viewGreeting); // , viewUploadImagePop
 MainDiv.push(...ViewTeam, ...ViewEntry, ...ViewInfo, ...MainIntro);
 
-arrViewPop.push(viewDeleteAccountPop, viewUploadImagePop, viewComplaintCommentPop, viewComplaintAnswerPop, viewChangePWPop, viewForgottPWPop);
+arrViewPop.push(viewDeleteAccountPop, viewComplaintCommentPop, viewComplaintAnswerPop, viewChangePWPop, viewForgottPWPop);  //, viewUploadImagePop
 AMinusB(MainDiv, arrViewPop).forEach(ele=>ele.addClass('mainDiv'));
 viewTable.css({'max-width':'none'});
 

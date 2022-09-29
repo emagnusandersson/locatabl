@@ -152,7 +152,7 @@ app.cmdRedis=async function(strCommand, arr){
   });
 }
 app.getRedis=async function(strVar, boObj=false){
-  var [err,res]=await cmdRedis('GET', [strVar]);  if(boObj) res=JSON.parse(res);  return [err,res];
+  var [err,data]=await cmdRedis('GET', [strVar]);  if(boObj) data=JSON.parse(data);  return [err,data];
 }
 app.setRedis=async function(strVar, val, tExpire=-1){
   if(typeof val!='string') var strA=JSON.stringify(val); else var strA=val;
@@ -272,10 +272,15 @@ app.getPost=async function(req){
     var form = new formidable.IncomingForm();
     form.multiples = true;  
     //form.uploadDir='tmp';
+    var File=this.File=[];
+
+    form.on('file', function(field, file) {
+      File.push(file);
+    });
 
     var [err, fields, files]=await new Promise(resolve=>{  form.parse(req, (...arg)=>resolve(arg));  });     if(err){ this.mesEO(err); return; } 
     
-    this.File=files['fileToUpload[]'];
+    //this.File=files['fileToUpload[]'];
     if('kind' in fields) this.kind=fields.kind; else this.kind='s';
     if(!(this.File instanceof Array)) this.File=[this.File];
     strData=fields.vec;

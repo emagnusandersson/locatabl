@@ -507,7 +507,7 @@ app.makeMapMultBubble=function(objIn){
 
 
 //
-// Functions for compressing and autorotate jpeg images
+// Image compress, autorotate etc
 //
 
 // Modified from https://stackoverflow.com/a/32490603, cc by-sa 3.0
@@ -562,7 +562,7 @@ app.imgToCanvasWithOrientation=function(img, rawWidth, rawHeight, orientation) {
   return canvas;
 }
 
-app.reduceFileSize=async function(file, acceptFileSize, maxWidth, maxHeight, quality) {
+app.reduceImageSize=async function(file, acceptFileSize, maxWidth, maxHeight, quality) {
   if(file.size <= acceptFileSize) {  return [null, file]; }
 
     // Extract w and h (one could probably read these from the jpeg header more or less as one reads the orientation from the header below. (And doing this would probably be faster))

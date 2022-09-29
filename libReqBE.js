@@ -279,7 +279,7 @@ ReqBE.prototype.go=async function(){
   if(caller=='index'){
       // Arrays of functions
     arrCSRF=['UUpdate','USetIRoleActive', 'RIntroCB','VSetPosCond','RUpdate','RShow','RHide','UDelete','teamLoad','teamSaveName','teamSave',
-    'complaintUpdateComment', 'complaintUpdateAnswer','setSetting','deleteImage', 'uploadImage', 'uploadImageB64','loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage', 'setWebPushSubcription', 'sendNotification', 'keyRemoteControlSave'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
+    'complaintUpdateComment', 'complaintUpdateAnswer','setSetting', 'uploadImage', 'uploadImageB64', 'clearUserImage', 'clearTeamImage', 'loginGetGraph', 'sendLoginLink', 'loginWEmail', 'changePW', 'verifyEmail', 'verifyPWReset', 'sendVerifyEmailNCreateUserMessage', 'setWebPushSubcription', 'sendNotification', 'keyRemoteControlSave'];   //'createUser'   // Functions that changes something must check and refresh CSRF-code
     arrNoCSRF=['setupById','setUpCond','setUp','getList','getSingleUser','getGroupList','getHist','complaintOneGet','getComplaintsOnComplainee','getComplaintsFromComplainer','logout','getSetting'];  // ,'testA','testB'
     allowed=arrCSRF.concat(arrNoCSRF);
 
@@ -1179,12 +1179,14 @@ ReqBE.prototype.RIntroCB=async function(inObj){ // writing needSession
   Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
   Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
 
-    // base64Img
-  var bufImg = Buffer.from(base64Img.split(",")[1], 'base64');
-  console.log('bufImg.length: '+bufImg.length);
-  if(bufImg.length==0) return [Error('bufImg.length==0')];
-  if(bufImg.length>10000) return [Error('bufImg.length>10000 !?!, aborting!')];
-  Sql.push("REPLACE INTO "+userImageTab+" (idUser,data) VALUES (@idUser,?);"); Val.push(bufImg);
+  if(!boUseIdPImg){
+      // base64Img
+    var bufImg = Buffer.from(base64Img.split(",")[1], 'base64');
+    console.log('bufImg.length: '+bufImg.length);
+    if(bufImg.length==0) return [Error('bufImg.length==0')];
+    if(bufImg.length>10000) return [Error('bufImg.length>10000 !?!, aborting!')];
+    Sql.push("REPLACE INTO "+userImageTab+" (idUser,data) VALUES (@idUser,?);"); Val.push(bufImg);
+  }
   
   if(boWebPushOK){
     Sql.push("REPLACE INTO "+webPushSubscriptionTab+" VALUES (@idUser, ?);");  Val.push(strSubscription);
@@ -1584,21 +1586,6 @@ ReqBE.prototype.teamLoad=async function(inObj){  // writing needSession
 }
 
 
-ReqBE.prototype.deleteImage=async function(inObj){
-  var {req}=this, {site}=req, {userTab, userImageTab}=site.TableName;
-  var Ou={};
-  var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
-  var idUser=user.idUser;
-
-  var Sql=[];
-  Sql.push("DELETE FROM "+userImageTab+" WHERE idUser="+idUser+";");
-  Sql.push("UPDATE "+userTab+" SET boUseIdPImg=1 WHERE idUser="+idUser+";");
-  var sql=Sql.join("\n "), Val=[];
-  var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
-  var nDel=results[0].affectedRows; 
-  Ou.boOK=0; if(nDel==1) {Ou.boOK=1; this.mes('Image deleted'); } else { this.mes(nDel+" images deleted!?");}
-  return [null, [Ou]];
-}
 
 
 ReqBE.prototype.keyRemoteControlSave=async function(inObj){
@@ -1653,9 +1640,10 @@ ReqBE.prototype.uploadImage=async function(inObj){
   var File=this.File;
   var n=File.length; this.mes("nFile: "+n);
 
-  var file=File[0], tmpname=file.path, fileName=file.name; 
+  //var file=File[0], tmpname=file.path, fileName=file.name; 
+  var file=File[0], {filepath:tmpname, originalFilename:fileName}=file; //if(this.strName.length) fileName=this.strName;
   var Match=RegExp('\\.(\\w{1,4})$').exec(fileName); 
-  if(!Match){ Ou.strMessage="The file name should have a three or four letter extension, ex: \".jpg\""; return [null, [Ou]]; }
+  if(!Match){ Ou.strMessage='The file name should have a three or four letter extension, ex: ".jpg"'; return [null, [Ou]]; }
   var type=Match[1].toLowerCase();
   var [err, buf]=await fsPromises.readFile(tmpname).toNBP();    if(err) return [err];
   var data=buf; 
@@ -1663,20 +1651,15 @@ ReqBE.prototype.uploadImage=async function(inObj){
 
   if(!regImg.test(type)){ Ou.strMessage="Unrecognized file type: "+type; return [null, [Ou]]; }
 
-
-
   var wNew=50, hNew=50;
   var [err,data]=await new Promise(resolve=>{
     var myCollector=concat(function(buf){  resolve([null,buf]);   });
-    var streamImg=gm(strDataOrg).autoOrient().resize(wNew, hNew).stream(function streamOut(err, stdout, stderr) {
+    var streamImg=gm(data).autoOrient().resize(wNew, hNew).stream(function streamOut(err, stdout, stderr) {
       if(err) {resolve([err]); return;}
       stdout.pipe(myCollector); 
     });
   });
   if(err) return [err];
-
-
-
 
   var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
   
@@ -1714,9 +1697,8 @@ ReqBE.prototype.uploadImageB64=async function(inObj){
   var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
   var Ou={};
 
-  var {kind, base64Img, boUseIdPImg}=inObj;
+  var {kind, base64Img, boUseIdPImg=false}=inObj;
 
-  
   var Sql=[], Val=[];
   var sqlSetExtra="";
   if(kind=='u'){
@@ -1730,27 +1712,80 @@ ReqBE.prototype.uploadImageB64=async function(inObj){
     var idUser=sellerTeam.idUser, tabImage=sellerTeamImageTab, tabMeta=sellerTeamTab;;
   } else return [new ErrorClient("kind="+kind)];
 
-
     // base64Img
   var data = Buffer.from(base64Img.split(",")[1], 'base64');
   console.log('data.length: '+data.length);
   if(data.length==0) return [Error('data.length==0')];
   if(data.length>10000) return [Error('data.length>10000 !?!, aborting!')];
 
-  
   Sql.push("REPLACE INTO "+tabImage+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
-  Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); 
-  if(sqlSetExtra) Val.push(boUseIdPImg);      Val.push(idUser);
-  Sql.push("SELECT imTag, boUseIdPImg FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
-  var sql=Sql.join('\n');
-  var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
-  copySome(Ou,results[2][0],["imTag","boUseIdPImg"]);  
+  if(kind=='u'){
+    Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); 
+    if(sqlSetExtra) Val.push(boUseIdPImg);      Val.push(idUser);
+    Sql.push("SELECT imTag, boUseIdPImg FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
+    var sql=Sql.join('\n');
+    var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
+    copySome(Ou,results[2][0],["imTag","boUseIdPImg"]);
+  }else{
+    Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); Val.push(idUser);
+    Sql.push("SELECT imTag FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
+    var sql=Sql.join('\n');
+    var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
+    copySome(Ou,results[2][0],["imTag"]);
+  } 
 
   Ou.strMessage="Image stored";
   return [null, [Ou]];
 }
 
+ReqBE.prototype.clearUserImage=async function(inObj){
+  var self=this, {req}=this, {site}=req, {siteName}=site;
+  var {userTab, sellerTeamTab, sellerTeamImageTab, buyerTeamTab, buyerTeamImageTab, userImageTab}=site.TableName;
+  var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
+  var Ou={};
 
+  if(!buyer && !seller) { this.mes('No session'); return [null, [Ou]];}
+  var idUser=user.idUser, tabImage=userImageTab, tabMeta=userTab;
+  
+  var Sql=[], Val=[];
+  Sql.push("DELETE FROM "+tabImage+" WHERE idUser=?;"); Val.push(idUser);
+  Sql.push("UPDATE "+tabMeta+" SET boUseIdPImg=1 WHERE idUser=?;"); Val.push(idUser);
+  var sql=Sql.join('\n');
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
+  var nDel=results[0].affectedRows; 
+  Ou.boOK=0; if(nDel==1) {Ou.boOK=1; this.mes('Image deleted'); } else { this.mes(nDel+" images deleted!?");}
+
+  return [null, [Ou]];
+}
+
+ReqBE.prototype.clearTeamImage=async function(inObj){
+  var self=this, {req}=this, {site}=req, {siteName}=site;
+  var {userTab, sellerTeamTab, sellerTeamImageTab, buyerTeamTab, buyerTeamImageTab, userImageTab}=site.TableName;
+  var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB;
+  var Ou={};
+
+  var {kind}=inObj;
+
+  var Sql=[], Val=[];
+  if(kind=='b'){
+    if(!buyerTeam) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=buyerTeam.idUser, tabImage=buyerTeamImageTab, tabMeta=buyerTeamTab;
+  } else if(kind=='s'){
+    if(!sellerTeam) { this.mes('No session'); return [null, [Ou]];}
+    var idUser=sellerTeam.idUser, tabImage=sellerTeamImageTab, tabMeta=sellerTeamTab;;
+  } else return [new ErrorClient("kind="+kind)];
+
+  Sql.push("DELETE FROM "+tabImage+" WHERE idUser=?;"); Val.push(idUser);
+  Sql.push("UPDATE "+tabMeta+" SET imTag=imTag+1 WHERE idUser=?;"); Val.push(idUser);
+  Sql.push("SELECT imTag FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
+  var sql=Sql.join('\n');
+  var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
+  var c=results[0].affectedRows
+  copySome(Ou,results[2][0],["imTag"]);
+  
+  Ou.strMessage=c+" image(s) deleted";
+  return [null, [Ou]];
+}
 
 
 

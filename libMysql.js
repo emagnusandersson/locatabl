@@ -28,7 +28,15 @@ MyMySql.prototype.rollbackNRelease=async function(){  await new Promise(resolve=
 MyMySql.prototype.commitNRelease=async function(){
   var err=await new Promise(resolve=>{this.connection.commit(eT=>resolve(eT));  });  this.connection.release();  return [err];
 }
+// MyMySql.prototype.isConnectionFree=function(){   return this.pool._freeConnections.indexOf(this.connection)!=-1;  }
+// MyMySql.prototype.fin=function(){
+//   if(this.connection) { 
+//     if(this.isConnectionFree()) this.connection.release();
+//     this.connection=null;
+//   };
+// }
 MyMySql.prototype.fin=function(){   if(this.connection) { this.connection.destroy();this.connection=null;};  }
+
 
 
 
