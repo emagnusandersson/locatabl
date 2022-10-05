@@ -345,7 +345,7 @@ app.genRandomString=function(len) {
 
 app.myUUID=function(){
   var array = new Uint32Array(4);
-  app.crypto.getRandomValues(array);
+  app.myCrypto.getRandomValues(array);
   var Str=Array(4);
   for (var i = 0; i < array.length; i++) { Str[i]=array[i].toString(16).padStart(8,"0"); }
   return Str.join("");

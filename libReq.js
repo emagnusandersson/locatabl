@@ -4,6 +4,8 @@
 //When using a device with a small screen such as iphone 5 it was impossible to login because some buttons didn't fit into the screen. I'm guessing this was the problem.
 //So now I have made sure one can use it down to a 280x280 screen.
 
+// redis interface 4.0 does not work
+
 // globalThis
 // Do extra exchange of fb-token, to get longer exipriation time
 // FB: how to enable public photo
@@ -18,7 +20,6 @@
 // globSubscription must be stored in a database mustn't it. (It seams to work, when tested with multiple users.) 
 // Should one use dataSet instead of prop when storing data in the DOM.
 // Use element.classList.add / toggle etc instead of custom library methods.
-// inert attribute
 // Reduce the need of user-agent-string
 // dotenv
 // nodemon
@@ -28,10 +29,16 @@
 // In client.js: Use viewUploadImagePopCreator (with reduceImageSize) instead of viewUploadImagePop. (In viewTeamCreator and image.crInp )
 // Instead of idTeam, strKey (more easy to remember) should be used.
 // in taxi_sellerTeam ... id should be idSeller ... instead of idUser
-// test dialog
 // After a push-message has arrived, and one clicks "Activate" the latest tab opens (I think) not necessarily the tab with a map on.
 // Some times a push-message is sent, the image doesn't come along (sec-fetch-mode header not allowed (no-cors)) (only when debugger window is closed)
 // Should perhaps use onDomContentLoaded instead of onLoad  +  use defer instead of async
+// Pier-Pier Messaging:
+//   WebRtc
+// Client-Server Messaging:
+//   Web sockets (older)
+//   Web transport (promoted in chrome 97 as alternative to Web sockets) (server needs to support http3 (generaly easier than setting up a webrtc server))
+//     Reliable (Streams api)
+//     Unreliable (Datagram api)
 
 // How to attach Chrome DevTools to node --inspect
 // Sampling heap profiler (heap-profile module)
@@ -40,8 +47,14 @@
 // SanitizerAPI (only supported by chrome)
 // Element.isVisible (not yet supported by safari and firefox)
 // Use Navigation API instead of History API (only supported by chrome)
-// cqi, cqw
+// cqi, cqw (not in FF)
+// dialog (doesn't work on ios 12 (but persumably ios 15))
+// popup api (<div popup>) (chrome 106 (Origin trial))
+// inert (in ff not until 107), (in ios not until 15)
 
+
+// After googling "node.js connect debugger to running process" I found:
+//   kill -USR1 <node-pid>   // starts debugger
 
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 //https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
@@ -178,11 +191,11 @@ app.reqKeyRemoteControlSave=async function(){
   var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css">');
 
     // Include site specific JS-files
-  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
+  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" ></script>');
   
   var StrTmp=[siteName+'_'+leafSiteSpecific, 'lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyRemoteControlSave.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" async></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
   }
 
 
@@ -217,7 +230,7 @@ function parseSignedRequest(signedRequest, secret) {
   var [b64UrlMac, b64UrlPayload] = signedRequest.split('.', 2);
   //var mac = b64UrlDecode(b64UrlMac);
   var payload = b64UrlDecode(b64UrlPayload),  data = JSON.parse(payload);
-  var b64ExpectedMac = crypto.createHmac('sha256', secret).update(b64UrlPayload).digest('base64');
+  var b64ExpectedMac = myCrypto.createHmac('sha256', secret).update(b64UrlPayload).digest('base64');
   var b64UrlExpectedMac=b64ExpectedMac.replace(/\+/g, '-').replace(/\//g, '_').replace('=', '');
   if (b64UrlMac !== b64UrlExpectedMac) {
     return [Error('Invalid mac: ' + b64UrlMac + '. Expected ' + b64UrlExpectedMac)];
@@ -387,11 +400,6 @@ app.reqIndex=async function() {
   var strLangBrowser=getBrowserLang(req); if(!checkIfLangIsValid(strLangBrowser)){ strLangBrowser='en'; }
 
   var ua=req.headers['user-agent']||''; ua=ua.toLowerCase();
-  var boMSIE=RegExp('msie').test(ua);
-  var boAndroid=RegExp('android').test(ua);
-  var boFireFox=RegExp('firefox').test(ua);
-  var boUC= RegExp('ucbrowser','i').test(ua);
-  //var boIOS= RegExp('iPhone|iPad|iPod','i').test(ua)
   var boIOS= RegExp('iphone','i').test(ua);
   if(/facebookexternalhit/.test(ua)) {
     objQS.lang='en'; 
@@ -443,9 +451,6 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
   Str.push('<link rel="apple-touch-icon" href="'+srcIcon114+'"/>');
 
 
-  var strTmp='';  //if(boAndroid && boFireFox) {  strTmp=", width=device-width'";}    
-  var strTmpB=''; //if(boAndroid || boIOS) strTmpB=", user-scalable=no";
-
   Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1'/>");
   Str.push('<meta name="theme-color" content="#ff0"/>');
 
@@ -487,6 +492,18 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
   
   Str.push(`<script>window.app=window;</script>`);
 
+  Str.push(`<style>
+:root { --maxWidth:800px; height:100%}
+body {margin:0; height:100%; display:flow-root; font-family:arial, verdana, helvetica; }
+.mainDiv { margin: 0em auto; height: 100%; width:100%; display:flex; flex-direction:column; max-width:var(--maxWidth) }
+.mainDivR { box-sizing:border-box; margin:0em auto; width:100%; display:flex; max-width:var(--maxWidth) }
+h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px; color:black; font-size:1.6em; font-weight:bold; text-align:center; padding:0.4em 0em 0.4em 0em; background:#ff0;  }
+</style>`);
+
+
+    //
+    // FB
+    //
   var tmp=`
 <script>
   window.fbAsyncInit = function() {
@@ -511,61 +528,9 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
 </script>`;
   Str.push(tmp);
 
-
-
-  var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
-  if(typeof boGoogleMap!='undefined' && boGoogleMap) Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
-  
-  //Str.push(`<link rel="preconnect" href="`+uCommon+`">`);
-  //Str.push(`<link rel="preconnect" href="https://connect.facebook.net">`);
-  
-
-  Str.push(`<style>
-:root { --maxWidth:800px; height:100%}
-body {margin:0; height:100%; display:flow-root; font-family:arial, verdana, helvetica; }
-.mainDiv { margin: 0em auto; height: 100%; width:100%; display:flex; flex-direction:column; max-width:var(--maxWidth) }
-.mainDivR { box-sizing:border-box; margin:0em auto; width:100%; display:flex; max-width:var(--maxWidth) }
-h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px; color:black; font-size:1.6em; font-weight:bold; text-align:center; padding:0.4em 0em 0.4em 0em; background:#ff0;  }
-</style>`);
-
-
-  //Str.push('<script type="module" src="'+uSite+'/lib/foundOnTheInternet/sha1.js"></script>');
-  
-    // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
-
-    // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
-  var boDbgT=boDbg; if(boIOS || boUC) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
-  
-  var keyTmp='/'+siteName+'_'+leafManifest, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;
-  //Str.push(`<link rel="manifest" href="`+uSite+`/`+leafManifest+`?v=`+vTmp+`"/>`);
-  Str.push(`<link rel="manifest" href="`+keyTmp+`?v=`+vTmp+`"/>`);
-  var keyTmp='/'+leafServiceWorker, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     const srcServiceWorker=`/`+leafServiceWorker+`?v=`+vTmp;
-  
-    // Include stylesheets
-  var pathTmp='/stylesheets/style.css', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css" async >');
-
-    // Include site specific JS-files
-  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=boDbgT?0:CacheUri[keyCache].eTag;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
-
-    // Include JS-files
-  var StrTmp=[siteName+'_'+leafSiteSpecific, 'lib.js', 'libClient.js', 'lang/en.js', 'filter.js', 'client.js'];
-  for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" async></script>');
-  }
-
-    // Include plugins
-  Str.push(`<script> window.CreatorPlugin={};</script>`);
-  var StrPlugInNArg=site.StrPlugInNArg;
-  for(var i=0;i<StrPlugInNArg.length;i++){
-    var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
-    var Name=ucfirst(nameT); 
-    var pathTmp='/plugin'+Name+'.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" async></script>');
-  }
-
-    // Files with delayed loading
-  var pathTmp='/lib/foundOnTheInternet/sha1.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;   const wsSha1=pathTmp+'?v='+vTmp;
-
-
+    //
+    // Google
+    //
   var strTracker, tmpID=site.googleAnalyticsTrackingID||null;
   tmpID=null;  // Disabling ga
   if(boDbg||!tmpID){strTracker="<script> ga=function(){};</script>";}else{ 
@@ -584,35 +549,84 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
   
   const uRecaptcha='https://www.google.com/recaptcha/api.js?onload=cbRecaptcha&render=explicit';
 
+  var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
+  if(typeof boGoogleMap!='undefined' && boGoogleMap) Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
+  
+  //Str.push(`<link rel="preconnect" href="`+uCommon+`">`);
+  //Str.push(`<link rel="preconnect" href="https://connect.facebook.net">`);
+  
+
+    // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
+
+    // Use normal vTmp on iOS (since I don't have any method of disabling cache on iOS devices (nor any debugging interface))
+    var boDbgT=boDbg; if(boIOS) boDbgT=0; if(typeof boSlowNetWork!='undefined' && boSlowNetWork) boDbgT=0;
+
+  Str.push(`<script>
+//var StrMainProt=[];
+//var StrMainProtRole=[];
+var MainDiv=[];
+var arrViewPop=[];
+</script>`);
+
+  var keyTmp='/'+siteName+'_'+leafManifest, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;
+  //Str.push(`<link rel="manifest" href="`+uSite+`/`+leafManifest+`?v=`+vTmp+`"/>`);
+  Str.push(`<link rel="manifest" href="`+keyTmp+`?v=`+vTmp+`"/>`);
+  var keyTmp='/'+leafServiceWorker, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     const srcServiceWorker=`/`+leafServiceWorker+`?v=`+vTmp;
+
+    // File with delayed loading
+  var pathTmp='/lib/foundOnTheInternet/sha1.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;   const wsSha1=pathTmp+'?v='+vTmp;
+  //Str.push('<script type="module" src="'+uSite+'/lib/foundOnTheInternet/sha1.js" async></script>');
+
+
+  var objOut={strLang, coordApprox, UrlOAuth, response_type, strReCaptchaSiteKey, uRecaptcha, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
+  copySome(objOut, req, ['boTLS']);
+  extend(objOut, {wsSha1});
+
+  Str.push(`<script>`);
+  Str.push(`var tmp=`+serialize(objOut)+`;\n Object.assign(window, tmp);`);
+  Str.push(`</script>`);
+
+
+  
+    // Include stylesheets
+  var pathTmp='/stylesheets/style.css', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css" >');
+
+    // Include site specific JS-files
+  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=boDbgT?0:CacheUri[keyCache].eTag;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" ></script>');
+
+    // Include JS-files
+  var StrTmp=[siteName+'_'+leafSiteSpecific, 'lib.js', 'libClient.js', 'lang/en.js', 'filter.js'];
+  for(var i=0;i<StrTmp.length;i++){
+    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
+  }
+
+    // Include plugins
+  Str.push(`<script> window.CreatorPlugin={};</script>`);
+  var StrPlugInNArg=site.StrPlugInNArg;
+  for(var i=0;i<StrPlugInNArg.length;i++){
+    var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
+    var Name=ucfirst(nameT); 
+    var pathTmp='/plugin'+Name+'.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
+  }
+
+  var StrTmp=['client.js'];
+  for(var i=0;i<StrTmp.length;i++){
+    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
+  }
+
+
   Str.push("</head>");
   Str.push(`<body>
 <title>`+strTitle+`</title>
 <div class="viewFront mainDiv">
 <div id=divEntryBar class="mainDivR" style="min-height:2rem; visibility:hidden;"></div>
 <h1 class=mainH1>`+strH1+`</h1>
-<noscript><div style="text-align:center">You don't have javascript enabled, so this app won't work.</div></noscript>
+<noscript><div style="text-align:center">Javascript is disabled, so this app won't work.</div></noscript>
 <div class=summary style="visibility:hidden">`+strSummary+`</div>
 </div>`); //style="display:none"
   
 
-
-
-
-  Str.push(`<script>
-//var StrMainProt=[];
-//var StrMainProtRole=[];
-var MainDiv=[];
-var arrViewPop=[];`);
-
-  var objOut={strLang, coordApprox, UrlOAuth, response_type, strReCaptchaSiteKey, uRecaptcha, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
-  copySome(objOut, req, ['boTLS']);
-  extend(objOut, {wsSha1});
-
-  Str.push(`var tmp=`+serialize(objOut)+`;\n Object.assign(window, tmp);`);
-  
-
   Str.push(`
-</script>
 <form  id=formLogin style="display:none">
 <label name=email>Email</label><input type=email name=email>
 <label name=password>Password</label><input type=password name=password>
@@ -626,7 +640,6 @@ var arrViewPop=[];`);
 </form>
 </body>
 </html>`);  //visibility:hidden
-
 
   var str=Str.join('\n');
   //res.writeHead(200, "OK", {'Content-Type': MimeType.html});   res.end(str);    
@@ -759,6 +772,7 @@ var uSiteLogin=getCookie('uSiteLogin');
 //var uSiteLogin=location.origin;
 var {search:strQS, hash:strHash}=location;
 debugger
+
 window.opener.postMessage(strQS, uSiteLogin);
 window.close();
 </script></body></html>

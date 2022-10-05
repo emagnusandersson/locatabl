@@ -1,6 +1,5 @@
 
 
-
 /*jshint asi:true*/
 /*jshint esversion: 6*/
 /* jshint shadow:true */
@@ -999,7 +998,6 @@ app.CreatorPlugin.taxi=function(){
       extend(ORole[i].Prop.nChildSeat, tmp);
       extend(ORole[i].Prop.nWheelChairPlaces, tmp);
     }
-    //var charPassengerB=boSafari?'💺':"🯅"; //🧍🚹𓀠웃🚶🕴️🕺👫👤🯅
     var charPassengerB='🚹'
     var charPassengerS='🚹';  //💺
     var tmpF=r=>charPassengerB+r.nPassengers;     extend(oB.Prop.nPassengers, {setMapF:tmpF, setTabF:tmpF, setInfo:tmpF});
@@ -1007,7 +1005,6 @@ app.CreatorPlugin.taxi=function(){
     var tmpF=r=>{return {str:charPassengerB+r.nPassengers}}; extend(oB.Prop.nPassengers, {setMapMF:tmpF});
     var tmpF=r=>{return {str:charPassengerS+r.nPassengers}}; extend(oS.Prop.nPassengers, {setMapMF:tmpF});
 
-    //var charWheelChair=boSafari?'♿︎':"🦽"
     var charWheelChair='♿︎'
     var tmpF=r=>charWheelChair+r.nWheelChairPlaces, tmp2F=r=>{return {str:charWheelChair+r.nWheelChairPlaces}};; 
     for(let i=0;i<ORole.length;i++){
@@ -1609,7 +1606,7 @@ app.CreatorPlugin.programmer=function(){
 
 //0123456789abcdef client.js
 "use strict"
-window.onload=function(){
+app.funLoad=function(){
 
 /*******************************************************************************************************************
  *******************************************************************************************************************
@@ -2122,8 +2119,12 @@ var getOAuthCode=async function(){
 
   var objProp={uSiteLogin:encodeURIComponent(uSite),'max-age':300}
   var {hostname}=new URL(uSite);
-  var ind=hostname.indexOf('.');  if(ind!=-1) objProp.domain=hostname.substr(ind);  
-  document.cookie=objToQueryArr(objProp).join(';');
+  if(/^192\.168\.0\.[0-9]$/.test(hostname)) objProp.domain=hostname;  // To make it work when debugging
+  else {
+    var ind=hostname.indexOf('.');  if(ind!=-1) objProp.domain=hostname.substr(ind+1);  
+  }
+  var strCookie=objToQueryArr(objProp).join(';');
+  document.cookie=strCookie
   var URLLoginRet=new URL(uLoginRet);
 
   window.open(uPop); //, '_blank', 'popup', 'width=580,height=400'
@@ -2716,12 +2717,13 @@ var viewUserSettingCreator=function(){
     oB.Prop.boWebPushOK.setInp.call(spanBoWebPushOK);
     cbBoGeoWatch.checked=boGeoWatch;
     divIPSetting.setUp();
-    //inpKeyRemoteControl.value=tmp.keyRemoteControl; 
+    //spanKeyRemoteControl.value=tmp.keyRemoteControl; 
     //var urlKey=strSchemeLong+tmp.keyRemoteControl+'@'+site.wwwSite;
     var {keyRemoteControl}=tmp
     var boDisableCopy=keyRemoteControl.length==0;  butCopy.prop("disabled",boDisableCopy);
     var urlKey=uSite+'#'+keyRemoteControl;
-    inpKeyRemoteControl.prop({value:urlKey, title:"iSeq: "+tmp.iSeq});
+    spanKeyRemoteControl.prop({title:"iSeq: "+tmp.iSeq});
+    spanKeyRemoteControl.myText(urlKey)
     return true;
   }
   var divIPSetting=divIPSettingCreator().css({background:'lightgrey', margin:'0.2em', border:'1px black solid'});
@@ -2729,7 +2731,7 @@ var viewUserSettingCreator=function(){
 
     // Alternative login method  (change PW)
   var buttChangePW=createElement('button').myText('Change password').on('click', function(e){ viewChangePWPop.openFunc(); });
-  var divPW=createElement('div').myAppend("Alternative login method (with email from IdP):", buttChangePW); //'Change password: ',
+  var divPW=createElement('div').myAppend("Alternative login method (with email from IdP): ", buttChangePW); //'Change password: ',
   
   var saveDisplayName=function(){ var vec=[['UUpdate',{displayName:inpDisplayName.value.trim()}], ['setupById', {}]];   majax(vec); }
   var inpDisplayName=createElement('input').prop({type:'text'}).on('keypress', function(e){if(e.which==13) {saveDisplayName();return false;}} );
@@ -2761,25 +2763,33 @@ var viewUserSettingCreator=function(){
   var divBoGeoWatch=createElement('div').myAppend('Continuous tracking (screen needs to be on):', imgH, cbBoGeoWatch);
 
     // keyRemoteControl
-  var strHelp="Copy this url with key to the remote controller.";
+  var strHelp="Copy this to the remote controller.";
   var imgH=imgHelp.cloneNode(1).css({'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
   //var aLink=createElement('a').myText('link to trackerControl').prop({href:'https://emagnusandersson.github.io/trackerControl/'}).css({'margin-left':'0.4em'});
-  var inpKeyRemoteControl=createElement('input').prop({ size:40}).attr({readonly:true}).css({'font-size':'0.8em', 'margin-bottom':'0.7em'}); //placeholder:'Key for external controller',
+  var spanKeyRemoteControl=createElement('span').css({'font-size':'0.8em', 'padding':'0.1em', 'user-select':'none', width:'100%', display:'block', 'box-sizing':'border-box', overflow:'hidden', background:'#ccc'}); //placeholder:'Key for external controller',
+  var inpKeyRemoteControl=createElement('input')
   var generateF=function(){
     var strUUID=myUUID();
     //var urlKey=strSchemeLong+strUUID+'@'+site.wwwSite;
     var urlKey=uSite+'#'+strUUID;
-    inpKeyRemoteControl.prop({value:urlKey, title:"iSeq: 0"});
+    spanKeyRemoteControl.myText(urlKey).prop({title:"iSeq: 0"});
     var vec=[['keyRemoteControlSave',{keyRemoteControl:strUUID}]];   majax(vec);
     butCopy.prop("disabled",false);
   }
-  var butGenerateKeyRemoteControl=createElement('button').myText('Generate new key').on('click',generateF);
+  var butGenerateKeyRemoteControl=createElement('button').myText('Generate new').on('click',generateF);
   var copy=function(){
-    inpKeyRemoteControl.select(); inpKeyRemoteControl.setSelectionRange(0, 99999); document.execCommand("copy");
+    if(boIOS){
+      divKeyRemoteControl.myAppend(inpKeyRemoteControl);
+      inpKeyRemoteControl.value=spanKeyRemoteControl.myText()
+      inpKeyRemoteControl.select(); inpKeyRemoteControl.setSelectionRange(0, 99999); document.execCommand("copy");
+      inpKeyRemoteControl.detach()
+    }else{
+      navigator.clipboard.writeText(spanKeyRemoteControl.myText());
+    }
   }
-  var butCopy=createElement('button').myText('Copy to clipboard').on('click',copy);
-  var divKeyRemoteControl=createElement('div').myAppend('Url with authentication key for remote controller:', imgH, inpKeyRemoteControl, butGenerateKeyRemoteControl, butCopy); //, aLink
-
+  var butCopy=createElement('button').myText('Copy').on('click',copy);
+  var divKeyRemoteControl=createElement('div').myAppend('Uri+key (for remote controller): ', butGenerateKeyRemoteControl, butCopy, spanKeyRemoteControl); //, aLink
+  //, imgH
   //var divRemoteControl=createElement('div').myAppend(divKeyRemoteControl).css({background:'lightgrey'});
   
       // deleteDiv
@@ -2788,8 +2798,10 @@ var viewUserSettingCreator=function(){
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
   var Div=[divIPSetting, divPW, divDisplayName, divSelectImageIdPOrCustom, divBoWebPushOK, divKeyRemoteControl, deleteDiv];  //, divBoGeoWatch
-  Div.forEach(ele=>ele.css({'margin-top':'1em'}));
-  Div.forEach((ele,i)=>{if(i%2==0)ele.css({background:'lightgrey'})});
+  //Div.forEach(ele=>ele.css({'margin-top':'1em'}));
+  Div.slice(1).forEach(ele=>ele.css({'margin-top':'.3em', padding:'0.5em', background:'#eee', 'box-shadow':'0 0 0.3em 0.1em darkgrey inset'}));
+
+  //Div.forEach((ele,i)=>{if(i%2==0)ele.css({background:'lightgrey'})});
   var divCont=createElement('div').myAppend(...Div).addClass('contDiv');
   
     // divFoot
@@ -2937,7 +2949,10 @@ var settingCreator=function(oRole){
     //[...el.querySelectorAll('input,select')].forEach( (ele)=>ele.css({'float':'right',clear:'both'}) );
 
     var checkBoxes=el.querySelectorAll('input[type=checkbox]');
-    var tmp=boAndroid?{'-webkit-transform':'scale(2,2)'}:{width:'1.4em',height:'1.4em'}; extend(tmp,{flex:'0 0 auto'});  [...checkBoxes].forEach((ele)=>ele.css(tmp));
+    //var tmp=boAndroid?{'-webkit-transform':'scale(2,2)'}:{width:'1.4em',height:'1.4em'};
+    var tmp={width:'1.4em',height:'1.4em'};
+    extend(tmp,{flex:'0 0 auto'});
+    [...checkBoxes].forEach((ele)=>ele.css(tmp));
 
       // Add labels
     for(var i=0;i<StrGroup.length;i++){
@@ -4976,7 +4991,8 @@ var markSelectorCreator=function(oRole){
       var rb=createElement('input').prop({"type":"radio",name:'markSel'}).prop('value',strName).on('change', changeFunc);
       //if(i%2) rb.css({'margin':'0.5em 1.6em 0.5em 0'}); else rb.css({'margin':'0.5em 0em 0.5em 1.6em'})
       var cssTmp; if(i%2) cssTmp={'margin-left':'2em'}; else cssTmp={'margin-right':'2em'};  rb.css(cssTmp);
-      if(boAndroid) rb.css({'-webkit-transform':'scale(2,2)'}); else rb.css({width:'1.4em',height:'1.4em'});
+      //if(boAndroid) rb.css({'-webkit-transform':'scale(2,2)'}); else rb.css({width:'1.4em',height:'1.4em'});
+      rb.css({width:'1.4em',height:'1.4em'});
       var imgH=''; if(strName in oRole.helpBub) { imgH=imgHelp.cloneNode(1).css({'margin-right':'1em'});  popupHover(imgH,oRole.helpBub[strName]);  }
       var tdL=createElement('td').myAppend(calcLabel(langHtml.prop, strName),' ',imgH), tdRB=createElement('td').myAppend(rb);
       var r=createElement('tr').myAppend(tdL,tdRB).attr({name:strName});
@@ -5073,7 +5089,8 @@ var columnSelectorCreator=function(oRole){
     for(var i=0;i<StrProp.length;i++){
       var strName=StrProp[i];
       var cb=createElement('input').prop({"type":"checkbox"}).css({'margin':'0.6em 1.2em'}).on('change', changeFunc);
-      if(boAndroid) cb.css({'-webkit-transform':'scale(2,2)'}); else cb.css({width:'1.4em',height:'1.4em'});
+      //if(boAndroid) cb.css({'-webkit-transform':'scale(2,2)'}); else cb.css({width:'1.4em',height:'1.4em'});
+      cb.css({width:'1.4em',height:'1.4em'});
       cb.value=strName;  arrCB[i]=cb;
       var imgH=''; if(strName in oRole.helpBub) { imgH=imgHelp.cloneNode(1).css({'margin-right':'1em'});  popupHover(imgH,oRole.helpBub[strName]);  }
       var tdL=createElement('td').myAppend(calcLabel(langHtml.prop, strName),' ',imgH), tdCB=createElement('td').myAppend(cb);
@@ -5892,17 +5909,14 @@ window.elHtml=document.documentElement;  window.elBody=document.body
 window.boTouch = Boolean('ontouchstart' in document.documentElement);  //boTouch=1;
 
 var ua=navigator.userAgent, uaLC = ua.toLowerCase(); //alert(ua);
-window.boAndroid = uaLC.indexOf("android") > -1;
-window.boFF = uaLC.indexOf("firefox") > -1;
+app.boAndroid = uaLC.indexOf("android") > -1;
+app.boFF = uaLC.indexOf("firefox") > -1;
 
 app.boChrome= /chrome/.test(uaLC);
 app.boIOS= /iphone|ipad|ipod/.test(uaLC);
-app.boSafari= /safari/.test(uaLC);
-app.boEpiphany=/epiphany/.test(uaLC);    if(boEpiphany && !boAndroid) boTouch=false;  // Ugly workaround
-//app.boEdge= /\bedg\b/.test(uaLC);
-app.boUCBrowser = 0;
+app.boEpiphany=/epiphany/.test(uaLC);    if(boEpiphany && !boAndroid) boTouch=false;  // Ugly workaround (epiphany=GNOME Web)
 
-window.boOpera=RegExp('OPR\\/').test(ua); if(boOpera) boChrome=false; //alert(ua);
+app.boOpera=RegExp('OPR\\/').test(ua); if(boOpera) boChrome=false; //alert(ua);
 
 window.boReallySmall=0;
 if(boTouch){
@@ -5942,7 +5956,7 @@ window.interpretHashVariables=function(){
 }
 interpretHashVariables();
 
-var strBackSymbol=(boSafari)?'◄':'◀';
+var strBackSymbol='◄';
 
 var strTable='<span style="transform:scaleX(1.5); display:inline-block; position:relative; left:-2px">┋</span><span style="transform:scaleX(5); display:inline-block; position:relative; left:-1px">┋</span>'
 var strTable='<span style="transform:scaleX(1.5); display:inline-block; position:relative; left:-4px; letter-spacing: -6px; text-align: center;">┋┋ ┋ ┋ ┋</span>'; //┊┋┋┋┋
@@ -6314,7 +6328,6 @@ var pb=createElement('p').myText('('+langHtml.WaitingForYourPositionHelp+')');
 var startPop=createElement('div').myAppend(pa,pb);
 if(!boTouch) startPop=startPopExtend(startPop); else  startPop=startPopExtendTouch(startPop);
 var startPopTimer=null;
-//if(boTouch && boIOS) startPop.openFunc(); else startPopTimer=setTimeout(startPop.openFunc,1000);
 
 //agreementStart=agreementStartCreator();
 //if(boFirstVisit) agreementStart.setLocalDates(1);
@@ -6656,9 +6669,9 @@ boGeoOK=false; setItem('boGeoOK',boGeoOK)
 
 
 };
-
+funLoad()
+//window.onload=funLoad
 //0123456789abcdef
-
 
 
 

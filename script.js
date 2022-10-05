@@ -9,7 +9,7 @@ import concat from 'concat-stream';
 import fetch from 'node-fetch';
 import formidable from "formidable";
 //import NodeRSA from 'node-rsa';
-import crypto from 'crypto';
+import myCrypto from 'crypto';
 import zlib from 'zlib';
 import redis from "redis";
 import Streamify from 'streamify-string';
@@ -33,7 +33,7 @@ var argv = minimist(process.argv.slice(2));
 
 
 app.extend=Object.assign;
-extend(app, {http, url, path, fsPromises, concat, fetch, formidable, crypto, zlib, redis, Streamify, validator, serialize, UglifyJS, ip, webPush, mime, mysql, gm});
+extend(app, {http, url, path, fsPromises, concat, fetch, formidable, myCrypto, zlib, redis, Streamify, validator, serialize, UglifyJS, ip, webPush, mime, mysql, gm});
 //, sgMail
 
 await import('./lib.js')

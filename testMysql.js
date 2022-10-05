@@ -1,7 +1,6 @@
 
 globalThis.app=globalThis;
 import http from "http";
-import crypto from 'crypto';
 import mysql from 'mysql';
 import path from "path";
 import fs, {promises as fsPromises} from "fs";
