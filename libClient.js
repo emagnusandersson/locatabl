@@ -234,7 +234,7 @@ app.isVisible=function(el) {  // Could be replaced with el.isVisible ?!?
  * popupHover: popup a elBubble when you hover over elArea
  *******************************************************************************************************************/
 app.popupHover=function(elArea, elBubble, tClose=4){
-  elBubble.css({position:'absolute', 'box-sizing':'border-box', margin:'0px', 'text-align':'left'}); //
+  elBubble.css({position:'absolute', margin:'0px', 'text-align':'left'}); //
   function setBubblePos(e){
     var xClear=6, yClear=6;
     var x = e.pageX, y = e.pageY;
@@ -251,7 +251,7 @@ app.popupHover=function(elArea, elBubble, tClose=4){
       if(xFar<xBorder){ 
         x=x+xClear;
       } else {
-        x=x-bubW-xClear;  // if the bubble doesn't fit on the right side then flip to the left side
+        x=x-bubW-xClear;  // If the bubble overflows to the right, then display it to the left of the pointer.
         //x=x-xClear; boRight=false;
       }
         
@@ -259,7 +259,7 @@ app.popupHover=function(elArea, elBubble, tClose=4){
       if(yFar<yBorder) {
         y=y+yClear;
       }else{ 
-        y=y-bubH-yClear;   // if the bubble doesn't fit below then flip to above
+        y=y-bubH-yClear;   // If the bubble overflows downwards then display it above the pointer.
         //y=y-yClear; boBottom=false;
       }
     } else {
@@ -318,7 +318,7 @@ app.vippButtonExtend=function(el, srcVipp0, srcVipp1){
   var o0={background:'url('+srcVipp0+') no-repeat'}, o1={background:'url('+srcVipp1+') no-repeat'};
 
   el.attr({boOn:0});
-  el.css({'background':'url('+srcVipp0+') no-repeat',height:'33px',width:'90px',zoom:'60%','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
+  el.css({'background':'url('+srcVipp0+') no-repeat',height:'33px',width:'90px',transform:'scale(0.6)','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
   el.on('click',function(){var t=1-el.attr('boOn');   el.setStat(t);});
   return el;
 }

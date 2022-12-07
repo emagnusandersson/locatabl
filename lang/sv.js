@@ -106,6 +106,9 @@ Wiki:'Wiki',
 
 Sort:'Sortera',
 SortColumns:'Sortera kolumner',
+Rearrange:'Ändra ordning',
+RearrangeColumns:'Ändra kolumnordning',
+ColumnOrder:'Kol­umn ordn­ing',
 
 column:'kolumn',
 show:'visa',
@@ -574,79 +577,104 @@ globalThis.langServerFunc=function(){
 if('taxi' in Site) Site.taxi.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Taxitracker, Hitta taxi, få taxijobb"; serv.strH1="taxi.locatabl.com"; 
-  serv.strDescription="Trackersajt för taxibilar/taxiförare.";
+  serv.strDescription="Trackersajt för att hitta och jämföra taxibilar/taxiförare och taxikunder.";
   serv.strKeywords="taxi, taxijobb, taxitracker";
-  serv.strSummary="<div>\n\
-  <p>Denna webbplats använder sig av positioneringssystemet i kundernas och taxiförarnas iphones/android/datorer.</p>\n\
-  <p>Kunden kan då på en karta se vart alla lediga taxibilar är i närheten och jämföra senaste/aktuella priser, antal säten etc.</p>\n\
-  <p>Taxiföraren kan ändra priset mellan olika tider beroende på tillgång och efterfrågan.</p>\n\
-</div>";
+  serv.strSummary=`<div>
+  <p>Tracker-web-app för taxiförare och resp. kunder.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att användare i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
 }
 
 if('transport' in Site) Site.transport.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Budbilstracker, Hitta budbilar, få budbilsjobb"; serv.strH1="transport.locatabl.com"; 
-  serv.strDescription="Trackersajt för budbilar.";
+  serv.strDescription="Trackersajt för att hitta och jämföra transporter/budbilar och kunder med transportjobb.";
   serv.strKeywords="budbilar, chaufförer, chaufförsjobb, lastbilschaufför, transportjobb, förartracker";
-  serv.strSummary="<div>\n\
-  <p>Denna webbplats använder sig av positioneringssystemet i kundernas och förarnas iphones/android/datorer.</p>\n\
-  <p>Kunden kan då på en karta se vart alla lediga fordon är i närheten och jämföra senaste/aktuella priser, fordonstyp etc.</p>\n\
-  <p>Föraren kan ändra priset mellan olika tider beroende på tillgång och efterfrågan.</p>\n\
-</div>";
+  serv.strSummary=`<div>
+  <p>Tracker-web-app för förare och resp. kunder.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att anavändre i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
+}
+
+if('vehicledriver' in Site) Site.vehicledriver.langSetup=function(){
+  var serv=this.serv={};
+  serv.strTitle="Hitta förare, få körjobb"; serv.strH1="vehicledriver.locatabl.com"; 
+  serv.strDescription="Trackersajt för att hitta och jämföra förare och kunder fordon som behöver köras.";
+  serv.strKeywords="förare, förarjobb, körjobb, förartracker";
+  serv.strSummary=`<div>
+  <p>Tracker-web-app för förare och resp. kunder med fordon som behöver köras.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att användare i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
 }
 
 if('cleaner' in Site) Site.cleaner.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Städartracker, Hitta städare/städarbete"; serv.strH1="cleaner.locatabl.com"; 
-  serv.strDescription="Trackersajt för städare.";
+  serv.strDescription="Trackersajt för att hitta och jämföra städare och kunder med städupdrag.";
   serv.strKeywords="städare, städjobb, tracker";
-  serv.strSummary="<div>\n\
-  <p>Web-app för städare och de som söker städare</p>\n\
-  <p>Städaren kan göra sig synlig för sina kunder, och kunderna kan se på en karta vilka städare som är tillgängliga för tillfället och jämföra priser, rykte etc.</p>\n\
-</div>";
+  serv.strSummary=`<div>
+  <p>Web-app för städare och kunder med städjobb.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att användare i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
 }
 if('windowcleaner' in Site) Site.windowcleaner.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Hitta fönsterputsare"; serv.strH1="windowcleaner.locatabl.com"; 
-  serv.strDescription="Trackersajt för fönsterputsare.";
+  serv.strDescription="Trackersajt för att hitta och jämföra fönsterputsare och resp. kunder.";
   serv.strKeywords="fönsterputsare, fönsterputsarjobb, tracker";
-  serv.strSummary="<div>\n\
-  <p>Web-app för fönsterputsare och de som vill köpa fönsterputsaretjänster</p>\n\
-  <p>Fönsterputsare kan göra sig synlig för sina kunder, och kunderna kan se på en karta vilka fönsterputsare som är tillgängliga för tillfället och jämföra priser, rykte etc.</p>\n\
-</div>";
+  serv.strSummary=`<div>
+  <p>Tracker-web-app för fönsterputsare och resp. kunder.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att användare i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
 }
 
 if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Tracker av frukt och grönsaksplockare"; serv.strH1="fruitpicker.locatabl.com"; 
-  serv.strDescription="Trackersajt av frukt och grönsaksplockare.";
+  serv.strDescription="Trackersajt för att hitta och jämföra plockjobbare och resp. plockjobb.";
   serv.strKeywords="tracker frukt och grönsaksplockare, jobb";
-  serv.strSummary="<div>\n\
-  <p>Web-app för frukt och grönsaksplockare och deras arbetsgivare.</p>\n\
-  <p>De som vill ha jobb som plockare kan göra sig synlig för arbetsgivare. Fungerar över hela världen där det finns internet. Bra för korttidsanställningar.</p>\n\
-</div>";
+  serv.strSummary=`<div>
+  <p>Tracker-web-app för grönsaksplockare och resp. kunder med plockjobb.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att användare i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
 }
 
 if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
   var serv=this.serv={};
   serv.strTitle="Tracker av gräsklipparentreprenörer"; serv.strH1="lawnmowing.locatabl.com"; 
-  serv.strDescription="Trackersajt av gräsklipparentreprenörer.";
+  serv.strDescription="Trackersajt för att hitta och jämföra gräsklipparentreprenörer och resp. kunder.";
   serv.strKeywords="tracker gräsklipparentreprenörer, jobb";
-  serv.strSummary="<div>\n\
-  <p>Web-app för gräsklipparentreprenörer och deras arbetsgivare.</p>\n\
-  <p>De som vill ha gräsklipparjobb kan göra sig synlig för arbetsgivare. Fungerar över hela världen där det finns internet. Bra för korttidsanställningar.</p>\n\
-</div>";
+  serv.strSummary=`<div>
+  <p>Tracker-web-app för gräsklipparentreprenörer och resp. kunder med gräsklippningsjobb.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att användare i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
 }
 
 if('programmer' in Site) Site.programmer.langSetup=function(){ 
   var serv=this.serv={};
   serv.strTitle="Tracker av programmerare, Hitta programmerare/programmeringsjobb"; serv.strH1="programmer.locatabl.com"; 
-  serv.strDescription="Trackersajt för programmerare.";
+  serv.strDescription="Trackersajt för att hitta och jämföra programmerare och resp. kunder med programmerarjobb.";
   serv.strKeywords="Programmerare, programmeringsjobb, tracker, frilans";
-  serv.strSummary="<div>\n\
-  <p>Web-app för programmerare och de som söker programmerare</p>\n\
-  <p>Programmeraren kan göra sig synlig för sina kunder, och kunderna kan se på en karta vilka programmerare som är tillgängliga i närområdet och jämföra kunskaper etc.</p>\n\
-</div>";
+  serv.strSummary=`<div>
+  <p>Tracker-web-app för programmerare och resp. kunder med programmeringsjobb.</p>
+  <p>Användare kan göra sig själva synliga på en karta i en viss roll så att användare i motsatta roll kan söka och jämföra priser, rykte och annan data.</p>
+  <p>Användarna kan ändra sina priser beroende på tillgång och efterfrågan.</p>
+  <p>Användarna kan dölja/visa sig på kartan med ett enkelt knapptryck.</p>
+</div>`;
 }
 
 //Site.bla.langSetup=function(){this.strTitle="App för entreprenörer"; this.strH1="App för entreprenörer"; this.strSummary='<div></div>';}

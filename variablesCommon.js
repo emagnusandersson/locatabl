@@ -28,6 +28,7 @@ leafServiceWorker:'serviceworker.js',
 leafDataDelete:'dataDelete',
 leafDataDeleteStatus:'dataDeleteStatus',
 leafDeAuthorize:'deAuthorize',
+leafLoginBackB:'loginBackB.html',
 });
 
 
@@ -190,7 +191,7 @@ PluginF.general=function(site){
 
   
     // StrOrder: Order of arguments in roleTab.
-    // It correspond to properties in oS.Prop/oC.Prop (PropTmp) with b-bit 6 set.
+    // It correspond to properties in oB.Prop/oS.Prop (PropTmp) with b-bit 6 set.
     // Properties in PropTmp with bit6 set that is NOT included in StrOrder, will have their property name added to StrOrder in the bottom of this file.
     // Just for reference I write them down here: (as it is at the time of writing): 
     //   * geoHash, boWebPushOK, experience
@@ -283,11 +284,12 @@ PluginF.general=function(site){
 
 
 
-PluginF.vehicleType=function(site){
+PluginF.vehicleType=function(site, charRoleUC){
   var [oB,oS]=site.ORole;
+  var oRole=charRoleUC=='B'?oB:oS;
 
-    // oS ////////////////////
-  var Prop=oS.Prop;
+    // oRole ////////////////////
+  var Prop=oRole.Prop;
   //                         012345678
   var tmpEnumVehicle=['sedan', 'wagon', 'largeMPV', 'MPV', 'hatchback'];
   var PropTmp={
@@ -299,8 +301,9 @@ PluginF.vehicleType=function(site){
   Prop.vehicleType.selOneF=selEnumF;
   Prop.vehicleType.roleUpdF=updEnumBoundF;
 
-  array_mergeM(oS.StrFiltAccept, Object.keys(PropTmp));
-  oS.StrOrder.push('vehicleType');
+  array_mergeM(oRole.StrFiltAccept, Object.keys(PropTmp));
+  oRole.StrOrder.push('vehicleType');
+
 }
 
 PluginF.distNTimePrice=function(site){
@@ -429,6 +432,8 @@ PluginF.hourlyPrice=function(site, charRoleUC){
   oRole.StrOrder.push('pricePerHour');
 }
 
+
+
 PluginF.fixedPricePerUnit=function(site){
   var [oB,oS]=site.ORole;
     // oB ////////////////////
@@ -438,9 +443,10 @@ PluginF.fixedPricePerUnit=function(site){
     fixedPricePerUnitUnit:  {b:'111011111',type:'VARCHAR(5)', default:'', feat:{kind:'B'}}
   };
   extend(oB.Prop, PropTmp); 
-  oB.StrPrice=oB.StrPrice||[];  oB.StrPrice.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');
-  array_mergeM(oB.StrFiltAccept, 'fixedPricePerUnit', 'fixedPricePerUnitUnit');
-  oB.StrOrder.push('fixedPricePerUnit', 'fixedPricePerUnitUnit');
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);
+  oB.StrPrice=oB.StrPrice||[];  array_mergeM(oB.StrPrice, StrPropE);
+  array_mergeM(oB.StrFiltAccept, StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
 }
 
 /***********************************************************************************
@@ -462,29 +468,29 @@ PluginF.taxi=function(site){
 
   extend(oB.Prop,PropTmp);  oB.Prop.nPassengers.default=1;
   extend(oS.Prop, PropTmp);
-  site.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, site.StrPropE);   array_mergeM(oS.StrFiltAccept, site.StrPropE); 
+  var StrPropE=site.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE);   array_mergeM(oS.StrFiltAccept, StrPropE); 
   //oB.StrOrder.push('nPassengers', 'nChildSeat', 'nWheelChairPlaces');
   //oS.StrOrder.push('nPassengers', 'nChildSeat', 'nWheelChairPlaces');
-  array_mergeM(oB.StrOrder, site.StrPropE);
-  array_mergeM(oS.StrOrder, site.StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
+  array_mergeM(oS.StrOrder, StrPropE);
   
       // oS ////////////////////
   //                           012345678
-  var PropTmpS={
+  var PropTmp={
     brand:               {b:'111000111',type:'VARCHAR(20)', default:'',feat:{kind:'B'}},
     idDriverGovernment:  {b:'111011110',type:'VARCHAR(65)', default:''},
     nExtraSeat:          {b:'111011110',type:'TINYINT', default:0, feat:{kind:'S10',min:[0, 1, 2, 3],span:1}}
   };
   
-  extend(oS.Prop, PropTmpS);
-  
-  oS.StrPropE=Object.keys(PropTmpS);
-  array_mergeM(oS.StrFiltAccept, oS.StrPropE);  
-  
-  oS.Prop.vehicleType.feat.bucket=array_mergeM(oS.Prop.vehicleType.Enum, ['rickshaw', 'limo', 'bus', 'smallBus', 'boat']);
+  extend(oS.Prop, PropTmp);
+  var StrPropE=oS.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oS.StrFiltAccept, StrPropE);
+
+  var {vehicleType}=oS.Prop;
+  vehicleType.feat.bucket=array_mergeM(vehicleType.Enum, ['rickshaw', 'limo', 'bus', 'smallBus', 'boat']);
   //oS.StrOrder.push('brand', 'idDriverGovernment', 'nExtraSeat');
-  array_mergeM(oS.StrOrder, oS.StrPropE);
+  array_mergeM(oS.StrOrder, StrPropE);
 }
 
 PluginF.transport=function(site){
@@ -505,29 +511,88 @@ PluginF.transport=function(site){
   } 
   
   extend(oB.Prop, PropTmp); extend(oS.Prop, PropTmp);
-  site.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, site.StrPropE);  array_mergeM(oS.StrFiltAccept, site.StrPropE);
+  var StrPropE=site.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE);  array_mergeM(oS.StrFiltAccept, StrPropE);
   //array_mergeM(oB.StrOrder, 'payload', site.StrTransportBool);
   //array_mergeM(oS.StrOrder, 'payload', site.StrTransportBool);
-  array_mergeM(oB.StrOrder, site.StrPropE);
-  array_mergeM(oS.StrOrder, site.StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
+  array_mergeM(oS.StrOrder, StrPropE);
    
     // oS ////////////////////
   //                           012345678
-  var PropTmpS={
+  var PropTmp={
     brand:               {b:'111000111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
   };
 
-  extend(oS.Prop, PropTmpS);
+  extend(oS.Prop, PropTmp);
+  var StrPropE=oS.StrPropE=Object.keys(PropTmp);  
+  array_mergeM(oS.StrFiltAccept, StrPropE);  
   
-  oS.StrPropE=Object.keys(PropTmpS);  
-  array_mergeM(oS.StrFiltAccept, oS.StrPropE);  
-  
-  oS.Prop.vehicleType.feat.bucket=oS.Prop.vehicleType.Enum=array_mergeM(['bike', 'moped', 'MC'], oS.Prop.vehicleType.Enum, ['pickup', 'van', 'lorry', 'semiTrailer',  'lorryWTrailer', 'semiTrailerWTrailer', 'boat']);   //, 'lorryWDollyTrailer', 'semiTrailerWDollyTrailer'
+  var {vehicleType}=oS.Prop;
+  vehicleType.feat.bucket=vehicleType.Enum=array_mergeM(['bike', 'moped', 'MC'], vehicleType.Enum, ['pickup', 'van', 'lorry', 'semiTrailer',  'lorryWTrailer', 'semiTrailerWTrailer', 'boat']);   //, 'lorryWDollyTrailer', 'semiTrailerWDollyTrailer'
   //oS.StrOrder.push('brand');
-  array_mergeM(oS.StrOrder, oS.StrPropE);
-  
+  array_mergeM(oS.StrOrder, StrPropE);
 }
+
+PluginF.vehicledriver=function(site){
+  var [oB,oS]=site.ORole;
+ 
+    // Both ////////////////////
+  var PropTmp={
+    other:             {b:'111000111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
+  };
+
+  var StrPropE=site.StrPropE=Object.keys(PropTmp);
+  extend(oB.Prop, PropTmp);   extend(oS.Prop, PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE);  array_mergeM(oS.StrFiltAccept, StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
+  array_mergeM(oS.StrOrder, StrPropE);
+  
+  
+    // oB ////////////////////
+  //                           012345678
+  var PropTmp={
+    requiredLicense:       {b:'111000111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}},
+    //vehicle:               {b:'111000111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
+  };
+  oB.StrBool=['canCarryBike', 'canCarryFoldableBike', 'bikeCarryingOnlyWithProtectiveBag', 'hasBikeRack']; 
+
+  for(var i=0;i<oB.StrBool.length;i++){
+    var name=oB.StrBool[i];
+    PropTmp[name]=         {b:'111011110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
+  } 
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);   extend(oB.Prop, PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE); 
+  array_mergeM(oB.StrOrder, StrPropE);
+  
+  var {vehicleType}=oB.Prop;
+  vehicleType.feat.bucket=vehicleType.Enum=array_mergeM(['sedan', 'lorry', 'semiTrailer',  'lorryWTrailer', 'semiTrailerWTrailer', 'bus', 'tractor', 'boat', 'bike', 'moped', 'MC']);
+
+    // oS ////////////////////
+  //                           012345678
+  var PropTmp={
+    license:               {b:'111000111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
+  };
+  
+  oS.StrBool=['hasProtectiveBagToPutFoldableBikeIn'];
+  for(var i=0;i<oS.StrBool.length;i++){
+    var name=oS.StrBool[i];
+    PropTmp[name]=          {b:'111011110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
+  } 
+
+  var StrPropE=oS.StrPropE=Object.keys(PropTmp);   extend(oS.Prop, PropTmp);
+  array_mergeM(oS.StrFiltAccept, StrPropE);  
+  array_mergeM(oS.StrOrder, StrPropE);
+
+  
+  arrValRemove(oS.StrFiltAccept, 'experience');  arrValRemove(oS.StrOrder, 'experience');
+  delete oS.Prop.experience
+
+  var {vehicleType}=oS.Prop, Enum=['bike', 'foldableBike', 'kickBike', 'foot'];
+  vehicleType.feat.bucket=vehicleType.Enum=Enum;
+  vehicleType.default=Enum[0];
+}
+
 
 PluginF.cleaner=function(site){
   var [oB,oS]=site.ORole;
@@ -541,12 +606,13 @@ PluginF.cleaner=function(site){
     PropTmp[name]=         {b:'111011110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   }
   extend(oB.Prop, PropTmp); 
-  oB.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, oB.StrPropE); 
-  array_mergeM(oB.StrOrder, oB.StrPropE);
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE); 
+  array_mergeM(oB.StrOrder, StrPropE);
   
     // oS ////////////////////
-  oS.Prop.vehicleType.feat.bucket=oS.Prop.vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
+  var {vehicleType}=oS.Prop;
+  vehicleType.feat.bucket=vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
 }
 
 
@@ -560,9 +626,9 @@ PluginF.windowcleaner=function(site){
     customerHasEquipment:{b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}}
   };
   extend(oB.Prop,PropTmp);
-  oB.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, oB.StrPropE); 
-  array_mergeM(oB.StrOrder, oB.StrPropE);
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE); 
+  array_mergeM(oB.StrOrder, StrPropE);
   
   
     // oS ////////////////////
@@ -573,11 +639,12 @@ PluginF.windowcleaner=function(site){
     var name=StrBool[i];
     PropTmp[name]=         {b:'111011110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   }
-  oS.Prop.vehicleType.feat.bucket=oS.Prop.vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
+  var {vehicleType}=oS.Prop;
+  vehicleType.feat.bucket=vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
   extend(oS.Prop,PropTmp); 
-  oS.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oS.StrFiltAccept, oS.StrPropE); 
-  array_mergeM(oS.StrOrder, oS.StrPropE);
+  var StrPropE=oS.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oS.StrFiltAccept, StrPropE); 
+  array_mergeM(oS.StrOrder, StrPropE);
 }
 
 PluginF.lawnmowing=function(site){
@@ -590,13 +657,14 @@ PluginF.lawnmowing=function(site){
     customerHasEquipment:{b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}}
   };
   extend(oB.Prop,PropTmp);
-  oB.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
-  array_mergeM(oB.StrOrder, oB.StrPropE);
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
   
     // oS ////////////////////
   oS.StrBool=['pushMower','ridingMower', 'edger'];
-  oS.Prop.vehicleType.feat.bucket=oS.Prop.vehicleType.Enum=['ridingMower', 'foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
+  var {vehicleType}=oS.Prop;
+  vehicleType.feat.bucket=vehicleType.Enum=['ridingMower', 'foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van'];
 
   //                        012345678
   var PropTmp={
@@ -608,9 +676,9 @@ PluginF.lawnmowing=function(site){
     PropTmp[name]=         {b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   }
   extend(oS.Prop,PropTmp);
-  oS.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oS.StrFiltAccept, oS.StrPropE);
-  array_mergeM(oS.StrOrder, oS.StrPropE);
+  var StrPropE=oS.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oS.StrFiltAccept, StrPropE);
+  array_mergeM(oS.StrOrder, StrPropE);
 }
 
 
@@ -628,14 +696,15 @@ PluginF.snowremoval=function(site){
     PropTmp[name]=          {b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   }
   extend(oB.Prop, PropTmp); 
-  oB.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
-  array_mergeM(oB.StrOrder, oB.StrPropE);
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
   
   
     // oS ////////////////////
   oS.StrBool=['shovel', 'snowblower', 'plow'];
-  oS.Prop.vehicleType.feat.bucket=oS.Prop.vehicleType.Enum=[ 'foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van', 'lorryOpen', 'ridingMower', 'tractor'];
+  var {vehicleType}=oS.Prop;
+  vehicleType.feat.bucket=vehicleType.Enum=[ 'foot', 'bike', 'moped', 'sedan', 'wagon', 'pickup', 'van', 'lorryOpen', 'ridingMower', 'tractor'];
   //                         012345678
   var PropTmp={};
   for(var i=0;i<oS.StrBool.length;i++){
@@ -643,9 +712,9 @@ PluginF.snowremoval=function(site){
     PropTmp[name]=          {b:'111010110',type:'BOOL', default:0, feat:{kind:'BN',span:1}};
   }
   extend(oS.Prop,PropTmp);
-  oS.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oS.StrFiltAccept, oS.StrPropE);
-  array_mergeM(oS.StrOrder, oS.StrPropE);
+  var StrPropE=oS.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oS.StrFiltAccept, StrPropE);
+  array_mergeM(oS.StrOrder, StrPropE);
 }
 
 PluginF.fruitpicker=function(site){
@@ -657,13 +726,14 @@ PluginF.fruitpicker=function(site){
     fruit:              {b:'111111111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
   };
   extend(oB.Prop, PropTmp); 
-  oB.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
-  array_mergeM(oB.StrOrder, oB.StrPropE);
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
 
 
     // oS ////////////////////
-  oS.Prop.vehicleType.feat.bucket=oS.Prop.vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'van'];
+  var {vehicleType}=oS.Prop;
+  vehicleType.feat.bucket=vehicleType.Enum=['foot', 'bike', 'moped', 'sedan', 'van'];
 
 }
 
@@ -680,9 +750,9 @@ PluginF.programmer=function(site){
     language:              {b:'111111111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}}
   };
   extend(oB.Prop, PropTmp);
-  oB.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oB.StrFiltAccept, oB.StrPropE);
-  array_mergeM(oB.StrOrder, oB.StrPropE);
+  var StrPropE=oB.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oB.StrFiltAccept, StrPropE);
+  array_mergeM(oB.StrOrder, StrPropE);
   
   
     // oS ////////////////////
@@ -696,13 +766,50 @@ PluginF.programmer=function(site){
   PropTmp.otherLang=        {b:'111111111',type:'VARCHAR(20)', default:'', feat:{kind:'B'}};
   
   extend(oS.Prop, PropTmp);
-  oS.StrPropE=Object.keys(PropTmp);
-  array_mergeM(oS.StrFiltAccept, oS.StrPropE);
-  array_mergeM(oS.StrOrder, oS.StrPropE);
+  var StrPropE=oS.StrPropE=Object.keys(PropTmp);
+  array_mergeM(oS.StrFiltAccept, StrPropE);
+  array_mergeM(oS.StrOrder, StrPropE);
   arrValRemove(oS.StrFiltAccept, 'experience');  arrValRemove(oS.StrOrder, 'experience');
-  //removeProp(oS,'experience');
   delete oS.Prop.experience
 }
+
+
+// What does the plugins change in the objects: site, oRole (oX), oB and oS:
+// In all oB/oS:
+//  StrFiltAccept
+//  StrOrder
+//
+// Extra stuff added to:
+// site:
+//  taxi: StrPropE
+//  transport: StrPropE, StrTransportBool
+//  vehicledriver: StrPropE
+// oB:
+//  transportBuyer: StrTransportBuyer
+//  fixedPricePerUnit: StrPropE, StrPrice
+//  taxi: 
+//  transport: 
+//  vehicledriver: StrPropE, StrBool
+//  cleaner: StrPropE
+//  windowcleaner: StrPropE
+//  lawnmowing: StrPropE
+//  snowremoval: StrPropE, StrBool
+//  fruitpicker: StrPropE
+//  programmer: StrPropE
+// oS:
+//  distNTimePrice: StrPrice, StrDistTimePrice
+//  taxi: StrPropE
+//  transport: StrPropE
+//  vehicledriver: StrPropE, StrBool
+//  cleaner: 
+//  windowcleaner: StrPropE
+//  lawnmowing: StrPropE, StrBool
+//  snowremoval: StrPropE, StrBool
+//  fruitpicker: 
+//  programmer: StrPropE, StrProgrammerLang
+// oRole:
+//  price: StrPrice
+//  hourlyPrice: StrPrice
 
 
 var featCalcValExtend=function(Prop){
@@ -789,16 +896,17 @@ app.SiteExtend=function(){
     var ORole=JSON.parse(JSON.stringify(ORoleDefault));
     var tmp={siteName, ORole, oB:ORole[0], oS:ORole[1]};
     var site=extend(Site[siteName],tmp);
-    if(['taxi', 'transport', 'demo'].indexOf(siteName)!=-1) { // , 'test'
-      StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'priceB', 'transportBuyer', 'standingByMethod', 'shiftEnd', siteName];   
+    if(['taxi', 'transport', 'demo', 'vehicledriver'].indexOf(siteName)!=-1) { // , 'test'
+      StrPlugInNArg=['general', 'vehicleTypeS', 'distNTimePrice', 'priceB', 'transportBuyer', 'standingByMethod', 'shiftEnd', siteName];   
       //if(['demo', 'test'].indexOf(siteName)!=-1) StrPlugInNArg.splice(5,0,'taxi');
       if(['demo', 'test'].indexOf(siteName)!=-1) {StrPlugInNArg.pop(); StrPlugInNArg.push('taxi');}
+      if(['vehicledriver'].indexOf(siteName)!=-1) {var indT=StrPlugInNArg.indexOf('vehicleTypeS'); StrPlugInNArg.splice(indT, 0, 'vehicleTypeB');}
     }
-    else if(siteName=='cleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', 'shiftEnd', siteName];
-    else if(siteName=='windowcleaner') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', siteName];
-    else if(siteName=='fruitpicker') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', 'fixedPricePerUnit', siteName];
-    else if(siteName=='lawnmowing') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', siteName];
-    else if(siteName=='snowremoval') StrPlugInNArg=['general', 'vehicleType', 'distNTimePrice', 'hourlyPriceB', siteName];
+    else if(siteName=='cleaner') StrPlugInNArg=['general', 'vehicleTypeS', 'distNTimePrice', 'hourlyPriceB', 'shiftEnd', siteName];
+    else if(siteName=='windowcleaner') StrPlugInNArg=['general', 'vehicleTypeS', 'distNTimePrice', 'hourlyPriceB', siteName];
+    else if(siteName=='fruitpicker') StrPlugInNArg=['general', 'vehicleTypeS', 'distNTimePrice', 'hourlyPriceB', 'fixedPricePerUnit', siteName];
+    else if(siteName=='lawnmowing') StrPlugInNArg=['general', 'vehicleTypeS', 'distNTimePrice', 'hourlyPriceB', siteName];
+    else if(siteName=='snowremoval') StrPlugInNArg=['general', 'vehicleTypeS', 'distNTimePrice', 'hourlyPriceB', siteName];
     else if(siteName=='programmer') StrPlugInNArg=['general', 'hourlyPriceB', 'hourlyPriceS', siteName];
     else StrPlugInNArg=['general'];
     

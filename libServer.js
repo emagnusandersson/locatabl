@@ -70,12 +70,12 @@ app.createSiteSpecificClientJSAll=async function() {
 app.createSiteSpecificClientJS=function(siteName) {
   var site=Site[siteName]; 
 
-  var StrSimplified=["wwwSite", "strRootDomain", "ORole", "siteName", "StrPropE", "StrTransportBool", "KeySel", "StrPlugInNArg", "testWWW", "client_id", "wwwLoginRet"]; //, "wwwLoginScope"
+  var StrSimplified=["wwwSite", "strRootDomain", "ORole", "siteName", "StrPropE", "StrTransportBool", "KeySel", "StrPlugInNArg", "testWWW", "client_id", "wwwLoginRet", "boAllowEmailLogin"]; //, "wwwLoginScope"
   //var siteSimplified={}; for(var i=0;i<StrSimplified.length;i++){ var name=StrSimplified[i]; siteSimplified[name]=site[name]; }
-  var siteSimplified=copySome({},site,StrSimplified);
+  var siteSimplified=copyIfExist({},site,StrSimplified);
 
   
-  var StrVar=['boDbg', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'userInfoFrDBZero', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt', 'boAllowEmailLoginOnSomeSites'];  //, 'storedButt', 'urlPayPal'
+  var StrVar=['boDbg', 'version', 'intMax', 'uintMax', 'arrLang', 'snoreLim', 'leafBE', 'leafUploadFront', 'flImageFolder', 'boShowTeam', 'maxList', 'lenHistActive', 'maxGroupsInFeat', 'userInfoFrDBZero', 'arrCoordinatePrecisionM', 'wwwCommon', 'siteName', 'strIPPrim', 'strIPAlt'];  //, 'storedButt', 'urlPayPal'
   var objOut=copySome({},app,StrVar);
   //copySome(objOut,site,['wwwSite']);
   objOut.site=siteSimplified;

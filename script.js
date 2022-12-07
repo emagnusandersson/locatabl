@@ -95,7 +95,6 @@ maxLoginUnactivity:10*60,  // Used on _LoginIdP, _LoginIdUser
 boVideo:0,
 boUseSelfSignedCert:false,
 wsIconDefaultProt:"/Site/Icon/icon<size>.png",
-boAllowEmailLoginOnSomeSites:false,
 intDDOSMax:100, // intDDOSMax: How many requests before DDOSBlocking occurs. 
 tDDOSBan:5, // tDDOSBan: How long in seconds til the blocking is lifted
 intDDOSIPMax:200, // intDDOSIPMax: How many requests before DDOSBlocking occurs. 
@@ -105,6 +104,10 @@ timeOutAccumulatedUpdate:3600, // How long to wait before updating tAccumulated 
 timeOutDeleteStatusInfo:3600,
 RegRedir:[],
 strSalt:'abcdefghijklmnopqrstuvxyz', // Random letters to prevent that the hashed passwords looks the same as on other sites.
+UrlOAuth:null,
+UrlToken:null,
+UrlGraph:null, 
+response_type:'code',
 strIPPrim:'fb', 
 strIPAlt:'idplace',
 //apiKeySendGrid:"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -405,6 +408,7 @@ const handler=async function(req, res){
     await reqStatic.call(objReqRes);
   }
   else if(pathName=='/'+leafLoginBack){   await reqLoginBack.call(objReqRes);   }
+  else if(pathName=='/'+leafLoginBackB){   await reqLoginBackB.call(objReqRes);   }
   else if(pathName=='/monitor.html'){     await reqMonitor.call(objReqRes);     }
   else if(pathName=='/stat.html'){        await reqStat.call(objReqRes);        }
   else if(pathName=='/statBoth.html'){        await reqStatBoth.call(objReqRes);        }

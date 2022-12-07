@@ -101,6 +101,9 @@ Wiki:'Wiki',
 
 Sort:'Sort',
 SortColumns:'Sort columns',
+Rearrange:'Re­ar­ra­nge',
+RearrangeColumns:'Rearrange Columns',
+ColumnOrder:'Col­umn ord­er',
 
 column:'column',
 show:'show',
@@ -572,103 +575,141 @@ skyLift:''
 
 globalThis.langServerFunc=function(){
 if('taxi' in Site) Site.taxi.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="taxi.locatabl.com"; 
-  serv.strDescription="Positioning/tracking-tool for finding and comparing taxicabs in the neighborhood";
-  serv.strKeywords="job, work, search tool, tracker, taxi, taxicab, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>This web application uses the positioning system of the customers resp the taxi drivers iphones/androids/computers.</p>\n\
-  <p>The customer can then see on a map where all the vacant taxis in the neighborhood are, and compare latest/current prices, number of seats etc.</p>\n\
-  <p>The taxi driver can change the price between different periods depending on supply and demand.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Taxis / Taxicabs, Jobs, Free taxi app",
+  strH1:"taxi.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing taxicabs and resp. customers.",
+  strKeywords:"taxi, taxicab, tracker, drivers, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for taxi drivers and resp. customers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 
 if('transport' in Site) Site.transport.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Couriers / Truckers, Jobs"; serv.strH1="transport.locatabl.com"; 
-  serv.strDescription="Positioning/tracking-tool for finding and comparing couriers and goods transports";
-  serv.strKeywords="job, work, search tool, tracker, truckers, couriers, drivers, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>This web application uses the positioning system of the customers resp the drivers iphones/androids/computers.</p>\n\
-  <p>The customer can then see on a map where all the vacant vehicles in the neighborhood are, and compare latest/current prices, vehicle type etc.</p>\n\
-  <p>The driver can change the price between different periods depending on supply and demand.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Couriers / Truckers, Jobs",
+  strH1:"transport.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing couriers and goods transports and resp. customers.",
+  strKeywords:"transportation, couriers, truckers, tracker, drivers, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for drivers and resp. customers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
+}
+
+if('vehicledriver' in Site) Site.vehicledriver.langSetup=function(){
+  this.serv={
+  strTitle:"Vehicle Drivers, Jobs",
+  strH1:"vehicledriver.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing drivers who can drive the customers vehicle and resp. driving jobs.",
+  strKeywords:"drivers, chauffeurs, designated drivers, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for drivers and resp. customers with vehicles that needs to be driven.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 
 if('cleaner' in Site) Site.cleaner.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Cleaners / Janitors / Chars, Jobs"; serv.strH1="cleaner.locatabl.com";
-  serv.strDescription="Positioning/tracking-tool for finding and comparing cleaners/janitors/chars";
-  serv.strKeywords="job, work, search tool, tracker, cleaners, chars, janitors, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>Tracker-web-app for cleaners and those who seek cleaners.</p>\n\
-  <p>The cleaner can make him/herself visible for the customers, and the customers can on a map see which cleaners are available for the moment and compare prices and reputation etc.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Cleaners / Janitors / Chars, Jobs",
+  strH1:"cleaner.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing cleaners/janitors/chars and resp. customers.",
+  strKeywords:"cleaners, chars, janitors, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for cleaners and resp. customers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 if('windowcleaner' in Site) Site.windowcleaner.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Window Cleaners, Jobs"; serv.strH1="windowcleaner.locatabl.com";
-  serv.strDescription="Positioning/tracking-tool for finding and comparing window cleaners";
-  serv.strKeywords="job, work, search tool, tracker, window cleaners, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>Tracker-web-app for window cleaners and those who seek window cleaners.</p>\n\
-  <p>The window cleaner can make him/herself visible for the customers, and the customers can on a map see which window cleaners are available for the moment and compare prices and reputation etc.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Window Cleaners, Jobs",
+  strH1:"windowcleaner.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing window cleaners and resp. customers.",
+  strKeywords:"window cleaners, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for window cleaners and resp. customers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 
 if('fruitpicker' in Site) Site.fruitpicker.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Fruit / Vegetable Pickers, Jobs"; serv.strH1="fruitpicker.locatabl.com";
-  serv.strDescription="Positioning/tracking-tool for finding and comparing fruit/vegetable-pickers.";
-  serv.strKeywords="job, work, search tool, tracker, fruit, vegetable,  pickers, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>Tracker-web-app of fruit/vegetable pickers.</p>\n\
-  <p>Those who want work as pickers can make themselves visible to employers. Works all over the world. Usefull for short-time employments.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Fruit / Vegetable Pickers, Jobs",
+  strH1:"fruitpicker.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing fruit/vegetable-pickers and resp. picking-jobs.",
+  strKeywords:"fruit pickers, vegetable pickers, pickers, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app of fruit/vegetable pickers and resp. picking-jobs.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 
 if('lawnmowing' in Site) Site.lawnmowing.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Lawn Mower Drivers, Jobs"; serv.strH1="lawnmowing.locatabl.com";
-  serv.strDescription="Positioning/tracking-tool for finding and comparing lawn mowing entrepreneurs / people ready mow lawns";
-  serv.strKeywords="job, work, search tool, tracker, lawn mowing, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>Tracker-web-app for lawn mowing entrepreneurs.</p>\n\
-  <p>Those who want work mowing lawns can make themselves visible to employers. Works all over the world. Usefull for short-time employments.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Lawn Mower Drivers, Jobs",
+  strH1:"lawnmowing.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing lawn mowing entrepreneurs and resp. customers.",
+  strKeywords:"lawn mowing, lawn mowing jobs, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for lawn mowing entrepreneurs and resp. customers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 if('snowremoval' in Site) Site.snowremoval.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Snow Removal, Jobs"; serv.strH1="snowremoval.locatabl.com";
-  serv.strDescription="Positioning/tracking-tool for finding and comparing snow shovelers/plowers ...";
-  serv.strKeywords="job, work, search tool, tracker, snow removal, shoveling, plowing, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>Tracker-web-app for snow shoveler / plower entrepreneurs.</p>\n\
-  <p>Those who want snow shoveling/plowing-jobs can make themselves visible to any customer. Works all over the world.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Snow Removal, Jobs",
+  strH1:"snowremoval.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing snow removal entrepreneurs and resp. customers.",
+  strKeywords:"snow removal, snow removal jobs, shoveling, plowing, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for snow removal entrepreneurs and resp. customers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 
 if('programmer' in Site) Site.programmer.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Programmers, Jobs"; serv.strH1="programmer.locatabl.com";
-  serv.strDescription="Positioning/tracking-tool for finding and comparing programmers.";
-  serv.strKeywords="job, work, search tool, tracker, programmers, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>Tracker-web-app for programmers and those who seek programmers.</p>\n\
-  <p>The programmer can make him/herself visible for the customers, and the customers can on a map see which programmers are available for the moment and compare skills etc.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Programmers, Jobs",
+  strH1:"programmer.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing programmers and resp. customers.",
+  strKeywords:"programmers, programming jobs, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>Tracker-web-app for programmers and resp. customers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 
 if('demo' in Site) Site.demo.langSetup=function(){
-  var serv=this.serv={};
-  serv.strTitle="Taxis / Taxicabs, Jobs, Free taxi app"; serv.strH1="(demo) taxi.locatabl.com"; 
-  serv.strDescription="Positioning/tracking-tool for finding and comparing taxicabs in the neighborhood";
-  serv.strKeywords="job, work, search tool, tracker, taxi, taxicab, freelance, business, entrepreneurs, jobs, job center";
-  serv.strSummary="<div>\n\
-  <p>This web application uses the positioning system of the customers resp the taxi drivers iphones/androids/computers.</p>\n\
-  <p>The customer can then see on a map where all the vacant taxis in the neighborhood are, and compare latest/current prices, number of seats etc.</p>\n\
-  <p>The taxi driver can change the price between different periods depending on supply and demand.</p>\n\
-</div>";
+  this.serv={
+  strTitle:"Taxis / Taxicabs, Jobs, Free taxi app",
+  strH1:"(demo) taxi.locatabl.com",
+  strDescription:"Positioning/tracking-tool for finding and comparing taxicabs and resp. customers.",
+  strKeywords:"taxi, taxicab, tracker, customers, search tool, freelance, business, entrepreneurs, work, job center",
+  strSummary:`<div>
+  <p>This web application uses the positioning system of the customers resp the taxi drivers iphones/androids/computers.</p>
+  <p>Users can make themselves visible on a map in resp. role, and users of the other role can browse around and compare prices, reputation and other data.</p>
+  <p>The users can change their prices depending on supply and demand.</p>
+  <p>The user can easily hide with a simple button-click.</p>
+</div>`};
 }
 
 //Site.bla.langSetup=function(){this.strTitle="App for Sellers"; this.strH1="App for Sellers"; this.strSummary='<div></div>';}

@@ -11,6 +11,7 @@ Promise.prototype.toNBP=function(){   return this.then(a=>{return [null,a];}).ca
 
 app.extend=Object.assign;
 app.copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[name]=b[name]; } return a; }
+app.copyIfExist=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; if(name in b) a[name]=b[name]; } return a; }
 app.object_values=function(obj){
   var arr=[];      for(var name in obj) arr.push(obj[name]);
   return arr;
@@ -125,6 +126,8 @@ app.array_splice=function(arr,st,len,arrIns){
 app.array_merge=function(){  return Array.prototype.concat.apply([],arguments);  } // Does not modify origin
 //app.array_mergeM=function(a,b){  a.push.apply(a,b); return a; } // Modifies origin (first argument)
 app.array_mergeM=function(){var t=[], a=arguments[0], b=t.slice.call(arguments, 1), c=t.concat.apply([],b); t.push.apply(a,c); return a; } // Modifies origin (first argument)
+// app.array_mergeM=function(){var arg=[...arguments], b=arg.slice(1), c=[].concat(...b); return arg[0].push(...c); } // Modifies origin (first argument)
+// var a=['abc'], b=['aa','bb','cc'], c=['dd'];  array_mergeM(a, b, c)
 
 app.array_flip=function(A){ var B={}; for(var i=0;i<A.length;i++){B[A[i]]=i;} return B;}
 app.array_fill=function(n, val){ return Array.apply(null, new Array(n)).map(String.prototype.valueOf,val); }
@@ -184,7 +187,6 @@ app.Str_changeOne=function(arr,strO,strN){ var ind=arr.indexOf(strO); if(ind==-1
 app.ucfirst=function(string){  return string.charAt(0).toUpperCase() + string.slice(1);  }
 app.lcfirst=function(string){  return string.charAt(0).toLowerCase() + string.slice(1);  }
 app.isAlpha=function(star){  var regEx = /^[a-zA-Z0-9]+$/;  return str.match(regEx); } 
-//String.prototype.trim = function(){ return this.replace(/^\s+|\s+$/g,"");}
 if(!String.format){
   String.format = function(format){
     var args = Array.prototype.slice.call(arguments, 1);
@@ -194,15 +196,16 @@ if(!String.format){
   };
 }
 
-app.ltrim=function(str,charlist=String.raw`\s`){
+  // Trim functions that can trim for other characters than whitespace
+app.myTrimStart=function(str,charlist=String.raw`\s`){
   return str.replace(new RegExp("^[" + charlist + "]+"), "");
 };
-app.rtrim=function(str,charlist=String.raw`\s`){
+app.myTrimEnd=function(str,charlist=String.raw`\s`){
   return str.replace(new RegExp("[" + charlist + "]+$"), "");
 };
-app.trim=function(str,charlist=String.raw`\s`){
-  return str.replace(new RegExp("^[" + charlist + "]+([^" + charlist + "]*)[" + charlist + "]+$"), function(m,n){return n;});
-}
+// app.myTrim=function(str,charlist=String.raw`\s`){
+//   return str.replace(new RegExp("^[" + charlist + "]+([^" + charlist + "]*)[" + charlist + "]+$"), function(m,n){return n;});
+// }
 
 //app.pad2=function(n){ return ('0'+n).slice(-2);}
 app.pad2=function(n){return (n<10?'0':'')+n;}
@@ -217,6 +220,17 @@ app.myParser=function(strText,obj){
   }
   return strText;
 }
+app.camelcaseDecode=function(str){
+  var arr=[], len=str.length;
+  if(len==0) return arr;
+  var iStart=0;
+  for(var i=0;i<len;i++) {
+    if(str[i]<="Z" && iStart!=i) {var strT=str.slice(iStart,i); arr.push(lcfirst(strT)); iStart=i;}
+  }
+  var strT=str.slice(iStart,i); arr.push(lcfirst(strT));
+  return arr;
+}
+
 
 /////////////////////////////////////////////////////////////////////
 
@@ -345,7 +359,9 @@ app.genRandomString=function(len) {
 
 app.myUUID=function(){
   var array = new Uint32Array(4);
-  app.myCrypto.getRandomValues(array);
+  if('crypto' in app) app.crypto.getRandomValues(array); // On client
+  else app.myCrypto.getRandomValues(array); // On Server
+  
   var Str=Array(4);
   for (var i = 0; i < array.length; i++) { Str[i]=array[i].toString(16).padStart(8,"0"); }
   return Str.join("");
@@ -557,7 +573,7 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
   
   
     // Create an array of pot size candidates
-  var lenStrDX=ltrim(strDX,'0').length, lenStrDY=ltrim(strDY,'0').length;  // lenStrDX and lenStrDY ∈[0,34]. Ex: lenStrDX==32 => intDX is wider than half the world
+  var lenStrDX=myTrimStart(strDX,'0').length, lenStrDY=myTrimStart(strDY,'0').length;  // lenStrDX and lenStrDY ∈[0,34]. Ex: lenStrDX==32 => intDX is wider than half the world
   var msbXD=lenStrDX-1, msbYD=lenStrDY-1;  // msbXD and msbYD ∈[-1,33]. Ex: msbXD==31 => intDX is wider than half the world
   var levXD=msbXD, levYD=msbYD,  levXDP1=msbXD+1, levYDP1=msbYD+1,  levXDP2=msbXD+2, levYDP2=msbYD+2;
 

@@ -1827,7 +1827,7 @@ ReqBE.prototype.sendNotification=async function(inObj){
   var self=this, {req}=this, {site}=req, {siteName}=site;
   var {userTab, sellerTab, buyerTab, webPushSubscriptionTab}=site.TableName;
   var Ou={};
-  var {idReceiver, iRole, message, latlngSender}=inObj;
+  var {idReceiver, message, latlngSender}=inObj;
   var {user, buyer, seller, buyerTeam, sellerTeam}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   var idUser=user.idUser;
   
@@ -1841,10 +1841,12 @@ ReqBE.prototype.sendNotification=async function(inObj){
   if(results[0].length==0) return [new ErrorClient("No subscription for that idReceiver")];
   //const subscription = JSON.parse(results[0][0].strSubscription);
   try{ var subscription=JSON.parse(results[0][0].strSubscription); }catch(e){ return [new ErrorClient(e)]; }
-  var objSender=copySome({}, results[1][0], ["idUser", 'displayName', 'boUseIdPImg', 'image', 'imTag']);
+  var objSender=copySome({}, results[1][0], ["idUser", 'displayName', 'boUseIdPImg', 'image', 'imTag', 'iRoleActive']);
+  objSender.iRole=objSender.iRoleActive;
+  delete objSender.iRoleActive
   if(!objSender.boUseIdPImg) objSender.image='';
   
-  const payload = JSON.stringify({ objSender, iRole, message, tSent:unixNow(), latlngSender });
+  const payload = JSON.stringify({ objSender, message, tSent:unixNow(), latlngSender });//iRole: (should be called iRoleSender (or skipped))
   const options = {TTL: 0};
 
   if(boDbg) { await new Promise(resolve=>{setTimeout(resolve, 5000);  }); }

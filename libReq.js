@@ -7,7 +7,7 @@
 // redis interface 4.0 does not work
 
 // globalThis
-// Do extra exchange of fb-token, to get longer exipriation time
+// Do extra exchange of fb-token, to get longer expiration time
 // FB: how to enable public photo
 // test fast zip
 // Ability to set default hideTimer in plugin
@@ -52,6 +52,10 @@
 // popup api (<div popup>) (chrome 106 (Origin trial))
 // inert (in ff not until 107), (in ios not until 15)
 
+// tHide should be renamed cached_tHide in database
+
+// webpush on FF
+
 
 // After googling "node.js connect debugger to running process" I found:
 //   kill -USR1 <node-pid>   // starts debugger
@@ -59,6 +63,8 @@
 //https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 //https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 
+
+// How to get an alias of an gmail-address: abc+1@gmail.com
 
 /******************************************************************************
  * reqCurlEnd
@@ -177,10 +183,10 @@ app.reqKeyRemoteControlSave=async function(){
   Str.push(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" id="viewportMy" content="initial-scale=1" />
+<meta name="viewport" id="viewportMy" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="robots" content="noindex">
 </head>
-<body>`);
+<body>`); //, interactive-widget=resizes-content
 
   var uCommon=req.strSchemeLong+wwwCommon;
   Str.push(`<script>window.app=window;</script>`);
@@ -719,7 +725,12 @@ app.reqImage=async function() {
 }
 
 
-// Need to do server-side-granting rather than client-side-granting (autherization-code-granting rather than implicit-granting). The reason for this is that I want to use window.opener.postMessage (in reqLoginBack) (postMessage is safer than window.opener.[ANY FUNCTION]). And postMessage requires you to know the subdomain of the receiver (if you want things safe). So the subdomain must be stored at the server between the call to reqLogin and reqLoginBack.
+// Need to do server-side-granting instead of client-side-granting (autherization-code-granting rather than implicit-granting). The reason for this is that I want to use window.opener.postMessage (in reqLoginBack) (postMessage is safer than window.opener.[ANY FUNCTION]). And postMessage requires you to know the subdomain of the receiver (if you want things safe). So the subdomain must be stored at the server between the call to reqLogin and reqLoginBack.
+
+// 20230207 checking
+// So response_type can be "code" or "token". "code" is the default
+// locatable and idplace specifically uses "code"
+// nsVote and syncameeting doesn't specify, so the default ("code") is used
 
 /******************************************************************************
  * reqLogin
@@ -760,7 +771,8 @@ app.reqLoginBack=async function(){
   var Str=[];
   Str.push(`<!DOCTYPE html>
 <html lang="en"><head><meta name='robots' content='noindex'></head>
-<body><script>
+<body>
+<script>
 const getCookie=(c_name)=>{
   var arr=document.cookie.split(";");
   for (var i=0;i<arr.length;i++){
@@ -769,17 +781,73 @@ const getCookie=(c_name)=>{
   }
 }
 var uSiteLogin=getCookie('uSiteLogin');
+//var strBroadcastChannel=getCookie('strBroadcastChannel');
+//var strBroadcastChannel='broadcastChannel_0123456789abcdef0123456789abcdef';
+//var strBroadcastChannel=sessionStorage.getItem('strBroadcastChannel');
 //var uSiteLogin=location.origin;
 var {search:strQS, hash:strHash}=location;
 debugger
-
-window.opener.postMessage(strQS, uSiteLogin);
-window.close();
-</script></body></html>
+//console.log('window.opener: '+window.opener)
+//console.log('uSiteLogin: '+uSiteLogin)
+//console.log('strBroadcastChannel: '+strBroadcastChannel)
+//window.opener.postMessage(strQS, uSiteLogin);
+//new BroadcastChannel(strBroadcastChannel).postMessage(strQS);
+//window.close();
+window.location.href=uSiteLogin+'/${leafLoginBackB}'+strQS+strHash;
+</script>
+</body></html>
 `);
   res.setHeader('Content-Type', MimeType.html);
   var str=Str.join('\n');  res.end(str);
 }
+
+app.reqLoginBackB=async function(){
+  var {req, res}=this, {cookies}=req;
+  
+  var strT=req.headers['sec-fetch-mode'];
+  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
+  console.log('sec-fetch-mode: '+strT);
+  
+  //var {sessionIDLogin}=cookies; if(!sessionIDLogin) { res.out500("!sessionIDLogin"); return; }
+  //var redisVar=sessionIDLogin+'_Login'; 
+  //var [err, sessionLogin]=await getRedis(redisVar,1); if(err) { res.out500(err); return; }
+  //if(!sessionLogin) { res.out500('!sessionLogin');  return; }
+
+  //var wwwLoginScopeTmp=req.site.wwwLoginScope??null;
+  //var uSite=req.strSchemeLong+req.wwwSite;
+
+  var Str=[];
+  Str.push(`<!DOCTYPE html>
+<html lang="en"><head><meta name='robots' content='noindex'></head>
+<body>
+<script>
+const getCookie=(c_name)=>{
+  var arr=document.cookie.split(";");
+  for (var i=0;i<arr.length;i++){
+    var [k,v]=arr[i].split("=");
+    if (k.trim()==c_name){return unescape(v);}   
+  }
+}
+//var uSiteLogin=getCookie('uSiteLogin');
+var strBroadcastChannel=getCookie('strBroadcastChannel');
+//var strBroadcastChannel='broadcastChannel_0123456789abcdef0123456789abcdef';
+//var strBroadcastChannel=sessionStorage.getItem('strBroadcastChannel');
+//var uSiteLogin=location.origin;
+var {search:strQS, hash:strHash}=location;
+debugger
+//console.log('window.opener: '+window.opener)
+//console.log('uSiteLogin: '+uSiteLogin)
+//console.log('strBroadcastChannel: '+strBroadcastChannel)
+//window.opener.postMessage(strQS, uSiteLogin);
+new BroadcastChannel(strBroadcastChannel).postMessage(strQS);
+window.close();
+</script>
+</body></html>
+`);
+  res.setHeader('Content-Type', MimeType.html);
+  var str=Str.join('\n');  res.end(str);
+}
+
 
 
 app.reqVerifyEmailReturn=async function() {
@@ -2222,7 +2290,7 @@ app.SetupSql.prototype.createDummies=async function(siteName){
   
 
   var Sql=[];
-  var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'strUnitDist', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang', 'compassPoint', 'destination', 'fixedPricePerUnitUnit', 'fruit', 'database', 'language'];
+  var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'strUnitDist', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang', 'compassPoint', 'destination', 'fixedPricePerUnitUnit', 'fruit', 'database', 'language', 'other'];
         
 
     //
@@ -2287,7 +2355,7 @@ app.SetupSql.prototype.createDummies=async function(siteName){
       if(charRole=='s') arrAssign.push('experience');
     }
 
-    if(in_array("vehicleType", StrPlugInNArg) && charRole=='s'){ arrAssign.push('vehicleType');  }
+    if(in_array("vehicleType"+charRoleUC, StrPlugInNArg)){ arrAssign.push('vehicleType');  }
     if(in_array("distNTimePrice", StrPlugInNArg) && charRole=='s'){ arrAssign.push('priceStart', 'strUnitDist', 'pricePerDist', 'pricePerHour');  }
     if(in_array("transportBuyer", StrPlugInNArg) && charRole=='b'){ arrAssign.push('distStartToGoal', 'compassPoint', 'destination'); }
     if(in_array("standingByMethod", StrPlugInNArg) && charRole=='s'){  arrAssign.push('standingByMethod');   }
@@ -2302,10 +2370,19 @@ app.SetupSql.prototype.createDummies=async function(siteName){
       if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
     }
     if(in_array("transport", StrPlugInNArg)){
+      array_mergeM(arrAssign, site.StrPropE); //['payload'], StrTmp
       var StrTmp=site.StrTransportBool;
       for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
-      array_mergeM(arrAssign, ['payload'], StrTmp);
       if(charRole=='s') array_mergeM(arrAssign, oRole.StrPropE);
+    }
+    if(in_array("vehicledriver", StrPlugInNArg)){
+      array_mergeM(arrAssign, site.StrPropE);
+
+      var StrTmp=oRole.StrBool;
+      for(var i=0;i<StrTmp.length;i++){ var name=StrTmp[i]; PropBucket[name].Enum=[0,1]; }
+      var StrTmp=oRole.StrPropE;
+      array_mergeM(arrAssign, StrTmp);
+      if(charRole=='s') arrValRemove(arrAssign, 'experience');
     }
     if(intersectBool(["cleaner"], StrPlugInNArg)){ 
       if(charRole=='b') { 

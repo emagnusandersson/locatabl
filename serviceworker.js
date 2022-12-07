@@ -28,7 +28,7 @@ self.addEventListener('push', function(event) {
   event.waitUntil(async function() {
     var obj=event.data.json();
     self.objMess=obj;
-    var {objSender, iRole, message, tSent, latlngSender}=obj;
+    var {objSender, message, tSent, latlngSender}=obj;
     //console.log(Notification.actions.length());
     var actions=[{action:'map', title:'Goto map'}]; //, {action:'respond', title:'Respond to message'}, {action:'info', title:'See '+strRole+' info' }
     //if(Notification.maxActions)
@@ -40,7 +40,7 @@ self.addEventListener('push', function(event) {
       //actions: actions
     if(!self.myData) await tryGetDataFrClient();
     if(self.myData) {
-      var strRole=myData.langHtml.Role[iRole];
+      var strRole=myData.langHtml.Role[objSender.iRole];
       var title=ucfirst(strRole)+': '+objSender.displayName;
       options.icon=calcImageUrl(objSender);
     }else {  var title=objSender.displayName; }

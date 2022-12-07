@@ -51,6 +51,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "dropTable",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "dropTable"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "populateSetting",
             "skipFiles": [
                 "<node_internals>/**"

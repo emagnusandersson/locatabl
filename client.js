@@ -167,6 +167,25 @@ app.CreatorPlugin.general=function(){
     langHtml.theBuyers0=langHtml.theCustomers0;
   };
 
+  app.rewriteLangSellerToDriver=function(){
+    //langHtml.sellerRewritten=langHtml.driver;
+    langHtml.divLoginInfo.seller=langHtml.driver;
+    langHtml.Seller=ucfirst(langHtml.driver);
+    langHtml.Sellers=ucfirst(langHtml.drivers);
+    langHtml.IndependentSeller=langHtml.IndependentDriver;
+
+    langHtml.seller=langHtml.driver;   langHtml.sellers=langHtml.drivers;
+    langHtml.theSeller=langHtml.theDriver;  langHtml.theSellers=langHtml.theDrivers;
+    langHtml.theSellers0=langHtml.theDrivers0;
+  };
+  app.rewriteLangMissingProp=function(obj, StrA){
+    for(var strName of StrA){
+      if(!(strName in langHtml)) {
+        var strTmp=camelcaseDecode(strName).join(' '); langHtml[strName]=strTmp; langHtml[ucfirst(strName)]=ucfirst(strTmp);
+      }
+    }
+  }
+
 
   this.rewriteObj=function(){
 
@@ -386,8 +405,8 @@ app.CreatorPlugin.general=function(){
     var tmpCrInfo=function(){
       var butT=createElement('button').css({'font-size':'85%'}).myText(langHtml.SendAPushNotification).on('click', function(){  
         if(!userInfoFrDB.user){ setMess('You need to be logged in to send a message.', 2); return; }
-        viewGreeting.setUp(this.idUser, this.iRole); viewGreeting.setVis();
-        doHistPush({view:viewGreeting});
+        viewChat.setUp(this.idUser, this.iRole); viewChat.setVis();
+        doHistPush({strView:'viewChat'});
       });
       this.append(butT);
     }
@@ -405,10 +424,12 @@ app.CreatorPlugin.general=function(){
 
 //0123456789abcdef pluginVehicleType.js
 "use strict"
-app.CreatorPlugin.vehicleType=function(){
+app.CreatorPlugin.vehicleType=function(charRoleUC){
+  var oRole=charRoleUC=='B'?oB:oS;
+  var {strRole}=oRole
 
   //enumVehicleType=Enum.vehicleType;
-  var enumVehicleType=oS.Prop.vehicleType.Enum;
+  var enumVehicleType=oRole.Prop.vehicleType.Enum;
 
     // images
   var strPlugin='vehicleType';
@@ -423,7 +444,7 @@ app.CreatorPlugin.vehicleType=function(){
 
   //elBody.css({background:'url('+wseSpecImageFolder+'tsBackgroundWW.png)'});
 
-  app.vehSprite={
+  var vehSprite={
     item:{
       sedan:{x:1,y:1,w:69,h:21},
       wagon:{x:1,y:30,w:68,h:21},
@@ -453,8 +474,11 @@ app.CreatorPlugin.vehicleType=function(){
       MC:{x:90,y:60,w:38,h:17},
       foot:{x:90,y:100,w:39,h:18},
       ridingMower:{x:90,y:130,w:35,h:22},
+      kickBike:{x:90,y:160,w:18,h:18},
+      foldableBike:{x:90,y:180,w:26,h:20},
       lorryOpen:{x:180,y:489,w:78,h:31},
-      tractor:{x:50,y:213,w:53,h:37}
+      tractor:{x:50,y:213,w:53,h:37},
+      publicTransport:{x:90,y:330,w:44,h:34}
     },
     order:enumVehicleType,
     //order:['sedan', 'wagon', 'largeMPV', 'MPV', 'hatchback', 'pickup', 'convertible', 'rickshaw', 'limo', 'bus', 'smallBus', 'boat', 'airplane', 'helicopter', 'van', 'lorry', 'semiTrailer',  'lorryWTrailer', 'lorryWDollyTrailer', 'tipper'],
@@ -462,23 +486,13 @@ app.CreatorPlugin.vehicleType=function(){
     zoom:0.65, sheetW:400, sheetH:800
   };
 
-  app.vehSpriteW=extend({},vehSprite); vehSpriteW.url=wsVehicleTypeW;
-  for(var i=0;i<enumVehicleType.length;i++) {var k=enumVehicleType[i],fn=vehSpriteW.item[k],fo=vehSprite.item[k]; fn.x=fn.x-1; fn.y=fo.y-1; fn.w=fo.w+2; fn.h=fo.h+2;}
-  app.vehSpriteZ=extend({},vehSpriteW); vehSpriteZ.url=wsVehicleTypeInactive;
-  app.vehSpriteDummy=extend({},vehSpriteW); vehSpriteDummy.url=wsVehicleTypeDummy;
+  var vehSpriteW=extend({},vehSprite); vehSpriteW.url=wsVehicleTypeW;
+  for(var i=0;i<enumVehicleType.length;i++) {var k=enumVehicleType[i],fn=vehSpriteW.item[k]; fn.x--; fn.y--; fn.w+=2; fn.h+=2;}
+  var vehSpriteZ=extend({},vehSpriteW); vehSpriteZ.url=wsVehicleTypeInactive;
+  var vehSpriteDummy=extend({},vehSpriteW); vehSpriteDummy.url=wsVehicleTypeDummy;
 
 
-  app.rewriteLangDriver=function(){
-    //langHtml.sellerRewritten=langHtml.driver;
-    langHtml.divLoginInfo.seller=langHtml.driver;
-    langHtml.Seller=ucfirst(langHtml.driver);
-    langHtml.Sellers=ucfirst(langHtml.drivers);
-    langHtml.IndependentSeller=langHtml.IndependentDriver;
 
-    langHtml.seller=langHtml.driver;   langHtml.sellers=langHtml.drivers;
-    langHtml.theSeller=langHtml.theDriver;  langHtml.theSellers=langHtml.theDrivers;
-    langHtml.theSellers0=langHtml.theDrivers0;
-  };
 
   //this.rewriteLang=function(){};
   this.rewriteObj=function(){
@@ -496,9 +510,9 @@ app.CreatorPlugin.vehicleType=function(){
     };
     var tmpSetVehicleTypeMM=function(rowMTab){return langHtml.vehicleType[enumVehicleType[rowMTab.vehicleType]];};
     var tmpCrVehicleType=function(){   this.append(  spriteCreator(vehSprite)  );   };
-    extend(oS.Prop.vehicleType, {
+    extend(oRole.Prop.vehicleType, {
       crInp:function(){ var c=selSpriteCreator(vehSprite); return c; },
-      setInp:function(){ this.mySet(userInfoFrDB.seller.vehicleType); },
+      setInp:function(){ this.mySet(userInfoFrDB[strRole].vehicleType); },
       saveInp:function(){return [null, this.myGet()];},
       crInfo:tmpCrVehicleType,setInfo:tmpSetVehicleType,
       crTabF:tmpCrVehicleType,setTabF:tmpSetVehicleType,
@@ -521,6 +535,7 @@ app.CreatorPlugin.vehicleType=function(){
 //0123456789abcdef pluginDistNTimePrice.js
 "use strict"
 app.CreatorPlugin.distNTimePrice=function(){
+  var {StrPrice, StrDistTimePrice}=oS; // [...], ['priceStart', 'pricePerDist', 'pricePerHour','comparePrice']
   
   //StrMainProt.push('comparePriceDataPop');
   
@@ -536,7 +551,7 @@ app.CreatorPlugin.distNTimePrice=function(){
       divTimeLab.firstChild.nodeValue=langHtml.Time+' ('+langHtml.timeUnit[strUnitTime][1][1]+'): ';
       mess.firstChild.nodeValue='';
       if(typeof extraSaveFuncT!='undefined') extraSaveFunc=extraSaveFuncT; else extraSaveFunc=null;
-      doHistPush({view:viewComparePriceDataPop});
+      doHistPush({strView:'viewComparePriceDataPop'});
       el.setVis();
     };
     el.setVis=function(){ el.show(); return true;  }
@@ -766,8 +781,9 @@ app.CreatorPlugin.distNTimePrice=function(){
 //0123456789abcdef pluginPrice.js
 "use strict"
 app.CreatorPlugin.price=function(charRoleUC){
+  var oRole=charRoleUC=='B'?oB:oS;
+  var {StrPrice}=oRole; //  // ['price']
   this.rewriteObj=function(){
-    var oRole=charRoleUC=='B'?oB:oS;
     extend(oRole.Prop.price, {strType:'number', inpW:4});
   }
 };
@@ -776,6 +792,7 @@ app.CreatorPlugin.price=function(charRoleUC){
 //0123456789abcdef pluginTransportBuyer.js
 "use strict"
 app.CreatorPlugin.transportBuyer=function(){
+  var {StrTransportBuyer}=oB; // ['distStartToGoal','compassPoint','destination']
   this.rewriteObj=function(){
       // distStartToGoal
     var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPointL[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
@@ -874,6 +891,7 @@ app.CreatorPlugin.shiftEnd=function(){
 "use strict"
 app.CreatorPlugin.hourlyPrice=function(charRoleUC){
   var oRole=charRoleUC=='B'?oB:oS;
+  var {StrPrice}=oRole; // ['pricePerHour']
   
   this.rewriteObj=function(){
       // pricePerHour
@@ -899,6 +917,7 @@ app.CreatorPlugin.hourlyPrice=function(charRoleUC){
 //0123456789abcdef pluginFixedPricePerUnit.js
 "use strict"
 app.CreatorPlugin.fixedPricePerUnit=function(){
+  var {StrPropE, StrPrice}=oB;
 }
 //0123456789abcdef
 
@@ -979,7 +998,7 @@ app.CreatorPlugin.taxi=function(){
 
   this.rewriteLang=function(){
     rewriteLangBuyerToCustomer();
-    rewriteLangDriver();
+    rewriteLangSellerToDriver();
     var tmp=createElement('span').myHtml(langHtml.helpBub.nExtraSeat);
     tmp.querySelector('img:nth-of-type(1)').prop({src:wsExtraSeat,width:200});
     langHtml.helpBub.nExtraSeat=tmp.innerHTML;
@@ -1020,36 +1039,17 @@ app.CreatorPlugin.taxi=function(){
 //0123456789abcdef
 
 
-// crInp: no arg, no this, creates and returns el
-// crInfo: no arg, uses this (span), nothing returned
-// crTabF: no arg, uses this (td), nothing returned
-
-// setInp: no arg, uses this, nothing returned
-// saveInp: no arg, uses this, returns [err val]
-
-// setInfo: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
-// setTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
-// sortTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
-// setMapF, setMapMF: rowMTab as arg, uses this, if something is returned...:
-//   ...and is a string, (it is displayed as a string (see more in mapDiv))
-//   ...and is an object, (it is used as seen in mapDiv)
-
-// crFilterButtF: button index as arg, no this, creates and returns el
-// setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
-
-
 //0123456789abcdef pluginTransport.js
 "use strict"
 app.CreatorPlugin.transport=function(){
   app.strUnitTime='m';
   var StrS=oS.StrPropE;  // ['brand']
   var {StrDistTimePrice}=oS;  // ['priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']
-  var {StrPropE}=site;
+  var {StrPropE, StrTransportBool}=site;
+  //var StrPropE=['payload' ...]
+  //var StrTransportBool=['generalCargo', 'tailLift', 'loaderCrane', 'tipper', 'loadableFromTheSide', 'iso20', 'iso40', 'tiltBed', 'sideLift', 'rollerContainer', 'otherContainer'];
   var {StrTransportBuyer}=oB;  // ['compassPoint','distStartToGoal','destination']
  
-
-  //var StrTransportBool=['generalCargo', 'tailLift', 'loaderCrane', 'tipper', 'loadableFromTheSide', 'iso20', 'iso40', 'tiltBed', 'sideLift', 'rollerContainer', 'otherContainer'];
-  var StrTransportBool=site.StrTransportBool;
   
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
   oB.Main=separateGroupLabels([
@@ -1112,7 +1112,7 @@ app.CreatorPlugin.transport=function(){
 
   this.rewriteLang=function(){
     rewriteLangBuyerToCustomer();
-    rewriteLangDriver();
+    rewriteLangSellerToDriver();
     var Tmp=StrTransportBool.slice(0,-1);
     for(var i=0;i<Tmp.length;i++) {
       var strName=Tmp[i], tmp=createElement('span').myHtml(langHtml.helpBub[strName]);
@@ -1134,7 +1134,117 @@ app.CreatorPlugin.transport=function(){
   }
 };
 //0123456789abcdef
+
+
+
+// crInp: no arg, no this, creates and returns el
+// crInfo: no arg, uses this (span), nothing returned
+// crTabF: no arg, uses this (td), nothing returned
+
+// setInp: no arg, uses this, nothing returned
+// saveInp: no arg, uses this, returns [err val]
+
+// setInfo: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// setTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// sortTabF: rowMTab as arg, uses this, if something is returned, it is used as textInput to the (existing) element
+// setMapF, setMapMF: rowMTab as arg, uses this, if something is returned...:
+//   ...and is a string, (it is displayed as a string (see more in mapDiv))
+//   ...and is an object, (it is used as seen in mapDiv)
+
+// crFilterButtF: button index as arg, no this, creates and returns el
+// setFilterButtF: span,vAll[i],boOn as arg, no this, nothing returned
+
+
+
+//0123456789abcdef pluginVehicledriver.js
+"use strict"
+app.CreatorPlugin.vehicledriver=function(){
+  app.strUnitTime='m';
+  var {StrPropE:StrB, StrBool:StrBoolB, StrTransportBuyer}=oB;  // ['requiredLicense'], ['canCarryBike', 'canCarryFoldableBike', 'bikeCarryingOnlyWithProtectiveBag', 'hasBikeRack'], ['compassPoint','distStartToGoal','destination']  
+  var {StrPropE:StrS, StrBool:StrBoolS, StrDistTimePrice}=oS;  // ['license'], ['hasProtectiveBagToPutFoldableBikeIn'], [priceStart', 'pricePerDist', 'pricePerHour', 'comparePrice']  
+  var {StrPropE}=site;  // ['other']
+ 
+  
+    // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
+  oB.Main=separateGroupLabels([
+  {'Buyer':StrPropPerson},
+  {'Contact':AMinusB(StrPropContact, ['homeTown'])},
+  {'Vehicle':['requiredLicense', 'vehicleType', ...StrBoolB, 'other']},
+  {'Destination':StrTransportBuyer}, //, 'price', 'currency'
+  {'Price':[ 'price', 'currency', 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
+  oS.Main=separateGroupLabels([
+  {'Seller':[ ...StrPropPerson, 'license', 'standingByMethod', 'shiftEnd']},
+  {'Contact':StrPropContact},
+  {'Equipment':['vehicleType', ...StrBoolS, 'other']},
+  {'Price':[ 'currency', ...StrDistTimePrice, 'tLastPriceChange']},
+  {'Position':StrPropPos},
+  {'Reputation':StrPropRep}]);
+  
+    // Properties in roleSettingDiv
+  oB.roleSetting=separateGroupLabels([
+  {'Buyer':[ 'tel', 'displayEmail', 'link', 'idTeamWanted', 'coordinatePrecisionM']},
+  {'Destination':StrTransportBuyer},
+  {'Vehicle':['requiredLicense', 'vehicleType', ...StrBoolB, 'other']},
+  {'Price':[ 'currency', 'price']}]);
+  oS.roleSetting=separateGroupLabels([
+  {'Seller':[ ...StrPropContactMinusBoWebPushOK, 'idTeamWanted', 'license', 'standingByMethod', 'shiftEnd', 'coordinatePrecisionM']},
+  {'Equipment':['vehicleType', ...StrBoolS, 'other']},
+  {'Price':[ 'currency', 'priceStart', 'pricePerDist', 'strUnitDist', 'pricePerHour']}]);
+
+    // Properties in filterDiv
+  oB.filter=separateGroupLabels([
+  {'Buyer':[ 'tPos', 'idTeam']},
+  {'Destination':StrTransportBuyer},
+  {'Vehicle':['requiredLicense', 'vehicleType', ...StrBoolB, 'other']},
+  {'Reputation':[ 'tCreated', 'donatedAmount', 'nComplaint']}]);
+  oS.filter=separateGroupLabels([
+  {'Seller':['license', 'homeTown', 'standingByMethod', 'currency', 'tPos', 'shiftEnd', 'idTeam']},
+  {'Equipment':['vehicleType', ...StrBoolS, 'other']},
+  {'Reputation':StrPropRep}]);
+
+    // Default columns
+  oB.ColsShowDefault= ['vehicleType', 'image',  ...StrTransportBuyer, 'idTeam', 'price'];
+  oB.ColsShowDefaultS= ['vehicleType', 'image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
+  oB.ColsShowDefaultRS= ['vehicleType', 'image', 'compassPoint', 'distStartToGoal', 'idTeam', 'price'];
+  oB.colOneMarkDefault='vehicleType';
+  
+  oS.ColsShowDefault= ['vehicleType', 'image', 'displayName', 'tel', 'license', 'idTeam', 'comparePrice'];
+  oS.ColsShowDefaultS= ['vehicleType', 'image', 'displayName', 'license', 'comparePrice'];
+  oS.ColsShowDefaultRS= ['vehicleType', 'image', 'displayName', 'comparePrice'];
+  oS.colOneMarkDefault='vehicleType';
+  
+
+  viewComparePriceDataPop.setDefault(10,15); // Arg: dist, time
+
+  this.rewriteLang=function(){
+    rewriteLangBuyerToCustomer();
+    rewriteLangSellerToDriver();
+    rewriteLangMissingProp(langHtml, ['Equipment']);
+    //rewriteLangMissingProp(langHtml.prop, [...StrB, ...StrS]);
+
+  };
+
+  this.rewriteObj=function(){
+
+    for(var oX of ORole){
+      for(var i=0;i<oX.StrBool.length;i++) { var strName=oX.StrBool[i]; extend(oX.Prop[strName], propBoolProt); }
+
+        // other
+      extend(oX.Prop.other, {strType:'text', inpW:6});
+    }
+
+    extend(oB.Prop.requiredLicense, {strType:'text', inpW:6});
+    extend(oS.Prop.license, {strType:'text', inpW:6});
     
+      // payload
+    //var tmp={strType:'number', inpW:3, saveInp:posNumF}; extend(oB.Prop.payload, tmp); extend(oS.Prop.payload, tmp);
+  }
+};
+//0123456789abcdef
+
+
 
 
 //0123456789abcdef pluginCleaner.js
@@ -1504,7 +1614,6 @@ app.CreatorPlugin.fruitpicker=function(){
 "use strict"
 app.CreatorPlugin.programmer=function(){
   var StrB=oB.StrPropE, StrS=oS.StrPropE;
-  
   var StrProgrammerLang=oS.StrProgrammerLang;
 
     // oRole.Main.StrProp: rows in roleInfoDiv, markSelectorDiv, viewColumnSelector, tHeadLabel, TableDiv
@@ -1606,7 +1715,7 @@ app.CreatorPlugin.programmer=function(){
 
 //0123456789abcdef client.js
 "use strict"
-app.funLoad=function(){
+app.funLoad= async function(){
 
 /*******************************************************************************************************************
  *******************************************************************************************************************
@@ -1668,7 +1777,7 @@ app.complaintButtonCreator=function(oRole){
   el.on('click', function(){
     viewComplainee.setUp(oRole, row); viewComplainee.load();
     viewComplainee.setVis();
-    doHistPush({view:viewComplainee});
+    doHistPush({strView:'viewComplainee'});
   });
   el.innerHTML=' ';
   var row; //idUser;
@@ -1721,14 +1830,15 @@ app.propSetCropLabel=function(rowMTab){var propName=this.strName, str=rowMTab[pr
  
  
 //calcLabel=function(Label,strName){ return Label[strName]||ucfirst(strName); }
-app.calcLabel=function(obj,strName){ var objA=obj[strName]; return (objA&&objA.label)?objA.label:ucfirst(strName); }
+//app.calcLabel=function(obj,strName){ var objA=obj[strName]; return (objA&&objA.label)?objA.label:ucfirst(strName); }
+app.calcLabel=function(obj,strName){ var objA=obj[strName]; return (objA&&objA.label)?objA.label:ucfirst(camelcaseDecode(strName).join(' ')); }
 
 
 
 
 var divMessageTextCreate=function(){
   var spanInner=createElement('span');
-  var imgBusyLoc=imgBusy.cloneNode().css({zoom:'65%','margin-left':'0.4em'}).hide();
+  var imgBusyLoc=imgBusy.cloneNode().css({transform:'scale(0.65)','margin-left':'0.4em'}).hide();
   //var span=createElement('span').myAppend(spanInner, imgBusyLoc);
   //var el=createElement('div').myAppend(span);
   var el=createElement('div').myAppend(spanInner, imgBusyLoc);
@@ -1975,60 +2085,12 @@ var roleTogglerCreator=function(viewTarget){
     el.setStat(charRole);
     setItem('charRole', charRole);
 
-    viewTarget.setVis();  //doHistReplace({view:ViewTarget[iTmp]});
+    viewTarget.setVis();  //doHistReplace({strView:ViewTarget[iTmp].toString()});
   });
   el.addClass('flexWidth').css({'font-size':'75%'});
   return el;
 }
 
-
-  //
-  // History stuff
-  //
-
-app.histGoTo=function(view){}
-app.historyBack=function(){  history.back();}
-app.doHistPush=function(obj){
-    // Set "scroll" of stateNew  (If the scrollable div is already visible)
-  var view=obj.view;
-  var scrollT=window.scrollTop();
-  if(typeof view.setScroll=='function') view.setScroll(scrollT); else history.StateMy[history.state.ind].scroll=scrollT;  //view.intScroll=scrollT;
-
-  if((boChrome || boOpera) && !boTouch)  history.boFirstScroll=true;
-
-  var indNew=history.state.ind+1;
-  stateMem={hash:history.state.hash, ind:indNew};
-  history.pushState(stateMem, strHistTitle, uCanonical);
-  history.StateMy=history.StateMy.slice(0, indNew);
-  history.StateMy[indNew]=obj;
-}
-app.doHistReplace=function(obj, indDiff=0){
-  history.StateMy[history.state.ind+indDiff]=obj;
-}
-app.changeHist=function(obj){
-  history.StateMy[history.state.ind]=obj;
-}
-app.getHistStatName=function(){
-  return history.StateMy[history.state.ind].view.toString();
-}
-history.distToGoal=function(viewGoal){
-  var ind=history.state.ind;
-  var indGoal;
-  for(var i=ind; i>=0; i--){
-    var obj=history.StateMy[i];
-    var view; if(typeof obj=='object') view=obj.view; else continue;
-    if(view===viewGoal) {indGoal=i; break;}
-  }
-  var dist; if(typeof indGoal!='undefined') dist=indGoal-ind;
-  return dist;
-}
-history.fastBack=function(viewGoal, boRefreshHash){
-  var dist=history.distToGoal(viewGoal);
-  if(dist) {
-    if(typeof boRefreshHash!='undefined') history.boResetHashCurrent=boRefreshHash;
-    history.go(dist);
-  }
-}
 
 
   //
@@ -2105,35 +2167,54 @@ app.objToQueryArr=function(o){
   return arr;
 }
 
-var createUPop=function(IP, uRedir, nonce){
+var createUPop=function(IP, uRedir, nonce, boReauthenticate=false){
   var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uRedir), "state="+nonce, "response_type="+response_type];
   if(IP=='fb')   arrQ.push("scope=email"); //, "display=popup"
   else if(IP=='google')    arrQ.push("scope=profile,email");
   else if(IP=='idplace')    arrQ.push("scope=name,image,email");
-  //arrQ.push("auth_type=reauthenticate");
+  if(boReauthenticate) arrQ.push("auth_type=reauthenticate");
   return UrlOAuth[IP]+'?'+arrQ.join('&');
 }
+var getOAuthCode=async function(boReauthenticate=false){
+  var strQS, nonce=randomHash(), {wwwLoginRet}=site, uLoginRet=strSchemeLong+wwwLoginRet, uPop=createUPop(strIPPrim, uLoginRet, nonce, boReauthenticate);
 
-var getOAuthCode=async function(){
-  var strQS, nonce=randomHash(), {wwwLoginRet}=site, uLoginRet=strSchemeLong+wwwLoginRet, uPop=createUPop(strIPPrim, uLoginRet, nonce);
-
-  var objProp={uSiteLogin:encodeURIComponent(uSite),'max-age':300}
+  //var strBroadcastChannel='broadcastChannel_0123456789abcdef0123456789abcdef'; //'broadcastChannel_'+randomHash(); //'myapp';
+  var strBroadcastChannel='broadcastChannel_'+randomHash(); //'myapp';
+  var objCookieProt={'max-age':300, SameSite:'Strict', Secure:'True'}
+  var objCookieSite=extend({uSiteLogin:encodeURIComponent(uSite)},objCookieProt)
+  var objCookieCh=extend({strBroadcastChannel:encodeURIComponent(strBroadcastChannel)}, objCookieProt)
   var {hostname}=new URL(uSite);
-  if(/^192\.168\.0\.[0-9]$/.test(hostname)) objProp.domain=hostname;  // To make it work when debugging
+  var uDomainSite // As uLoginRet is to a sibling-domain, objCookieSite must be accessable from other sub-domains
+  if(/^192\.168\.0\.[0-9]$/.test(hostname)) uDomainSite=hostname;  // To make it work when debugging
   else {
-    var ind=hostname.indexOf('.');  if(ind!=-1) objProp.domain=hostname.substr(ind+1);  
+    var ind=hostname.indexOf('.');  if(ind!=-1) uDomainSite=hostname.substr(ind+1);  
   }
-  var strCookie=objToQueryArr(objProp).join(';');
-  document.cookie=strCookie
+  objCookieSite.domain=uDomainSite;
+  var strCookieSite=objToQueryArr(objCookieSite).join(';');   document.cookie=strCookieSite
+  var strCookieCh=objToQueryArr(objCookieCh).join(';');   document.cookie=strCookieCh
   var URLLoginRet=new URL(uLoginRet);
+
+  //setItemS('strBroadcastChannel',strBroadcastChannel);
+  //sessionStorage.strBroadcastChannel=strBroadcastChannel
+  extend(sessionStorage, {strBroadcastChannel});
 
   window.open(uPop); //, '_blank', 'popup', 'width=580,height=400'
   //var {strQS,strHash}=await new Promise(resolve=>{ window.loginReturn=resolve; });
+
+  // var strQS=await new Promise(resolve=>{
+  //   window.on("message", (ev)=>{
+  //     if(ev.origin == URLLoginRet.origin) resolve(ev.data);
+  //   });
+  // });
+
+
+  var broadcastChannel=new BroadcastChannel(strBroadcastChannel);
   var strQS=await new Promise(resolve=>{
-    window.on("message", (ev)=>{
-      if(ev.origin == URLLoginRet.origin) resolve(ev.data);
-    });
+    broadcastChannel.on('message', function(e){
+      resolve(e.data)
+    })
   });
+  broadcastChannel.close()
   var strParams=response_type=='code'?strQS:strHash;
 
   var params=parseQS(strParams.substring(1));
@@ -2153,7 +2234,7 @@ var idPLoginCreator=function(){
 
 var viewFormLoginCreator=function(){
   var el=createElement('div')
-  el.toString=function(){return 'formLoginDiv';}
+  el.toString=function(){return 'viewFormLogin';}
 
 
   el.setUp=function(){
@@ -2168,7 +2249,7 @@ var viewFormLoginCreator=function(){
       var hashPW=inpPass.value+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
       await new Promise(resolve=>{
         var vec=[['loginWEmail',{email:inpEmail.value, password:hashPW}], ['setupById', {}, function(){ resolve(); }]];   majax(vec);   });
-      history.fastBack(viewFront);
+      history.fastBack('viewFront');
 
     })();
     return false;
@@ -2195,7 +2276,7 @@ var viewFormLoginCreator=function(){
   var divSendLink=createElement('div').css({'margin-top':'1em'}).myAppend(butSendLink, imgH);
 
   var buttonCreateAccount=createElement('button').addClass('highStyle').myText('Create an account').on('click', function(){
-    doHistPush({view:viewCreateUser});
+    doHistPush({strView:'viewCreateUser'});
     viewCreateUser.setVis();
   });
 
@@ -2228,13 +2309,15 @@ var divLoginSelectorCreator=function(oRole){
     await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
 
     var boE=Boolean(userInfoFrDB[strRole]);
-    var tmpIntro=strRole=='buyer'?mainIntroB:mainIntroS;
+    var tmpIntro=strRole=='buyer'?viewIntroB:viewIntroS;
+    //var strTmpIntro=strRole=='buyer'?'viewIntroB':'viewIntroS';
+    //var tmpIntro=MainDiv[StrMainDivFlip[strTmpIntro]];
     //if(!boE) tmpIntro.openFunc(); 
     if(!boE) { 
-      var fun=function(){history.fastBack(viewFront);}
-      doHistReplace({view:tmpIntro,fun});
+      var fun=function(){history.fastBack('viewFront');}
+      doHistReplace({strView:tmpIntro.toString(),fun});
       tmpIntro.setVis();
-    } else {history.fastBack(viewFront);}
+    } else {history.fastBack('viewFront');}
   });
   imgFb.css({align:'center', display:'block', 'margin': '0.7em auto'}); //     , position:'relative',top:'0.4em',heigth:strButtonSize,width:strButtonSize
 
@@ -2247,9 +2330,9 @@ var divLoginSelectorCreator=function(oRole){
   var timeSpecialR=0, nSpecialReq=0;
   divHead.on('click', emailToggleEventF);
 
-  var cssCol={display:'inline-block','box-sizing': 'border-box',padding:'1em',flex:1}; //width:'50%',
+  var cssCol={display:'inline-block',padding:'1em',flex:1}; //width:'50%',
   var buttonViaEmail=createElement('button').addClass('highStyle').myText('Email and password').on('click', function(){
-    doHistPush({view:viewFormLogin});
+    doHistPush({strView:'viewFormLogin'});
     viewFormLogin.setVis();
   });
   var divLeft=createElement('div').css(cssCol).css({'text-align':'center'}).myAppend(imgFb); divLeft.insertAdjacentHTML('beforeend', '<p>Email, name and image are used, although not shown publicly unless you want to.</p><p>Nothing is written to your Facebook flow.</p>' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
@@ -2269,7 +2352,7 @@ var divLoginSelectorCreator=function(oRole){
 
 var viewCreateUserCreator=function(){
   var el=createElement('div')
-  el.toString=function(){return 'createUser';}
+  el.toString=function(){return 'viewCreateUser';}
   var save=function(){
     resetMess();
     var strPassword=inpPass.value.trim();
@@ -2344,7 +2427,7 @@ var viewCreateUserCreator=function(){
 
 var viewChangePWPopCreator=function(){
   var el=createElement('div')
-  el.toString=function(){return 'changePWPop';}
+  el.toString=function(){return 'viewChangePWPop';}
   var save=function(){
     resetMess();
     messDiv.myText('');
@@ -2361,7 +2444,7 @@ var viewChangePWPopCreator=function(){
   }
 
   el.openFunc=function(){
-    doHistPush({view:viewChangePWPop});
+    doHistPush({strView:'viewChangePWPop'});
     el.setVis();
     inpPassOld.value=''; inpPass.value=''; inpPassB.value='';
   }
@@ -2395,13 +2478,13 @@ var viewChangePWPopCreator=function(){
 
 var viewForgottPWPopCreator=function(){
   var el=createElement('div')
-  el.toString=function(){return 'forgottPWPop';}
+  el.toString=function(){return 'viewForgottPWPop';}
   var okF=function(){
     var vec=[['verifyPWReset',{email:inpEmail.value.trim()}, okRet]];   majax(vec);
 
   };
   el.openFunc=function(){
-    doHistPush({view:viewForgottPWPop});
+    doHistPush({strView:'viewForgottPWPop'});
     el.setVis();
     inpEmail.value='';
   }
@@ -2433,11 +2516,11 @@ var viewForgottPWPopCreator=function(){
 
 var viewConvertIDCreator=function(){
   var el=createElement('div')
-  el.toString=function(){return 'convertID';}
+  el.toString=function(){return 'viewConvertID';}
   el.setUp=function(){}
   el.openFunc=function(){
     pendingMess.hide(); cancelMess.hide();
-    doHistPush({view:viewConvertID});
+    doHistPush({strView:'viewConvertID'});
     el.setVis();
   };
   el.myReset=function(){   clearInterval(timerClosePoll);     }
@@ -2517,7 +2600,7 @@ app.butTeamImgCreator=function(oRole){
       // histPHP (server-side): histPHP[buttonNumber]=['name',value], (converts to:) hist[0]=names,  hist[1]=values
 var viewFilterCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'filterDiv';}
+  el.toString=function(){return 'viewFilter';}
   
   el.setUp=function() {
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
@@ -2582,7 +2665,7 @@ var filterButtonCreator=function(){
   var tmpImg=createElement('img').prop({src:wsFilter, alt:"filter"}).css({height:'1em', width:'1em'});// , 'margin-right':'0.5em'  height:'1em', width:'1em',   //,'vertical-align':'middle'  //,'vertical-align':'text-bottom'
   el.myAppend(tmpImg, tmpDivW).addClass('flexWidth').prop('title',langHtml.FilterTitle);
   el.on('click',function(){
-    viewFilter.setVis();  doHistPush({view:viewFilter});
+    viewFilter.setVis();  doHistPush({strView:'viewFilter'});
     ga('send', 'event', 'button', 'click', 'filter');
   });
   el.css({'padding':'0 0 0 0.1em', display:'flex', 'align-items':'center', overflow:'hidden'});
@@ -2608,7 +2691,7 @@ var filterButtonCreator=function(){
  *   divEntryBarCreator
  *   divLoginInfoCreator
  * viewEntryCreator
- * mainIntroCreator
+ * viewIntroCreator
  *   divSelectImageIdPOrCustomCreator
  *
  *******************************************************************************************************************
@@ -2617,14 +2700,14 @@ var filterButtonCreator=function(){
 
 var viewSettingEntryCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'settingEntry';}
+  el.toString=function(){return 'viewSettingEntry';}
   
   
   //var buttShowMarkSelectB=createElement('button').myText(langHtml.Buyers).css({background:oB.strColor, 'margin-left':'0.4em'}).on('click', function(){
-    //var viewTmp=viewMarkSelector.ElRole[0]; viewTmp.setVis();doHistPush({view:viewTmp});
+    //var viewTmp=viewMarkSelector.ElRole[0]; viewTmp.setVis();doHistPush({strView:viewTmp.toString()});
   //});
   //var buttShowMarkSelectS=createElement('button').myText(langHtml.Sellers).css({background:oS.strColor}).on('click', function(){
-    //var viewTmp=viewMarkSelector.ElRole[1]; viewTmp.setVis();doHistPush({view:viewTmp});
+    //var viewTmp=viewMarkSelector.ElRole[1]; viewTmp.setVis();doHistPush({strView:viewTmp.toString()});
   //});
   el.setUp=function(){
     for(let i=0;i<2;i++) {
@@ -2641,15 +2724,15 @@ var viewSettingEntryCreator=function(){
     var spanTmp=createElement('span');
     ButtShowMarkSelect[i]=createElement('button').myAppend('(', spanTmp, ')').css({background:oRole.strColor}).on('click', function(){ //langHtml[strTmp]+
       charRole=ORole[i].charRole; // Temporary
-      viewMarkSelector.setVis(); doHistPush({view:viewMarkSelector});
+      viewMarkSelector.setVis(); doHistPush({strView:'viewMarkSelector'});
     });
     var strTmp=i?'Seller':'Buyer';
     el.userDiv.SettingButton[i]=createElement('button').myText(langHtml[strTmp+'Settings']).on('click',function(){
       charRole=i?'s':'b';
-      viewSetting.setVis(); doHistPush({view:viewSetting});
+      viewSetting.setVis(); doHistPush({strView:'viewSetting'});
     });
     el.TeamButton[i]=createElement('button').myText(strTmp+' team settings').on('click', function(){
-      ViewTeam[i].setUp(); ViewTeam[i].setVis(); doHistPush({view:ViewTeam[i]});
+      ViewTeam[i].setUp(); ViewTeam[i].setVis(); doHistPush({strView:ViewTeam[i].toString()});
     }); //.css({display:'block'})
   }
   //ButtShowMarkSelect[0].css({'margin-left':'0.4em'});
@@ -2659,20 +2742,20 @@ var viewSettingEntryCreator=function(){
 
   
   var userSettingButton=createElement('button').myText(langHtml.UserSettings).on('click',function(){
-    viewUserSetting.setVis(); doHistPush({view:viewUserSetting});
+    viewUserSetting.setVis(); doHistPush({strView:'viewUserSetting'});
   });
-  var complainerButton=createElement('button').myText('Complaints from me').on('click',function(){
+  var complainerButton=createElement('button').myText('Complaints on others').on('click',function(){
     var userT=userInfoFrDB.user, objT={idComplainer:userT.idUser}; copySome(objT, userT, ['image', 'displayName']);
     viewComplainer.setUp(objT);
     //viewComplainer.setUp(userInfoFrDB.user);
     viewComplainer.load();
-    viewComplainer.setVis(); doHistPush({view:viewComplainer});
+    viewComplainer.setVis(); doHistPush({strView:'viewComplainer'});
   });
   //var butts=createFragment(userSettingButton, ...el.userDiv.SettingButton, createElement('br'), complainerButton).cssChildren({margin:'.5em 0.1em'});
   var h=createElement('p').myText("Settings for logged in users").css({'font-weight':'bold'});
   
   el.adminButton=createElement('button').myText('Admin').css({display:'block'}).on('click',function(){
-    viewAdmin.setVis(); doHistPush({view:viewAdmin});
+    viewAdmin.setVis(); doHistPush({strView:'viewAdmin'});
   });
   var divA=createElement('div').myAppend(userSettingButton, ...el.userDiv.SettingButton).css({display:'flex'}); //divA.cssChildren({});
   var divTeam=createElement('div').myAppend(...el.TeamButton).css({display:'flex'});
@@ -2706,7 +2789,7 @@ var viewSettingEntryCreator=function(){
 
 var viewUserSettingCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'userSetting';}
+  el.toString=function(){return 'viewUserSetting';}
 
   el.setUp=function(){
     var tmp=userInfoFrDB.user;
@@ -2766,7 +2849,7 @@ var viewUserSettingCreator=function(){
   var strHelp="Copy this to the remote controller.";
   var imgH=imgHelp.cloneNode(1).css({'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
   //var aLink=createElement('a').myText('link to trackerControl').prop({href:'https://emagnusandersson.github.io/trackerControl/'}).css({'margin-left':'0.4em'});
-  var spanKeyRemoteControl=createElement('span').css({'font-size':'0.8em', 'padding':'0.1em', 'user-select':'none', width:'100%', display:'block', 'box-sizing':'border-box', overflow:'hidden', background:'#ccc'}); //placeholder:'Key for external controller',
+  var spanKeyRemoteControl=createElement('span').css({'font-size':'0.8em', 'padding':'0.1em', 'user-select':'none', width:'100%', display:'block', overflow:'hidden', background:'#ccc'}); //placeholder:'Key for external controller',
   var inpKeyRemoteControl=createElement('input')
   var generateF=function(){
     var strUUID=myUUID();
@@ -2794,7 +2877,7 @@ var viewUserSettingCreator=function(){
   
       // deleteDiv
   //var imgH=imgHelp.cloneNode(1); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
-  var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
+  var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({strView:'viewDeleteAccountPop'}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
   var Div=[divIPSetting, divPW, divDisplayName, divSelectImageIdPOrCustom, divBoWebPushOK, divKeyRemoteControl, deleteDiv];  //, divBoGeoWatch
@@ -2866,7 +2949,7 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
 
       // deleteDiv
   //var imgH=imgHelp.cloneNode(1); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
-  var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({view:viewDeleteAccountPop}); viewDeleteAccountPop.setVis();});
+  var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({strView:'viewDeleteAccountPop'}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete);
 
 
@@ -2880,12 +2963,12 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
 
 var viewDeleteAccountPopCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'deleteAccountPop';}
+  el.toString=function(){return 'viewDeleteAccountPop';}
   var butYes=createElement('button').myText(langHtml.Yes).on('click', function(){
     //var vec=[['UDelete',1,function(data){historyBack();historyBack();}]];   majax(vec);
     sessionLoginIdP={};  userInfoFrDB=extend({}, userInfoFrDBZero);
     var vec=[['UDelete',{}], ['logout',{}, function(data){
-      history.fastBack(viewFront,true);
+      history.fastBack('viewFront',true);
     }]];   majax(vec);
 
   });
@@ -2923,18 +3006,26 @@ var settingCreator=function(oRole){
   el.createDivs=function(){
     for(var i=0;i<StrProp.length;i++){
       var strName=StrProp[i];
-      var imgH=''; if(strName in oRole.helpBub ) {    var imgH=imgHelp.cloneNode(1).css({'margin-left':'0', 'margin-right':'0.4em'});   popupHover(imgH,oRole.helpBub[strName]);         }
+      var imgH=''; if(strName in oRole.helpBub ) {    var imgH=imgHelp.cloneNode(1).css({'margin-left':'0', 'margin-right':'0.4em', flex:'0 0 auto'});   popupHover(imgH,oRole.helpBub[strName]);         }
 
       //var strLabel=ucfirst(strName)+': '; if(strName in langHtml.prop) strLabel=langHtml.prop[strName].label+': ';
       var strLabel=calcLabel(langHtml.prop, strName);
       var elLabel=createElement('label').myText(strLabel).css({flex:'0 1 auto', 'margin-right':'0.4em'}); //
-      var spanSpace=createElement('span').css({flex:'2 2 auto'}); //
+      var spanSpace=createElement('span').css({flex:'2000 0 auto'}); //
 
       var inp='', prop=(strName in oRole.Prop)?oRole.Prop[strName]:{},  strType=('strType' in prop)?prop.strType:'';
-      if('crInp' in prop) inp=prop.crInp.call(inp); else inp=createElement('input').prop('type',strType);
+      if('crInp' in prop)  inp=prop.crInp.call(inp); else  inp=createElement('input').prop('type',strType); 
+      inp.css({"flex":'0 1 auto'});
+      if('inpW' in prop)  {
+        if('crInp' in prop) inp.css({width:prop.inpW+'em'});
+        else{
+          inp.css({width:'0em'});
+          inp.css({"flex-basis":prop.inpW+'em'});
+        }
+      }
+        
       extend(inp, {strName, iRole:oRole.ind});
-      if('inpW' in prop)  inp.css({width:prop.inpW+'em'});
-      inp.css({flex:'0 1 0'});
+      //if('inpW' in prop)  inp.css({width:prop.inpW+'em'});
       inp.attr('name',strName);
       //var divLCH=createElement('div').myAppend(strLabel,imgH,inp).css({position:'relative', margin:'.8em 0','min-height':'2em'});
       var divLCH=createElement('div').myAppend(elLabel,imgH,spanSpace, inp).css({display:'flex', 'justify-content':'space-between', 'align-items':'center', margin:'.8em 0','min-height':'2em'});
@@ -2981,7 +3072,7 @@ var settingCreator=function(oRole){
 
 var viewSettingCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'setting';}
+  el.toString=function(){return 'viewSetting';}
   el.setUp=function(){
     var indRole=Number(charRole=='s'), oRole=ORole[indRole], oRoleAlt=ORole[1-indRole], elRoleAlt=ElRole[1-indRole];
     elRole=ElRole[indRole];
@@ -3044,7 +3135,7 @@ app.spanIdTeamWantedCreator=function(oRole){
 
 var viewAdminCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'admin';}
+  el.toString=function(){return 'viewAdmin';}
   el.setUp=function(data){
     //boShowTeam=Boolean(Number(data.boShowTeam)); inpBoShowTeam.prop({checked:boShowTeam});
     //for(var i=0;i<ORole.length;i++){
@@ -3086,7 +3177,7 @@ var viewAdminCreator=function(){
 var viewTeamCreator=function(oRole){
   var el=createElement('div');
   var {strRole, charRoleUC, ind:iRole}=oRole;
-  el.toString=function(){return 'team'+charRoleUC;}
+  el.toString=function(){return 'viewTeam'+charRoleUC;}
   el.setUp=function(boShow){
     elId.value='';  elLink.value='';
     var vec=[['teamLoad',{iRole},disLoadRet]];   majax(vec);
@@ -3176,11 +3267,11 @@ var divEntryBarCreator=function(el){
   var entryButtonLabel=createElement('div').myText(langHtml.AppearOnTheMap).css({'font-weight':'bold'});
   var cssBut={width:'initial','font-weight':'bold', padding:'0.2em', height:"auto", 'min-height':'1.8rem', margin:'0 2px'};
   var entryButtonB=createElement('button').myText(langHtml.Buyers).addClass('flexWidth').css(cssBut).css({background:ORole[0].strColor}).on('click',function(){
-    viewEntryB.setVis(); doHistPush({view:viewEntryB});
+    viewEntryB.setVis(); doHistPush({strView:'viewEntryB'});
     ga('send', 'event', 'button', 'click', 'entryDivB');
   });
   var entryButtonS=createElement('button').myText(langHtml.Sellers).addClass('flexWidth').css(cssBut).css({background:ORole[1].strColor}).on('click',function(){
-    viewEntryS.setVis(); doHistPush({view:viewEntryS});
+    viewEntryS.setVis(); doHistPush({strView:'viewEntryS'});
     ga('send', 'event', 'button', 'click', 'entryDivS');
   });
   //if(site.siteName=='demo') {entryButtonB.hide(); entryButtonS.hide();}
@@ -3216,7 +3307,7 @@ var divLoginInfoCreator=function(){
   logoutButt.on('click', function(){
     sessionLoginIdP={}; userInfoFrDB=extend({}, userInfoFrDBZero);
     var vec=[['logout', {}, function(data){
-      history.fastBack(viewFront,true);
+      history.fastBack('viewFront',true);
     }]];
     majax(vec);
     return false;
@@ -3234,7 +3325,7 @@ var divLoginInfoCreator=function(){
 var viewEntryCreator=function(oRole){
   var el=createElement('div');
   var {strRole, charRoleUC}=oRole;
-  el.toString=function(){return 'entry'+charRoleUC;}
+  el.toString=function(){return 'viewEntry'+charRoleUC;}
   el.setUp=function(){
     //var nTmp=strRole=='buyer'?nBuyerReal:nSellerReal;
     //var nNext=nTmp+1; //if(nNext==13) nNext=14;
@@ -3267,7 +3358,7 @@ var viewEntryCreator=function(oRole){
     var oT={IP:strIPPrim, fun:'teamFun', strRole, caller:'index', code};
     await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
 
-    history.fastBack(viewFront);
+    history.fastBack('viewFront');
     return false;
   }).hide();
 
@@ -3311,10 +3402,10 @@ var viewEntryCreator=function(oRole){
 }
 
 
-var mainIntroCreator=function(oRole){
+var viewIntroCreator=function(oRole){
   var el=createElement('div');
   var {charRole, strRole, charRoleUC}=oRole;
-  el.toString=function(){return 'mainIntro'+charRoleUC;}
+  el.toString=function(){return 'viewIntro'+charRoleUC;}
   var save=function(){ 
     ga('send', 'event', 'button', 'click', 'introCont');
     resetMess();  
@@ -3370,7 +3461,7 @@ var mainIntroCreator=function(oRole){
   //var pBread=createElement('p').myText("These data are shown to everyone. You may want to use a separate phone if you use this service often.");
   var pBread=createElement('h4').myText("Choose how you want to appear...");
   var pBread2=createElement('h4').myText("...and how other users will be able to contact you.");  // You may want to use a separate phone if you use this service often.
-  var inpName=createElement('input').prop({type:'text', id:'introName'+charRoleUC, name:'name'});// .css({width:'70%', 'box-sizing':'border-box'});
+  var inpName=createElement('input').prop({type:'text', id:'introName'+charRoleUC, name:'name'});// .css({width:'70%'});
   var labName=createElement('label').prop({for:'introName'+charRoleUC}).myAppend('Name: ');
   var divName=createElement('p').myAppend(labName,inpName);
   
@@ -3383,11 +3474,11 @@ var mainIntroCreator=function(oRole){
   var spanBoWebPushOK, divBoWebPushOK=createElement('p');
   divBoWebPushOK.toggle(boEnablePushNotification);
   
-  var inpTel=createElement('input').prop({type:'tel', id:'introTel'+charRoleUC, name:'tel'}); //.css({width:'70%', 'box-sizing':'border-box'});
+  var inpTel=createElement('input').prop({type:'tel', id:'introTel'+charRoleUC, name:'tel'}); //.css({width:'70%'});
   var labTel=createElement('label').prop({for:'introTel'+charRoleUC}).myAppend(langHtml.Tel+'*:');
   var divTel=createElement('p').myAppend(labTel, inpTel);
   
-  var inpEmail=createElement('input').prop({type:'email', id:'introEmail'+charRoleUC, name:'email'}); //.css({width:'70%', 'box-sizing':'border-box'});
+  var inpEmail=createElement('input').prop({type:'email', id:'introEmail'+charRoleUC, name:'email'}); //.css({width:'70%'});
   var labEmail=createElement('label').prop({for:'introEmail'+charRoleUC}).myAppend(langHtml.Email+'*:');
   var divEmail=createElement('p').myAppend(labEmail, inpEmail);
   var strTmp=boEnablePushNotification?"*At least one of these must be enabled/supplied.":"*At least one of these must be supplied.";
@@ -3551,7 +3642,7 @@ var divSelectTeamImageCreator=function(oRole){  // Selector between default-imag
 
 var viewComplaintCommentPopCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'complaintCommentPop';}
+  el.toString=function(){return 'viewComplaintCommentPop';}
   el.openFunc=function(idComplaineeT){
     idComplainee=idComplaineeT; spanIdComplainee.myText(idComplaineeT);
 
@@ -3602,12 +3693,12 @@ var viewComplaintCommentPopCreator=function(){
 
 var viewComplaintAnswerPopCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'complaintAnswerPop';}
+  el.toString=function(){return 'viewComplaintAnswerPop';}
   el.openFunc=function(idT){
     idComplainer=idT;  spanIdComplainer.myText(idT);
     var o1={idComplainer}, vec=[['complaintOneGet',o1,complaintAnswerOneGet]];   majax(vec);
     answer.focus();
-    doHistPush({view:viewComplaintAnswerPop});
+    doHistPush({strView:'viewComplaintAnswerPop'});
     el.setVis();
   };
   el.setVis=function(){
@@ -3657,7 +3748,7 @@ var viewComplaintAnswerPopCreator=function(){
 
 var viewComplaineeCreator=function(){    // Complaints on a certain complainee
   var el=createElement('div');
-  el.toString=function(){return 'complainee';}
+  el.toString=function(){return 'viewComplainee';}
   el.setUp=function(oRoleT, rowComplainee){
     //var id=rMTab.idUser;
     oRole=oRoleT; el.indRole=oRole.ind;
@@ -3684,7 +3775,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
     viewComplainer.setUp(objArg);
     viewComplainer.load();
     viewComplainer.setVis();
-    doHistPush({view:viewComplainer});
+    doHistPush({strView:'viewComplainer'});
   }}
   var ansButClick=function(){
     var idComplainer=this.closest('tr').idComplainer;
@@ -3738,7 +3829,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
       var oT={IP:strIPPrim, fun:'complainerFun', caller:'index', code};
       await new Promise(resolve=>{var vec=[['loginGetGraph', oT], ['setupById', {}, function(){ resolve(); }]];   majax(vec);  });
     }
-    doHistPush({view:viewComplaintCommentPop});   viewComplaintCommentPop.openFunc(viewComplainee.idComplainee);
+    doHistPush({strView:'viewComplaintCommentPop'});   viewComplaintCommentPop.openFunc(viewComplainee.idComplainee);
   }
   
   var oRole;
@@ -3775,7 +3866,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
 
 var viewComplainerCreator=function(){  // Complaints from a certain Complainer
   var el=createElement('div');
-  el.toString=function(){return 'complainer';}
+  el.toString=function(){return 'viewComplainer';}
   el.setUp=function(objArg){
     var {idComplainer:idTmp, image, displayName}=objArg;
     idComplainer=idTmp;
@@ -3997,7 +4088,7 @@ var viewInfoCreator=function(oRole){ // All the detailed info of a user.
   var el=createElement('div');
   var {strRole, Prop, charRoleUC}=oRole, {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
   el.indRole=oRole.ind;
-  el.toString=function(){return 'info'+charRoleUC;}
+  el.toString=function(){return 'viewInfo'+charRoleUC;}
   el.setContainers=function(arg){ // arg is iMTab or rowMTab
     var boMTab=typeof arg=='number';
     if(boMTab) { var iMTab=arg, rowMTab=oRole.MTab[iMTab]; } else rowMTab=arg;
@@ -4403,6 +4494,7 @@ var mapDivCreator=function(){
             }
           }
           if(srcTmp2.length==0) srcTmp2=srcTmp;
+          if(boFF) TileStack.length=0
           var elTile; if(TileStack.length) elTile=TileStack.pop(); else { elTile=createElement('img').css({position:'absolute',opacity:0.7}).prop({alt:"tile"});  } //,border:'solid 1px grey'
           //elTile.src=srcTmp;
           elTile.srcset=srcTmp+" 1x, "+srcTmp2+" 2x ";
@@ -4421,12 +4513,12 @@ var mapDivCreator=function(){
 
 
   el.setMe=function(latlng, boAndCenter=false){
-    if(window.boVideo) latlng=latlngDebug;
+    //if(window.boVideo) latlng=latlngDebug;
     el.latlngMe=latlng;
     el.pWCMe=merProj.fromLatLngToPoint(latlng);   if(boAndCenter) copySome(pWCC, el.pWCMe, ['x','y']);
   }
   el.setOpponent=function(data, url){
-    var {objSender, iRole, message, tSent, latlngSender}=data;
+    var {objSender, message, tSent, latlngSender}=data;
     el.latlngOpponent=latlngSender;
     el.pWCOpponent=merProj.fromLatLngToPoint(latlngSender); el.elImgOpponent.prop({src:url, myData:data});
   }
@@ -4601,7 +4693,7 @@ var mapDivCreator=function(){
     var viewTmp=this.oRole==oB?viewInfoB:viewInfoS;
     viewTmp.setContainers(i);
     viewTmp.setVis();
-    doHistPush({view:viewTmp});
+    doHistPush({strView:viewTmp.toString()});
     return false;
   }
   MarkerT.tmpPrototype.setImg=function(){
@@ -4683,7 +4775,7 @@ var mapDivCreator=function(){
   var iTileFirstLast=-1, jTileFirstLast=-1, zoomLevLast=-20, drLevLast=-20;
   var TileStack=[];
   var arrInd=[];
-  var elBoard=createElement('div').css({position:'absolute','box-sizing': 'border-box'});
+  var elBoard=createElement('div').css({position:'absolute'});
   
   //elBoard.css({width:2*256,height:2*256}); //,border:'solid 3px red' ,'zoom':0.5
   elBoard.css({width:'100%',height:'100%'}); //,border:'solid 3px red' ,'zoom':0.5
@@ -4693,7 +4785,6 @@ var mapDivCreator=function(){
 
   var elGlas=createElement('div').css({position:'absolute', top:0, left:0, width:'512',height:'512'});
   //elGlas=createElement('div').css({position:'absolute', top:0, left:0, width:"calc(100% + 256px)",height:"calc(100% + 256px)"});
-  elGlas.css({'box-sizing': 'border-box'});
   elGlas.css({width:"calc(200% + 512px)",height:"calc(200% + 512px)"});
   if(boDbg) elGlas.css({border:'pink solid'});
   var elGlasBack=elGlas.cloneNode(true);
@@ -4702,22 +4793,23 @@ var mapDivCreator=function(){
   var srcsetMe=wsMarkerMe+" 1x, "+wsMarkerMe2+" 2x";
   var elImgMe=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}).prop({srcset:srcsetMe, alt:"me"});  // , src:wsMarkerMe
   el.elImgOpponent=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':2}).prop({src:wsMarkerOpponent, alt:"opponent"}).on('click',function(){
-    var {objSender, iRole, message, tSent, latlngSender}=this.myData;
+    var {objSender, message, tSent, latlngSender}=this.myData;
+    var idRoleSender=objSender.iRole;
     var {idUser, displayName, boUseIdPImg, image, imTag}=objSender;
     //var iMTab=null; ORole[iRole].MTab.forEach(function(item,i){ if(item.idUser==idUser) iMTab=i;});
     //if(iMTab==null){ return; }
-    var viewInfoT=ViewInfo[iRole];
-    //var data=extend({}, userInfoFrDB[ORole[iRole].strRole]);
+    var viewInfoT=ViewInfo[idRoleSender];
+    //var data=extend({}, userInfoFrDB[ORole[idRoleSender].strRole]);
     //copySome(data, userInfoFrDB.user, ['boUseIdPImg', 'image', 'imTag', 'displayName']);
     //viewInfoT.setContainers(data);
     //viewInfoT.setVis();
-    //doHistPush({view:viewInfoT});
+    //doHistPush({strView:viewInfoT.toString()});
     var retFunc=function(data){
-      viewInfoT.setContainers(data[iRole]);
+      viewInfoT.setContainers(data[idRoleSender]);
       viewInfoT.setVis();
-      doHistPush({view:viewInfoT});
+      doHistPush({strView:viewInfoT.toString()});
     }
-    var vec=[['getSingleUser',{IRole:[iRole], idUser}, retFunc]];  majax(vec); 
+    var vec=[['getSingleUser',{IRole:[idRoleSender], idUser}, retFunc]];  majax(vec); 
   });
   elGlas.append(elImgMe, el.elImgOpponent);
   
@@ -4774,7 +4866,7 @@ var mapDivCreator=function(){
  
 var viewFrontCreator=function(el){
   //var el=createElement('div');
-  el.toString=function(){return 'front';}
+  el.toString=function(){return 'viewFront';}
   
   
     // quickDiv
@@ -4783,7 +4875,7 @@ var viewFrontCreator=function(el){
   
     // divFoot
   var settingButtonClick=function(){
-    viewSettingEntry.setVis(); doHistPush({view:viewSettingEntry});
+    viewSettingEntry.setVis(); doHistPush({strView:'viewSettingEntry'});
     ga('send', 'event', 'button', 'click', 'setting');
   }
   //var tmpImg=createElement('img').prop({src:wsSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
@@ -4793,11 +4885,11 @@ var viewFrontCreator=function(el){
   var uWikiT=uWiki; if(strLang!='en') uWikiT=uWiki+'/'+strLang;
   var infoLink=createElement('a').prop({href:uWikiT}).myText(langHtml.OtherSites).on('click', function(){  
     ga('send', 'event', 'button', 'click', 'wiki');
-  }).css({'margin':'0.4em', 'text-align':'center', 'max-width':'min-content'});
+  }).css({'margin':'0.4em', 'text-align':'center'}); //, 'max-width':'min-content'
   //var divLink=createElement('div').myAppend(infoLink);
   
   var tableButtonClick=function(){
-    viewTable.setVis();  doHistPush({view:viewTable});
+    viewTable.setVis();  doHistPush({strView:'viewTable'});
     ga('send', 'event', 'button', 'click', 'table');
   }
   var tmpImg=createElement('img').prop({srcset:srcsetList, alt:"list"}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
@@ -4826,8 +4918,8 @@ var viewFrontCreator=function(el){
   var DivButRole=[], CbRole=[], Label=[];
   for(var i=0;i<2;i++){
     var strRole=i?'Sellers':'Buyers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
-    Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'75%', flex:'0 0 auto', 'box-sizing':'border-box'});  //, 'z-index':'-1'
-    CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, flex:'0 0 auto', width:'1.4em', height:'1.4em', 'box-sizing':'border-box'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
+    Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'75%', flex:'0 0 auto'});  //, 'z-index':'-1'
+    CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, flex:'0 0 auto', width:'1.4em', height:'1.4em'}).prop('title','Show / hide '+strTmp).on('click',clickF);
     DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, display:'flex', flex:'1 1 2.5em', "flex-direction":"column", 'align-items':'center'}); //, padding:'0.2em'
   }
   
@@ -4835,7 +4927,7 @@ var viewFrontCreator=function(el){
   //var DivButRole=[], CbRole=[], Label=[];
   //for(var i=0;i<2;i++){
     //var strRole=i?'Sellers':'Buyers', strTmp=langHtml[strRole], oRole=ORole[i]; //.toUpperCase()
-    //Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'100%', left:'0px', 'box-sizing':'border-box', width:'100%', 'line-height':'100%'});  //, 'z-index':'-1'
+    //Label[i]=createElement('div').myText(strTmp).css({background:oRole.strColor, 'word-break':'break-word', 'font-size':'70%', padding:'0 0.1em', position:'absolute', top:'100%', left:'0px', width:'100%', 'line-height':'100%'});  //, 'z-index':'-1'
     //CbRole[i]=createElement('input').prop({type:'checkbox', checked:true}).css({background:oRole.strColor, margin:'0 0 0.4em',transform:'scale(1.6)'}).prop('title','Show / hide '+strTmp).on('click',clickF); //, transform:'scale(2,2)', zoom:'1.4'
     //DivButRole[i]=createElement('div').myAppend(CbRole[i], Label[i]).css({background:oRole.strColor, position:'relative', 'padding':'.3em .8em 0', top:'-3px'}); //, padding:'0.2em'
   //}
@@ -4851,19 +4943,41 @@ var viewFrontCreator=function(el){
   
   var tmpImg=createElement('img').prop({src:wsFilter, alt:"filter"}).css({height:'1em', width:'1em', 'vertical-align':'middle', 'margin-right':'0.3em'});// , 'margin-right':'0.5em'  height:'1em', width:'1em',   //,
   var labelFilterBut=createElement('div').myAppend(tmpImg, 'Filter (incl/excl) users').css({'font-size':'75%', 'text-align':'center'});
-  var divFilterBut=createElement('div').myAppend(...DivButRole, el.filterButton).css({'box-sizing': 'border-box', flex:'0 0 auto', display:'flex', 'align-items':'stretch', 'justify-content':'space-between'});
-  var divFilterButW=createElement('div').myAppend(labelFilterBut, divFilterBut).css({'box-sizing': 'border-box', flex:'0 0 auto', display:'flex', 'align-items':'center', 'justify-content':'space-between', 'flex-direction':'column', background:'#e8e8e8'});  //border:'1px solid black'
+  var divFilterBut=createElement('div').myAppend(...DivButRole, el.filterButton).css({flex:'0 0 auto', display:'flex', 'align-items':'stretch', 'justify-content':'space-between'});
+  var divFilterButW=createElement('div').myAppend(labelFilterBut, divFilterBut).css({flex:'0 0 auto', display:'flex', 'align-items':'center', 'justify-content':'space-between', 'flex-direction':'column', background:'#e8e8e8'});  //border:'1px solid black'
   
   var divFoot=createElement('div').myAppend(settingButton, infoLink, el.tableButton, divFilterButW).addClass('footDiv').css({padding:'0em 0 0em'}); //.css({display:'flex', 'align-items':'center', 'justify-content':'space-around'});
 
+  el.divPromptGeoLocation=divPromptGeoLocationCreator(createElement('div')).hide();
+
   
-  el.append(mapDiv, el.quickDiv, divFoot);
+  el.append(mapDiv, el.quickDiv, divFoot, el.divPromptGeoLocation);
 
   el.css({'text-align':'left', display:"flex","flex-direction":"column"});
   return el
 }
 
-
+var divPromptGeoLocationCreator=function(el){
+  el.setStat=function(strStat){
+    el.toggle(strStat=='prompt' || strStat=='denied');
+    divPrompt.toggle(strStat=='prompt');
+    divDenied.toggle(strStat=='denied');
+  }
+  el.cbOK=function(){console.log('ok clicked')}
+  el.cbCancel=function(){console.log('cancel clicked')}
+  var butOK=createElement('button').myAppend('OK').on('click', ()=>{ 
+    viewFront.divPromptGeoLocation.hide()
+    el.cbOK();
+  });
+  var butCancel=createElement('button').myAppend('Close').on('click', ()=> { 
+    viewFront.divPromptGeoLocation.hide();
+    el.cbCancel();
+  });
+  var divPrompt=createElement('div').myAppend('Use the device location?', butOK, butCancel).hide();
+  var divDenied=createElement('div').myAppend('Geolocation has been denied.').hide();
+  el.myAppend(divPrompt, divDenied).addClass('divGeoLocationStatus');
+  return el;
+}
 
 
 
@@ -4899,11 +5013,12 @@ var quickDivCreator=function(){
   }
 
   var butShowWPos=createElement('button').myText(langHtml.On).css({'margin-left':'1em'}).on('click', function(){
-    if(boDbg && window.location.hostname!='localhost') { myShow({coords:{latitude:0, longitude:0}});  return;  } // setMess('... using origo ... ',null,true);
+    //if(boDbg && window.location.hostname!='localhost') { myShow({coords:{latitude:0, longitude:0}});  return;  } // setMess('... using origo ... ',null,true);
       
-    if(boGeoApproved==0) {setMess('You must agree to sending your position.'); return;}
+    //if(boGeoApproved==0) {setMess('You must agree to sending your position.'); return;}
     setMess('... getting position ... ',null,true);
-    navigator.geolocation.getCurrentPosition(myShow, geoError);  //, {maximumAge:Infinity, timeout:5000}
+    //navigator.geolocation.getCurrentPosition(myShow, geoError);  //, {maximumAge:Infinity, timeout:5000}
+    getPosLev2(myShow, geoError)
 
   });
 
@@ -4936,7 +5051,7 @@ var quickDivCreator=function(){
   
     // butTog
   var DivInButTog=Array(2);
-  var cssOn={'font-weight':'bold', color:'#00ff00'}, cssOff={'font-weight':'', color:'#606060'}
+  var cssOn={'font-weight':'bold', color:'#0075ff'}, cssOff={'font-weight':'', color:'#A0A0A0'}
   DivInButTog[0]=createElement('div').myText('⬤ '+langHtml.Buyer).css(cssOff)
   DivInButTog[1]=createElement('div').myText('⬤ '+langHtml.Seller).css(cssOff)
   var butTog=createElement('button').myAppend(...DivInButTog).css({'font-size':'12px', 'text-align':'left', 'line-height':'1.2em', 'background':'#eee'}).on('click', function(){
@@ -4990,19 +5105,19 @@ var markSelectorCreator=function(oRole){
       var strName=StrProp[i];
       var rb=createElement('input').prop({"type":"radio",name:'markSel'}).prop('value',strName).on('change', changeFunc);
       //if(i%2) rb.css({'margin':'0.5em 1.6em 0.5em 0'}); else rb.css({'margin':'0.5em 0em 0.5em 1.6em'})
-      var cssTmp; if(i%2) cssTmp={'margin-left':'2em'}; else cssTmp={'margin-right':'2em'};  rb.css(cssTmp);
+      //var cssTmp; if(i%2) cssTmp={'margin-left':'2em'}; else cssTmp={'margin-right':'2em'};  rb.css(cssTmp);
       //if(boAndroid) rb.css({'-webkit-transform':'scale(2,2)'}); else rb.css({width:'1.4em',height:'1.4em'});
-      rb.css({width:'1.4em',height:'1.4em'});
+      rb.css({width:'1.4em', height:'1.4em', margin:'0.6em 1.2em'});
       var imgH=''; if(strName in oRole.helpBub) { imgH=imgHelp.cloneNode(1).css({'margin-right':'1em'});  popupHover(imgH,oRole.helpBub[strName]);  }
       var tdL=createElement('td').myAppend(calcLabel(langHtml.prop, strName),' ',imgH), tdRB=createElement('td').myAppend(rb);
       var r=createElement('tr').myAppend(tdL,tdRB).attr({name:strName});
-      if(i%2) r.css({background:'lightgrey'});
+      //if(i%2) r.css({background:'lightgrey'});
       tBody.append(r);
     }
       // Add labels
     for(var i=0;i<StrGroup.length;i++){
-      var th=createElement('th').myText(langHtml[StrGroup[i]]+':').css({'font-size':'120%','text-align':'center'});
-      var h=createElement('tr').myAppend(th, createElement('td'));
+      var th=createElement('th').myText(langHtml[StrGroup[i]]+':').css({'font-size':'120%','text-align':'center',background:'lightgrey'}).attr('colspan',2);
+      var h=createElement('tr').myAppend(th);
       el.querySelector('tr[name='+StrGroupFirst[i]+']').insertAdjacentElement('beforebegin', h);
     }
   }
@@ -5015,7 +5130,7 @@ var markSelectorCreator=function(oRole){
 
 var viewMarkSelectorCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'markSelector';}
+  el.toString=function(){return 'viewMarkSelector';}
   el.setUp=function() {  
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     divFoot.css({background:oRole.strColor});
@@ -5100,7 +5215,8 @@ var columnSelectorCreator=function(oRole){
 
       // add labels
     for(var i=0;i<StrGroup.length;i++){
-      var th=createElement('th').myText(langHtml[StrGroup[i]]+':').prop('colspan',2).css({'font-size':'120%','text-align':'center'});
+      var strName=StrGroup[i], strLab=langHtml[strName]; //??strName;
+      var th=createElement('th').myText(strLab+':').attr('colspan',2).css({'font-size':'120%','text-align':'center'});
       var h=createElement('tr').myAppend(th);
       el.querySelector('tr[name='+StrGroupFirst[i]+']').insertAdjacentElement('beforebegin', h);
     }
@@ -5117,7 +5233,7 @@ var columnSelectorCreator=function(oRole){
 
 var viewColumnSelectorCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'columnSelector';}
+  el.toString=function(){return 'viewColumnSelector';}
   el.setUp=function() {
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     divFoot.css({background:oRole.strColor});
@@ -5136,24 +5252,25 @@ var viewColumnSelectorCreator=function(){
   el.ElRole=ElRole;
   
       // divFoot
-  var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px'});
+  var roleToggler=roleTogglerCreator(el).css({padding:'0px'}); //'margin':'0 auto', 
   
   var buttDefault=createElement('button').myText(langHtml.Default).on('click', defaultFunc);
   var buttAll=createElement('button').myText(langHtml.All).on('click', allFunc);
   var buttNone=createElement('button').myText(langHtml.None).on('click', noneFunc);
-  var tmpImg=createElement('img').prop({src:wsColumn16, alt:"column"}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//, 'margin-right':'0.5em'
+  var tmpImg=createElement('img').prop({src:wsColumnSort16}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//, 'margin-right':'0.5em'
   //var buttSort=createElement('button').myAppend(tmpImg).css({'margin-left':'auto', 'margin-right':'1em', 'font-size':'0.72rem'}).addClass('flexWidth');
-  var buttSort=createElement('button').myAppend('sort').css({'margin-left':'1em', 'margin-right':'1em'}).addClass('flexWidth').on('click', function(){
+  var buttSort=createElement('button').myAppend(tmpImg).prop('title',langHtml.RearrangeColumns).css({'margin-left':'1em', 'margin-right':'1em'}).addClass('fixWidth').on('click', function(){
     //var viewTmp=oRole.strRole=='buyer'?viewColumnSorterB:viewColumnSorterS;
-    //viewTmp.setVis();    doHistPush({view:viewTmp});
-    viewColumnSorter.setVis();    doHistPush({view:viewColumnSorter});
+    //viewTmp.setVis();    doHistPush({strView:viewTmp.toString()});
+    viewColumnSorter.setVis();    doHistPush({strView:'viewColumnSorter'});
   });
   var buttonBack=createElement('button').myText(strBackSymbol).css({'margin-left':'0.8em','margin-right':'1em'}).addClass('fixWidth').on('click', historyBack);
-  var tmpImg=createElement('img').prop({src:wsColumn16, alt:"column"}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});// wsSetting1
+  var tmpImg=createElement('img').prop({src:wsColumn16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});// wsSetting1
   var spanRole=createElement('span');
-  var spanLab=createElement('span').myAppend(tmpImg, langHtml.Columns, spanRole).addClass('footDivLabel');
+  var spanLab=createElement('span').myAppend(tmpImg, langHtml.SelectColumns, spanRole).addClass('footDivLabel');
   buttAll.css({'font-size':'80%'}); buttDefault.css({'font-size':'80%'}); buttNone.css({'font-size':'80%'});
-  var divFoot=createElement('div').myAppend(buttonBack, roleToggler, buttSort, spanLab, buttNone, buttDefault, buttAll).addClass('footDiv'); //,overflow:'hidden'
+  var divPreSelectBut=createElement('div').myAppend(buttNone, buttDefault, buttAll);
+  var divFoot=createElement('div').myAppend(buttonBack, roleToggler, buttSort, spanLab, divPreSelectBut).addClass('footDiv'); //,overflow:'hidden'
   
   el.append(divCont, divFoot);
 
@@ -5226,7 +5343,7 @@ var dragSorterCreator=function(cbMouseup){
 
 var viewColumnSorterCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'columnSorter';}
+  el.toString=function(){return 'viewColumnSorter';}
   el.setUp=function(){
     var indRole=Number(charRole=='s'); oRole=ORole[indRole];
     arrLabel.length=0;  for(var i=0;i<oRole.ColsShow.length;i++){ arrLabel[i]=calcLabel(langHtml.prop, oRole.ColsShow[i]);  }
@@ -5244,7 +5361,6 @@ var viewColumnSorterCreator=function(){
   }
   
   var oRole;
-  var head=createElement('h3').myText(langHtml.SortColumns);
   var dragSorter=dragSorterCreator(cbMouseup).css({margin:'1em auto',display:'inline-block', 'text-align':'left'});
 
   var arrLabel=[];
@@ -5254,7 +5370,8 @@ var viewColumnSorterCreator=function(){
   var roleToggler=roleTogglerCreator(el).css({'margin':'0 auto', padding:'0px', position:'relative', left:'-2em'});
   var buttonBack=createElement('button').css({'margin-left':'0.8em'}).myText(strBackSymbol).addClass('fixWidth').on('click', historyBack);
   var spanRole=createElement('span');
-  var spanLab=createElement('span').myAppend(langHtml.SortColumns, spanRole).addClass('footDivLabel');
+  var tmpImg=createElement('img').prop({src:wsColumnSort16}).css({height:'1em',width:'1em','vertical-align':'text-bottom', 'margin-right':'0.5em'});
+  var spanLab=createElement('span').myAppend(tmpImg, langHtml.RearrangeColumns, spanRole).addClass('footDivLabel');
   var divFoot=createElement('div').myAppend(buttonBack, roleToggler, spanLab).addClass('footDiv');
   
   el.append(divCont, divFoot);
@@ -5325,7 +5442,7 @@ var tHeadLabelCreator=function(oRole){
       if(strName in langHtml.prop && langHtml.prop[strName].boRot) divLab.css({'writing-mode':'vertical-rl', transform:'rotate(-180deg)'});
     
       var imgH=''; if(strName in oRole.helpBub) { var imgH=imgHelp.cloneNode(1).css({'margin-left':'', 'margin-top':'0.2em'});  popupHover(imgH,oRole.helpBub[strName]); }
-      var imgSort=createElement('img').attr('data-type','sort').prop({src:wsUnsorted, alt:"sort"}).css({display:'block',zoom:1.5,'margin':'auto','margin-top':'0.3em','margin-bottom':'0.3em'});
+      var imgSort=createElement('img').attr('data-type','sort').prop({src:wsUnsorted}).css({display:'block',transform:'scale(1.5)','margin':'auto','margin-top':'0.3em','margin-bottom':'0.3em'}); //, alt:"sort"
       arrImgSort[i]=imgSort;
       var h=createElement("th").attr('name',strName).css({cursor:'pointer'}).addClass('unselectable').on('click', thClick).myAppend(divLab,imgH,imgSort);
 
@@ -5339,8 +5456,8 @@ var tHeadLabelCreator=function(oRole){
 
   var tmpImg=createElement('img').prop({src:wsColumn16, alt:"column"}).css({height:'1rem',width:'1rem','vertical-align':'text-bottom'});// wsSetting1
   var butSel=createElement('button').prop('title',langHtml.AddRemoveColumns).addClass('fixWidth').myAppend(tmpImg).on('click', function(){
-    //var i=oRole.ind;  ViewColumnSelector[i].setVis();  doHistPush({view:ViewColumnSelector[i]});
-    viewColumnSelector.setVis();  doHistPush({view:viewColumnSelector});
+    //var i=oRole.ind;  ViewColumnSelector[i].setVis();  doHistPush({strView:ViewColumnSelector[i].toString()});
+    viewColumnSelector.setVis();  doHistPush({strView:'viewColumnSelector'});
   });
   
   el.append(r);
@@ -5452,7 +5569,7 @@ var tableCreator=function(oRole){
       var viewroleInfo=iRole?viewInfoS:viewInfoB;
       viewroleInfo.setContainers(iMTab);
       viewroleInfo.setVis();
-      doHistPush({view:viewroleInfo});
+      doHistPush({strView:viewroleInfo.toString()});
     });
   }
   el.getRow=function(iMTab){ if(iMTab<oRole.nMTab) return arrRow[iMTab]; else return null;  }
@@ -5480,7 +5597,7 @@ var tableCreator=function(oRole){
 
 var viewTableCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'table';}
+  el.toString=function(){return 'viewTable';}
   el.setUp=function(){
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     divFoot.css({background:oRole.strColor});
@@ -5500,8 +5617,8 @@ var viewTableCreator=function(){
   var buttonBack=createElement('button').css({'margin-left':'0.8em'}).addClass('fixWidth').on('click', historyBack).myText(strBackSymbol);
 
   var tmpf=function(){
-    //var i=oRole.ind;  ViewColumnSelector[i].setVis(); doHistPush({view:ViewColumnSelector[i]});
-    viewColumnSelector.setVis();  doHistPush({view:viewColumnSelector});
+    //var i=oRole.ind;  ViewColumnSelector[i].setVis(); doHistPush({strView:ViewColumnSelector[i].toString()});
+    viewColumnSelector.setVis();  doHistPush({strView:'viewColumnSelector'});
   };
   //var tmpImg=createElement('img').prop({src:wsSetting1}).css({height:'1em',width:'1em','vertical-align':'text-bottom'});//,'vertical-align':'middle'
   var buttShowSelect=createElement('button').css({'margin-left':'0.8em'}).prop('title',langHtml.AddRemoveColumns).addClass('fixWidth').on('click', tmpf).myAppend('⚙');
@@ -5534,9 +5651,9 @@ var viewTableCreator=function(){
  *******************************************************************************************************************/
 
 
-var viewGreetingCreator=function(){
+var viewChatCreator=function(){
   var el=createElement('div');
-  el.toString=function(){return 'chat';}
+  el.toString=function(){return 'viewChat';}
   el.initMyWebPush=function(){ 
     
     app.myWebPush=new MyWebPush();
@@ -5550,13 +5667,14 @@ var viewGreetingCreator=function(){
       if(typeof elSpan!='undefined' && typeof elSpan.myCB!='undefined') elSpan.myCB();
     }
     var setOpponentNLoadTabStart=function(){ // Called with postMessage from serviceWorker
-      var {objSender, iRole, message, tSent, latlngSender}=data;
+      var {objSender, message, tSent, latlngSender}=data;
       var {displayName}=objSender;
       //mapDiv.setOpponent(latlngSender, 1);
+      mapDiv.setCenter(latlngSender)
       var o1=mapDiv.getMapStatus(), {pC}=o1;
       var boRefresh=mapDiv.setTile(o1.zoom);
       
-      var objTmp=makeMarkerBubble({text:displayName+' says:\n'+message, color:ORole[iRole].strColor});
+      var objTmp=makeMarkerBubble({text:displayName+' says:\n'+message, color:ORole[objSender.iRole].strColor});
       mapDiv.setOpponent(data, objTmp.url); 
       mapDiv.elImgOpponent.toggle(1);
       
@@ -5576,15 +5694,15 @@ var viewGreetingCreator=function(){
 
     window.cbOnSWMessage=function(dataT){
       data=dataT;
-      var dist=history.distToGoal(viewFront);
-      if(dist){  history.funOverRule=setOpponentNLoadTabStart; history.fastBack(viewFront,1); } 
+      var dist=history.distToGoal('viewFront');
+      if(dist){  history.funOverRule=setOpponentNLoadTabStart; history.fastBack('viewFront',1); } 
       else setOpponentNLoadTabStart();
     }
     if(myWebPush.boPushSupported) registerSW(uSite);
 
   }
   el.setUp=function(idUserT, iRoleT){ // Called when pushing button leading to this view
-    idUser=idUserT; iRole=iRoleT;
+    idUser=idUserT; //iRole=iRoleT;
     butSendMess.prop({disabled:Boolean(strGeoErrCode)});
     var strMess='';
     if(strGeoErrCode) strMess='Geolocation must be enabled and work. ('+strGeoErrCode+', '+strGeoErrMessage+')';
@@ -5602,14 +5720,14 @@ var viewGreetingCreator=function(){
   
   var timerButSendDelay=null, countButSendDelay;
   var data;
-  var idUser=null, iRole=null;
+  var idUser=null;  //, iRole=null;
 
   var elText=createElement('textarea');
-  //var imgSendMessTimer=createElement('img').prop('src',wsBusy).css({'margin-left':'.4em', zoom:0.9});
-  var spanSendMessTimer=createElement('span').css({'margin-left':'.4em', zoom:0.9});
+  //var imgSendMessTimer=createElement('img').prop('src',wsBusy).css({'margin-left':'.4em', transform:'scale(0.9)'});
+  var spanSendMessTimer=createElement('span').css({'margin-left':'.4em', transform:'scale(0.9)'});
   var butSendMess=createElement('button').myAppend('sendMess', spanSendMessTimer).prop({disabled:false}).on('click', function(){
     if(!elText.value) {setMess('empty text',5); return;}
-    var vec=[['sendNotification',{idReceiver: idUser, iRole, message:elText.value, latlngSender:mapDiv.latlngMe}]];   majax(vec);
+    var vec=[['sendNotification',{idReceiver: idUser, message:elText.value, latlngSender:mapDiv.latlngMe}]];   majax(vec);
     history.back();
   }).css({display:'block'});
   var divDisabledMess=createElement('div').css({'background':'lightgrey'});
@@ -5645,26 +5763,29 @@ var firstAJAXCall=function(latlngFirst){ // Called after first geosuccess
     var zoomLevel;  if('zoom' in data) zoomLevel=data.zoom;
     var boRefresh=mapDiv.setTile(zoomLevel);
   }
+  var latlngC=latlngFirst;
   mapDiv.setMe(latlngFirst, 1);
   
     // If opponent exist then focus on him
   var boOpponent='latlngSender' in objMess;
   if(boOpponent) {
-    var {objSender, iRole, message, tSent, latlngSender}=objMess;
+    var {objSender, message, tSent, latlngSender}=objMess;
     var {displayName}=objSender;
-    latlngFirst=latlngSender;
-    var objTmp=makeMarkerBubble({text:displayName+' says:\n'+message, color:ORole[iRole].strColor});
+    latlngC=latlngSender;
+    var objTmp=makeMarkerBubble({text:displayName+' says:\n'+message, color:ORole[objSender.iRole].strColor});
     //mapDiv.setOpponent(latlngFirst, objTmp.url);
     mapDiv.setOpponent(objMess, objTmp.url);
+    mapDiv.setCenter(latlngSender);
   }
   mapDiv.elImgOpponent.toggle(boOpponent);
   
-  var pC=merProj.fromLatLngToPoint(latlngFirst);
+  var pC=merProj.fromLatLngToPoint(latlngC);
+  var pFirst=merProj.fromLatLngToPoint(latlngFirst);
   var rect=mapDiv.getBoundingClientRect(), VPSizeT=[rect.width,rect.height];
 
   var o1={pC, VPSize:VPSizeT};
   var OFilt=[]; for(var i=0;i<2;i++){ OFilt[i]=viewFilter.ElRole[i].gatherFiltData(); }
-  var vec=[['getSetting',{Var:[]},viewAdmin.setUp], ['setupById', {}], ['VSetPosCond',pC],
+  var vec=[['getSetting',{Var:[]},viewAdmin.setUp], ['setupById', {}], ['VSetPosCond',pFirst],
     ['setUpCond',{CharRole:'bs', OFilt}], ['setUp',o1,setUpRet], ['getList',{},getListRet], ['getGroupList',{},getGroupListRet], ['getHist',{},getHistRet]];  //'boShowTeam'
   majax(vec);
   setMess('',null,true);
@@ -5672,7 +5793,7 @@ var firstAJAXCall=function(latlngFirst){ // Called after first geosuccess
 app.myGeoWatchId=null
 app.geoCB=function(pos){
   console.log('geoCB');
-  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
+  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; //if(boVideo) latlng=latlngDebug;
   mapDiv.setMe(latlng, 1);
   var o1=mapDiv.getMapStatus(), {pC}=o1;
   var boB=userInfoFrDB.buyer.boShow, boS=userInfoFrDB.seller.boShow;
@@ -5700,7 +5821,7 @@ app.loadTabStart=function(boSetupById=0){ // Called when mapDiv becomes idle(boS
 
 
 var uploadPosNLoadTabStart=function(pos, hideTimer){ // Called when butShow is clicked
-  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; if(boVideo) latlng=latlngDebug;
+  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude}; //if(boVideo) latlng=latlngDebug;
   mapDiv.setMe(latlng, 1);
   var o1=mapDiv.getMapStatus(), {pC}=o1;
   var boRefresh=mapDiv.setTile(o1.zoom);
@@ -5861,42 +5982,6 @@ var getHistRet=function(data){
 };
 
 
-app.strGeoErrCode='';
-app.strGeoErrMessage='';
-var geoError=function(errObj) {
-  var str='';
-  var strCode='';
-  if(typeof errObj == 'string') str=errObj;
-  else {
-    if(errObj.code==errObj.PERMISSION_DENIED){
-      strCode='PERMISSION_DENIED';
-      str="geoLocation: PERMISSION_DENIED";
-    }else if(errObj.code==errObj.POSITION_UNAVAILABLE){
-      strCode='POSITION_UNAVAILABLE';
-      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
-    }else if(errObj.code==errObj.TIMEOUT){
-      strCode='TIMEOUT';
-      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
-    }
-    boGeoOK=false; setItem('boGeoOK',boGeoOK);
-
-  }
-  var strB='';
-  if(strCode=='POSITION_UNAVAILABLE') {
-    if(boTouch)      strB=', Android: check that sharing of wifi-positioning / gps is enabled on your device.';
-    else strB=', Wifi might need to be on.';
-  }
-  //if(boTouch && strCode=='TIMEOUT' && !boAndroid) strB=', Android: Geolocation stops working every once in a while (A bug). Try reboot the device.';
-  //if(boTouch && strCode=='TIMEOUT' && boAndroid) {strB='Android: To use your exact location, you have to reboot your device. Read more in the FAQ.'; }
-  //if(boTouch && strCode=='TIMEOUT' && boAndroid) {str=''; strB='Android user: GeoLocation is not working! Reboot your device might solve the problem. Read more in the FAQ.'; } //speciale
-
-  var strB='';
-  setMess(str+' '+strB);
-  mapDiv.boGeoStatSucc=0;
-  app.strGeoErrCode=strCode;
-  app.strGeoErrMessage=errObj.message;
-}
-
 /********************************************************************************************************************
  ********************************************************************************************************************/
 
@@ -5921,8 +6006,10 @@ app.boOpera=RegExp('OPR\\/').test(ua); if(boOpera) boChrome=false; //alert(ua);
 window.boReallySmall=0;
 if(boTouch){
   if(boIOS) {
-    var tmp={"-webkit-overflow-scrolling":"touch", overflow:"hidden"};
-    var tmp={"-webkit-overflow-scrolling":"touch", overflow:"hidden", height:'calc(100vh - 95px)'};
+    //var tmp={"-webkit-overflow-scrolling":"touch", overflow:"hidden", "-webkit-appearance":"none"};  
+    var tmp={overflow:"hidden"};  
+      // "-webkit-appearance":"none" makes disabled button to have grey text
+    //var tmp={"-webkit-overflow-scrolling":"touch", overflow:"hidden", height:'calc(100vh - 95px)'};
     elBody.css(tmp);  elHtml.css(tmp);
   } 
 }
@@ -5976,6 +6063,7 @@ if(!(typeof sessionStorage=='object' && sessionStorage.getItem)) {alert("This br
 var [err, mess]=testBrowserFunctionality();
 if(err) { console.log(mess+':\n'+err); alert(mess+':\n'+err); return; }  
 
+
 //boTouch=true;
 
 //if(boVideo) boTouch=true;
@@ -5983,8 +6071,7 @@ if(err) { console.log(mess+':\n'+err); alert(mess+':\n'+err); return; }
 //assignSiteSpecific();
 extend(app, objSiteSpecific);
 
-app.boAllowEmailLogin=objSiteSpecific.boAllowEmailLoginOnSomeSites&&site.siteName=="demo"
-//app.boAllowEmailLogin=objSiteSpecific.boAllowEmailLoginOnSomeSites&&site.siteName=="taxi"
+app.boAllowEmailLogin=site.boAllowEmailLogin??false
 
 console.log('boDbg='+boDbg);
 
@@ -6026,7 +6113,7 @@ app.wsIdplace=wseImageFolder+'idPlaceOrg64Login.png';
 app.wsIncreasing=wseImageFolder+'increasingFlip.png';
 app.wsDecreasing=wseImageFolder+'decreasingFlip.png';
 //wsUnsorted=wseImageFolder+'unsortedFlip.png';
-app.wsUnsorted=uEmptyImage
+app.wsUnsorted="";//uEmptyImage
 app.wsBusy=wseImageFolder+'busy.gif';
 app.wsBusyLarge=wseImageFolder+'busyLarge.gif';
 app.wsList16=wseImageFolder+'list16.png';  
@@ -6039,6 +6126,7 @@ app.wsFilter=wseImageFolder+'filter.png';
 app.wsMapm1=wseImageFolder+'mapm1.png';
 app.wsMapm2=wseImageFolder+'mapm2.png';
 app.wsColumn16=wseImageFolder+'column16.png';
+app.wsColumnSort16=wseImageFolder+'columnSort16.png';
 app.wsMarkerMe=wseImageFolder+'markerMe.gif';
 app.wsMarkerMe2=wseImageFolder+'markerMe_2.gif';
 app.wsMarkerOpponent=wseImageFolder+'markerOpponent.gif';
@@ -6069,6 +6157,130 @@ var oVersion=getItem('version'); app.boNewVersion=version!==oVersion;        set
 
 
 langClientFunc();
+
+
+
+
+
+  //
+  // History
+  //
+
+app.histGoTo=function(view){}
+app.historyBack=function(){  history.back();}
+app.doHistPush=function(obj){
+  var stateT=history.state
+  var {strView}=obj;
+  var scroll=(strView==stateT.strView)?stateT.scroll:0;
+  
+  var indNew=stateT.ind+1;
+  stateMem={hash:stateT.hash, ind:indNew, strView, scroll};
+  history.pushState(stateMem, strHistTitle, uCanonical);
+  history.StateOpen=history.StateOpen.slice(0, indNew);
+  history.StateOpen[indNew]=obj;
+}
+app.doHistReplace=function(obj, indDiff=0){
+  if(indDiff==0){
+    copySome(stateMem, obj, ['strView']);
+    history.pushState(stateMem, strHistTitle, uCanonical);
+  }
+  history.StateOpen[history.state.ind+indDiff]=obj;
+}
+app.changeHist=function(obj){
+  doHistReplace(obj, 0)
+}
+app.getHistStatName=function(){
+  return history.StateOpen[history.state.ind].strView;
+}
+history.distToGoal=function(strViewGoal){
+  var ind=history.state.ind;
+  var indGoal;
+  for(var i=ind; i>=0; i--){
+    var obj=history.StateOpen[i];
+    var strView; if(typeof obj=='object') strView=obj.strView; else continue;
+    if(strView===strViewGoal) {indGoal=i; break;}
+  }
+  var dist; if(typeof indGoal!='undefined') dist=indGoal-ind;
+  return dist;
+}
+history.fastBack=function(strViewGoal, boRefreshHash){
+  var dist=history.distToGoal(strViewGoal);
+  if(dist) {
+    if(typeof boRefreshHash!='undefined') history.boResetHashCurrent=boRefreshHash;
+    history.go(dist);
+  }
+}
+
+
+var strViewOrg='viewFront';
+var strHistTitle=site.wwwSite;
+var stateRun=history.state;
+var stateMem={hash:randomHash(), ind:0, strView:strViewOrg, scroll:0}
+if(stateRun){
+  let {strView, ind, scroll}=stateRun;
+  if(strView!=strViewOrg)  scroll=0;
+  extend(stateMem, {ind, scroll});
+}
+history.replaceState(stateMem, '', uCanonical);  // ind, hash, strView, scroll
+history.StateOpen=[];
+history.StateOpen[history.state.ind]=copySome({}, stateMem, ['strView','scroll']);    //  strView, scroll
+
+
+window.on('popstate', function(event) {
+  var stateT=history.state;
+  if(!stateT) {
+    interpretHashVariables(); setUpStartFilter();
+    stateMem.ind++; history.replaceState(stateMem, '', uCanonical);
+    return;
+  }
+  var dir=stateT.ind-stateMem.ind;
+  //if(Math.abs(dir)>1) {debugger; alert('dir=',dir); }
+  var boSameHash=stateT.hash==stateMem.hash;
+  if(boSameHash){
+    if('boResetHashCurrent' in history && history.boResetHashCurrent) {
+      stateT.hash=randomHash();
+      history.replaceState(stateT, '', uCanonical);
+      history.boResetHashCurrent=false;
+    }
+
+    var scroll=(stateMem.strView==stateT.strView && stateT.strView==strViewOrg)?stateMem.scroll:stateT.scroll;
+    stateT.scroll=scroll
+    stateMem=copyDeep(stateT);
+    history.replaceState(stateMem, '', uCanonical);
+    var stateOpen=history.StateOpen[stateT.ind]
+    stateOpen.scroll=scroll
+    setMyState(stateOpen);
+  }else{
+    if(stateMem.strView!=strViewOrg) stateMem.scroll=0
+    extend(stateMem, {hash:randomHash(), strView:strViewOrg});  //, arg:"page"
+    copySome(stateMem, stateT, ["ind"]);
+    history.replaceState(stateMem, '', uCanonical);
+    history.StateOpen[stateT.ind]={strView:strViewOrg, scroll:stateMem.scroll};
+    history.go(sign(dir));
+  }
+});
+
+var setMyState=function(state){
+  var view=MainDiv[StrMainDivFlip[state.strView]];
+  view.setVis();  // state.arg
+  if(history.funOverRule) {history.funOverRule(); history.funOverRule=null;}
+  else if(state.fun) {state.fun(state); }
+  else{ view.funPopped?.(state); }
+}
+
+window.on('pagehide', function(){ 
+  var stateT=history.state, stateOpen=history.StateOpen[stateT.ind];
+  var {strView, scroll}=stateOpen;
+  if(strView!=strViewOrg) scroll=0;
+  extend(stateT, {strView:strViewOrg, scroll});
+  history.replaceState(stateT, '', uCanonical);
+});
+
+if(boFF){ window.on('beforeunload', function(){   }); }
+
+
+window.on('beforeinstallprompt', function(e){ e.preventDefault();  });
+
 
 
 window.PlugIn=[];
@@ -6235,83 +6447,7 @@ for(var i=0;i<ORole.length;i++){
 
 
 
-  //
-  // History
-  //
-  
-var strHistTitle=site.wwwSite;
 
-var histList=[];
-var stateLoaded=history.state;
-var tmpi=stateLoaded?stateLoaded.ind:0,    stateMem={hash:randomHash(), ind:tmpi};
-history.replaceState(stateMem, '', uCanonical);
-history.StateMy=[];
-
-window.on('popstate', function(event) {
-  if(!history.state) {
-    interpretHashVariables(); setUpStartFilter();
-    stateMem.ind++; history.replaceState(stateMem, '', uCanonical);
-    return;
-  }
-  var dir=history.state.ind-stateMem.ind;
-  //if(Math.abs(dir)>1) {debugger; alert('dir=',dir); }
-  var boSameHash=history.state.hash==stateMem.hash;
-  if(boSameHash){
-    var tmpObj=history.state;
-    if('boResetHashCurrent' in history && history.boResetHashCurrent) {
-      tmpObj.hash=randomHash();
-      history.replaceState(tmpObj, '', uCanonical);
-      history.boResetHashCurrent=false;
-    }
-
-    var stateMy=history.StateMy[history.state.ind];
-    if(typeof stateMy!='object' ) {
-      var tmpStr=window.location.href +" Error: typeof stateMy: "+(typeof stateMy)+', history.state.ind:'+history.state.ind+', history.StateMy.length:'+history.StateMy.length+', Object.keys(history.StateMy):'+Object.keys(history.StateMy);
-      if(!boEpiphany) alert(tmpStr); else  console.log(tmpStr);
-      debugger;
-      return;
-    }
-    var view=stateMy.view;
-    view.setVis();
-    if(typeof view.getScroll=='function') {
-      var scrollT=view.getScroll();
-      setTimeout(function(){window.scrollTop(scrollT);}, 1);
-    } else {
-      //var scrollT=stateMy.scroll;  setTimeout(function(){  window.scrollTop(scrollT);}, 1);
-    }
-    
-    if('funOverRule' in history && history.funOverRule) {history.funOverRule(); history.funOverRule=null;}
-    else{
-      if('fun' in stateMy && stateMy.fun) {var fun=stateMy.fun(stateMy); }
-    }
-
-    stateMem=extend({}, tmpObj);
-  }else{
-    stateMem=history.state; extend(stateMem, {hash:randomHash()}); history.replaceState(stateMem, '', uCanonical);
-    history.go(sign(dir));
-  }
-});
-if(boFF){
-  window.on('beforeunload', function(){   });
-}
-//window.on('beforeunload', function(){  console.log("beforeunload"); });
-
-
-window.on('beforeinstallprompt', function(e){ e.preventDefault();  });
-
-//oAJAX={
-  //url:uBE,
-  //global: false,
-  //type: "POST",
-  //dataType:'json',
-  //contentType:'application/json',
-  //processData:false,
-  //success: beRet,
-  //error: function(jqXHR, textStatus, errorThrown){
-    //setMess('responseText: '+jqXHR.responseText+', textStatus: '+' '+textStatus+', errorThrown: '+errorThrown);     throw 'bla';
-  //}
-//};
-var oAJAX={};
 
 
   //filter colors
@@ -6335,13 +6471,13 @@ var startPopTimer=null;
 
 
 
-  // MainIntro, ListCtrlDiv
-app.MainIntro=[]; app.ListCtrlDiv=[];
+  // ViewIntro, ListCtrlDiv
+app.ViewIntro=[]; app.ListCtrlDiv=[];
 for(var i=0;i<ORole.length;i++){
-  MainIntro[i]=mainIntroCreator(ORole[i]);
+  ViewIntro[i]=viewIntroCreator(ORole[i]);
   ListCtrlDiv[i]=listCtrlCreator(ORole[i]).css({display:'inline-block','float':'right'});
 }
-[app.mainIntroB, app.mainIntroS]=MainIntro;  [app.listCtrlDivB, app.listCtrlDivS]=ListCtrlDiv;
+[app.viewIntroB, app.viewIntroS]=ViewIntro;  [app.listCtrlDivB, app.listCtrlDivS]=ListCtrlDiv;
 
 
   // mapDiv
@@ -6373,7 +6509,7 @@ app.viewTable=viewTableCreator();
 app.viewMarkSelector=viewMarkSelectorCreator();
 app.viewFilter=viewFilterCreator();  //,'padding-bottom':'0.6em'
 app.viewSetting=viewSettingCreator();
-  
+
 app.ViewTeam=[];  //ViewSetting=[];
 //ViewFilter=[]; //ViewColumnSelector=[]; //ViewColumnSorter=[]; ViewTable=[];
 app.ViewEntry=[];
@@ -6390,8 +6526,8 @@ for(var i=0;i<ORole.length;i++){
 [app.viewEntryB, app.viewEntryS]=ViewEntry;
 [app.viewInfoB, app.viewInfoS]=ViewInfo;  // [viewMarkSelectorB, viewMarkSelectorS]=ViewMarkSelector;
 
-app.viewGreeting=viewGreetingCreator();
-viewGreeting.initMyWebPush();
+app.viewChat=viewChatCreator();
+viewChat.initMyWebPush();
 
    // Let plugins rewrite objects
 for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteObj; if(tmp) tmp();   }
@@ -6420,7 +6556,7 @@ for(var i=0;i<ORole.length;i++){
   //ViewColumnSelector[i].createTable();
   viewColumnSelector.ElRole[i].createTable();
   viewMarkSelector.ElRole[i].createTable();
-  MainIntro[i].createDivs();
+  ViewIntro[i].createDivs();
 }
 setUpStartFilter();
 
@@ -6439,14 +6575,16 @@ if(boTouch) h1.detach(); else h1.show();
 viewFront.querySelector('noscript').detach();
 
 
-MainDiv.push(viewFront, viewUserSetting, viewAdmin, viewComplainee, viewComplainer, viewFormLogin, viewConvertID, viewCreateUser, viewSettingEntry, viewDeleteAccountPop, viewComplaintCommentPop, viewComplaintAnswerPop, viewChangePWPop, viewForgottPWPop, viewColumnSorter, viewColumnSelector, viewTable, viewMarkSelector, viewFilter, viewSetting, viewGreeting); // , viewUploadImagePop
-MainDiv.push(...ViewTeam, ...ViewEntry, ...ViewInfo, ...MainIntro);
+MainDiv.push(viewFront, viewUserSetting, viewDeleteAccountPop, viewAdmin, viewComplainee, viewComplainer, viewComplaintCommentPop, viewComplaintAnswerPop, viewFormLogin, viewConvertID, viewCreateUser, viewChangePWPop, viewForgottPWPop, viewSettingEntry, viewColumnSorter, viewColumnSelector, viewTable, viewMarkSelector, viewFilter, viewSetting, viewChat); // , viewUploadImagePop
+MainDiv.push(...ViewTeam, ...ViewEntry, ...ViewInfo, ...ViewIntro);
+var StrMainDiv=MainDiv.map(obj=>obj.toString());
+var StrMainDivFlip=array_flip(StrMainDiv);
 
 arrViewPop.push(viewDeleteAccountPop, viewComplaintCommentPop, viewComplaintAnswerPop, viewChangePWPop, viewForgottPWPop);  //, viewUploadImagePop
 AMinusB(MainDiv, arrViewPop).forEach(ele=>ele.addClass('mainDiv'));
 viewTable.css({'max-width':'none'});
 
-history.StateMy[history.state.ind]={view:viewFront};
+//history.StateOpen[history.state.ind]={strView:strStateOrg};
 
 AMinusB(MainDiv, [viewFront]).forEach(ele=>ele.hide());
 
@@ -6455,7 +6593,7 @@ elBody.append(...MainDiv);
 
 var setMainView=function(view){   MainDiv.forEach(ele=>{var boOn=ele===view; ele.toggle(boOn)});   }
 
-var scalableTog=function(boOn){ return;
+var scalableTog=function(boOn){
   if(typeof boOn=='undefined') boOn=document.body.style.opacity!=0.9999;
   var floatOpacity=boOn?1:0.9999;
   var strVPContent='width=device-width, initial-scale=1, '+(boOn?'maximum-scale=4':'maximum-scale=1, user-scalable=no');
@@ -6464,6 +6602,7 @@ var scalableTog=function(boOn){ return;
   document.body.style.opacity=floatOpacity;
   //setTimeout(function(){ document.body.style.opacity = 1;  }, 1);
 }
+var scalableTog=function(){}
 
 viewFront.setVis=function(){
   setMainView(this);
@@ -6584,7 +6723,7 @@ viewTeamS.setVis=function(){
   scalableTog(1);
   return true;
 }
-viewGreeting.setVis=function(){
+viewChat.setVis=function(){
   setMainView(this);
   scalableTog(1);
   this.setUpB();
@@ -6595,8 +6734,8 @@ viewGreeting.setVis=function(){
   //scalableTog(1);
   //return true;
 //}
-mainIntroB.setVis=
-mainIntroS.setVis=function(){
+viewIntroB.setVis=
+viewIntroS.setVis=function(){
   setMainView(this);
   this.setUp();
   scalableTog(1);
@@ -6626,46 +6765,97 @@ window.addEventListener("resize", function(){
 });
 
 
-var boFirstLoadTab=1, boGeoApproved=0;
+var boFirstLoadTab=1; //, boGeoApproved=0;
 
 if(boVideo) {
   var latlngDebug={lat:59.330454370984235, lng:18.059076067697106};
   var posDebug={coords:{latitude:latlngDebug.lat,longitude:latlngDebug.lng}};
   var pointDebug=merProj.fromLatLngToPoint(latlngDebug);
 }
-
+var posApprox={coords:{latitude:coordApprox[0],longitude:coordApprox[1]}};  
+var posZero={coords:{latitude:0,longitude:0}};   
 //ga('send', 'event', 'button', 'click', 'geoOK');
+
+
+
 
 var boGeoWatch=getItem('boGeoWatch');  if(boGeoWatch===null) boGeoWatch=false;
 var boGeoWatch=false;
 
-var semGeoApprox=false, semGeoReal=false, boGeoOK=false;
+app.strGeoErrCode='';
+app.strGeoErrMessage='';
+var geoError=function(errObj) {
+  var str='';
+  var strCode='';
+  if(typeof errObj == 'string') str=errObj;
+  else {
+    if(errObj.code==errObj.PERMISSION_DENIED){
+      strCode='PERMISSION_DENIED';
+      str="geoLocation: PERMISSION_DENIED";
+      if(boIOS && !boPermAPI) geoCBFirst(posApprox);
+    }else if(errObj.code==errObj.POSITION_UNAVAILABLE){
+      strCode='POSITION_UNAVAILABLE';
+      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
+    }else if(errObj.code==errObj.TIMEOUT){
+      strCode='TIMEOUT';
+      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
+    }
+    //boGeoOK=false; setItem('boGeoOK',boGeoOK);
+  }
+  var strB='';
+  if(strCode=='POSITION_UNAVAILABLE') {
+    if(boTouch)      strB=', Android: check that sharing of wifi-positioning / gps is enabled on your device.';
+    else strB=', Wifi might need to be on.';
+  }
+
+  var strB='';
+  setMess(str+' '+strB);
+  mapDiv.boGeoStatSucc=0;
+  app.strGeoErrCode=strCode;
+  app.strGeoErrMessage=errObj.message;
+}
 var geoCBFirst=function(pos){
-  var latlng, boCallerGeo=typeof pos=='object';
-  if(boCallerGeo) {
-    boGeoOK=true; setItem('boGeoOK',boGeoOK); boGeoApproved=true;  // boGeoApproved should be replaced with navigator.permissions once supported by iOS.
-    latlng={lat:pos.coords.latitude, lng:pos.coords.longitude};
-  } else { latlng={lat:coordApprox[0], lng:coordApprox[1]}; }
-  
-  if(boVideo) latlng=latlngDebug;
-  if(semGeoReal) { return; }
-  if(semGeoApprox) { mapDiv.setMe(latlng, 1);return;}
-  clearTimeout(startPopTimer);  startPop.closeFunc();
+  var latlng={lat:pos.coords.latitude, lng:pos.coords.longitude};
   firstAJAXCall(latlng);
-  //else mapDiv.setMe(latlng, 1);
-  
-  if(boCallerGeo) semGeoReal=true; else semGeoApprox=true;
 }
 
-//if(boWebApp)
-navigator.geolocation.getCurrentPosition(geoCBFirst, geoError, {timeout:20000,maximumAge:60000});
+var setPermStat=function(strStat){
+  viewFront.divPromptGeoLocation.setStat(strStat)
+}
 
-var boGeoOK=getItem('boGeoOK');  if(boGeoOK===null) boGeoOK=false;
-setTimeout(geoCBFirst,  boGeoOK?10000:2000);
-boGeoOK=false; setItem('boGeoOK',boGeoOK)
+app.boPermAPI='permissions' in navigator; app.strGeoLocationPerm=''
+if(boPermAPI) { 
+  app.objPerm=await navigator.permissions.query({ name: 'geolocation' });
+  objPerm.onchange=(ev)=>{
+    var strStat=ev.currentTarget.state
+    setPermStat(strStat)
+  }
+} 
 
-//window.addEventListener('online', () => console.log('came online'));
-//window.addEventListener('offline', () => console.log('came offline'));
+var getPosLev1=function(cb, cbE){
+  setMess('... getting position ... ',null,true);
+  navigator.geolocation.getCurrentPosition(cb, cbE, {timeout:20000,maximumAge:60000});
+}
+if(app.boVideo) getPosLev1=function(cb){ cb(posDebug);}
+
+
+var getPosLev2=async function(cb, cbE){
+  viewFront.divPromptGeoLocation.cbOK=()=>{ getPosLev1(cb, cbE); }
+  var strPerm=boPermAPI?objPerm.state:''
+  setPermStat(strPerm);
+  if(strPerm=='granted' || strPerm==''){ getPosLev1(cb, cbE); }
+  else if(strPerm=='denied'){ setMess('The device denies the app access to geolocation', 5); }
+  //else if(!boPermAPI) {setMess('Access to the geolocation is denied by the device.');}
+}
+var getPosLev2UseApproxAsAlt=async function(cb, cbE){
+  viewFront.divPromptGeoLocation.cbOK=()=>{ getPosLev1(cb, cbE); }
+  var strPerm=boPermAPI?objPerm.state:''
+  setPermStat(strPerm);
+  if(strPerm=='granted' || strPerm==''){ getPosLev1(cb, cbE); }
+  else { cb(posApprox) }
+}
+
+getPosLev2UseApproxAsAlt(geoCBFirst, geoError)
 
 
 };

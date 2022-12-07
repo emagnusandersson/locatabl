@@ -296,7 +296,7 @@ var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.set
 var buttCancel=createElement('button').myText('Cancel').on('click', function(){window.close();});
 
 var strLeaveMess="(Click browser-back-button or close this tab to leave.)";
-var cssAns={width:'50%',display:'inline-block','box-sizing': 'border-box','text-align':'center',padding:'1em',flex:1};
+var cssAns={width:'50%',display:'inline-block','text-align':'center',padding:'1em',flex:1};
 //cssAns={'text-align':'center',padding:'1em'};
 var yesDiv=yesDivExtend(createElement('div')).css(cssAns).css({'background':'lightgreen'});
 var noSpan=createElement('div').myText('No').css({'text-align':'center','margin-bottom':'1em', 'font-weight':'bold'});
