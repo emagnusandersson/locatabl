@@ -11,7 +11,8 @@ import formidable from "formidable";
 //import NodeRSA from 'node-rsa';
 import myCrypto from 'crypto';
 import zlib from 'zlib';
-import redis from "redis";
+//import redis from "redis";
+import Redis from "ioredis";
 import Streamify from 'streamify-string';
 import validator from 'validator';
 import serialize from 'serialize-javascript';
@@ -33,7 +34,7 @@ var argv = minimist(process.argv.slice(2));
 
 
 app.extend=Object.assign;
-extend(app, {http, url, path, fsPromises, concat, fetch, formidable, myCrypto, zlib, redis, Streamify, validator, serialize, UglifyJS, ip, webPush, mime, mysql, gm});
+extend(app, {http, url, path, fsPromises, concat, fetch, formidable, myCrypto, zlib, Streamify, validator, serialize, UglifyJS, ip, webPush, mime, mysql, gm});
 //, sgMail
 
 await import('./lib.js')
@@ -73,10 +74,13 @@ if(StrUnknown.length){ console.log('Unknown arguments: '+StrUnknown.join(', '));
 
 
     // Set up redisClient
-var urlRedis=process.env.REDIS_URL;
-if(  urlRedis ) {
-  app.redisClient=redis.createClient(urlRedis, {no_ready_check: true}); //
-}else { app.redisClient=redis.createClient();}
+// var urlRedis=process.env.REDIS_URL;
+// if(  urlRedis ) {
+//   app.redisClient=redis.createClient(urlRedis, {no_ready_check: true}); //
+// }else { app.redisClient=redis.createClient();}
+
+var REDIS_URL="redis://localhost:6379"
+app.redis = new Redis(REDIS_URL);
 
   // WebPush subscription (for testing)
 var globSubscription=null;
@@ -152,9 +156,9 @@ var boNewConfig=strMd5Config!==tmp;
 if(boNewConfig) { var tmp=await setRedis(redisVar, strMd5Config);  }
 
 //var redisVar='str'+ucfirst(strAppName)+'Md5Config';
-//var [err,tmp]=await cmdRedis('GET', [redisVar]);
+//var [err,tmp]=await getRedis(redisVar);
 //var boNewConfig=strMd5Config!==tmp; 
-//if(boNewConfig) { var [err,tmp]=await cmdRedis('SET',[redisVar,strMd5Config]);  }
+//if(boNewConfig) { var [err,tmp]=await setRedis(redisVar,strMd5Config);  }
 
 
 if('levelMaintenance' in process.env) levelMaintenance=process.env.levelMaintenance;
@@ -273,6 +277,15 @@ oTmp["Max-Age"]=0; var str0=";"+arrayifyCookiePropObj(oTmp).join(';');
 app.StrSessionIDLoginProp=[str0,str1];
 
 
+
+var luaDDosCounterFun=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`
+redis.defineCommand("myDDosCounterFun", { numberOfKeys: 1, lua: luaDDosCounterFun });
+
+var luaGetNExpire=`local c=redis.call('GET',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
+//var luaGetNExpire=`local c=redis.call('GET',KEYS[1]); if(c) then redis.call('EXPIRE',KEYS[1], ARGV[1]); end; return c`;
+redis.defineCommand("myGetNExpire", { numberOfKeys: 1, lua: luaGetNExpire });
+
+
 const handler=async function(req, res){
 
   if(levelMaintenance){res.outCode(503, "Down for maintenance, try again in a little while."); return;} // If levelMaintenance
@@ -327,20 +340,20 @@ const handler=async function(req, res){
   var {sessionIDDDos=null}=cookies, redisVarDDos;
   if(sessionIDDDos) {
     redisVarDDos=sessionIDDDos+'_DDOS';
-    var [err, tmp]=await cmdRedis('EXISTS', redisVarDDos); boCookieDDOSCameNExist=tmp;
+    var [err, tmp]=await existsRedis(redisVarDDos); boCookieDDOSCameNExist=tmp;
   }
     // If !boCookieDDOSCameNExist then create a new sessionIDDDos (and redisVarDDos).
   if(!boCookieDDOSCameNExist) { sessionIDDDos=randomHash();  redisVarDDos=sessionIDDDos+'_DDOS'; }
     // Update redisVarDDos counter
-  var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
-  var [err, intCount]=await cmdRedis('EVAL',[luaCountFunc, 1, redisVarDDos, tDDOSBan]);
+  //var [err, intCount]=await cmdRedis('EVAL',[luaDDosCounterFun, 1, redisVarDDos, tDDOSBan]);
+  var [err, intCount]=await redis.myDDosCounterFun(redisVarDDos, tDDOSBan).toNBP();
     // Write to response
   res.replaceCookie("sessionIDDDos="+sessionIDDDos+strCookiePropNormal);
 
     // Update redisVarDDosIP counter
   var ipClient=getIP(req), redisVarDDosIP=ipClient+'_DDOS';
-  var luaCountFunc=`local c=redis.call('INCR',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
-  var [err, intCountIP]=await cmdRedis('EVAL',[luaCountFunc, 1, redisVarDDosIP, tDDOSIPBan]);
+  // var [err, intCountIP]=await cmdRedis('EVAL',[luaDDosCounterFun, 1, redisVarDDosIP, tDDOSIPBan]);
+  var [err, intCountIP]=await redis.myDDosCounterFun(redisVarDDosIP, tDDOSIPBan).toNBP();
   
     // Determine which DDOS counter to use
   if(boCookieDDOSCameNExist) {  var intCountT=intCount, intDDOSMaxT=intDDOSMax, tDDOSBanT=tDDOSBan;   }
@@ -361,7 +374,7 @@ const handler=async function(req, res){
   var boSessionCookieInInput='sessionID' in cookies, sessionID=null, redisVarSessionMain;
   if(boSessionCookieInInput) {
     sessionID=cookies.sessionID;  redisVarSessionMain=sessionID+'_Main';
-    var [err, tmp]=await cmdRedis('EXISTS', redisVarSessionMain); req.boGotSessionCookie=tmp;
+    var [err, tmp]=await existsRedis(redisVarSessionMain); req.boGotSessionCookie=tmp;
   } 
   
   if(!req.boGotSessionCookie){ sessionID=randomHash();  redisVarSessionMain=sessionID+'_Main'; }
@@ -370,8 +383,9 @@ const handler=async function(req, res){
   
       // Refresh / create  redisVarSessionMain
   if(req.boGotSessionCookie){
-    var luaCountFunc=`local c=redis.call('GET',KEYS[1]); redis.call('EXPIRE',KEYS[1], ARGV[1]); return c`;
-    var [err, value]=await cmdRedis('EVAL',[luaCountFunc, 1, redisVarSessionMain, maxUnactivity]); req.sessionCache=JSON.parse(value)
+    //var [err, value]=await cmdRedis('EVAL',[luaGetNExpire, 1, redisVarSessionMain, maxUnactivity]); req.sessionCache=JSON.parse(value)
+    var [err, value]=await redis.myGetNExpire(redisVarSessionMain, maxUnactivity).toNBP(); req.sessionCache=JSON.parse(value);
+  
   } else { 
     await setRedis(redisVarSessionMain, 1, maxUnactivity); 
     req.sessionCache={};

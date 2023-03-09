@@ -31,13 +31,6 @@ app.copyDeepB=function(o, isdeep=true){
   return n;
 }
 
-/*JSON.myParse=function(str){
-    try{
-        return [null, JSON.parse(str)];
-    }catch(err){
-        return [err, undefined];
-    }
-}*/
 app.isEmpty=function(v){ 
   if(typeof v=='undefined') return true;
   if(typeof v=='number') return v==0;

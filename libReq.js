@@ -60,8 +60,8 @@
 // After googling "node.js connect debugger to running process" I found:
 //   kill -USR1 <node-pid>   // starts debugger
 
-//https://192.168.0.7:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
-//https://192.168.0.7:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
+//https://192.168.0.5:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
+//https://192.168.0.5:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 
 
 // How to get an alias of an gmail-address: abc+1@gmail.com
@@ -309,7 +309,7 @@ app.reqDataDeleteStatus=async function(){
   var {req, res}=this, {site, objQS, uSite}=req;
   var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
   var confirmation_code=objQS.confirmation_code||'';
-  var [err,mess]=await cmdRedis('GET', [confirmation_code+'_DeleteRequest']); 
+  var [err,mess]=await getRedis(confirmation_code+'_DeleteRequest'); 
   if(err) {var mess=err.message;}
   else if(mess==null) {
     var [t,u]=getSuitableTimeUnit(timeOutDeleteStatusInfo);
@@ -666,7 +666,7 @@ app.reqLoginWLink=async function(){
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var code=objQS.code;
   //var email=await getRedis(code+'_LoginWLink');
-  var [err,email]=await cmdRedis('GET', [code+'_LoginWLink']); 
+  var [err,email]=await getRedis(code+'_LoginWLink'); 
   if(!email) {  res.out200('No such code'); return;  }
   //if(email!=inObj.email) {  res.out200('email does not match'); return; }
 
@@ -677,7 +677,7 @@ app.reqLoginWLink=async function(){
   
   var idUser=results[0].idUser;
   await setRedis(req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
-  //var [err,tmp]=await cmdRedis('SET', [req.sessionID+'_LoginIdUser',idUser,'EX', maxLoginUnactivity]);
+  //var [err,tmp]=await setRedis(req.sessionID+'_LoginIdUser',idUser, maxLoginUnactivity);
 
   res.end("You are now logged in, close this tab, go back the web app and reload.");
 }
@@ -856,7 +856,7 @@ app.reqVerifyEmailReturn=async function() {
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
   //var idUser=await getRedis(codeIn+'_verifyEmail');
-  var [err,idUser]=await cmdRedis('GET', [codeIn+'_verifyEmail']); 
+  var [err,idUser]=await getRedis(codeIn+'_verifyEmail'); 
   
   if(idUser===null) { res.out200('No such code'); return;}
 
@@ -878,7 +878,7 @@ app.reqVerifyPWResetReturn=async function() {
   var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
   var codeIn=objQS.code;
   //var email=await getRedis(codeIn+'_verifyPWReset');
-  var [err,email]=await cmdRedis('GET', [codeIn+'_verifyPWReset']); 
+  var [err,email]=await getRedis(codeIn+'_verifyPWReset'); 
   
   if(email===null) { res.out200('No such code'); return;}
 
@@ -921,7 +921,7 @@ app.reqVerifyEmailNCreateUserReturn=async function() {
   
   
   //var objT=await getRedis(codeIn+'_verifyEmailNCreateUser', true); if(!objT) { res.out200('No such code'); return;}
-  var [err,value]=await cmdRedis('GET', [codeIn+'_verifyEmailNCreateUser']),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
+  var [err,value]=await getRedis(codeIn+'_verifyEmailNCreateUser'),   objT=JSON.parse(value);  if(!objT) { res.out200('No such code'); return;}
   var {name, email, password, iRole}=objT;
   name=myJSEscape(name); email=myJSEscape(email); //password=myJSEscape(password);
 

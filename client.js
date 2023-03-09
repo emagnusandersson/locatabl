@@ -3264,7 +3264,7 @@ var divEntryBarCreator=function(el){
   //var el=createElement('div');
   el.toString=function(){return 'entryButtonDiv';}
   
-  var entryButtonLabel=createElement('div').myText(langHtml.AppearOnTheMap).css({'font-weight':'bold'});
+  var entryButtonLabel=createElement('div').myText(langHtml.AppearOnTheMap).css({'font-weight':'bold'}).addClass('unselectable');
   var cssBut={width:'initial','font-weight':'bold', padding:'0.2em', height:"auto", 'min-height':'1.8rem', margin:'0 2px'};
   var entryButtonB=createElement('button').myText(langHtml.Buyers).addClass('flexWidth').css(cssBut).css({background:ORole[0].strColor}).on('click',function(){
     viewEntryB.setVis(); doHistPush({strView:'viewEntryB'});
@@ -4495,7 +4495,9 @@ var mapDivCreator=function(){
           }
           if(srcTmp2.length==0) srcTmp2=srcTmp;
           if(boFF) TileStack.length=0
-          var elTile; if(TileStack.length) elTile=TileStack.pop(); else { elTile=createElement('img').css({position:'absolute',opacity:0.7}).prop({alt:"tile"});  } //,border:'solid 1px grey'
+          var elTile;
+          if(TileStack.length) elTile=TileStack.pop(); 
+          else { elTile=createElement('img').css({position:'absolute',opacity:0.7}).prop({alt:"tile"});  } //,border:'solid 1px grey'
           //elTile.src=srcTmp;
           elTile.srcset=srcTmp+" 1x, "+srcTmp2+" 2x ";
           elTile.css({left:left+'px',top:top+'px', 'transform-origin':'left top', transform:'scale('+1/dr+')'});

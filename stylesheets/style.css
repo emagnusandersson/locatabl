@@ -1,42 +1,42 @@
 
 
 * {box-sizing:border-box}
+html, body { -webkit-overflow-scrolling:touch}
+body {overscroll-behavior:contain}
 
-html, body { -webkit-overflow-scrolling: touch; }
+  /* Is there really a difference using this. Tested values "100%" and "none" (Used by Chrome, Edge. Not used by Safari, Firefox) */
+/* body { -webkit-text-size-adjust:none} */
+
+  /* -webkit-appearance:none is required to make disabled buttons have grey text on Safari. */
 html, body {-webkit-appearance:none}
-/* -webkit-appearance:none is required to make disabled buttons have grey text on Safari. */
-body {overscroll-behavior: contain;}
-
-body { -webkit-text-size-adjust: 100%; }
-
-select, button, input  {color: inherit} /* Removing blue text in buttons ... on Safari */
+select, button, input  {color:inherit} /* Removing blue text in buttons ... on Safari */
 :disabled {color:grey}
-input, button, textarea, select { font: inherit; }  /* Preventing zoom, especially on Safari. */
+input, button, textarea, select { font:inherit}  /* Preventing zoom, especially on Safari. */
 
 
 /* emulate center */
 .center {
-width: 100%;
-text-align: center;
+width:100%;
+text-align:center;
 }
 *.center * {
-margin-left: auto;
-margin-right: auto;
+margin-left:auto;
+margin-right:auto;
 }
 
 p {
-    margin: 0.3em 0em 0.3em 0em;
-    line-height: 1.2em;
+  margin:0.3em 0em 0.3em 0em;
+  line-height:1.2em;
 }
 
 dl{
-    margin-top: 0.2em;
-    margin-bottom: 0.5em;
+  margin-top:0.2em;
+  margin-bottom:0.5em;
 }
 dd {
-    line-height: 1.2em;
-    margin-left: 2em;
-    margin-bottom: 0.1em;
+  line-height:1.2em;
+  margin-left:2em;
+  margin-bottom:0.1em;
 }
 
 
@@ -45,209 +45,205 @@ dd {
 body {padding:0px; text-align:center}
 
 
-table {border-width:1px;border-style:solid;border-collapse:collapse;font-size:inherit}
-td,th {border-width:inherit;border-style:inherit }
-.tableDiv {border-width:0px;}
+table {border-width:1px; border-style:solid; border-collapse:collapse; font-size:inherit}
+td,th {border-width:inherit; border-style:inherit }
+.tableDiv {border-width:0px}
 .tableDiv td, .tableDiv th {box-shadow:0 0 0.3em 0.1em darkgrey inset} /*background:lightgrey*/
-.tableDiv th {position:sticky; position: -webkit-sticky; top:0px; background:lightgrey; z-index:1; font-weight:normal; font-size:90%;}
-tr {border-width:inherit;border-style:inherit }
-tbody,thead {border-width:inherit;border-style:inherit }
+.tableDiv th {position:sticky; position:-webkit-sticky; top:0px; background:lightgrey; z-index:1; font-weight:normal; font-size:90%}
+tr {border-width:inherit; border-style:inherit }
+tbody,thead {border-width:inherit; border-style:inherit }
 
-input, textarea, keygen, select, button, isindex  {font-family:arial, verdana, helvetica;font-size:inherit}
+input, textarea, keygen, select, button, isindex  {font-family:arial, verdana, helvetica; font-size:inherit}
 
 
-input[type=email]:not(:placeholder-shown):invalid { color:red; outline-color:red;}
+input[type=email]:not(:placeholder-shown):invalid { color:red; outline-color:red}
 
 
 .contDiv {
-    flex:1 1 0; 
-    overflow-y:scroll;
-    height:100%
+  flex:1 1 0; 
+  overflow-y:scroll;
+  height:100%
 }
-.footDiv {margin: 0em auto;
-    max-width: var(--maxWidth);
-    width: 100%;
-    padding: 1.2em 0 1em;
-    border-top: solid 1px;
-    position:relative;
-    flex:0 0 auto;
-    display:flex;
-    align-items:center;
-    justify-content:space-between
+.footDiv {margin:0em auto;
+  max-width:var(--maxWidth);
+  width:100%;
+  padding:1.2em 0 1em;
+  border-top:solid 1px;
+  position:relative;
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between
 }
-/*.footDivLabel { display:block; position:absolute; top:.0em; left:50%; transform:translate(-50%, 0); }*/
-.footDivLabel { display:block; position:absolute; top:.0em; width:100%; text-align:center; }
+/*.footDivLabel { display:block; position:absolute; top:.0em; left:50%; transform:translate(-50%, 0)}*/
+.footDivLabel { display:block; position:absolute; top:.0em; width:100%; text-align:center}
 
-.myRadio {border:0px;border-radius:0px;padding:1px 6px;margin:0em 0.2em;}
+.myRadio {border:0px; border-radius:0px; padding:1px 6px; margin:0em 0.2em}
 
 button {
-border-radius: 2px;
-border: solid 1px grey;
+border-radius:2px;
+border:solid 1px grey;
 margin:2px;
 padding:1px 6px;
 background:#ddd;
 }
 
 .btn-round {
-  text-align: center;
-  width: 1.6em;
-  height: 1.6em;
-  border-radius: 100%;
-  border: 1px solid;
-  display: inline-block;
-  text-decoration: none;
-  line-height: 1.7em;
-  cursor: default
+  text-align:center;
+  width:1.6em;
+  height:1.6em;
+  border-radius:100%;
+  border:1px solid;
+  display:inline-block;
+  text-decoration:none;
+  line-height:1.7em;
+  cursor:default
 }
 .helpButtonGradient {
-  background-image: radial-gradient(#daeaff, #8cbdfd, #0064ea);;
-  color: #5780a8;
-  border: 0;
-  font-weight: bold;
-  font-size: 90%;
+  background-image:radial-gradient(#daeaff, #8cbdfd, #0064ea);;
+  color:#5780a8;
+  border:0;
+  font-weight:bold;
+  font-size:90%;
 }
-/*text-shadow: 0.5px 0.5px #888888*/
+/*text-shadow:0.5px 0.5px #888888*/
 
 
-dt {font-weight:bold;}
+dt {font-weight:bold}
 
-del {background-color:#ffaaaa;}
-ins {background-color:#aaffaa;text-decoration: none;}
+del {background-color:#ffaaaa}
+ins {background-color:#aaffaa; text-decoration:none}
 
 /* Sortable tables */
 table.sortable thead {
-    background-color:#eee;
-    color:#666666;
-    font-weight: bold;
-    cursor: default;
+  background-color:#eee;
+  color:#666666;
+  font-weight:bold;
+  cursor:default;
 }
 
-button.flexWidth{padding-left:0.7em;padding-right:0.7em;height:1.8rem}
-button.fixWidth{width:2rem;height:1.8rem}
+button.flexWidth{padding-left:0.7em; padding-right:0.7em; height:1.8rem}
+button.fixWidth{width:2rem; height:1.8rem}
 .rowButtonFeat  span { vertical-align:bottom}
-.rowButtonFeat button, .rowButtonFeat select { min-height:1.5em; font-size:0.8em; margin:0.5 0.5; padding:0 0.2em; font-size: inherit;vertical-align:bottom;background-color:#eee;border-radius:0.4em}
-.rowButtonFeat button > span:first-child { vertical-align:baseline;line-height:2.3em}
-.rowButtonFeat button > span:nth-child(2) { vertical-align:baseline;line-height:2.3em}
+.rowButtonFeat button, .rowButtonFeat select { min-height:1.5em; font-size:0.8em; margin:0.5 0.5; padding:0 0.2em; font-size:inherit; vertical-align:bottom; background-color:#eee; border-radius:0.4em}
+.rowButtonFeat button > span:first-child { vertical-align:baseline; line-height:2.3em}
+.rowButtonFeat button > span:nth-child(2) { vertical-align:baseline; line-height:2.3em}
 
 .popupHover {
   position:absolute;
   z-index:9500; 
-  padding: 0.2em;
-  margin-left: .7em;
-  margin-top: .3em;
-  max-width: 16em;
-  border: 1px solid black;
-  background-color: #777;
-  color: white;
-  font-size: 0.95em;
+  padding:0.2em;
+  margin-left:.7em;
+  margin-top:.3em;
+  max-width:16em;
+  border:1px solid black;
+  background-color:#777;
+  color:white;
+  font-size:0.95em;
 }
 
 
 .blanketPop {
-   background-color:#111;
-   opacity: 0.65;
-   position:absolute;
-   z-index: 9001; 
-   top:0px;
-   left:0px;
-   width:100%;
+  background-color:#111;
+  opacity:0.65;
+  position:absolute;
+  z-index:9001; 
+  top:0px;
+  left:0px;
+  width:100%;
 }
 
 .popUpDiv {
   position:absolute;
   background-color:#eeeeee;
-  z-index: 9002; 
+  z-index:9002; 
   border:1px solid
 }
 
 
 .blanket{
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background-color: white;
+  position:relative;
+  width:100%;
+  height:100%;
+  background-color:white;
   opacity:0.5;
-  position: fixed;
+  position:fixed;
   top:0px;
-  z-index: 9001;
+  z-index:9001;
 }
 
 .Center-Container {
-  position: relative;
+  position:relative;
 }
 
 .Center {
   max-width:300px;
   /*min-width:200px;*/
-  overflow: auto;  
-  margin: auto;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  background-color: #eeeeee;
+  overflow:auto;  
+  margin:auto;
+  position:fixed;
+  top:50%;
+  left:50%;
+  background-color:#eeeeee;
   border:1px solid;
-  z-index: 9002;
-  transform: translate(-50%,-50%);
+  z-index:9002;
+  transform:translate(-50%,-50%);
 }
 
   
 .toast{
-  position: fixed;
-  bottom: 4em;
+  position:fixed;
+  bottom:4em;
   margin:auto;
-  border: 1px solid #666;
-  background-color: #B1BCCF;
-  padding: 1.5em 0 ;
+  border:1px solid #666;
+  background-color:#B1BCCF;
+  padding:1.5em 0 ;
   text-align:center;
-  opacity: .9;
-  border-radius: 0.5em;
+  opacity:.9;
+  border-radius:0.5em;
   z-index:4;
   
   /*
-  margin-left: -100px;
-  -webkit-transition: opacity 0.5s ease-out;  
-  -moz-transition: opacity 0.5s ease-out;  
-  -ms-transition: opacity 0.5s ease-out;  
-  -o-transition: opacity 0.5s ease-out;  
-  transition: opacity 0.5s ease-out;  */
+  margin-left:-100px;
+  -webkit-transition:opacity 0.5s ease-out;  
+  -moz-transition:opacity 0.5s ease-out;  
+  -ms-transition:opacity 0.5s ease-out;  
+  -o-transition:opacity 0.5s ease-out;  
+  transition:opacity 0.5s ease-out;  */
   
 }
 
 
 .complaintTab {
-  background-color: #ffffff;
-  background-image: -webkit-gradient(linear, left top, right top, from(#ffffff), to(#ffff33));
-  background-image: -webkit-linear-gradient(left, #ffffff, #ffff33);
-  background-image:    -moz-linear-gradient(left, #ffffff, #ffff33);
-  background-image:      -o-linear-gradient(left, #ffffff, #ffff33);
-  background-image:         linear-gradient(to right, #ffffff, #ffff33);
+  background-color:#ffffff;
+  background-image:-webkit-gradient(linear, left top, right top, from(#ffffff), to(#ffff33));
+  background-image:-webkit-linear-gradient(left, #ffffff, #ffff33);
+  background-image:-moz-linear-gradient(left, #ffffff, #ffff33);
+  background-image:-o-linear-gradient(left, #ffffff, #ffff33);
+  background-image:linear-gradient(to right, #ffffff, #ffff33);
 }
 
 
 *.unselectable {
-   -webkit-user-select: none; /* Safari, Chrome */
-    -khtml-user-select: none; /* Konqueror */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE */
-    -o-user-select: none;
-    user-select: none; /* CSS3 */
+  -webkit-user-select:none; /* Safari */
+  user-select:none;
 }
 
-*.smallButt{font-size:0.8em;padding:1px 2px 1px 2px;margin:1px 0px 1px 0px}
+*.smallButt{font-size:0.8em; padding:1px 2px 1px 2px; margin:1px 0px 1px 0px}
 
 
 .grabbable {
-    cursor: move; /* fallback if grab cursor is unsupported */
-    cursor: grab;
-    cursor: -moz-grab;
-    cursor: -webkit-grab;
+  cursor:move; /* fallback if grab cursor is unsupported */
+  cursor:grab;
+  cursor:-moz-grab;
+  cursor:-webkit-grab;
 }
 
  /* (Optional) Apply a "closed-hand" cursor during drag operation. */
 .grabbable:active { 
-    cursor: grabbing;
-    cursor: -moz-grabbing;
-    cursor: -webkit-grabbing;
+  cursor:grabbing;
+  cursor:-moz-grabbing;
+  cursor:-webkit-grabbing;
 }
 
 .message{
@@ -258,13 +254,13 @@ button.fixWidth{width:2rem;height:1.8rem}
   margin:0;
   padding:1px;
   background-color:#F7F700;
-  font-size: 0.8em;
-  z-index: 10000;
+  font-size:0.8em;
+  z-index:10000;
 }
 
 .divGeoLocationStatus {
-  flex: none;
-  background: #ffb100;
-  text-align: center;
-  padding: 1em;
+  flex:none;
+  background:#ffb100;
+  text-align:center;
+  padding:1em;
 }

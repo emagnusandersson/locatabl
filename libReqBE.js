@@ -243,7 +243,7 @@ ReqBE.prototype.go=async function(){
   // Hmm!! When tested 20211010 on the idPlace app (on IOS), it worked to log in (and that javascript is also called from a popup-window). So perhaps the iOS sends the strict cookie now.
   
   var [err,val]=await getRedis(req.sessionID+'_UserInfoFrDB', true); if(err) { this.mesEO(err);  return; }   this.sessionUserInfoFrDB=val;
-  //var [err,value]=await cmdRedis('GET', [req.sessionID+'_UserInfoFrDB']); this.sessionUserInfoFrDB=JSON.parse(value);
+  //var [err,value]=await getRedis(req.sessionID+'_UserInfoFrDB'); this.sessionUserInfoFrDB=JSON.parse(value);
   if(!this.sessionUserInfoFrDB || typeof this.sessionUserInfoFrDB!='object'  ) {
     this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);
   }
@@ -252,11 +252,12 @@ ReqBE.prototype.go=async function(){
   //var [err,val]=await getRedis(req.sessionID+'_LoginIdP', true);  if(err) { this.mesEO(err);  return; } this.sessionLoginIdP=val;
   //if(this.sessionLoginIdP ) { await expireRedis(req.sessionID+'_LoginIdP', maxLoginUnactivity); } else this.sessionLoginIdP={};
 
-  //var [err, value]=await cmdRedis('GET',[req.sessionID+'_LoginIdP']);  this.sessionLoginIdP=JSON.parse(value);
-  //if(this.sessionLoginIdP ) { await cmdRedis('EXPIRE', [req.sessionID+'_LoginIdP', maxLoginUnactivity]); } else this.sessionLoginIdP={};
+  //var [err, value]=await getRedis(req.sessionID+'_LoginIdP');  this.sessionLoginIdP=JSON.parse(value);
+  //if(this.sessionLoginIdP ) { await expireRedis(req.sessionID+'_LoginIdP', maxLoginUnactivity); } else this.sessionLoginIdP={};
   
-  var luaCountFunc=`local c=redis.call('GET',KEYS[1]); if(c) then redis.call('EXPIRE',KEYS[1], ARGV[1]); end; return c`;
-  var [err, value]=await cmdRedis('EVAL',[luaCountFunc, 1, req.sessionID+'_LoginIdP', maxLoginUnactivity]);   this.sessionLoginIdP=value?JSON.parse(value):{};
+  ///var [err, value]=await cmdRedis('EVAL',[luaGetNExpire, 1, req.sessionID+'_LoginIdP', maxLoginUnactivity]);   this.sessionLoginIdP=value?JSON.parse(value):{};
+  var [err, value]=await redis.myGetNExpire(req.sessionID+'_LoginIdP', maxLoginUnactivity).toNBP(); this.sessionLoginIdP=value?JSON.parse(value):{};
+  
   //try{ var data = JSON.parse(value); }catch(e){ return [e]; }
   
   
@@ -772,7 +773,7 @@ ReqBE.prototype.setupById=async function(inObj){ //check  idFB (or idUser) again
   var idUser=this.sessionUserInfoFrDB.user.idUser||null;
   var {idFB, idIdPlace, idOpenId}=this.sessionLoginIdP;
   if(!idUser) {  var [err,idUser]=await getRedis(req.sessionID+'_LoginIdUser'); if(err) return [err];  }
-  //if(!idUser) { var [err,idUser]=await cmdRedis('GET', [req.sessionID+'_LoginIdUser']); }
+  //if(!idUser) { var [err,idUser]=await getRedis(req.sessionID+'_LoginIdUser'); }
     
   var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.buyer, BoTest.seller, BoTest.buyerTeam, BoTest.sellerTeam, BoTest.admin, BoTest.complainer, BoTest.complainee];
   Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
@@ -823,7 +824,7 @@ ReqBE.prototype.VSetPosCond=async function(inObj){  // writing needSession
 
 ReqBE.prototype.logout=async function(inObj){
   var {req}=this, Ou={};
-  var [err,tmp]=await cmdRedis('DEL', [req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser']);
+  var [err,tmp]=await delRedis(req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser');
   this.sessionLoginIdP={};  this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);  this.GRet.userInfoFrDBUpd=extend({},userInfoFrDBZero);
   this.mes('Logged out'); return [null, [Ou]];
 }
