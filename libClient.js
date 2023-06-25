@@ -283,7 +283,7 @@ app.popupHover=function(elArea, elBubble, tClose=4){
   }
   var elBlanket, timer, boIOSTmp=boTouch;
   if(boIOSTmp){
-    elBlanket=createElement('div').css({'background':'#555',opacity:0,'z-index': 9001,top:'0px',left:'0px',width:'100%',position:'fixed',height:'100%'});
+    elBlanket=createElement('div').css({background:'#000', opacity:0.25, 'z-index': 9001,top:'0px',left:'0px',width:'100%',position:'fixed',height:'100%'});
     elBlanket.on('click', closeFunc);
   }
   if(boTouch){
@@ -308,34 +308,6 @@ app.popupHover=function(elArea, elBubble, tClose=4){
 }
 
 
-
-
-app.vippButtonExtend=function(el, srcVipp0, srcVipp1){
-  el.setStat=function(bo1){
-    if(!bo1) {el.css(o0);} else {el.css(o1);}
-    el.attr({boOn:bo1});
-  }
-  var o0={background:'url('+srcVipp0+') no-repeat'}, o1={background:'url('+srcVipp1+') no-repeat'};
-
-  el.attr({boOn:0});
-  el.css({'background':'url('+srcVipp0+') no-repeat',height:'33px',width:'90px',transform:'scale(0.6)','vertical-align':'-0.5em',cursor:'pointer',display:'inline-block'}).addClass('unselectable');
-  el.on('click',function(){var t=1-el.attr('boOn');   el.setStat(t);});
-  return el;
-}
-
-app.toggleButtonExtend=function(el){
-  el.setStat=function(bo1){
-    if(bo1) {el.css(colOn);} else {el.css(colOff);}
-    //el.toggleClass('on',Boolean(bo1));
-    el.attr({boOn:bo1});
-  }
-  var colOn={background:'#4f4'}, colOff={background:''};
-
-  el.attr({boOn:0});
-  el.css({height:'1em',width:'1em'});
-  el.on('click',function(){var t=1-el.attr('boOn');   el.setStat(t);});
-  return el;
-}
 
 
 
@@ -725,8 +697,8 @@ class SpanInpWebPushToggle{
       checkbox.disabled=false;
     }
     var checkbox=createElement('input').prop({type:'checkbox', disabled:true}).on('click', cbClick);
-    var spanBlocked=createElement('span').myText('Blocked').css({'background-color':'lightgrey', padding:'0.4em'}).hide();
-    var spanNotSupported=createElement('span').myText('Not supported by this browser').css({'background-color':'lightgrey', padding:'0.2em'}).hide();
+    var spanBlocked=createElement('span').myText('Blocked').css({'background-color':'var(--bg-colorEmp)', padding:'0.4em'}).hide();
+    var spanNotSupported=createElement('span').myText('Not supported by this browser').css({'background-color':'var(--bg-colorEmp)', padding:'0.2em'}).hide();
     span.append(createFragment(checkbox, spanBlocked, spanNotSupported));
     SpanInpWebPushToggle.Span.push(span);
     return span;

@@ -255,7 +255,7 @@ var wsBusy=wseImageFolder+'busy.gif';
 
 var imgBusy=createElement('img').attr({src:wsBusy});
 var imgHelp=createElement('img').prop({src:wsHelpFile}).css({'vertical-align':'-0.4em'});
-app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButtonGradient').css({'margin-left':'0.6em'}).css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'}); //on('click', function(){return false;})    //'pointer-events':'none',
+app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButton').css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'}); //on('click', function(){return false;})    //'pointer-events':'none',
 imgHelp=hovHelpMy;
 
 var sessionLoginIdP={};
@@ -298,9 +298,9 @@ var buttCancel=createElement('button').myText('Cancel').on('click', function(){w
 var strLeaveMess="(Click browser-back-button or close this tab to leave.)";
 var cssAns={width:'50%',display:'inline-block','text-align':'center',padding:'1em',flex:1};
 //cssAns={'text-align':'center',padding:'1em'};
-var yesDiv=yesDivExtend(createElement('div')).css(cssAns).css({'background':'lightgreen'});
+var yesDiv=yesDivExtend(createElement('div')).css(cssAns).css({'background':'var(--bg-green)'});
 var noSpan=createElement('div').myText('No').css({'text-align':'center','margin-bottom':'1em', 'font-weight':'bold'});
-var noDiv=createElement('div').css(cssAns).css({'border-left':'2px solid grey','vertical-align':'top','background':'pink'}).myAppend(noSpan,strLeaveMess);
+var noDiv=createElement('div').css(cssAns).css({'border-left':'2px solid','vertical-align':'top','background':'var(--bg-red)'}).myAppend(noSpan,strLeaveMess);
 var answerDiv=createElement('div').myAppend(yesDiv,noDiv).css({display:'flex'}); //
 //mainDivs=([]).push(divLoginInfo).push(headA).push(headB).push(answerDiv);
 var MainDiv=[divLoginInfo, headA, headB, headC, answerDiv];

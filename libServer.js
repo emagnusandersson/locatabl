@@ -95,8 +95,8 @@ app.createSiteSpecificClientJS=function(siteName) {
 app.createManifest=function(siteName){
   var site=Site[siteName], {wwwSite, icons}=site;
   var uSite="https://"+wwwSite;
-  let objOut={theme_color:"#ff0", background_color:"#fff", display:"minimal-ui", prefer_related_applications:false, short_name:siteName, name:siteName, start_url: uSite, icons }
-
+  let objOut={theme_color:"#ff0", background_color:"#ff0", display:"minimal-ui", prefer_related_applications:false, short_name:siteName, name:siteName, start_url: uSite, icons }
+  // 
   //let str=serialize(objOut);
   let str=JSON.stringify(objOut);
   return str;

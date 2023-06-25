@@ -109,6 +109,7 @@ SortColumns:'Sortera kolumner',
 Rearrange:'Ändra ordning',
 RearrangeColumns:'Ändra kolumnordning',
 ColumnOrder:'Kol­umn ordn­ing',
+MoveColumns:'Fly­tta ko­lum­ner',
 
 column:'kolumn',
 show:'visa',

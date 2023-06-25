@@ -48,13 +48,15 @@
 // Element.isVisible (not yet supported by safari and firefox)
 // Use Navigation API instead of History API (only supported by chrome)
 // cqi, cqw (not in FF)
-// dialog (doesn't work on ios 12 (but persumably ios 15))
 // popup api (<div popup>) (chrome 106 (Origin trial))
 // inert (in ff not until 107), (in ios not until 15)
 
 // tHide should be renamed cached_tHide in database
 
 // webpush on FF
+
+// LoginWithEmail, forgottPassword, login (and maybe others): send email regardless if email was found in db.
+// "If the email was in the database, an email was sent."
 
 
 // After googling "node.js connect debugger to running process" I found:
@@ -634,15 +636,15 @@ var arrViewPop=[];
 
   Str.push(`
 <form  id=formLogin style="display:none">
-<label name=email>Email</label><input type=email name=email>
-<label name=password>Password</label><input type=password name=password>
+<section name=email><label name=email>Email</label><input type=email name=email></section>
+<section name=password><label name=password>Password</label><input type=password name=password></section>
 <button type=submit name=submit class=highStyle value="Sign in">Sign in</button> 
 </form>
 <form  id=formCreateAccount style="display:none">
-<label name=name>Full name</label><input type=text name=name>
-<label name=email>Email</label><input type=email name=email>
-<label name=password>Password</label><input type=password name=password>
-<label name=passwordB>Password again</label><input type=password name=passwordB>
+<section name=name><label name=name>Full name</label><input type=text name=name></section>
+<section name=email><label name=email>Email</label><input type=email name=email></section>
+<section name=password><label name=password>Password</label><input type=password name=password></section>
+<section name=passwordB><label name=passwordB>Password again</label><input type=password name=passwordB></section>
 </form>
 </body>
 </html>`);  //visibility:hidden
@@ -1045,14 +1047,17 @@ app.reqMonitor=async function(){
   //var strTotB=nTotB, strTotS=nTotS;
   //var strColor='';
   //if('admin' in objQS && objQS.admin){
-    //if(boRefresh) strColor=';background-color:lightgreen';
-    //if(site.boGotNewBuyers) strTotB='<span style="background-color:pink">'+nTotB+'</span>';
-    //if(site.boGotNewSellers) strTotS='<span style="background-color:lightblue">'+nTotS+'</span>';
+    //if(boRefresh) strColor=';background-color:var(--bg-green)';
+    //if(site.boGotNewBuyers) strTotB='<span style="background-color:var(--bg-buyer)">'+nTotB+'</span>';
+    //if(site.boGotNewSellers) strTotS='<span style="background-color:var(--bg-seller)">'+nTotS+'</span>';
   //}
   //Str.push('<body style="margin: 0px'+strColor+'">'+nVisB+"/"+strTotB+", "+nVisS+"/"+strTotS+"</body>");
   
-  var strColor='', strColorB='pink', strColorS='lightblue';
+  var strColor='';
+  //var strColorB='var(--bg-buyer)', strColorS='var(--bg-seller)';
+  var strColorB='pink', strColorS='lightblue';
   if('admin' in objQS && objQS.admin){
+    //if(boRefresh) strColor=';background-color:var(--bg-green)';
     if(boRefresh) strColor=';background-color:lightgreen';
     if(site.boGotNewBuyers) strColorB='red';
     if(site.boGotNewSellers) strColorS='blue';
@@ -1123,7 +1128,7 @@ app.reqStat=async function(){
 <style>
 table,td,tr,th {border: solid 1px;border-collapse:collapse}
 thead{font-size:85%}
-thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
+thead,th{position: sticky; top: 0;word-break: break-all; opacity:0.7; background-color:var(--bg-color);}
 tr td:empty { background:#bbb}
 </style>
 </head>
@@ -1230,10 +1235,10 @@ app.reqStatBoth=async function(){
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style>
 table,td,tr,th {border: solid 1px;border-collapse:collapse}
-td:nth-child(n+9):nth-child(-n+16){background:pink}
-td:nth-child(n+17){background:lightblue}
+td:nth-child(n+9):nth-child(-n+16){background:var(--bg-buyer)}
+td:nth-child(n+17){background:var(--bg-seller)}
 thead{font-size:85%}
-thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
+thead,th{position: sticky; top: 0;word-break: break-all; opacity:0.7; background-color:var(--bg-color);}
 tr td:empty { background:#bbb !important} 
 </style>
 </head>
@@ -1246,7 +1251,7 @@ tr td:empty { background:#bbb !important}
       var row=matA[i];
       var {idUser, image, boUseIdPImg, idFB, tPos, tLastWriteOfTA, b_tAccumulated, b_hideTimer, s_tAccumulated, s_hideTimer, histActive}=row;
       row.image='<image src="'+image+'">';
-      row.boUseIdPImg=boUseIdPImg?'<div style="background:lightgreen">yes</div>':'<image style="background:pink" src="/image/u'+idUser+'">';
+      row.boUseIdPImg=boUseIdPImg?'<div style="background:var(--bg-green)">yes</div>':'<image style="background:var(--bg-red)" src="/image/u'+idUser+'">';
       if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture" title='+idFB+'>'; } else row.idFB='';
 
       for(var j=0;j<Keys.length;j++){
@@ -1327,7 +1332,7 @@ app.reqStatTeam=async function(){
 <style>
 table,td,tr,th {border: solid 1px;border-collapse:collapse}
 thead{font-size:85%}
-thead,th{position: sticky; top: 0;word-break: break-all; background-color: rgba(255, 255, 255, 0.7);}
+thead,th{position: sticky; top: 0;word-break: break-all; opacity:0.7; background-color:var(--bg-color);}
 tr td:empty { background:#bbb}
 </style>
 </head>

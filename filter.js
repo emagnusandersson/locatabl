@@ -3,7 +3,7 @@
 window.rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSetting, iFeat, changeFunc){  
   elHtml=document.documentElement;  elBody=document.body;
 
-  var {colButtAllOn, colButtOn, colButtOff, colFiltOn, colFiltOff, colFontOn, colFontOff, colActive, colStapleOn, colStapleOff, maxStaple}=objSetting;
+  var {colButtAllOn, colButtOn, colButtOff, colFiltOn, colFiltOff, colFontOn, colFontOff, colActive, colStapleOn, colStapleOff, maxStaple, colBg}=objSetting;
     
       // filt: 'B/BF'-features: [vOffNames,vOnNames, boWhite],     'S'-features: [iOn,iOff]
       // hist: 'B'-features: [vPosName,vPosVal],       'S'/'BF'-features: [vPosInd,vPosVal]
@@ -78,8 +78,8 @@ window.rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSe
     var colButtOnT=colButtOn; if(IStSt[0]==0 && IStSt[1]==len)  colButtOnT=colButtAllOn;
     arrStap.forEach(ele=>ele.css({'background':colStapleOff}));
     arrStap.slice(IStSt[0],IStSt[1]).forEach(ele=>ele.css({'background':colStapleOn}));
-    arrSpanLab.forEach(ele=>ele.css({'background-color':colFiltOff,color:colFontOff}));
-    arrSpanLab.slice(IStSt[0],IStSt[1]).forEach(ele=>ele.css({'background-color':colButtOnT,color:colFontOn}));
+    arrSpanLab.forEach(ele=>ele.css({'background-color':colFiltOff, color:colFontOff}));
+    arrSpanLab.slice(IStSt[0],IStSt[1]).forEach(ele=>ele.css({'background-color':colButtOnT, color:colFontOn}));
   }
   var setStapleHeight=function(){   
     for(var i=0;i<len;i++){
@@ -150,13 +150,13 @@ window.rangeExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSe
   setColors();  setAnchor(0); setAnchor(1);
   
   el.append(graph);
-  el.addClass('unselectable').prop({unselectable:"on"}); //class: needed by firefox, prop: needed by opera, firefox and ie
+  el.addClass('unselectable');
   
   return el;
 }
 
 window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, objSetting, iFeat, changeFunc){    // filter-buttons
-  var {colButtAllOn, colButtOn, colButtOff, colFiltOn, colFiltOff, colFontOn, colFontOff, colActive, colStapleOn, colStapleOff, maxStaple}=objSetting;
+  var {colButtAllOn, colButtOn, colButtOff, colFiltOn, colFiltOff, colFontOn, colFontOff, colActive, colStapleOn, colStapleOff, maxStaple, colBg}=objSetting;
   var calcAllOnNLight=function(){return vOff.length==0 && filt[2]==0 && boIfAllOnDoLight;}  
   var clickFunc=function(){
     var val=this.myVal;
@@ -191,12 +191,10 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
   
   el.createCont=function(){
     var len=feat.n; if(typeof len=='undefined') len=maxGroupsInFeat+1;
-    //setFilterButtF=('setFilterButtF' in prop)?prop.setFilterButtF:null; crFilterButtF=('crFilterButtF' in prop)?prop.crFilterButtF:null;
     var fragButts=createFragment();
     for(var i=0;i<len;i++){
       var staple=createElement('span').css({width:'10px', display:'inline-block', position:'relative', bottom:'-1px'}); 
       var span;
-      //if('crFilterButtF' in prop) {var span=prop.crFilterButtF.call({strName, iRole:this.oRole.indRole}, i);}
       if('crFilterButtF' in prop) {var span=prop.crFilterButtF(i);}
       else span=createElement('span').css({'margin':'0 0.25em 0 0.1em'}).myText('...');
       var butt=createElement('button').css({margin:'0.6em 0.2em'}).myAppend(span,staple); //,'vertical-align':'bottom', padding:'0.1em 0.2em',
@@ -260,7 +258,6 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
   if(!(strName in Prop))  return 'err';
   var prop=Prop[strName], feat=prop.feat;
   var filt=Filt[iFeat], hist=Hist[iFeat];
-  //var setFilterButtF, crFilterButtF;
   
   //var colButtOnClass='filterSingleOn', colButtAllOnClass='filterAllOn';
 
@@ -305,8 +302,6 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
 window.Filt=function(Prop, StrOrderFilt){ 
   var el=[];  extend(el,Filt.tmpPrototype);
   el.StrOrderFilt=StrOrderFilt; el.Prop=Prop; el.nFeat=StrOrderFilt.length;
-  var StrOrderFiltFlip=array_flip(StrOrderFilt);
-  //el.iParent=StrOrderFiltFlip.parent;  // Uncomment when used in mmmWiki (maybe something needs to be looked over)
   for(var i=0;i<el.nFeat;i++){  
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat, kind=feat.kind, len=feat.n;
     if(kind[0]=='S') el[i]=[0,len];
@@ -399,7 +394,7 @@ filterDivICreator.tmpPrototype.createDivs=function(){
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat;
     var divT=createElement('div').attr('name',strName);
     
-    if(strName in el.helpBub){ var imgH=imgHelp.cloneNode(1).css({'vertical-align':'top'});  popupHover(imgH,el.helpBub[strName]);    }   
+    if(strName in el.helpBub){ var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,el.helpBub[strName]);    }  //.css({'vertical-align':'top'})
     var strUnit=''; if(strName in el.Unit) strUnit=' ['+el.Unit[strName]+']';
     if(feat.kind[0]=='B') { 
       h=createElement('div').myAppend(calcLabel(el.Label,strName),strUnit,': ',imgH); //.css({'margin':'0.3em 0em 0em'})
@@ -421,7 +416,7 @@ filterDivICreator.tmpPrototype.createDivs=function(){
     if('span' in feat ){ 
       divT.css({display:'inline-block', 'padding': '0 0.6em 0 0.6em','margin-right':'0.2em'});
     }
-    divT.css({'background-color':'lightgrey','margin-bottom':'0.2em', overflow:'hidden'});
+    divT.css({'background-color':el.objSetting.colBg, 'margin-bottom':'0.2em', overflow:'hidden'});
   }
 
   

@@ -289,8 +289,9 @@ app.myLinkEscape=function(str){ str=myAttrEscape(str); if(str.startsWith('javasc
 app.getPost=async function(req){
   var strData;
   if('x-type' in req.headers ){ //&& req.headers['x-type']=='single'
-    var form = new formidable.IncomingForm();
-    form.multiples = true;  
+    //var form = new formidable.IncomingForm();
+    var form = formidable({});
+    //form.multiples = true;  
     //form.uploadDir='tmp';
     var File=this.File=[];
 
@@ -298,8 +299,10 @@ app.getPost=async function(req){
       File.push(file);
     });
 
-    var [err, fields, files]=await new Promise(resolve=>{  form.parse(req, (...arg)=>resolve(arg));  });     if(err){ this.mesEO(err); return; } 
-    
+    //var [err, fields, files]=await new Promise(resolve=>{  form.parse(req, (...arg)=>resolve(arg));  });     if(err){ this.mesEO(err); return; }  
+    var [err, arrRes]=await form.parse(req).toNBP();    if(err){ this.mesEO(err); return; } 
+    var [fields, files]=arrRes;
+
     //this.File=files['fileToUpload[]'];
     if('kind' in fields) this.kind=fields.kind; else this.kind='s';
     if(!(this.File instanceof Array)) this.File=[this.File];
@@ -334,27 +337,6 @@ app.setAccessControlAllowOrigin=function(req, res, RegAllowed){
 //setAccessControlAllowOrigin(res, req, RegAllowedOriginOfStaticFile);
 
   // Make Html table
-globalThis.makeTHead=function(K){
-  var strD=''; 
-  for(var i=0; i<K.length; i++){var d=K[i]; strD+="<th>"+d+"</th>";}
-  var strR="<tr>"+strD+"</tr>";
-  return "<thead>"+strR+"</thead>";
-}
-globalThis.makeTBody=function(K,M){
-  var strR=''; 
-  for(var j=0;j<M.length;j++){
-    var r=M[j];
-    var strD='';
-    //for(var i in r){var d=r[i]; strD+="<td>"+d+"</td>";}
-    for(var i=0;i<K.length;i++){var d=r[K[i]]; strD+="<td>"+d+"</td>";}
-    strR+="<tr>"+strD+"</tr>";
-  }
-  return "<tbody>"+strR+"</tbody>";
-}
-globalThis.makeTable=function(K,M){
-  return "<table>"+makeTHead(K)+makeTBody(K,M)+"</table>";
-}
-
 globalThis.makeTHead=function(StrHead){
   if(!StrHead) return "";
   var strD=''; 
