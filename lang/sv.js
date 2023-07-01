@@ -202,8 +202,8 @@ FilterTitle:'Filter (dölj ointressanta användare)',
 ToggleBetweenBuyerAndSeller:'Växla mellan köpare och <span nom="sellers">säljare</span>',
 
 //toManyMess:'För många <span nom="sellers">säljare</span> för att lista detalier, zooma in eller använd filter för att reducera antalet under '+maxList,
-//toManyMess:'Max '+maxList+' <span nom="sellers">sellers</span> för att se jämförelsetabellen, zooma in eller använd filter för att reducera antalet',
-toManyMess:'Avstängd när antalet filtrerade <span nom="sellers">sellers</span> är över '+maxList+'',
+//toManyMess:`Max ${maxList} <span nom="sellers">sellers</span> för att se jämförelsetabellen, zooma in eller använd filter för att reducera antalet`,
+toManyMess:`Avstängd när antalet filtrerade <span nom="sellers">sellers</span> är över ${maxList}`,
 
 
 // popup-texts:

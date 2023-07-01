@@ -55,7 +55,7 @@ app.boLocal=strInfrastructure=='local';
 app.boDO=strInfrastructure=='do'; 
 
 
-app.StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'populateSetting', 'truncate', 'createDummies']; // , 'createDummy'
+app.StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'populateSetting', 'truncate', 'truncateAllExceptSetting', 'createDummy', 'addDummyComplaints']; // , 'createDummy'
   
 app.helpTextExit=function(){
   var arr=[];
@@ -150,12 +150,12 @@ var strMd5Config=md5(strConfig);
 eval(strConfig);
 if(typeof strSalt=='undefined') {console.error("typeof strSalt=='undefined'"); process.exit(-1); }
 
-var redisVar='str'+ucfirst(strAppName)+'Md5Config';
+var redisVar=`str${ucfirst(strAppName)}Md5Config`;
 var [err,tmp]=await getRedis(redisVar); if(err) {console.error(err); process.exit(-1);   }
 var boNewConfig=strMd5Config!==tmp; 
 if(boNewConfig) { var tmp=await setRedis(redisVar, strMd5Config);  }
 
-//var redisVar='str'+ucfirst(strAppName)+'Md5Config';
+//var redisVar=`str${ucfirst(strAppName)}Md5Config`;
 //var [err,tmp]=await getRedis(redisVar);
 //var boNewConfig=strMd5Config!==tmp; 
 //if(boNewConfig) { var [err,tmp]=await setRedis(redisVar,strMd5Config);  }
@@ -193,9 +193,9 @@ SiteExtend();
 if(typeof argv.sql!='undefined'){
   if(typeof argv.sql!='string') {console.log('sql argument is not a string'); process.exit(-1);  }
   var tTmp=new Date().getTime();
-  var setupSql=new SetupSql();
+  var setupSql=new SetupSql(argv);
   setupSql.myMySql=new MyMySql(DB.default.pool);
-  var [err]=await setupSql.doQuery(argv.sql);
+  var [err]=await setupSql.doQuery();
   setupSql.myMySql.fin();
   if(err) { 
     if(err.strLab=='erraticInput') {console.log(err.message); process.exit(-1); }
@@ -247,7 +247,7 @@ app.ETagImage={};
 
 var regexpLib=RegExp('^/(stylesheets|lib|pluginLib|Site|lang)/');
 var regexpLooseJS=RegExp('^/(lib|libClient|client|clientKeyRemoteControlSave|filter|serviceworker)\\.js'); //|clientProt|clientMergeID
-var regexpLooseJS2=RegExp('^/[a-zA-Z]*_('+leafSiteSpecific+'|'+leafManifest+')'); 
+var regexpLooseJS2=RegExp(`^/[a-zA-Z]*_(${leafSiteSpecific}|${leafManifest})`); 
 var regexpPlugin=RegExp('^/plugin(\\w+)\\.js');
 
 var regexpHerokuDomain=RegExp("\\.herokuapp\\.com$"),  regexpAFDomain=RegExp("\\.af\\.cm$");  
@@ -256,7 +256,7 @@ if(boHeroku || boAF){
   var regInfra=boHeroku?regexpHerokuDomain:regexpAFDomain;
   RegRedir.push(function(req){
     var Str=regInfra.exec(req.headers.host); 
-    if(Str && req.headers['x-forwarded-proto']!='https') {    return 'https://'+req.headers.host+'/'+req.url;   }
+    if(Str && req.headers['x-forwarded-proto']!='https') {    return `https://${req.headers.host}/${req.url}`;   }
     return null;
   });
 }
@@ -361,7 +361,7 @@ const handler=async function(req, res){
   
     // If the counter is to high, then respond with 429
   if(intCountT>intDDOSMaxT) {
-    var strMess="Too Many Requests ("+intCountT+"), wait "+tDDOSBanT+"s\n";
+    var strMess=`Too Many Requests (${intCountT}), wait ${tDDOSBanT}s\n`;
     if(pathName=='/'+leafBE){ var reqBE=new ReqBE({req, res}); reqBE.mesEO(strMess, 429); }
     else res.outCode(429, strMess);
     return;
@@ -467,10 +467,10 @@ if(boUseSelfSignedCert){
   //var strName='r50.local';
   //var strName='localhost';
   //const options = { key: fs.readFileSync('0SSLCert/server.key'), cert: fs.readFileSync('0SSLCert/server.cert') };
-  //const options = { key: fs.readFileSync('0SSLCert/'+strName+'.key'), cert: fs.readFileSync('0SSLCert/'+strName+'.crt') };
+  //const options = { key: fs.readFileSync(`0SSLCert/${strName}.key`), cert: fs.readFileSync(`0SSLCert/${strName}.crt`) };
 
-  var [err, bufK]=await fsPromises.readFile('0SSLCert/'+strName+'.key').toNBP(); if(err) {console.error(err); process.exit(-1);}
-  var [err, bufC]=await fsPromises.readFile('0SSLCert/'+strName+'.crt').toNBP(); if(err) {console.error(err); process.exit(-1);}
+  var [err, bufK]=await fsPromises.readFile(`0SSLCert/${strName}.key`).toNBP(); if(err) {console.error(err); process.exit(-1);}
+  var [err, bufC]=await fsPromises.readFile(`0SSLCert/${strName}.crt`).toNBP(); if(err) {console.error(err); process.exit(-1);}
   const options= {key:bufK.toString(), cert:bufC.toString()};
 
   https.createServer(options, handler).listen(port);   console.log("Listening to HTTPS requests at port " + port);

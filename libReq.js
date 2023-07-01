@@ -58,6 +58,15 @@
 // LoginWithEmail, forgottPassword, login (and maybe others): send email regardless if email was found in db.
 // "If the email was in the database, an email was sent."
 
+//["'] *\+ *([a-zA-Z0-9-\.\(\)\[\]_/\+ ]+) *\+ *['"]      ${$1}
+//[`] *\+ *([a-zA-Z0-9-\.\(\)\[\]_/\+]+) *\+ *[`]        ${$1}
+//` *\+ *([a-zA-Z0-9-\.\[\]_/\+]+)               ${$1}`
+//` *\+ *([a-zA-Z0-9-\.\(\)\[\]_/\+]+)           ${$1}`
+//([a-zA-Z0-9-\.\[\]_/\+]+) *\+ *[`]             `${$1}
+//([a-zA-Z0-9-\.\(\)\[\]_/\+]+) *\+ *[`]         `${$1}
+
+// \$\{([^\+\}]+)\+                 }${
+
 
 // After googling "node.js connect debugger to running process" I found:
 //   kill -USR1 <node-pid>   // starts debugger
@@ -100,7 +109,7 @@ app.reqCurlEnd=async function(){
   //var data; if("data" in objQS) { data=objQS.data; }  else{ res.out200('No "data" in the query line'); return;}
 
   //var pemPub=keyRemoteControl, sixPub=keyRemoteControl.split('\n').slice(1,-2).join('\n');
-  //var pemPub="-----BEGIN PUBLIC KEY-----\n"+keyRemoteControl+"-----END PUBLIC KEY-----", sixPub=keyRemoteControl;
+  //var pemPub=`-----BEGIN PUBLIC KEY-----\n${keyRemoteControl}-----END PUBLIC KEY-----`, sixPub=keyRemoteControl;
   //var keyTmp = new NodeRSA(pemPub);
   //var boOK=keyTmp.verify(data, sixSignature, 'utf8', 'base64');
   //var boOK; if(!boOK){ res.out200('Message does NOT authenticate'); return;}
@@ -115,15 +124,15 @@ app.reqCurlEnd=async function(){
   
   
   if(typeof keyRemoteControl=='undefined') {  res.out200('"keyRemoteControl" is not set'); return;}
-  if(keyRemoteControl.length!=32) {  res.out200('The length of keyRemoteControl should be 32 (length is '+keyRemoteControl.length+')'); return;}
+  if(keyRemoteControl.length!=32) {  res.out200(`The length of keyRemoteControl should be 32 (length is ${keyRemoteControl.length})`); return;}
   if(typeof iSeqN=='undefined') {  res.out200('"iSeq" is not set'); return;}
   //if(typeof iRole=='undefined') {  res.out200('"iRole" is not set'); return;}
 
-  //console.log(moment().format('HH:mm:ss')+' '+req.connection.remoteAddress+' '+keyRemoteControl);
+  //console.log(moment().format('HH:mm:ss')+` ${req.connection.remoteAddress} ${keyRemoteControl}`);
   var Sql=[],Val=[];
   if(boCheck){
-    //Sql.push("CALL "+siteName+"GetValuesToController(?, ?, @boShow, @hideTimer, @tDiff, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN);
-    Sql.push("CALL "+siteName+"GetValuesToController(?, ?, @boShow, @hideTimer, @tNow, @tPos, @tHide, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN);
+    //Sql.push(`CALL ${siteName}GetValuesToController(?, ?, @boShow, @hideTimer, @tDiff, @iRoleActive, @boOk, @mess);`); Val.push(keyRemoteControl, iSeqN);
+    Sql.push(`CALL ${siteName}GetValuesToController(?, ?, @boShow, @hideTimer, @tNow, @tPos, @tHide, @iRoleActive, @boOk, @mess);`); Val.push(keyRemoteControl, iSeqN);
 
     Sql.push("SELECT @boShow AS boShow, @hideTimer AS hideTimer, @tNow AS tNow, @tPos AS tPos, @tHide AS tHide, @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
@@ -131,14 +140,15 @@ app.reqCurlEnd=async function(){
     var {boShow, hideTimer, tNow, tPos, tHide, iRoleActive, boOK, mess}=results[1][0];
     var tDiff=tHide-tNow, tPosDiff=tNow-tPos;
     if(!boOK) {res.out200(mess); return;}
-    var strRoleActive=iRoleActive?'Seller':'Buyer', strRoleActiveB=' ('+strRoleActive+')';
+    var strRoleActive=iRoleActive?'Seller':'Buyer', strRoleActiveB= ` (${strRoleActive})`;
     var str='Hidden'+strRoleActiveB;
     if(boShow){ 
       var str='Visible'+strRoleActiveB; 
       var [ttmp,u]=getSuitableTimeUnit(tPosDiff), tDiffF=ttmp.toFixed(0);   
-      str+=", last update "+tDiffF+" "+u+" ago"; 
+      str+=`, last update ${tDiffF} ${u} ago`; 
       var [ttmp,u]=getSuitableTimeUnit(tDiff), tDiffF=ttmp.toFixed(0);   
-      if(hideTimer!=intMax) str+=", hiding in "+tDiffF+" "+u; 
+      //if(hideTimer!=intMax) str+=`, hiding in ${tDiffF} ${u}`; 
+      if(hideTimer!=intMax) str+=`, hiding in ${tDiffF} ${u}`; 
     };
     res.out200(str);
   }
@@ -149,7 +159,7 @@ app.reqCurlEnd=async function(){
     hideTimer=bound(hideTimer, 0, intMax);
     var projs=new MercatorProjection(),   [x,y]=projs.fromLatLngToPointV([lat, lng]);
     //var strGeoHash=GeoHash.pWC2GeoHash({x,y});
-    Sql.push("CALL "+siteName+"SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, @iRoleActive, @boOk, @mess);"); Val.push(keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boSetTHide);
+    Sql.push(`CALL ${siteName}SetValuesFromController(?, ?, ?, ?, ?, ?, ?, ?, @iRoleActive, @boOk, @mess);`); Val.push(keyRemoteControl, iSeqN, x, y, lat, boShow, hideTimer, boSetTHide);
     Sql.push("SELECT @iRoleActive AS iRoleActive, @boOk AS boOK, @mess AS mess;");
     var sql=Sql.join('\n');
     var [err, results]=await this.myMySql.query(sql, Val);  if(err){ res.out500(err); return; } 
@@ -157,7 +167,7 @@ app.reqCurlEnd=async function(){
     var {iRoleActive, boOK, mess}=results[1][0];
     if(!boOK) {res.out200(mess); return;}
     var str=boShow?'Visible':'Hidden';
-    var strRoleActive=iRoleActive?'Seller':'Buyer', strRoleActiveB=' ('+strRoleActive+')';
+    var strRoleActive=iRoleActive?'Seller':'Buyer', strRoleActiveB=` (${strRoleActive})`;
     str+=strRoleActiveB
     res.out200(str);
   }
@@ -173,7 +183,7 @@ app.reqKeyRemoteControlSave=async function(){
 
   
   var strT=req.headers['sec-fetch-mode'];
-  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
+  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
   
   //this.mesO=mesOMake('\n');
   
@@ -192,18 +202,18 @@ app.reqKeyRemoteControlSave=async function(){
 
   var uCommon=req.strSchemeLong+wwwCommon;
   Str.push(`<script>window.app=window;</script>`);
-  Str.push(`<base href="`+uCommon+`">`);
+  Str.push(`<base href="${uCommon}">`);
 
 
           // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
-  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css">');
+  var pathTmp='/stylesheets/style.css', vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push(`<link rel="stylesheet" href="${pathTmp}?v=${vTmp}" type="text/css">`);
 
     // Include site specific JS-files
-  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" ></script>');
+  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbg) vTmp=0;  Str.push(`<script type="module" src="${uSite}/${leafSiteSpecific}?v=${vTmp}" ></script>`);
   
-  var StrTmp=[siteName+'_'+leafSiteSpecific, 'lang/'+strLang+'.js', 'lib.js', 'libClient.js', 'clientKeyRemoteControlSave.js'];
+  var StrTmp=[siteName+'_'+leafSiteSpecific, `lang/${strLang}.js`, 'lib.js', 'libClient.js', 'clientKeyRemoteControlSave.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbg) vTmp=0;    Str.push(`<script type="module" src="${pathTmp}?v=${vTmp}" ></script>`);
   }
 
 
@@ -215,7 +225,7 @@ app.reqKeyRemoteControlSave=async function(){
   var objOut={CSRFCode, caller, userInfoFrDBZero, keyRemoteControl, maxList, wwwCommon, leafBE, flImageFolder, UrlOAuth, response_type};
   copySome(objOut,req,['wwwSite', 'boTLS']);
 
-  Str.push(`var tmp=`+serialize(objOut)+`;
+  Str.push(`var tmp=${serialize(objOut)};
 Object.assign(window, tmp);
 function indexAssign(){
   setItem('CSRFCode',CSRFCode);
@@ -241,7 +251,8 @@ function parseSignedRequest(signedRequest, secret) {
   var b64ExpectedMac = myCrypto.createHmac('sha256', secret).update(b64UrlPayload).digest('base64');
   var b64UrlExpectedMac=b64ExpectedMac.replace(/\+/g, '-').replace(/\//g, '_').replace('=', '');
   if (b64UrlMac !== b64UrlExpectedMac) {
-    return [Error('Invalid mac: ' + b64UrlMac + '. Expected ' + b64UrlExpectedMac)];
+    //return [Error(`Invalid mac: ${b64UrlMac}. Expected ${b64UrlExpectedMac}`)];
+    return [Error(`Invalid mac: ${b64UrlMac}. Expected ${b64UrlExpectedMac}`)];
   }
   return [null,data];
 }
@@ -250,14 +261,14 @@ app.deleteOne=async function(site,user_id){  //
   var {req}=this, {userTab, buyerTab, sellerTab}=site.TableName;
 
   var Sql=[], Val=[];
-  //Sql.push("DELETE r FROM "+userTab+" u JOIN "+buyerTab+" r ON u.idUser=r.idUser WHERE idFB=?;"); Val.push(user_id);
-  //Sql.push("DELETE r FROM "+userTab+" u JOIN "+sellerTab+" r ON u.idUser=r.idUser WHERE idFB=?;"); Val.push(user_id);
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
-  Sql.push("DELETE FROM "+userTab+" WHERE idFB=?;"); Val.push(user_id);
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+  //Sql.push(`DELETE r FROM ${userTab} u JOIN ${buyerTab} r ON u.idUser=r.idUser WHERE idFB=?;`); Val.push(user_id);
+  //Sql.push(`DELETE r FROM ${userTab} u JOIN ${sellerTab} r ON u.idUser=r.idUser WHERE idFB=?;`); Val.push(user_id);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
+  Sql.push(`DELETE FROM ${userTab} WHERE idFB=?;`); Val.push(user_id);
+  Sql.push(`SELECT count(*) AS n FROM ${userTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var nTotBO=Number(results[0][0].n);
@@ -290,21 +301,21 @@ app.reqDataDelete=async function(){  //
   // for(var i=0;i<SiteName.length;i++){
   //   var siteName=SiteName[i], site=Site[siteName];
   //   var [err,c]=await deleteOne.call(this, site, user_id);
-  //   if(c) StrMess.push(siteName+' ('+c+')');
+  //   if(c) StrMess.push(`${siteName} (${c})`);
   // }
 
   var [err,c]=await deleteOne.call(this, site, user_id); if(err){  res.out500(err); return; }
-  var strC=c>1?' ('+c+' entries deleted?!)':''; // Incase there is more than one
+  var strC=c>1?` (${c} entries deleted?!)`:''; // Incase there is more than one
   if(c) StrMess.push(siteName+strC);
 
-  var mess='User '+user_id+':';     if(StrMess.length) mess+=' deleted on: '+StrMess.join(', '); else mess+=' not found.';
+  var mess=`User ${user_id}:`;     if(StrMess.length) mess+=' deleted on: '+StrMess.join(', '); else mess+=' not found.';
   console.log('reqDataDelete: '+mess);
   var confirmation_code=genRandomString(32);
   await setRedis(confirmation_code+'_DeleteRequest', mess, timeOutDeleteStatusInfo); //3600*24*30
 
   res.setHeader('Content-Type', MimeType.json); 
-  //res.end("{ url: '"+uSite+'/'+leafDataDeleteStatus+'?confirmation_code='+confirmation_code+"', confirmation_code: '"+confirmation_code+ "' }");
-  res.end(JSON.stringify({ url: uSite+'/'+leafDataDeleteStatus+'?confirmation_code='+confirmation_code, confirmation_code }));
+  //res.end(`{ url: '${uSite}/${leafDataDeleteStatus}?confirmation_code=${confirmation_code}', confirmation_code: '${confirmation_code}' }`);
+  res.end(JSON.stringify({ url: `${uSite}/${leafDataDeleteStatus}?confirmation_code=${confirmation_code}`, confirmation_code }));
 }
 
 app.reqDataDeleteStatus=async function(){
@@ -315,8 +326,8 @@ app.reqDataDeleteStatus=async function(){
   if(err) {var mess=err.message;}
   else if(mess==null) {
     var [t,u]=getSuitableTimeUnit(timeOutDeleteStatusInfo);
-    //var mess="The delete status info is only available for "+t+u+".\nAll delete requests are handled immediately. So if you pressed delete, you are deleted.";
-    var mess="No info of deletion status found, (any info is deleted "+t+u+" after the deletion request).";
+    //var mess=`The delete status info is only available for ${t}${u}.\nAll delete requests are handled immediately. So if you pressed delete, you are deleted.`;
+    var mess=`No info of deletion status found, (any info is deleted ${t}${u} after the deletion request).`;
   }
   res.end(mess);
 }
@@ -345,7 +356,7 @@ app.reqDeAuthorize=async function(){  //
   StrMess.push(siteName);
 
   if(StrMess.length) var mess='Hidden on site(s): '+StrMess.join(', '); else var mess='Nothing hidden';
-  console.log('reqDeAuthorize (id: '+data.user_id+'): '+mess);
+  console.log(`reqDeAuthorize (id: ${data.user_id}): ${mess}`);
   
   res.setHeader('Content-Type', MimeType.json); 
   res.end(JSON.stringify({ mess }));
@@ -358,7 +369,7 @@ app.reqPrev=async function() {
   var {req, res}=this;
   
   var strT=req.headers['sec-fetch-mode'];
-  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
+  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
   
   res.end(`<!DOCTYPE html>
 <html lang="en"><head>
@@ -368,7 +379,7 @@ app.reqPrev=async function() {
 </head>
 <body>
 <p>Prev
-<p><a href=`+req.uSite+`>index</a>
+<p><a href=${req.uSite}>index</a>
 </body></html>`);
 }
 
@@ -383,7 +394,7 @@ app.reqIndex=async function() {
   var {req, res}=this, {site, wwwSite, objQS, uSite}=req, {siteName}=site;
   
   var strT=req.headers['sec-fetch-mode'];
-  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
+  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
   
 
   var ip='';
@@ -446,7 +457,7 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>`);
 
   var uCommon=req.strSchemeLong+wwwCommon;
-  Str.push(`<base href="`+uCommon+`">`);
+  Str.push(`<base href="${uCommon}">`);
   
   
 
@@ -455,34 +466,34 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
   
   var srcIcon16=site.SrcIcon[IntSizeIconFlip[16]];
   var srcIcon114=site.SrcIcon[IntSizeIconFlip[114]];
-  Str.push('<link rel="icon" type="image/png" href="'+srcIcon16+'" />');
-  Str.push('<link rel="apple-touch-icon" href="'+srcIcon114+'"/>');
+  Str.push(`<link rel="icon" type="image/png" href="${srcIcon16}" />`);
+  Str.push(`<link rel="apple-touch-icon" href="${srcIcon114}"/>`);
 
 
   Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1'/>");
   Str.push('<meta name="theme-color" content="#ff0"/>');
 
-  await import('./lang/'+strLang+'.js');  langServerFunc();
+  await import(`./lang/${strLang}.js`);  langServerFunc();
   site.langSetup();
   var {strTitle, strH1, strDescription, strKeywords, strSummary}=site.serv;
 
 
   Str.push(`
-<meta name="description" content="`+strDescription+`"/>
-<meta name="keywords" content="`+strKeywords+`"/>
-<link rel="canonical" href="`+uSite+`"/>`);
+<meta name="description" content="${strDescription}"/>
+<meta name="keywords" content="${strKeywords}"/>
+<link rel="canonical" href="${uSite}"/>`);
 
   var uIcon200=uSite+site.SrcIcon[IntSizeIconFlip[200]];
   var fbTmp=req.rootDomain.fb, fiIdTmp=fbTmp?fbTmp.id:``;
   var tmp=`
-<meta property="og:title" content="`+wwwSite+`"/>
+<meta property="og:title" content="${wwwSite}"/>
 <meta property="og:type" content="website" />
-<meta property="og:url" content="`+uSite+`"/>
-<meta property="og:image" content="`+uIcon200+`"/>
-<meta property="og:site_name" content="`+wwwSite+`"/>
+<meta property="og:url" content="${uSite}"/>
+<meta property="og:image" content="${uIcon200}"/>
+<meta property="og:site_name" content="${wwwSite}"/>
 <meta property="fb:admins" content="100002646477985"/>
-<meta property="fb:app_id" content="`+fiIdTmp+`"/>
-<meta property="og:description" content="`+strDescription+`"/>
+<meta property="fb:app_id" content="${fiIdTmp}"/>
+<meta property="og:description" content="${strDescription}"/>
 <meta property="og:locale:alternate" content="sv_se" />
 <meta property="og:locale:alternate" content="en_US" />`;
   if(!boDbg) Str.push(tmp);
@@ -516,7 +527,7 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
 <script>
   window.fbAsyncInit = function() {
     FB.init({
-      appId      : '`+fiIdTmp+`',
+      appId      : '${fiIdTmp}',
       cookie     : true,
       xfbml      : true,
       version    : 'v9.0'
@@ -548,19 +559,19 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-  ga('create', '`+tmpID+`', { 'storage': 'none' });
+  ga('create', '${tmpID}', { 'storage': 'none' });
   ga('send', 'pageview');
 </script>`;
   }
   Str.push(strTracker);
-  //ga('create', '`+tmpID+`', 'auto');
+  //ga('create', '${tmpID}', 'auto');
   
   const uRecaptcha='https://www.google.com/recaptcha/api.js?onload=cbRecaptcha&render=explicit';
 
   var strT=''; if('googleAPIKey' in req.rootDomain) strT="?key="+req.rootDomain.googleAPIKey;
-  if(typeof boGoogleMap!='undefined' && boGoogleMap) Str.push("<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js"+strT+"'></script>");
+  if(typeof boGoogleMap!='undefined' && boGoogleMap) Str.push(`<script type='text/javascript' src='https://maps.googleapis.com/maps/api/js${strT}'></script>`);
   
-  //Str.push(`<link rel="preconnect" href="`+uCommon+`">`);
+  //Str.push(`<link rel="preconnect" href="${uCommon}">`);
   //Str.push(`<link rel="preconnect" href="https://connect.facebook.net">`);
   
 
@@ -576,14 +587,14 @@ var MainDiv=[];
 var arrViewPop=[];
 </script>`);
 
-  var keyTmp='/'+siteName+'_'+leafManifest, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;
-  //Str.push(`<link rel="manifest" href="`+uSite+`/`+leafManifest+`?v=`+vTmp+`"/>`);
-  Str.push(`<link rel="manifest" href="`+keyTmp+`?v=`+vTmp+`"/>`);
-  var keyTmp='/'+leafServiceWorker, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     const srcServiceWorker=`/`+leafServiceWorker+`?v=`+vTmp;
+  var keyTmp=`/${siteName}_${leafManifest}`, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;
+  //Str.push(`<link rel="manifest" href="${uSite}/${leafManifest}?v=${vTmp}"/>`);
+  Str.push(`<link rel="manifest" href="${keyTmp}?v=${vTmp}"/>`);
+  var keyTmp='/'+leafServiceWorker, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;     const srcServiceWorker=`/${leafServiceWorker}?v=${vTmp}`;
 
     // File with delayed loading
   var pathTmp='/lib/foundOnTheInternet/sha1.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;   const wsSha1=pathTmp+'?v='+vTmp;
-  //Str.push('<script type="module" src="'+uSite+'/lib/foundOnTheInternet/sha1.js" async></script>');
+  //Str.push(`<script type="module" src="${uSite}/lib/foundOnTheInternet/sha1.js" async></script>`);
 
 
   var objOut={strLang, coordApprox, UrlOAuth, response_type, strReCaptchaSiteKey, uRecaptcha, strSalt, m2wc, nHash, VAPID_PUBLIC_KEY, boEnablePushNotification, srcServiceWorker};
@@ -591,21 +602,21 @@ var arrViewPop=[];
   extend(objOut, {wsSha1});
 
   Str.push(`<script>`);
-  Str.push(`var tmp=`+serialize(objOut)+`;\n Object.assign(window, tmp);`);
+  Str.push(`var tmp=${serialize(objOut)};\n Object.assign(window, tmp);`);
   Str.push(`</script>`);
 
 
   
     // Include stylesheets
-  var pathTmp='/stylesheets/style.css', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<link rel="stylesheet" href="'+pathTmp+'?v='+vTmp+'" type="text/css" >');
+  var pathTmp='/stylesheets/style.css', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push(`<link rel="stylesheet" href="${pathTmp}?v=${vTmp}" type="text/css" >`);
 
     // Include site specific JS-files
-  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=boDbgT?0:CacheUri[keyCache].eTag;  Str.push('<script type="module" src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" ></script>');
+  //var keyCache=siteName+'/'+leafSiteSpecific, vTmp=boDbgT?0:CacheUri[keyCache].eTag;  Str.push(`<script type="module" src="${uSite}/${leafSiteSpecific}?v=${vTmp}" ></script>`);
 
     // Include JS-files
   var StrTmp=[siteName+'_'+leafSiteSpecific, 'lib.js', 'libClient.js', 'lang/en.js', 'filter.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push(`<script type="module" src="${pathTmp}?v=${vTmp}" ></script>`);
   }
 
     // Include plugins
@@ -614,23 +625,23 @@ var arrViewPop=[];
   for(var i=0;i<StrPlugInNArg.length;i++){
     var nameT=StrPlugInNArg[i], n=nameT.length, charRoleUC=nameT[n-1]; if(charRoleUC=='B' || charRoleUC=='S') {nameT=nameT.substr(0, n-1);} else charRoleUC='';
     var Name=ucfirst(nameT); 
-    var pathTmp='/plugin'+Name+'.js', vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
+    var pathTmp=`/plugin${Name}.js`, vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push(`<script type="module" src="${pathTmp}?v=${vTmp}" ></script>`);
   }
 
   var StrTmp=['client.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push('<script type="module" src="'+pathTmp+'?v='+vTmp+'" ></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=boDbgT?0:CacheUri[pathTmp].eTag;    Str.push(`<script type="module" src="${pathTmp}?v=${vTmp}" ></script>`);
   }
 
 
   Str.push("</head>");
   Str.push(`<body>
-<title>`+strTitle+`</title>
+<title>${strTitle}</title>
 <div class="viewFront mainDiv">
 <div id=divEntryBar class="mainDivR" style="min-height:2rem; visibility:hidden;"></div>
-<h1 class=mainH1>`+strH1+`</h1>
+<h1 class=mainH1>${strH1}</h1>
 <noscript><div style="text-align:center">Javascript is disabled, so this app won't work.</div></noscript>
-<div class=summary style="visibility:hidden">`+strSummary+`</div>
+<div class=summary style="visibility:hidden">${strSummary}</div>
 </div>`); //style="display:none"
   
 
@@ -665,7 +676,7 @@ var arrViewPop=[];
 app.reqLoginWLink=async function(){
   var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
-  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var tmp='code'; if(!(tmp in objQS)) { res.out200(`The parameter ${tmp} is required`); return;}
   var code=objQS.code;
   //var email=await getRedis(code+'_LoginWLink');
   var [err,email]=await getRedis(code+'_LoginWLink'); 
@@ -673,7 +684,7 @@ app.reqLoginWLink=async function(){
   //if(email!=inObj.email) {  res.out200('email does not match'); return; }
 
 
-  var sql="SELECT idUser FROM "+userTab+" WHERE email=?;", Val=[email];
+  var sql=`SELECT idUser FROM ${userTab} WHERE email=?;`, Val=[email];
   var [err, results]=await this.myMySql.query(sql, Val); if(err) {  res.out500(err); return; }
   if(results.length==0) { res.out200('No such email in the database'); return;}
   
@@ -706,7 +717,7 @@ app.reqImage=async function() {
   if(kind=='u')tab=userImageTab; 
   else if(kind=='b') tab=buyerTeamImageTab;
   else if(kind=='s')tab=sellerTeamImageTab; 
-  var sql = "SELECT data FROM "+tab+" WHERE idUser=?", Val=[id];
+  var sql = `SELECT data FROM ${tab} WHERE idUser=?`, Val=[id];
   var [err, results]=await this.myMySql.query(sql, Val);  if(err) { res.out500(err); return;}
   if(results.length>0){
     var strData=results[0].data;
@@ -720,7 +731,7 @@ app.reqImage=async function() {
     id=id%32;
     var tmp; if(kind=='u'){tmp='anonPng'; }else tmp='anonTeamPng';
     var uCommon=req.strSchemeLong+wwwCommon;
-    var uNew=uCommon+"/lib/image/"+tmp+"/a"+id+".png";
+    var uNew=`${uCommon}/lib/image/${tmp}/a${id}.png`;
     res.writeHead(302, {'Location': uNew});
     res.end();
   }
@@ -746,7 +757,7 @@ app.reqLogin=async function(){
   res.replaceCookie("sessionIDLogin="+sessionIDLogin+StrSessionIDLoginProp[1])
   var uLoginBack=uDomain+"/"+leafLoginBack;
   var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uLoginBack), "state="+state, 'display=popup', "response_type="+response_type];
-  var uTmp=UrlOAuth.fb+"?client_id="+rootDomain.fb.id+"&redirect_uri="+encodeURIComponent(uLoginBack)+"&state="+state+'&display=popup';
+  var uTmp=`${UrlOAuth.fb}?client_id=${rootDomain.fb.id}&redirect_uri=${encodeURIComponent(uLoginBack)}&state=${state}&display=popup`;
   var uTmp=UrlOAuth[IP]+"?"+arrQ.join('&');
   res.writeHead(302, {'Location': uTmp}); res.end();
 }
@@ -759,7 +770,7 @@ app.reqLoginBack=async function(){
   var {req, res}=this, {cookies}=req;
   
   var strT=req.headers['sec-fetch-mode'];
-  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
+  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
   console.log('sec-fetch-mode: '+strT);
   
   //var {sessionIDLogin}=cookies; if(!sessionIDLogin) { res.out500("!sessionIDLogin"); return; }
@@ -807,7 +818,7 @@ app.reqLoginBackB=async function(){
   var {req, res}=this, {cookies}=req;
   
   var strT=req.headers['sec-fetch-mode'];
-  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, "sec-fetch-mode header not allowed ("+strT+")"); return;}
+  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
   console.log('sec-fetch-mode: '+strT);
   
   //var {sessionIDLogin}=cookies; if(!sessionIDLogin) { res.out500("!sessionIDLogin"); return; }
@@ -855,7 +866,7 @@ window.close();
 app.reqVerifyEmailReturn=async function() {
   var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
-  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var tmp='code'; if(!(tmp in objQS)) { res.out200(`The parameter ${tmp} is required`); return;}
   var codeIn=objQS.code;
   //var idUser=await getRedis(codeIn+'_verifyEmail');
   var [err,idUser]=await getRedis(codeIn+'_verifyEmail'); 
@@ -863,7 +874,7 @@ app.reqVerifyEmailReturn=async function() {
   if(idUser===null) { res.out200('No such code'); return;}
 
   var Sql=[], Val=[];
-  Sql.push("UPDATE "+userTab+" SET boEmailVerified=1 WHERE idUser=?;");
+  Sql.push(`UPDATE ${userTab} SET boEmailVerified=1 WHERE idUser=?;`);
   Val.push(idUser);
 
   var sql=Sql.join('\n');
@@ -877,7 +888,7 @@ app.reqVerifyEmailReturn=async function() {
 app.reqVerifyPWResetReturn=async function() {
   var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
-  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var tmp='code'; if(!(tmp in objQS)) { res.out200(`The parameter ${tmp} is required`); return;}
   var codeIn=objQS.code;
   //var email=await getRedis(codeIn+'_verifyPWReset');
   var [err,email]=await getRedis(codeIn+'_verifyPWReset'); 
@@ -889,19 +900,19 @@ app.reqVerifyPWResetReturn=async function() {
   var hashPW=password+strSalt; for(var i=0;i<nHash;i++) hashPW=SHA1(hashPW);
 
   var Sql=[], Val=[];
-  Sql.push("UPDATE "+userTab+" SET hashPW=? WHERE email=?;");
+  Sql.push(`UPDATE ${userTab} SET hashPW=? WHERE email=?;`);
   Val.push(hashPW, email);
 
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) {  res.out500(err); return; }
 
   var c=results.affectedRows, mestmp; 
-  if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
+  if(c!=1) { res.out500(`Error (${c} affectedRows)`); return; }
 
 
   var wwwSite=req.wwwSite;
-  var strTxt=`<h3>New password on `+wwwSite+`</h3>
-<p>Your new password on `+wwwSite+` is `+password+`</p>`;
+  var strTxt=`<h3>New password on ${wwwSite}</h3>
+<p>Your new password on ${wwwSite} is ${password}</p>`;
   
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset', html:strTxt };
@@ -918,7 +929,7 @@ app.reqVerifyEmailNCreateUserReturn=async function() {
   var {userTab, buyerTab, sellerTab}=site.TableName;
   
   
-  var tmp='code'; if(!(tmp in objQS)) { res.out200('The parameter '+tmp+' is required'); return;}
+  var tmp='code'; if(!(tmp in objQS)) { res.out200(`The parameter ${tmp} is required`); return;}
   var codeIn=objQS.code;
   
   
@@ -935,20 +946,20 @@ app.reqVerifyEmailNCreateUserReturn=async function() {
   
   var Sql=[], Val=[];
   Sql.push("SET @tNow=now();");
-  Sql.push("INSERT INTO "+userTab+" (email, nameIP, displayName, hashPW, iRoleActive, tCreated) VALUES (?, ?, ?, ?, ?, @tNow) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);");
+  Sql.push(`INSERT INTO ${userTab} (email, nameIP, displayName, hashPW, iRoleActive, tCreated) VALUES (?, ?, ?, ?, ?, @tNow) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser);`);
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Val.push(email, name, name, password, iRole);
-  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive) VALUES (@idUser, @tNow, @tNow, @tNow, @tNow, 1 ) ON DUPLICATE KEY UPDATE idUser=idUser;");
+  Sql.push(`INSERT INTO ${roleTab} (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive) VALUES (@idUser, @tNow, @tNow, @tNow, @tNow, 1 ) ON DUPLICATE KEY UPDATE idUser=idUser;`);
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+  Sql.push(`SELECT count(*) AS n FROM ${userTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
   
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) {  res.out500(err); return; }
-  var c=results[1].affectedRows; if(c!=1) { res.out500("Error ("+c+" affectedRows)"); return; }
+  var c=results[1].affectedRows; if(c!=1) { res.out500(`Error (${c} affectedRows)`); return; }
   var idUser=Number(results[2][0].idUser);    await setRedis(req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   
   var boIns=Number(results[4][0].boInserted);   if(iRole) site.boGotNewSellers=boIns; else site.boGotNewBuyers=boIns;
@@ -960,10 +971,10 @@ app.reqVerifyEmailNCreateUserReturn=async function() {
 <meta name='viewport' id='viewportMy' content='initial-scale=1'/>
 </head><body>`];
   var uSite=req.strSchemeLong+req.wwwSite
-  //if(boIns) Str.push("An account has been created. Go back to <a href=\""+uSite+"\">"+req.wwwSite+"</a>."); else Str.push("Your account was updated."); //and you can login with the email / password you 
+  //if(boIns) Str.push(`An account has been created. Go back to <a href=\"${uSite}\">${req.wwwSite}</a>.`); else Str.push("Your account was updated."); //and you can login with the email / password you 
   if(boIns) Str.push("<b>Account created!</b><p>Now close this tab, go back, and login with your new account."); else Str.push("Your account was updated."); //and you can login with the email / password you selected
   //Str.push("<a href=\"javascript:window.open('','_self').close();\">close</a>, ");
-  //Str.push("<a href=\""+uSite+"\">"+req.wwwSite+"</a>");
+  //Str.push(`<a href=\"${uSite}\">${req.wwwSite}</a>`);
   Str.push('</body></html>');
   res.setHeader('Content-Type', MimeType.html);
   res.end(Str.join('\n'));
@@ -993,7 +1004,7 @@ app.reqStatic=async function() {
     var [err]=await readFileToCache(filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
-      if('host' in req.headers) console.error('Faulty request to '+req.headers.host+" ("+pathName+")");
+      if('host' in req.headers) console.error(`Faulty request to ${req.headers.host} (${pathName})`);
       if('Referer' in req.headers) console.error('Referer:'+req.headers.Referer);
       res.out500(err); return;
     }
@@ -1001,7 +1012,7 @@ app.reqStatic=async function() {
   var {buf, type, eTag, boZip, boUglify}=CacheUri[keyCache];
   if(eTag===eTagIn){ res.out304(); return; }
   var mimeType=MimeType[type];
-  if(typeof mimeType!='string') console.log('type: '+type+', mimeType: ', mimeType);
+  if(typeof mimeType!='string') console.log(`type: ${type}, mimeType: `, mimeType);
   if(typeof buf!='object' || !('length' in buf)) console.log('typeof buf: '+typeof buf);
   if(typeof eTag!='string') console.log('typeof eTag: '+eTag);
   var objHead={"Content-Type": mimeType, "Content-Length":buf.length, ETag: eTag, "Cache-Control":"public, max-age=31536000"};
@@ -1025,12 +1036,12 @@ app.reqMonitor=async function(){
 
   if(boRefresh){ 
     var Sql=[];
-    //Sql.push("SELECT count(u.idUser) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser  WHERE boShow=1 AND "+ sqlBoBeforeHiding+";");
-    Sql.push("SELECT count(*) AS n FROM "+buyerTab+" WHERE boShow=1 AND now()<tHide;");
-    Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-    Sql.push("SELECT count(*) AS n FROM "+sellerTab+" WHERE boShow=1 AND now()<tHide;");
-    //Sql.push("SELECT count(*) AS n FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
-    Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+    //Sql.push(`SELECT count(u.idUser) AS n FROM ${userTab} u JOIN ${sellerTab} ro ON u.idUser=ro.idUser  WHERE boShow=1 AND ${sqlBoBeforeHiding};`);
+    Sql.push(`SELECT count(*) AS n FROM ${buyerTab} WHERE boShow=1 AND now()<tHide;`);
+    Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+    Sql.push(`SELECT count(*) AS n FROM ${sellerTab} WHERE boShow=1 AND now()<tHide;`);
+    //Sql.push(`SELECT count(*) AS n FROM ${userTab} u JOIN ${sellerTab} ro ON u.idUser=ro.idUser;`);
+    Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
 
     var sql=Sql.join('\n'), Val=[];
     var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return; }
@@ -1048,10 +1059,10 @@ app.reqMonitor=async function(){
   //var strColor='';
   //if('admin' in objQS && objQS.admin){
     //if(boRefresh) strColor=';background-color:var(--bg-green)';
-    //if(site.boGotNewBuyers) strTotB='<span style="background-color:var(--bg-buyer)">'+nTotB+'</span>';
-    //if(site.boGotNewSellers) strTotS='<span style="background-color:var(--bg-seller)">'+nTotS+'</span>';
+    //if(site.boGotNewBuyers) strTotB=`<span style="background-color:var(--bg-buyer)">${nTotB}</span>`;
+    //if(site.boGotNewSellers) strTotS=`<span style="background-color:var(--bg-seller)">${nTotS}</span>`;
   //}
-  //Str.push('<body style="margin: 0px'+strColor+'">'+nVisB+"/"+strTotB+", "+nVisS+"/"+strTotS+"</body>");
+  //Str.push(`<body style="margin: 0px${strColor}">${nVisB}/${strTotB}, ${nVisS}/${strTotS}</body>`);
   
   var strColor='';
   //var strColorB='var(--bg-buyer)', strColorS='var(--bg-seller)';
@@ -1062,9 +1073,9 @@ app.reqMonitor=async function(){
     if(site.boGotNewBuyers) strColorB='red';
     if(site.boGotNewSellers) strColorS='blue';
   }
-  var strB='<span style="background-color:'+strColorB+'">'+nVisB+'/'+nTotB+'</span>';
-  var strS='<span style="background-color:'+strColorS+'">'+nVisS+'/'+nTotS+'</span>';
-  Str.push('<body style="margin: 0px'+strColor+'">'+strB+", "+strS+"</body>");
+  var strB=`<span style="background-color:${strColorB}">${nVisB}/${nTotB}</span>`;
+  var strS=`<span style="background-color:${strColorS}">${nVisS}/${nTotS}</span>`;
+  Str.push(`<body style="margin: 0px${strColor}">${strB}, ${strS}</body>`);
   
   Str.push("</html>");
   
@@ -1093,21 +1104,21 @@ app.reqStat=async function(){
   var roleTab=iRole?sellerTab:buyerTab,   roleAltTab=iRole?buyerTab:sellerTab;
 
   var Sql=[];
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+  Sql.push(`SELECT count(*) AS n FROM ${userTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
   
   //var strCols="u.idUser, idFB, image, boUseIdPImg, displayName, homeTown, currency, boShow, tPos, CONVERT(BIN(histActive),CHAR(30)) AS histActive, tLastWriteOfTA, tAccumulated, hideTimer, u.boWebPushOK"; //, idIdPlace, idOpenId
   
   var strCols="u.idUser, idFB, image, boUseIdPImg, displayName, r.homeTown, r.currency, r.boShow, r.tPos, CONVERT(BIN(r.histActive),CHAR(30)) AS histActive, r.tLastWriteOfTA, r.tAccumulated, r.hideTimer, u.boWebPushOK"; //, idIdPlace, idOpenId
   var strColAlt=", IF(a.idUser,1,'') AS "+"IsAlso"+ucfirst(oRoleAlt.strRole);
 
-  //Sql.push("SELECT "+strCols+" FROM "+userTab+" u LEFT JOIN "+roleTab+" r ON u.idUser=r.idUser  UNION   SELECT "+strCols+" FROM "+userTab+" u RIGHT JOIN "+roleTab+" r ON u.idUser=r.idUser;");
+  //Sql.push(`SELECT ${strCols} FROM ${userTab} u LEFT JOIN ${roleTab} r ON u.idUser=r.idUser  UNION   SELECT ${strCols} FROM ${userTab} u RIGHT JOIN ${roleTab} r ON u.idUser=r.idUser;`);
 
-  Sql.push("SELECT "+strCols+strColAlt+" FROM "+roleTab+" r LEFT JOIN "+userTab+" u ON u.idUser=r.idUser LEFT JOIN "+roleAltTab+" a ON u.idUser=a.idUser;");
-  //LEFT JOIN "+userImageTab+" i ON u.idUser=u.idUser
+  Sql.push(`SELECT ${strCols}${strColAlt} FROM ${roleTab} r LEFT JOIN ${userTab} u ON u.idUser=r.idUser LEFT JOIN ${roleAltTab} a ON u.idUser=a.idUser;`);
+  //LEFT JOIN ${userImageTab} i ON u.idUser=u.idUser
 
-  Sql.push("SELECT "+strCols+" FROM "+roleTab+" r LEFT JOIN "+userTab+" u ON u.idUser=r.idUser WHERE u.idUser IS NULL;");
+  Sql.push(`SELECT ${strCols} FROM ${roleTab} r LEFT JOIN ${userTab} u ON u.idUser=r.idUser WHERE u.idUser IS NULL;`);
   Sql.push("SELECT now() AS now;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return;  }
@@ -1134,43 +1145,45 @@ tr td:empty { background:#bbb}
 </head>
 <body>`);
   var nA=matA.length;
-  Str.push(strRole+" LEFT JOIN user ("+nA+")");
+  Str.push(`${strRole} LEFT JOIN user (${nA})`);
   if(nA>0){
     var Keys=Object.keys(matA[0]);
     for(var i=0;i<matA.length;i++){
       var row=matA[i]
       var {idUser, idFB, image, boShow, boUseIdPImg, tPos, tLastWriteOfTA, tAccumulated, hideTimer, histActive, boWebPushOK}=row;
 
-      if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture" title='+idFB+'>'; } else row.idFB='';
-      row.idUser='<image src="/image/u'+idUser+'" title='+idUser+'>';
+      if(idFB){  row.idFB=`<image src="https://graph.facebook.com/${idFB}/picture" title=${idFB}>`; } else row.idFB='';
+      row.idUser=`<image src="/image/u${idUser}" title=${idUser}>`;
       row.boUseIdPImg=boUseIdPImg?'fr IdP':"own";
       row.boShow=boShow?'1':"";
       row.boWebPushOK=boWebPushOK?'1':"";
       if(histActive===null){ row.histActive='' } else{
-        histActive=histActive.replace(/0/g,'_').replace(/1/g,'1');  row.histActive='<font style="font-size:50%; float:right;">'+histActive+'</font>';
+        histActive=histActive.replace(/0/g,'_').replace(/1/g,'1');  row.histActive=`<font style="font-size:50%; float:right;">${histActive}</font>`;
       }
-      var [ttmp,u]=getSuitableTimeUnit((tPos-curTime)/1000); row.tPos='<font title="'+tPos+'">'+Math.round(ttmp)+u+'</font>';
-      var [ttmp,u]=getSuitableTimeUnit((tLastWriteOfTA-curTime)/1000); row.tLastWriteOfTA='<font title="'+tLastWriteOfTA+'">'+Math.round(ttmp)+u+'</font>';
+      //var [ttmp,u]=getSuitableTimeUnit((tPos-curTime)/1000); row.tPos=`<font title="${tPos}">${Math.round(ttmp)}${u}</font>`;
+      var [ttmp,u]=getSuitableTimeUnit((tPos-curTime)/1000); row.tPos=`<font title="${tPos}">${Math.round(ttmp)}${u}</font>`;
+      //var [ttmp,u]=getSuitableTimeUnit((tLastWriteOfTA-curTime)/1000); row.tLastWriteOfTA=`<font title="${tLastWriteOfTA}">${Math.round(ttmp)}${u}</font>`;
+      var [ttmp,u]=getSuitableTimeUnit((tLastWriteOfTA-curTime)/1000); row.tLastWriteOfTA=`<font title="${tLastWriteOfTA}">${Math.round(ttmp)}${u}</font>`;
 
-      row.image='<image src="'+image+'">';
+      row.image=`<image src="${image}">`;
       for(var j=0;j<Keys.length;j++){
         var key=Keys[j], t=row[key];
           // Format t
         if(t===null){ row[key]=''; continue; }
         if(/^histActive/.test(key)) {
             t=t.replace(/0/g,'_');//.replace(/1/g,'￨');
-            row[key]='<font style="font-size:50%; float:right;">'+t+'</font>';
+            row[key]=`<font style="font-size:50%; float:right;">${t}</font>`;
         }else if(/^(tAccumulated|hideTimer)/.test(key)) {
-          var [ttmp,u]=getSuitableTimeUnit(t); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
+          var [ttmp,u]=getSuitableTimeUnit(t); row[key]=`<font title="${t}">${Math.round(ttmp)}${u}</font>`;
         }else if(t instanceof Date){
-          var [ttmp,u]=getSuitableTimeUnit((t-curTime)/1000); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
+          var [ttmp,u]=getSuitableTimeUnit((t-curTime)/1000); row[key]=`<font title="${t}">${Math.round(ttmp)}${u}</font>`;
         }
       }
     }
     Str.push(makeTable(matA));
   }
   var nA=matA.length, nB=matB.length;
-  Str.push("<hr>"+strRole+".idUser with no user.idUser ("+nB+"/"+nA+")");
+  Str.push(`<hr>${strRole}.idUser with no user.idUser (${nB}/${nA})`);
   Str.push(makeTable(matB));
   
   
@@ -1192,9 +1205,9 @@ app.reqStatBoth=async function(){
   var {siteName}=site, {userTab, buyerTab, sellerTab}=site.TableName;
 
   var Sql=[];
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+  Sql.push(`SELECT count(*) AS n FROM ${userTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
   
   var strColsU="u.idUser, idFB, idIdPlace, idOpenId, image, boUseIdPImg, displayName, u.boWebPushOK";
   //var strColsB="b.homeTown, b.currency, b.boShow, b.tPos, CONVERT(BIN(b.histActive),CHAR(30)) AS c_histActive, b.tLastWriteOfTA, b.tAccumulated, b.hideTimer";
@@ -1205,18 +1218,19 @@ app.reqStatBoth=async function(){
   for(var i=0;i<2;i++){
     var strRole=i?'s':'b', StrTmp=[];
     for(var j=0;j<StrColsProt.length;j++){
-      StrTmp[j]=strRole+'.'+StrColsProt[j]+" AS "+strRole+'_'+StrColsProt[j];
+      //StrTmp[j]=`${strRole}.${StrColsProt[j]} AS ${strRole}_${StrColsProt[j]}`;
+      StrTmp[j]=`${strRole}.${StrColsProt[j]} AS ${strRole}_${StrColsProt[j]}`;
     }
-    StrTmp.push("CONVERT(BIN("+strRole+".histActive),CHAR(30)) AS "+strRole+"_histActive");
+    StrTmp.push(`CONVERT(BIN(${strRole}.histActive),CHAR(30)) AS ${strRole}_histActive`);
     StrRoleCols[i]=StrTmp.join(', ');
   }
   var [strColsB, strColsS]=StrRoleCols;
   //strColsB="b.boShow";
 
-  Sql.push("SELECT "+strColsU+", "+strColsB+", "+strColsS+" FROM "+userTab+" u LEFT JOIN "+buyerTab+" b ON u.idUser=b.idUser LEFT JOIN "+sellerTab+" s ON u.idUser=s.idUser;");
+  Sql.push(`SELECT ${strColsU}, ${strColsB}, ${strColsS} FROM ${userTab} u LEFT JOIN ${buyerTab} b ON u.idUser=b.idUser LEFT JOIN ${sellerTab} s ON u.idUser=s.idUser;`);
 
-  Sql.push("SELECT "+strColsU+", "+strColsB+" FROM "+userTab+" u RIGHT JOIN "+buyerTab+" b ON u.idUser=b.idUser WHERE u.idUser IS NULL;");
-  Sql.push("SELECT "+strColsU+", "+strColsS+" FROM "+userTab+" u RIGHT JOIN "+sellerTab+" s ON u.idUser=s.idUser WHERE u.idUser IS NULL;");
+  Sql.push(`SELECT ${strColsU}, ${strColsB} FROM ${userTab} u RIGHT JOIN ${buyerTab} b ON u.idUser=b.idUser WHERE u.idUser IS NULL;`);
+  Sql.push(`SELECT ${strColsU}, ${strColsS} FROM ${userTab} u RIGHT JOIN ${sellerTab} s ON u.idUser=s.idUser WHERE u.idUser IS NULL;`);
   Sql.push("SELECT now() AS now;");
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return;  }
@@ -1244,15 +1258,15 @@ tr td:empty { background:#bbb !important}
 </head>
 <body>`);
   var nA=matA.length;
-  Str.push("user OUTER JOIN seller ("+nA+")");
+  Str.push(`user OUTER JOIN seller (${nA})`);
   if(nA>0){
     var Keys=Object.keys(matA[0]);
     for(var i=0;i<matA.length;i++){
       var row=matA[i];
       var {idUser, image, boUseIdPImg, idFB, tPos, tLastWriteOfTA, b_tAccumulated, b_hideTimer, s_tAccumulated, s_hideTimer, histActive}=row;
-      row.image='<image src="'+image+'">';
-      row.boUseIdPImg=boUseIdPImg?'<div style="background:var(--bg-green)">yes</div>':'<image style="background:var(--bg-red)" src="/image/u'+idUser+'">';
-      if(idFB){  row.idFB='<image src="https://graph.facebook.com/'+idFB+'/picture" title='+idFB+'>'; } else row.idFB='';
+      row.image=`<image src="${image}">`;
+      row.boUseIdPImg=boUseIdPImg?`<div style="background:var(--bg-green)">yes</div>`:`<image style="background:var(--bg-red)" src="/image/u${idUser}">`;
+      if(idFB){  row.idFB=`<image src="https://graph.facebook.com/${idFB}/picture" title=${idFB}>`; } else row.idFB='';
 
       for(var j=0;j<Keys.length;j++){
         var key=Keys[j], t=row[key];
@@ -1260,22 +1274,22 @@ tr td:empty { background:#bbb !important}
         if(t===null){ row[key]=''; continue; }
         if(/^[bs]_(histActive)/.test(key)) {
           t=t.replace(/0/g,'_');//.replace(/1/g,'￨');
-          row[key]='<font style="font-size:50%; float:right;">'+t+'</font>';
+          row[key]=`<font style="font-size:50%; float:right;">${t}</font>`;
         }else if(/^[bs]_(tAccumulated|hideTimer)/.test(key)) {
-          var [ttmp,u]=getSuitableTimeUnit(t); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
+          var [ttmp,u]=getSuitableTimeUnit(t); row[key]=`<font title="${t}">${Math.round(ttmp)}${u}</font>`;
         }else if(t instanceof Date){
-          var [ttmp,u]=getSuitableTimeUnit((t-curTime)/1000); row[key]='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>';
+          var [ttmp,u]=getSuitableTimeUnit((t-curTime)/1000); row[key]=`<font title="${t}">${Math.round(ttmp)}${u}</font>`;
         }
       }
     }
     Str.push(makeTable(matA));
   }
   var nB=matB.length;
-  Str.push("<hr>buyers with no user ("+nB+")");
+  Str.push(`<hr>buyers with no user (${nB})`);
   Str.push(makeTable(matB));
   
   var nC=matC.length;
-  Str.push("<hr>sellers with no user ("+nC+")");
+  Str.push(`<hr>sellers with no user (${nC})`);
   Str.push(makeTable(matC));
   
   
@@ -1303,15 +1317,15 @@ app.reqStatTeam=async function(){
   var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
 
   var Sql=[];
-  Sql.push("SELECT count(*) AS n FROM "+buyerTeamTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTeamTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTeamImageTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTeamImageTab+";");
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTeamTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTeamTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTeamImageTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTeamImageTab};`);
   
   var strCols="u.idUser, u.nameIP, s.tCreated";
 
-  //Sql.push("SELECT "+strCols+" FROM "+userTab+" u JOIN "+roleTeamTab+" s ON u.idUser=s.idUser;");
-  Sql.push("SELECT "+strCols+", COUNT(*) FROM "+userTab+" u JOIN "+roleTeamTab+" s ON u.idUser=s.idUser LEFT JOIN "+roleTab+" rMember ON u.idUser=rMember.idTeam GROUP BY u.idUser;");
+  //Sql.push(`SELECT ${strCols} FROM ${userTab} u JOIN ${roleTeamTab} s ON u.idUser=s.idUser;`);
+  Sql.push(`SELECT ${strCols}, COUNT(*) FROM ${userTab} u JOIN ${roleTeamTab} s ON u.idUser=s.idUser LEFT JOIN ${roleTab} rMember ON u.idUser=rMember.idTeam GROUP BY u.idUser;`);
 
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=await this.myMySql.query(sql, Val); if(err){ res.out500(err); return;  }
@@ -1338,10 +1352,10 @@ tr td:empty { background:#bbb}
 </head>
 <body>`);
   var nA=matA.length;
-  Str.push("user "+roleTeamTab+" ("+nA+")");
+  Str.push(`user ${roleTeamTab} (${nA})`);
   for(var i=0;i<matA.length;i++){ 
     var row=matA[i], t=row.tCreated;
-    var [ttmp,u]=getSuitableTimeUnit((tNow-t)/1000); row.tCreated='<font title="'+t+'">'+Math.round(ttmp)+u+'</font>' 
+    var [ttmp,u]=getSuitableTimeUnit((tNow-t)/1000); row.tCreated=`<font title="${t}">${Math.round(ttmp)}${u}</font>` 
   }
   Str.push(makeTable(matA));
   
@@ -1358,9 +1372,12 @@ tr td:empty { background:#bbb}
 /******************************************************************************
  * SetupSql
  ******************************************************************************/
-app.SetupSql=function(){
+app.SetupSql=function(argv){
+  var {sql}=argv;
+  this.sql=sql;
 }
-app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
+app.SetupSql.prototype.createTable=
+app.SetupSql.prototype.dropTable=async function(siteName){
   var site=Site[siteName]; 
   
   var SqlTabDrop=[], SqlTab=[];
@@ -1372,11 +1389,11 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
 
   var StrTabName=object_values(TableName);
   var tmp=StrTabName.join(', ');
-  SqlTabDrop.push("DROP TABLE IF EXISTS "+siteName+"_teamImage, "+siteName+"_sellerImage, "+siteName+"_team,"+siteName+"_marketer,"+siteName+"_payment,"+siteName+"_rebateCode,"+siteName+"_webPushSubscription");  // temporary thing
-  SqlTabDrop.push("DROP TABLE IF EXISTS "+siteName+"_binsCreated, "+siteName+"_binsPosTime, "+siteName+"_binsTimeAccumulated");  // temporary thing
+  SqlTabDrop.push(`DROP TABLE IF EXISTS ${siteName}_teamImage, ${siteName}_sellerImage, ${siteName}_team,${siteName}_marketer,${siteName}_payment,${siteName}_rebateCode,${siteName}_webPushSubscription`);  // temporary thing
+  SqlTabDrop.push(`DROP TABLE IF EXISTS ${siteName}_binsCreated, ${siteName}_binsPosTime, ${siteName}_binsTimeAccumulated`);  // temporary thing
   SqlTabDrop.push("DROP TABLE IF EXISTS "+tmp);     
   SqlTabDrop.push('DROP TABLE IF EXISTS '+userTab);     
-  var tmp=object_values(ViewName).join(', ');   if(tmp.length) SqlTabDrop.push("DROP VIEW IF EXISTS "+tmp+"");
+  var tmp=object_values(ViewName).join(', ');   if(tmp.length) SqlTabDrop.push(`DROP VIEW IF EXISTS ${tmp}`);
 
 
   //var nameDB=DB[db].nameDB;
@@ -1389,7 +1406,7 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
 
 
     // Create users
-  SqlTab.push(`CREATE TABLE `+userTab+` ( 
+  SqlTab.push(`CREATE TABLE ${userTab} ( 
   idUser int(4) NOT NULL auto_increment, 
   tCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
   idFB varchar(128) CHARSET utf8 NULL, 
@@ -1416,17 +1433,17 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
   UNIQUE KEY (idIdPlace), 
   UNIQUE KEY (idOpenId), 
   UNIQUE KEY (email) 
-  ) AUTO_INCREMENT = `+auto_increment+`, ENGINE=`+engine+` COLLATE `+collate); 
+  ) AUTO_INCREMENT = ${auto_increment}, ENGINE=${engine} COLLATE ${collate}`); 
  
 
 
     // Create webPushSubscription
-  SqlTab.push(`CREATE TABLE `+webPushSubscriptionTab+` ( 
+  SqlTab.push(`CREATE TABLE ${webPushSubscriptionTab} ( 
   idUser int(4) NOT NULL auto_increment, 
   strSubscription text CHARSET utf8 NULL, 
   PRIMARY KEY (idUser), 
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate); 
+  FOREIGN KEY (idUser) REFERENCES ${userTab}(idUser) ON DELETE CASCADE
+  ) ENGINE=${engine} COLLATE ${collate}`); 
 
   //strSubscription varchar(512) CHARSET utf8 NULL, 
     // Create sellerTab
@@ -1439,35 +1456,36 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
       if(strType=='ENUM'){
         //$tmpName='enum'.ucfirst($name);
         //$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
-        var arra=prop.Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
-        strType="ENUM("+str+")";
+        var arra=prop.Enum, str=arra.join("','"); if(arra.length) str=`'${str}'`;
+        strType=`ENUM(${str})`;
       }
       var strNull=Number(b[oS.bFlip.notNull])?'NOT NULL':'';
       var strDefault=''; 
       if('default' in prop){
         if(prop.type.toUpperCase()=='TIMESTAMP'){strDefault=prop.default;}
         else {
-          if(typeof prop.default=='string') strDefault="'"+prop.default+"'"; else strDefault=prop.default;
+          if(typeof prop.default=='string') strDefault=`'${prop.default}'`; else strDefault=prop.default;
         }
         strDefault="DEFAULT "+strDefault;
       }
-      arrCols.push("`"+name+"` "+strType+" "+strNull+" "+strDefault);
+      //arrCols.push(`\`${name}\` ${strType} ${strNull} ${strDefault}`);
+      arrCols.push(`\`${name}\` ${strType} ${strNull} ${strDefault}`);
     }//``
   }
   var strSql=arrCols.join(",\n");
 
-  SqlTab.push(`CREATE TABLE `+sellerTab+` (
-  `+strSql+`,
+  SqlTab.push(`CREATE TABLE ${sellerTab} (
+  ${strSql},
   PRIMARY KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate+``); 
+  FOREIGN KEY (idUser) REFERENCES ${userTab}(idUser) ON DELETE CASCADE
+  ) ENGINE=${engine} COLLATE ${collate}`); 
 
 
   if(boUseDBIndex){
       // Create SellerTab indexes
     for(var name in oS.Prop){
       var prop=oS.Prop[name], b=prop.b;
-      if(Number(b[oS.bFlip.sellerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+sellerTab+"(`"+name+"`)"); 
+      if(Number(b[oS.bFlip.sellerTabIndex])) SqlTab.push(`CREATE INDEX ${name}Index ON ${sellerTab}(\`${name}\`)`); 
     }
   }
 
@@ -1481,64 +1499,65 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
       if(strType=='ENUM'){
         //$tmpName='enum'.ucfirst($name);
         //$arra=$$tmpName;$str=implode("','",$arra); if(count($arra)>0) $str="'$str'";
-        var arra=prop.Enum, str=arra.join("','"); if(arra.length) str="'"+str+"'";
-        strType="ENUM("+str+")";
+        var arra=prop.Enum, str=arra.join("','"); if(arra.length) str=`'${str}'`;
+        strType=`ENUM(${str})`;
       }
       var strNull=Number(b[oB.bFlip.notNull])?'NOT NULL':'';
       var strDefault=''; 
       if('default' in prop){
         if(prop.type.toUpperCase()=='TIMESTAMP'){strDefault=prop.default;}
         else {
-          if(typeof prop.default=='string') strDefault="'"+prop.default+"'"; else strDefault=prop.default;
+          if(typeof prop.default=='string') strDefault=`'${prop.default}'`; else strDefault=prop.default;
         }
         strDefault="DEFAULT "+strDefault;
       }
-      arrCols.push("`"+name+"` "+strType+" "+strNull+" "+strDefault);
+      //arrCols.push(`\`${name}\` ${strType} ${strNull} ${strDefault}`);
+      arrCols.push(`\`${name}\` ${strType} ${strNull} ${strDefault}`);
     }//``
   }
   var strSql=arrCols.join(",\n");
 
-  SqlTab.push(`CREATE TABLE `+buyerTab+` (
-  `+strSql+`,
+  SqlTab.push(`CREATE TABLE ${buyerTab} (
+  ${strSql},
   PRIMARY KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate+``); 
+  FOREIGN KEY (idUser) REFERENCES ${userTab}(idUser) ON DELETE CASCADE
+  ) ENGINE=${engine} COLLATE ${collate}`); 
 
 
   if(boUseDBIndex){
       // Create BuyerTab indexes
     for(var name in oB.Prop){
       var prop=oB.Prop[name], b=prop.b;
-      if(Number(b[oB.bFlip.buyerTabIndex])) SqlTab.push("CREATE INDEX "+name+"Index ON "+buyerTab+"(`"+name+"`)");
+      if(Number(b[oB.bFlip.buyerTabIndex])) SqlTab.push(`CREATE INDEX ${name}Index ON ${buyerTab}(\`${name}\`)`);
     }
   }
   
   
   
-  //SqlTab.push("CREATE VIEW "+histView+" (idUser, histActive, tPos) AS SELECT idUser, BIN(histActive), tPos FROM "+sellerTab+"");
+  //SqlTab.push`CREATE VIEW ${histView} (idUser, histActive, tPos) AS SELECT idUser, BIN(histActive), tPos FROM ${sellerTab}`);
 
 
 
-  SqlTab.push(`CREATE TABLE `+settingTab+` (
+  SqlTab.push(`CREATE TABLE ${settingTab} (
   name varchar(65) CHARSET utf8 NOT NULL,
   value varchar(65) CHARSET utf8 NOT NULL,
   UNIQUE KEY (name)
-  ) ENGINE=`+engine+` COLLATE `+collate);
+  ) ENGINE=${engine} COLLATE ${collate}`);
 
 
     // Create admin
-  SqlTab.push(`CREATE TABLE `+adminTab+` (
+  SqlTab.push(`CREATE TABLE ${adminTab} (
   idUser int(4) NOT NULL,
   boApproved tinyint(1) NOT NULL DEFAULT 0,
   tCreated TIMESTAMP default CURRENT_TIMESTAMP,
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
+  FOREIGN KEY (idUser) REFERENCES ${userTab}(idUser) ON DELETE CASCADE,
   UNIQUE KEY (idUser)
-  ) ENGINE=`+engine+` COLLATE `+collate);
+  ) ENGINE=${engine} COLLATE ${collate}`);
 
 
 
     // Create complaintTab
-  SqlTab.push(`CREATE TABLE `+complaintTab+` (
+  SqlTab.push(`CREATE TABLE ${complaintTab} (
   idComplainee  int(4) NOT NULL,
   idComplainer int(4) NOT NULL,
   comment TEXT CHARSET utf8,
@@ -1547,59 +1566,59 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
   tCommentModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
   tAnswerModified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
   UNIQUE KEY (idComplainee,idComplainer),
-  FOREIGN KEY (idComplainee) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
-  FOREIGN KEY (idComplainer) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate);
+  FOREIGN KEY (idComplainee) REFERENCES ${userTab}(idUser) ON DELETE CASCADE,
+  FOREIGN KEY (idComplainer) REFERENCES ${userTab}(idUser) ON DELETE CASCADE
+  ) ENGINE=${engine} COLLATE ${collate}`);
 
 
 
     // Create buyerTeamTab
-  SqlTab.push(`CREATE TABLE `+buyerTeamTab+` (
+  SqlTab.push(`CREATE TABLE ${buyerTeamTab} (
   idUser int(4) NOT NULL,
   link varchar(128) CHARSET utf8 NOT NULL DEFAULT '',
   imTag int(4) NOT NULL default 0,
   boApproved tinyint(1) NOT NULL default 0,
   tCreated TIMESTAMP default CURRENT_TIMESTAMP,
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
+  FOREIGN KEY (idUser) REFERENCES ${userTab}(idUser) ON DELETE CASCADE,
   UNIQUE KEY (idUser)
-  ) ENGINE=`+engine+` COLLATE `+collate);
+  ) ENGINE=${engine} COLLATE ${collate}`);
   
     // Create sellerTeamTab
-  SqlTab.push(`CREATE TABLE `+sellerTeamTab+` (
+  SqlTab.push(`CREATE TABLE ${sellerTeamTab} (
   idUser int(4) NOT NULL,
   link varchar(128) CHARSET utf8 NOT NULL DEFAULT '',
   imTag int(4) NOT NULL default 0,
   boApproved tinyint(1) NOT NULL default 0,
   tCreated TIMESTAMP default CURRENT_TIMESTAMP,
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE,
+  FOREIGN KEY (idUser) REFERENCES ${userTab}(idUser) ON DELETE CASCADE,
   UNIQUE KEY (idUser)
-  ) ENGINE=`+engine+` COLLATE `+collate);
+  ) ENGINE=${engine} COLLATE ${collate}`);
 
     //
     // Image tables
     //
     
-  SqlTab.push(`CREATE TABLE `+userImageTab+` (
+  SqlTab.push(`CREATE TABLE ${userImageTab} (
   idUser int(4) NOT NULL,
   data BLOB NOT NULL,
   UNIQUE KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate); 
+  FOREIGN KEY (idUser) REFERENCES ${userTab}(idUser) ON DELETE CASCADE
+  ) ENGINE=${engine} COLLATE ${collate}`); 
 
 
-  SqlTab.push(`CREATE TABLE `+buyerTeamImageTab+` (
+  SqlTab.push(`CREATE TABLE ${buyerTeamImageTab} (
   idUser int(4) NOT NULL,
   data BLOB NOT NULL,
   UNIQUE KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+buyerTeamTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate); 
+  FOREIGN KEY (idUser) REFERENCES ${buyerTeamTab}(idUser) ON DELETE CASCADE
+  ) ENGINE=${engine} COLLATE ${collate}`); 
   
-  SqlTab.push(`CREATE TABLE `+sellerTeamImageTab+` (
+  SqlTab.push(`CREATE TABLE ${sellerTeamImageTab} (
   idUser int(4) NOT NULL,
   data BLOB NOT NULL,
   UNIQUE KEY (idUser),
-  FOREIGN KEY (idUser) REFERENCES `+sellerTeamTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate);
+  FOREIGN KEY (idUser) REFERENCES ${sellerTeamTab}(idUser) ON DELETE CASCADE
+  ) ENGINE=${engine} COLLATE ${collate}`);
   
   
   //name varchar(64) CHARSET utf8 NOT NULL,
@@ -1609,6 +1628,7 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
   addBinTableSql(SqlTabDrop, SqlTab, siteName, oB.Prop, engine, collate);
 
   
+  var boDropOnly=this.sql.slice(0,4)=='drop'; 
   if(boDropOnly) var Sql=SqlTabDrop;
   else var Sql=array_merge(SqlTabDrop, SqlTab);
   
@@ -1619,7 +1639,8 @@ app.SetupSql.prototype.createTable=async function(siteName, boDropOnly){
 
 
   
-app.SetupSql.prototype.createFunction=async function(siteName, boDropOnly){
+app.SetupSql.prototype.createFunction=
+app.SetupSql.prototype.dropFunction=async function(siteName){
   var site=Site[siteName]; 
 
   var SqlFunctionDrop=[], SqlFunction=[];
@@ -1634,61 +1655,61 @@ app.SetupSql.prototype.createFunction=async function(siteName, boDropOnly){
   //var strIPDefault=Prop.IP.Enum[0];
 
 
-  //RShow "+siteName+"TimeAccumulatedUpdOne -> UPDATE "+sellerTab+" SET boShow=1, tPos=now(), hideTime=date_add(now(), INTERVALL hideTimer SECOND) WHERE idUser=id
-  //RHide "+siteName+"TimeAccumulatedUpdOne -> UPDATE "+sellerTab+" SET boShow=0, tPos=0, hideTime=0 WHERE idUser=id
-  //IFun "+siteName+"TimeAccumulatedUpdMult
+  //RShow ${siteName}TimeAccumulatedUpdOne -> UPDATE ${sellerTab} SET boShow=1, tPos=now(), hideTime=date_add(now(), INTERVALL hideTimer SECOND) WHERE idUser=id
+  //RHide ${siteName}TimeAccumulatedUpdOne -> UPDATE ${sellerTab} SET boShow=0, tPos=0, hideTime=0 WHERE idUser=id
+  //IFun ${siteName}TimeAccumulatedUpdMult
 
-  // If setting boShow then one must call "+siteName+"TimeAccumulatedUpdOne before. Hence tLastWriteOfTA will never be < than tPos
+  // If setting boShow then one must call ${siteName}TimeAccumulatedUpdOne before. Hence tLastWriteOfTA will never be < than tPos
   var sqlTimeSinceLastWriteOfTA="UNIX_TIMESTAMP(VtNow)-UNIX_TIMESTAMP(tLastWriteOfTA)";  // tLastWriteOfTA, tPos, hideTimer are a columns in roleTab
   var sqlTWritten="UNIX_TIMESTAMP(tLastWriteOfTA)-UNIX_TIMESTAMP(tPos)"; // This variable is only used to make the expression sqlTRemaining (below) clearer
-  var sqlTRemaining="GREATEST(hideTimer-("+sqlTWritten+"),0)";
+  var sqlTRemaining=`GREATEST(hideTimer-(${sqlTWritten}),0)`;
   
     // Note TimeAccumulatedUpdOne doesn't set boShow unlike TimeAccumulatedUpdMult (I think because one wants to keep the old boShow to as input to histActivity)
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdOne");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdOne(IN IidUser INT)
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}TimeAccumulatedUpdOne`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}TimeAccumulatedUpdOne(IN IidUser INT)
       BEGIN
         DECLARE VtNow TIMESTAMP DEFAULT now();
-        UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
-        UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
+        UPDATE ${buyerTab} SET tAccumulated=tAccumulated+LEAST(${sqlTimeSinceLastWriteOfTA},${sqlTRemaining})*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
+        UPDATE ${sellerTab} SET tAccumulated=tAccumulated+LEAST(${sqlTimeSinceLastWriteOfTA},${sqlTRemaining})*boShow, tLastWriteOfTA=VtNow WHERE idUser=IidUser;
       END`);
 
     // IFunPoll
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"IFunPoll");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`IFunPoll(Itimer INT) BEGIN      CALL `+siteName+`TimeAccumulatedUpdMult(Itimer);   CALL `+siteName+`HistActiveUpdMult;   END`);
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}IFunPoll`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}IFunPoll(Itimer INT) BEGIN      CALL ${siteName}TimeAccumulatedUpdMult(Itimer);   CALL ${siteName}HistActiveUpdMult;   END`);
   
     // Idea of using tHide instead of tPos (or as well as tPos)  in roleTab
     // TimeAccumulatedUpdMult is only used in IFunPoll
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"TimeAccumulatedUpdMult");  // Update tAccumulated, tLastWriteOfTA and boShow
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`TimeAccumulatedUpdMult(Itimer INT)
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}TimeAccumulatedUpdMult`);  // Update tAccumulated, tLastWriteOfTA and boShow
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}TimeAccumulatedUpdMult(Itimer INT)
       BEGIN
         DECLARE tLastWriteOfBoShow INT;
         DECLARE VtNow TIMESTAMP DEFAULT now();
-        SELECT value INTO tLastWriteOfBoShow FROM `+settingTab+` WHERE name='tLastWriteOfBoShow';
+        SELECT value INTO tLastWriteOfBoShow FROM ${settingTab} WHERE name='tLastWriteOfBoShow';
         IF UNIX_TIMESTAMP(VtNow)>tLastWriteOfBoShow+Itimer THEN
-          UPDATE `+sellerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0) 
+          UPDATE ${sellerTab} SET tAccumulated=tAccumulated+LEAST(${sqlTimeSinceLastWriteOfTA},${sqlTRemaining})*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0) 
             WHERE boShow=1 AND VtNow>tHide;
-          UPDATE `+buyerTab+` SET tAccumulated=tAccumulated+LEAST(`+sqlTimeSinceLastWriteOfTA+`,`+sqlTRemaining+`)*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0)
+          UPDATE ${buyerTab} SET tAccumulated=tAccumulated+LEAST(${sqlTimeSinceLastWriteOfTA},${sqlTRemaining})*boShow, tLastWriteOfTA=VtNow, boShow=IF(now()<tHide,boShow,0)
             WHERE boShow=1 AND VtNow>tHide;
-          UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(VtNow) WHERE name='tLastWriteOfBoShow';
+          UPDATE ${settingTab} SET value=UNIX_TIMESTAMP(VtNow) WHERE name='tLastWriteOfBoShow';
         END IF;
       END`);
 
   //sPerDay=10;
-  //var dayDiff="floor( UNIX_TIMESTAMP(VtNow)/"+sPerDay+" )  -  floor( UNIX_TIMESTAMP(tPos)/"+sPerDay+" )";
+  //var dayDiff=`floor( UNIX_TIMESTAMP(VtNow)/${sPerDay} )  -  floor( UNIX_TIMESTAMP(tPos)/${sPerDay} )`;
   // tLastWriteOfHA lastHistActiveWrite
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"HistActiveUpdMult");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`HistActiveUpdMult()
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}HistActiveUpdMult`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}HistActiveUpdMult()
     BEGIN
       DECLARE tLastWriteOfHA, recentDay, dayDiff INT;
       DECLARE VtNow TIMESTAMP DEFAULT now();
       START TRANSACTION;
-      SELECT value INTO tLastWriteOfHA FROM `+settingTab+` WHERE name='tLastWriteOfHA';
-      SET recentDay=floor( UNIX_TIMESTAMP(VtNow)/`+sPerDay+` );   SET dayDiff=recentDay-tLastWriteOfHA;
+      SELECT value INTO tLastWriteOfHA FROM ${settingTab} WHERE name='tLastWriteOfHA';
+      SET recentDay=floor( UNIX_TIMESTAMP(VtNow)/${sPerDay} );   SET dayDiff=recentDay-tLastWriteOfHA;
       IF dayDiff>0 THEN
-        UPDATE `+sellerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
-        UPDATE `+buyerTab+` SET histActive= (histActive<<dayDiff | boShow) `+sqlMaskHistActive+`;
-        UPDATE `+settingTab+` SET value=recentDay WHERE name='tLastWriteOfHA';
+        UPDATE ${sellerTab} SET histActive= (histActive<<dayDiff | boShow) ${sqlMaskHistActive};
+        UPDATE ${buyerTab} SET histActive= (histActive<<dayDiff | boShow) ${sqlMaskHistActive};
+        UPDATE ${settingTab} SET value=recentDay WHERE name='tLastWriteOfHA';
       END IF;
       COMMIT;
     END`);
@@ -1699,45 +1720,45 @@ app.SetupSql.prototype.createFunction=async function(siteName, boDropOnly){
   var {SqlColSelOne}=site;
   var sqlColUTmp="@idUserTmp:=idUser AS idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, boUseIdPImg, imTag, boWebPushOK, keyRemoteControl, iSeq, iRoleActive";
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetUserInfo");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboBuyer INT, IboSeller INT, IboBuyerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}GetUserInfo`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}GetUserInfo(IidUser INT, IidFB varchar(128), IidIdPlace varchar(128), IidOpenId varchar(128), IboBuyer INT, IboSeller INT, IboBuyerTeam INT, IboSellerTeam INT, IboAdmin INT, IboComplainer INT, IboComplainee INT)
     proc_label:BEGIN
       START TRANSACTION;
       IF IidUser IS NOT NULL THEN
-        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idUser=IidUser;
+        SELECT SQL_CALC_FOUND_ROWS ${sqlColUTmp} FROM ${userTab} WHERE idUser=IidUser;
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT 'idUserNotFound' AS mess; LEAVE proc_label; END IF;
       ELSEIF IidFB IS NOT NULL THEN
-        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idFB=IidFB;
+        SELECT SQL_CALC_FOUND_ROWS ${sqlColUTmp} FROM ${userTab} WHERE idFB=IidFB;
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idFB not found: ', IidFB) AS mess; LEAVE proc_label; END IF;
         SET IidUser=@idUserTmp;
       ELSEIF IidIdPlace IS NOT NULL THEN
-        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idIdPlace=IidIdPlace;
+        SELECT SQL_CALC_FOUND_ROWS ${sqlColUTmp} FROM ${userTab} WHERE idIdPlace=IidIdPlace;
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idIdPlace not found: ', IidIdPlace) AS mess; LEAVE proc_label; END IF;
         SET IidUser=@idUserTmp;
       ELSE
-        SELECT SQL_CALC_FOUND_ROWS `+sqlColUTmp+` FROM `+userTab+` WHERE idOpenId=IidOpenId;
+        SELECT SQL_CALC_FOUND_ROWS ${sqlColUTmp} FROM ${userTab} WHERE idOpenId=IidOpenId;
         IF FOUND_ROWS()=0 THEN ROLLBACK; SELECT CONCAT('idOpenId not found: ', IidOpenId) AS mess; LEAVE proc_label; END IF;
         SET IidUser=@idUserTmp;
       END IF;
-      IF IboBuyer THEN     SELECT `+SqlColSelOne[0]+` FROM (`+buyerTab+` ro LEFT JOIN `+buyerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboSeller THEN       SELECT `+SqlColSelOne[1]+` FROM (`+sellerTab+` ro LEFT JOIN `+sellerTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboBuyerTeam THEN SELECT * FROM `+buyerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboSellerTeam THEN   SELECT * FROM `+sellerTeamTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboAdmin THEN        SELECT * FROM `+adminTab+` WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboComplainer THEN   SELECT count(*) AS n FROM `+complaintTab+` WHERE idComplainer=IidUser;     ELSE SELECT 1 FROM dual; END IF;
-      IF IboComplainee THEN   SELECT count(*) AS n FROM `+complaintTab+` WHERE idComplainee=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboBuyer THEN     SELECT ${SqlColSelOne[0]} FROM (${buyerTab} ro LEFT JOIN ${buyerTeamTab} tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboSeller THEN       SELECT ${SqlColSelOne[1]} FROM (${sellerTab} ro LEFT JOIN ${sellerTeamTab} tea on tea.idUser=ro.idTeam) WHERE ro.idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboBuyerTeam THEN SELECT * FROM ${buyerTeamTab} WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboSellerTeam THEN   SELECT * FROM ${sellerTeamTab} WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboAdmin THEN        SELECT * FROM ${adminTab} WHERE idUser=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboComplainer THEN   SELECT count(*) AS n FROM ${complaintTab} WHERE idComplainer=IidUser;     ELSE SELECT 1 FROM dual; END IF;
+      IF IboComplainee THEN   SELECT count(*) AS n FROM ${complaintTab} WHERE idComplainee=IidUser;     ELSE SELECT 1 FROM dual; END IF;
       COMMIT;
     END`);
 
   
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MakeUserTeamLeader");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`MakeUserTeamLeader(IidUser INT, IRole INT)
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}MakeUserTeamLeader`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}MakeUserTeamLeader(IidUser INT, IRole INT)
     proc_label:BEGIN
       DECLARE VtNow TIMESTAMP DEFAULT now();
       IF IRole THEN
-        INSERT INTO `+sellerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,VtNow,1);
+        INSERT INTO ${sellerTeamTab} (idUser, tCreated, boApproved) VALUES (IidUser,VtNow,1);
       ELSE
-        INSERT INTO `+buyerTeamTab+` (idUser, tCreated, boApproved) VALUES (IidUser,VtNow,1);
+        INSERT INTO ${buyerTeamTab} (idUser, tCreated, boApproved) VALUES (IidUser,VtNow,1);
       END IF;
     END`);
   
@@ -1746,70 +1767,70 @@ app.SetupSql.prototype.createFunction=async function(siteName, boDropOnly){
   // DELETE FROM taxi_sellerTeam WHERE idUser=16;
   
   
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateComplaint");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`UpdateComplaint(IidComplainee INT, IidComplainer INT, Icomment TEXT)
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}UpdateComplaint`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}UpdateComplaint(IidComplainee INT, IidComplainer INT, Icomment TEXT)
     proc_label:BEGIN
       DECLARE VtNow TIMESTAMP DEFAULT now();
       START TRANSACTION;
       IF Icomment IS NULL OR LENGTH(Icomment)=0 THEN
-        UPDATE `+complaintTab+` SET comment=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
-        DELETE FROM `+complaintTab+` WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND answer IS NULL;
+        UPDATE ${complaintTab} SET comment=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
+        DELETE FROM ${complaintTab} WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND answer IS NULL;
         IF ROW_COUNT() THEN
-          UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
-          UPDATE `+buyerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+buyerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
-          UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE ${userTab} SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE ${userTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE ${buyerTab} SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE ${buyerTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE ${sellerTab} SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE ${sellerTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
         END IF;
         SELECT 'entry deleted' AS mess;
       ELSE
-        INSERT INTO `+complaintTab+` (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,VtNow,VtNow) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=VtNow;
+        INSERT INTO ${complaintTab} (idComplainee,idComplainer,comment,tCreated,tCommentModified) VALUES (IidComplainee,IidComplainer,Icomment,VtNow,VtNow) ON DUPLICATE KEY UPDATE comment=Icomment, tCommentModified=VtNow;
         IF ROW_COUNT()=1 THEN   # If inserted
-          UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
-          UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
-          UPDATE `+buyerTab+` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
-          UPDATE `+buyerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
-          UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
-          UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          UPDATE ${userTab} SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE ${userTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          UPDATE ${buyerTab} SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE ${buyerTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
+          UPDATE ${sellerTab} SET nComplaint=GREATEST(0, nComplaint+1), nComplaintCum=GREATEST(0, nComplaintCum+1) WHERE idUser=IidComplainee;
+          UPDATE ${sellerTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven+1), nComplaintGivenCum=GREATEST(0, nComplaintGivenCum+1) WHERE idUser=IidComplainer;
           SELECT 'entry inserted' AS mess;
         ELSE
           SELECT 'entry updated' AS mess;
         END IF;
       END IF;
-      #SELECT count(*) AS nComplaintFromComplainer FROM `+complaintTab+` WHERE idComplainer=IidComplainer;
-      #SELECT count(*) AS nComplaintsOnComplainee FROM `+complaintTab+` WHERE idComplainee=IidComplainee;
+      #SELECT count(*) AS nComplaintFromComplainer FROM ${complaintTab} WHERE idComplainer=IidComplainer;
+      #SELECT count(*) AS nComplaintsOnComplainee FROM ${complaintTab} WHERE idComplainee=IidComplainee;
       COMMIT;
     END`);
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"UpdateAnswer");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`UpdateAnswer(IidComplainee INT, IidComplainer INT, Ianswer TEXT)
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}UpdateAnswer`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}UpdateAnswer(IidComplainee INT, IidComplainer INT, Ianswer TEXT)
     proc_label:BEGIN
       START TRANSACTION;
       IF Ianswer IS NULL OR LENGTH(Ianswer)=0 THEN
-        UPDATE `+complaintTab+` SET answer=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
-        DELETE FROM `+complaintTab+` WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND comment IS NULL;
+        UPDATE ${complaintTab} SET answer=NULL WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
+        DELETE FROM ${complaintTab} WHERE idComplainer=IidComplainer AND idComplainee=IidComplainee AND comment IS NULL;
         IF ROW_COUNT() THEN
-          UPDATE `+userTab    +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+userTab    +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
-          UPDATE `+buyerTab+` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+buyerTab+` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
-          UPDATE `+sellerTab  +` SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
-          UPDATE `+sellerTab  +` SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE ${userTab} SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE ${userTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE ${buyerTab} SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE ${buyerTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
+          UPDATE ${sellerTab} SET nComplaint=GREATEST(0, nComplaint-1) WHERE idUser=IidComplainee;
+          UPDATE ${sellerTab} SET nComplaintGiven=GREATEST(0, nComplaintGiven-1) WHERE idUser=IidComplainer;
         END IF;
         SELECT 'entry deleted' AS mess;
       ELSE
-        UPDATE `+complaintTab+` SET answer=Ianswer WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
+        UPDATE ${complaintTab} SET answer=Ianswer WHERE idComplainee=IidComplainee AND idComplainer=IidComplainer;
         SELECT 'entry updated' AS mess;
       END IF;
-      #SELECT count(*) AS nComplaintFromComplainer FROM `+complaintTab+` WHERE idComplainer=IidComplainer;
-      #SELECT count(*) AS nComplaintsOnComplainee FROM `+complaintTab+` WHERE idComplainee=IidComplainee;
+      #SELECT count(*) AS nComplaintFromComplainer FROM ${complaintTab} WHERE idComplainer=IidComplainer;
+      #SELECT count(*) AS nComplaintsOnComplainee FROM ${complaintTab} WHERE idComplainee=IidComplainee;
       COMMIT;
     END`);
 
 /*
-      SELECT idUser, count(*) INTO OidUser,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB;
+      SELECT idUser, count(*) INTO OidUser,Vc FROM ${userTab} WHERE IP=IIP AND idFB=IidFB;
       IF Vc=0 THEN
-        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);
+        INSERT INTO ${userTab} (IP,idFB) VALUES (IIP,IidFB);
         SELECT LAST_INSERT_ID() INTO OidUser;
       END IF;
 CLIENT_FOUND_ROWS
@@ -1820,68 +1841,68 @@ CLIENT_FOUND_ROWS
     //IF VcreatedA<VcreatedB THEN SET VidUserNew=VidUserA, VidUserOld=VidUserB; ELSE SET VidUserNew=VidUserB, VidUserOld=VidUserA; END IF;
 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"sellerSetup");
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"userSetup");
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"reporterSetup");
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"complainerSetup");
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"MergeID");
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}sellerSetup`);
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}userSetup`);
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}reporterSetup`);
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}complainerSetup`);
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}MergeID`);
 
 /*
-    SELECT idUser, count(*) INTO OidComplainer,Vc FROM "+userTab+" WHERE IP=IIP AND idFB=IidFB;
+    SELECT idUser, count(*) INTO OidComplainer,Vc FROM ${userTab} WHERE IP=IIP AND idFB=IidFB;
       IF Vc=0 THEN
-        INSERT INTO "+userTab+" (IP,idFB) VALUES (IIP,IidFB);
+        INSERT INTO ${userTab} (IP,idFB) VALUES (IIP,IidFB);
         SELECT LAST_INSERT_ID() INTO OidComplainer;
       END IF;
 
       SELECT LAST_INSERT_ID() INTO OidComplainer;
 */
-  //SqlFunction.push("INSERT INTO "+userTab+" (IP,idFB) VALUES ('fb',$id)"); 
+  //SqlFunction.push(`INSERT INTO ${userTab} (IP,idFB) VALUES ('fb',$id)`); 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"setPassword");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`setPassword(IidUser int(4), IpwOld VARCHAR(40), IpwNew VARCHAR(40))
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}setPassword`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}setPassword(IidUser int(4), IpwOld VARCHAR(40), IpwNew VARCHAR(40))
     proc_label:BEGIN
       DECLARE VpwOld VARCHAR(40);
-      SELECT hashPW INTO VpwOld FROM `+userTab+` WHERE idUser=IidUser;
+      SELECT hashPW INTO VpwOld FROM ${userTab} WHERE idUser=IidUser;
       IF FOUND_ROWS()!=1 THEN SELECT CONCAT('Found ', FOUND_ROWS(), ' users') AS mess; LEAVE proc_label; END IF;
       IF VpwOld!=IpwOld THEN SELECT 'Old password does not match' AS mess; LEAVE proc_label; END IF;
-      UPDATE `+userTab+` SET hashPW=IpwNew WHERE idUser=IidUser;
+      UPDATE ${userTab} SET hashPW=IpwNew WHERE idUser=IidUser;
       SELECT 'Password changed' AS mess;
     END`);
 
 
 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetIdUserNSetISeq");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetIdUserNSetISeq(Ikey varchar(32), iSeqN INT, OUT OidUser INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}GetIdUserNSetISeq`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}GetIdUserNSetISeq(Ikey varchar(32), iSeqN INT, OUT OidUser INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, ViSeq, Vdiff INT;
-      SELECT SQL_CALC_FOUND_ROWS idUser, iRoleActive, iSeq INTO OidUser, OiRoleActive, ViSeq FROM `+userTab+` WHERE keyRemoteControl=Ikey LIMIT 1;
+      SELECT SQL_CALC_FOUND_ROWS idUser, iRoleActive, iSeq INTO OidUser, OiRoleActive, ViSeq FROM ${userTab} WHERE keyRemoteControl=Ikey LIMIT 1;
       SET Vc=FOUND_ROWS();
       IF Vc>1 THEN SET OboOK=0, Omess=CONCAT('keyRemoteControl exist multiple times Vc=',Vc); LEAVE proc_label; END IF;
       IF Vc=0 THEN SET OboOK=0, Omess='No such keyRemoteControl stored!'; LEAVE proc_label; END IF;
 
       #SET Vdiff=ViSeq-iSeqN+1;
       #IF iSeqN<=ViSeq THEN SET OboOK=0, Omess=CONCAT('Sequence error, ', Vdiff, ' request(s) behind (Server=', ViSeq, ', Client=', iSeqN, ')'); LEAVE proc_label; END IF;
-      #UPDATE `+userTab+` SET iSeq=iSeqN WHERE idUser=OidUser;
+      #UPDATE ${userTab} SET iSeq=iSeqN WHERE idUser=OidUser;
       SET OboOK=1, Omess='';
     END`);
 
 
     // GetValuesToController should return tElapsed instead of tDiff, then one could let hideTimer unsigned int (Mysql can't have unsigned in an expression that end up negative)
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"GetValuesToController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`GetValuesToController(Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT, OUT OtNow INT, OUT OtPos INT, OUT OtHide INT, OUT OiRoleActive INT, OUT OboOK INT, OUT Omess varchar(128))
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}GetValuesToController`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}GetValuesToController(Ikey varchar(32), iSeqN INT, OUT OboShow TINYINT, OUT OhideTimer INT, OUT OtNow INT, OUT OtPos INT, OUT OtHide INT, OUT OiRoleActive INT, OUT OboOK INT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE Vc, Vn, VidUser, ViSeq, intMax, VtDiff INT;
       DECLARE VtNow TIMESTAMP DEFAULT now();
       SET OtNow=UNIX_TIMESTAMP(VtNow);
-      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OiRoleActive, OboOK, Omess);
+      CALL ${siteName}GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OiRoleActive, OboOK, Omess);
       IF OboOK=0 THEN LEAVE proc_label; END IF;
-      CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
+      CALL ${siteName}TimeAccumulatedUpdOne(VidUser);
 
       IF OiRoleActive=0 THEN
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos), UNIX_TIMESTAMP(tHide) INTO OboShow, OhideTimer, OtPos, Othide FROM `+buyerTab+` WHERE idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos), UNIX_TIMESTAMP(tHide) INTO OboShow, OhideTimer, OtPos, Othide FROM ${buyerTab} WHERE idUser=VidUser;
       ELSE
-        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos), UNIX_TIMESTAMP(tHide) INTO OboShow, OhideTimer, OtPos, OtHide FROM `+sellerTab+` WHERE idUser=VidUser;
+        SELECT SQL_CALC_FOUND_ROWS boShow, hideTimer, UNIX_TIMESTAMP(tPos), UNIX_TIMESTAMP(tHide) INTO OboShow, OhideTimer, OtPos, OtHide FROM ${sellerTab} WHERE idUser=VidUser;
       END IF;
       SET Vc=FOUND_ROWS();
       IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!';  LEAVE proc_label; END IF;
@@ -1891,28 +1912,28 @@ CLIENT_FOUND_ROWS
     END`);
     //IiRole INT, 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"SetValuesFromController");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`SetValuesFromController(Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboSetTHide INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}SetValuesFromController`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}SetValuesFromController(Ikey varchar(32), iSeqN INT, Ix DOUBLE, Iy DOUBLE, Ilat DOUBLE, IboShow TINYINT, IhideTimer INT, IboSetTHide INT, OUT OiRoleActive INT, OUT OboOK TINYINT, OUT Omess varchar(128))
     proc_label:BEGIN
       DECLARE VtNow TIMESTAMP DEFAULT now();
       DECLARE Vc, Vn, VidUser, ViSeq, VresM INT;
       START TRANSACTION;
-      CALL `+siteName+`GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OiRoleActive, OboOK, Omess);
+      CALL ${siteName}GetIdUserNSetISeq(Ikey, iSeqN, VidUser, OiRoleActive, OboOK, Omess);
       IF OboOK=0 THEN ROLLBACK; LEAVE proc_label; END IF;
-      CALL `+siteName+`TimeAccumulatedUpdOne(VidUser);
+      CALL ${siteName}TimeAccumulatedUpdOne(VidUser);
 
       IF IboShow=0 THEN
         IF OiRoleActive=0 THEN
-          UPDATE `+buyerTab+` SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
+          UPDATE ${buyerTab} SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,${intMax})), histActive=histActive|1 WHERE idUser=VidUser;
         ELSE
-          UPDATE `+sellerTab+` SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), histActive=histActive|1 WHERE idUser=VidUser;
+          UPDATE ${sellerTab} SET boShow=IboShow, tPos=VtNow, tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,${intMax})), histActive=histActive|1 WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
       ELSE
         IF OiRoleActive=0 THEN
-          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+buyerTab+` WHERE idUser=VidUser;
+          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM ${buyerTab} WHERE idUser=VidUser;
         ELSE
-          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM `+sellerTab+` WHERE idUser=VidUser;
+          SELECT SQL_CALC_FOUND_ROWS coordinatePrecisionM INTO VresM FROM ${sellerTab} WHERE idUser=VidUser;
         END IF;
         SET Vc=FOUND_ROWS();
         IF Vc=0 THEN SET OboOK=0, Omess='No such idUser!'; ROLLBACK; LEAVE proc_label; END IF;
@@ -1922,14 +1943,14 @@ CLIENT_FOUND_ROWS
         SET @bigIntGeoHash=pWC2GeoHash(Ix, Iy);
 
         IF OiRoleActive=0 THEN
-          UPDATE `+buyerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
-            tHide=IF(IboSetTHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), tHide) 
+          UPDATE ${buyerTab} SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
+            tHide=IF(IboSetTHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,${intMax})), tHide) 
             WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
+          UPDATE ${sellerTab} SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
         ELSE
-          UPDATE `+buyerTab+` SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
-          UPDATE `+sellerTab+` SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
-            tHide=IF(IboSetTHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,`+intMax+`)), tHide) 
+          UPDATE ${buyerTab} SET histActive=histActive|boShow, boShow=0, tPos=VtNow, tHide=VtNow WHERE idUser=VidUser;
+          UPDATE ${sellerTab} SET x=Ix, y=Iy, geoHash=@bigIntGeoHash, histActive=histActive|1, boShow=IboShow, hideTimer=IF(IhideTimer, IhideTimer, hideTimer), tPos=VtNow, 
+            tHide=IF(IboSetTHide, FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(VtNow)+hideTimer,${intMax})), tHide) 
             WHERE idUser=VidUser;
         END IF;
         SET OboOK=1, Omess='';
@@ -1937,67 +1958,68 @@ CLIENT_FOUND_ROWS
       COMMIT;
     END`);
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupMake");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupMake()
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}dupMake`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}dupMake()
       BEGIN
-        CALL copyTable('`+userTab+`_dup','`+userTab+`');
-        CALL copyTable('`+sellerTab+`_dup','`+sellerTab+`');
-        CALL copyTable('`+sellerTeamTab+`_dup','`+sellerTeamTab+`');
-        CALL copyTable('`+sellerTeamImageTab+`_dup','`+sellerTeamImageTab+`');
-        CALL copyTable('`+buyerTab+`_dup','`+buyerTab+`');
-        CALL copyTable('`+buyerTeamTab+`_dup','`+buyerTeamTab+`');
-        CALL copyTable('`+buyerTeamImageTab+`_dup','`+buyerTeamImageTab+`');
-        CALL copyTable('`+userImageTab+`_dup','`+userImageTab+`');
-        CALL copyTable('`+complaintTab+`_dup','`+complaintTab+`');
-        CALL copyTable('`+adminTab+`_dup','`+adminTab+`');
+        CALL copyTable('${userTab}_dup','${userTab}');
+        CALL copyTable('${sellerTab}_dup','${sellerTab}');
+        CALL copyTable('${sellerTeamTab}_dup','${sellerTeamTab}');
+        CALL copyTable('${sellerTeamImageTab}_dup','${sellerTeamImageTab}');
+        CALL copyTable('${buyerTab}_dup','${buyerTab}');
+        CALL copyTable('${buyerTeamTab}_dup','${buyerTeamTab}');
+        CALL copyTable('${buyerTeamImageTab}_dup','${buyerTeamImageTab}');
+        CALL copyTable('${userImageTab}_dup','${userImageTab}');
+        CALL copyTable('${complaintTab}_dup','${complaintTab}');
+        CALL copyTable('${adminTab}_dup','${adminTab}');
       END`);
 
 
 
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupTrunkOrgNCopyBack");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupTrunkOrgNCopyBack()
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}dupTrunkOrgNCopyBack`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}dupTrunkOrgNCopyBack()
       BEGIN
-        DELETE FROM `+sellerTab+` WHERE 1;
-        DELETE FROM `+sellerTeamTab+` WHERE 1;
-        DELETE FROM `+sellerTeamImageTab+` WHERE 1;
-        DELETE FROM `+buyerTab+` WHERE 1;
-        DELETE FROM `+buyerTeamTab+` WHERE 1;
-        DELETE FROM `+buyerTeamImageTab+` WHERE 1;
-        DELETE FROM `+userImageTab+` WHERE 1;
-        DELETE FROM `+complaintTab+` WHERE 1;
-        DELETE FROM `+adminTab+` WHERE 1;
-        DELETE FROM `+userTab+` WHERE 1;
+        DELETE FROM ${sellerTab} WHERE 1;
+        DELETE FROM ${sellerTeamTab} WHERE 1;
+        DELETE FROM ${sellerTeamImageTab} WHERE 1;
+        DELETE FROM ${buyerTab} WHERE 1;
+        DELETE FROM ${buyerTeamTab} WHERE 1;
+        DELETE FROM ${buyerTeamImageTab} WHERE 1;
+        DELETE FROM ${userImageTab} WHERE 1;
+        DELETE FROM ${complaintTab} WHERE 1;
+        DELETE FROM ${adminTab} WHERE 1;
+        DELETE FROM ${userTab} WHERE 1;
 
-        INSERT INTO `+userTab+` SELECT * FROM `+userTab+`_dup;
-        INSERT INTO `+sellerTab+` SELECT * FROM `+sellerTab+`_dup;
-        INSERT INTO `+sellerTeamTab+` SELECT * FROM `+sellerTeamTab+`_dup;
-        INSERT INTO `+sellerTeamImageTab+` SELECT * FROM `+sellerTeamImageTab+`_dup;
-        INSERT INTO `+buyerTab+` SELECT * FROM `+buyerTab+`_dup;
-        INSERT INTO `+buyerTeamTab+` SELECT * FROM `+buyerTeamTab+`_dup;
-        INSERT INTO `+buyerTeamImageTab+` SELECT * FROM `+buyerTeamImageTab+`_dup;
-        INSERT INTO `+userImageTab+` SELECT * FROM `+userImageTab+`_dup;
-        INSERT INTO `+complaintTab+` SELECT * FROM `+complaintTab+`_dup;
-        INSERT INTO `+adminTab+` SELECT * FROM `+adminTab+`_dup;
+        INSERT INTO ${userTab} SELECT * FROM ${userTab}_dup;
+        INSERT INTO ${sellerTab} SELECT * FROM ${sellerTab}_dup;
+        INSERT INTO ${sellerTeamTab} SELECT * FROM ${sellerTeamTab}_dup;
+        INSERT INTO ${sellerTeamImageTab} SELECT * FROM ${sellerTeamImageTab}_dup;
+        INSERT INTO ${buyerTab} SELECT * FROM ${buyerTab}_dup;
+        INSERT INTO ${buyerTeamTab} SELECT * FROM ${buyerTeamTab}_dup;
+        INSERT INTO ${buyerTeamImageTab} SELECT * FROM ${buyerTeamImageTab}_dup;
+        INSERT INTO ${userImageTab} SELECT * FROM ${userImageTab}_dup;
+        INSERT INTO ${complaintTab} SELECT * FROM ${complaintTab}_dup;
+        INSERT INTO ${adminTab} SELECT * FROM ${adminTab}_dup;
       END`);
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupDrop");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupDrop()
+  SqlFunctionDrop.push(`DROP PROCEDURE IF EXISTS ${siteName}dupDrop`);
+  SqlFunction.push(`CREATE PROCEDURE ${siteName}dupDrop()
       BEGIN
-        DROP TABLE IF EXISTS `+sellerTab+`_dup;
-        DROP TABLE IF EXISTS `+sellerTeamTab+`_dup;
-        DROP TABLE IF EXISTS `+sellerTeamImageTab+`_dup;
-        DROP TABLE IF EXISTS `+buyerTab+`_dup;
-        DROP TABLE IF EXISTS `+buyerTeamTab+`_dup;
-        DROP TABLE IF EXISTS `+buyerTeamImageTab+`_dup;
-        DROP TABLE IF EXISTS `+userImageTab+`_dup;
-        DROP TABLE IF EXISTS `+complaintTab+`_dup;
-        DROP TABLE IF EXISTS `+adminTab+`_dup;
-        DROP TABLE IF EXISTS `+userTab+`_dup;
+        DROP TABLE IF EXISTS ${sellerTab}_dup;
+        DROP TABLE IF EXISTS ${sellerTeamTab}_dup;
+        DROP TABLE IF EXISTS ${sellerTeamImageTab}_dup;
+        DROP TABLE IF EXISTS ${buyerTab}_dup;
+        DROP TABLE IF EXISTS ${buyerTeamTab}_dup;
+        DROP TABLE IF EXISTS ${buyerTeamImageTab}_dup;
+        DROP TABLE IF EXISTS ${userImageTab}_dup;
+        DROP TABLE IF EXISTS ${complaintTab}_dup;
+        DROP TABLE IF EXISTS ${adminTab}_dup;
+        DROP TABLE IF EXISTS ${userTab}_dup;
       END`);
 
   
 
+  var boDropOnly=this.sql.slice(0,4)=='drop'; 
   if(boDropOnly) var Sql=SqlFunctionDrop;
   else var Sql=array_merge(SqlFunctionDrop, SqlFunction);
   
@@ -2006,7 +2028,7 @@ CLIENT_FOUND_ROWS
   return [null];
 }
 
-app.SetupSql.prototype.funcGen=async function(boDropOnly){
+app.SetupSql.prototype.funcGen=async function(){
   var SqlFunction=[], SqlFunctionDrop=[];
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS copyTable");
   SqlFunction.push(`CREATE PROCEDURE copyTable(INameN varchar(128),IName varchar(128))
@@ -2025,7 +2047,7 @@ app.SetupSql.prototype.funcGen=async function(boDropOnly){
       //SET resT=resM;
       //IF ABS(y-128)>53.66 THEN SET resT=ROUND(resT/2); END IF;
       //IF ABS(y-128)>84.08 THEN SET resT=ROUND(resT/2); END IF;
-      //SET resP=resT*`+m2wc+`, Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
+      //SET resP=resT*${m2wc}, Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
     //END`);
 
 
@@ -2051,7 +2073,7 @@ app.SetupSql.prototype.funcGen=async function(boDropOnly){
   proc_label:BEGIN
       DECLARE lapSizeHalf, upper, lower, angInRelative, angIn_InCycle DOUBLE;
       IF angCenter IS NULL THEN SET angCenter=0; END IF;
-      IF lapSize IS NULL THEN SET lapSize=`+twoPi+`; END IF;
+      IF lapSize IS NULL THEN SET lapSize=${twoPi}; END IF;
       SET lapSizeHalf=lapSize/2;
       SET upper=angCenter+lapSizeHalf, lower=angCenter-lapSizeHalf;
       IF angIn<upper && angIn>=lower THEN SET angOut=angIn, nLapsCorrection=0; LEAVE proc_label; END IF;
@@ -2065,10 +2087,10 @@ app.SetupSql.prototype.funcGen=async function(boDropOnly){
   SqlFunction.push(`CREATE FUNCTION resM2resWC(resM DOUBLE, lat DOUBLE) RETURNS DOUBLE DETERMINISTIC
     BEGIN
       DECLARE resT, fac DOUBLE;
-      SET fac=COS(`+deg2r+`*lat);
+      SET fac=COS(${deg2r}*lat);
       SET resT=resM/fac;
       IF resT<1 THEN SET resT=1; END IF;
-      RETURN resT*`+m2wc+`;
+      RETURN resT*${m2wc};
     END`);
     
 
@@ -2080,7 +2102,7 @@ app.SetupSql.prototype.funcGen=async function(boDropOnly){
       SET resP=resM2resWC(resM,lat);
       SET Ox=ROUND(x/resP)*resP, Oy=ROUND(y/resP)*resP;
 
-      SET @xNoise=resP*`+facNoiseCoordinate+`*(RAND()-0.5), @yNoise=resP*`+facNoiseCoordinate+`*(RAND()-0.5);
+      SET @xNoise=resP*${facNoiseCoordinate}*(RAND()-0.5), @yNoise=resP*${facNoiseCoordinate}*(RAND()-0.5);
       SET Ox=Ox+@xNoise, Oy=Oy+@yNoise;
       CALL normalizeAng(Ox, 128, 256, Ox, @trash);
       CALL normalizeAng(Oy, 128, 256, Oy, @trash);
@@ -2118,6 +2140,7 @@ app.SetupSql.prototype.funcGen=async function(boDropOnly){
       RETURN zipperMergeInt(@x,@y);
     END`);
 
+  var boDropOnly=this.sql.slice(0,4)=='drop'; 
   if(boDropOnly) var Sql=SqlFunctionDrop;
   else var Sql=array_merge(SqlFunctionDrop, SqlFunction);
   
@@ -2127,77 +2150,72 @@ app.SetupSql.prototype.funcGen=async function(boDropOnly){
   return [null];
 }
 
-
-
-
-
-app.SetupSql.prototype.createDummies=async function(siteName){
-  var nData=10;
-  
-
-  var SEK2CUR={SEK:1,USD:0.14,GBP:0.1,EUR:0.12,CNY:0.72,JPY:14.37,INR:7.35,DKK:1,NOK:1}
-        
-  var arrAddress=[];
-  //arrAddress.push({country:'Sweden', homeTown:'Uppsala', currency:'SEK', x:140.51976455111, y:74.570362445619, n:5, std:0.1});
-  arrAddress.push({country:'Sweden', homeTown:'Stockholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-
-  if(1){
-    /*
-    arrAddress.push({country:'Sweden', homeTown:'Solna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Upplands Väsby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Sollentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Nortälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Södertälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Sigtuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Värmdö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Haninge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Nynäshamn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Nykvarn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Ekerö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    */
-    /*arrAddress.push({country:'Sweden', homeTown:'Salem', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Botkyrka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Huddinge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Tyresö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Nacka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Lindingö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Sundbyberg', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Järfälla', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Danderyd', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Vaxholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Täby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Vallentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    arrAddress.push({country:'Sweden', homeTown:'Österåker', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
-    */
-    /*
-    arrAddress.push({country:'Sweden', homeTown:'Göteborg', currency:'SEK', x:136.51532755738089, y:77.49346382340636, n:7, std:0.3});
-    arrAddress.push({country:'Denmark', homeTown:'København', currency:'DKK', x:136.93473555466124, y:80.13125508448312, n:7, std:0.3});
-    arrAddress.push({country:'Norway', homeTown:'Oslo', currency:'NOK', x:135.64994551559874, y:74.46792500635812, n:7, std:0.3});
-    arrAddress.push({country:'Finland', homeTown:'Helsinki', currency:'EUR', x:145.73099340101697, y:74.05775005653538, n:7, std:0.3});
-    */
-
-    //arrAddress.push({country:'UK', homeTown:'London', currency:'GBP', x:127.92629919892141, y:85.11312706193192, n:10, std:0.5});
-    ////arrAddress.push({country:'France', homeTown:'Paris', currency:'EUR', x:129.6294241989214, y:88.07406456193192, n:10, std:0.5});
-    ////arrAddress.push({country:'Italy', homeTown:'Rom', currency:'EUR', x:136.8811346138079, y:95.13470489701334, n:10, std:0.5});
-    ////arrAddress.push({country:'Spain', homeTown:'Madrid', currency:'EUR', x:125.37955748049507, y:96.54275866022407, n:10, std:0.5});
-    //arrAddress.push({country:'USA', homeTown:'NY', currency:'USD', x:75.39355286293579, y:96.21422827476029, n:10, std:0.5});
-    ////arrAddress.push({country:'USA', homeTown:'Chicago', currency:'USD', x:65.67872790747845, y:95.16096079575951, n:10, std:0.5});
-    //arrAddress.push({country:'USA', homeTown:'LA', currency:'USD', x:43.95576759128889, y:102.2555423122189, n:10, std:0.5});
-    //arrAddress.push({country:'Japan', homeTown:'Tokyo', currency:'JPY', x:227.3887757633159, y:100.80702770236107, n:10, std:0.5});
-    //arrAddress.push({country:'China', homeTown:'Beijing', currency:'CNY', x:210.7708451431501, y:96.99141526807438, n:10, std:0.5});
-    //arrAddress.push({country:'India', homeTown:'Mumbai', currency:'INR', x:179.7837377942387, y:114.25584433021675, n:10, std:0.5});
-    //arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 135.5377777777778, y: 1.46571534506883, n:10, std:20});
-    arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 128, y: 128, n:10, std:64});
-
+app.AddressMachine=class {
+  constructor() {
+    var arrAddress=this.arrAddress=[];
+    //arrAddress.push({country:'Sweden', homeTown:'Uppsala', currency:'SEK', x:140.51976455111, y:74.570362445619, n:5, std:0.1});
+    arrAddress.push({country:'Sweden', homeTown:'Stockholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+    
+    if(1){
+      /*
+      arrAddress.push({country:'Sweden', homeTown:'Solna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Upplands Väsby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Sollentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Nortälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Södertälje', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Sigtuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Värmdö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Haninge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Nynäshamn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Nykvarn', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Ekerö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      */
+      /*arrAddress.push({country:'Sweden', homeTown:'Salem', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Botkyrka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Huddinge', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Tyresö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Nacka', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Lindingö', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Sundbyberg', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Järfälla', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Danderyd', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Vaxholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Täby', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Vallentuna', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      arrAddress.push({country:'Sweden', homeTown:'Österåker', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01});
+      */
+      /*
+      arrAddress.push({country:'Sweden', homeTown:'Göteborg', currency:'SEK', x:136.51532755738089, y:77.49346382340636, n:7, std:0.3});
+      arrAddress.push({country:'Denmark', homeTown:'København', currency:'DKK', x:136.93473555466124, y:80.13125508448312, n:7, std:0.3});
+      arrAddress.push({country:'Norway', homeTown:'Oslo', currency:'NOK', x:135.64994551559874, y:74.46792500635812, n:7, std:0.3});
+      arrAddress.push({country:'Finland', homeTown:'Helsinki', currency:'EUR', x:145.73099340101697, y:74.05775005653538, n:7, std:0.3});
+      */
+    
+      //arrAddress.push({country:'UK', homeTown:'London', currency:'GBP', x:127.92629919892141, y:85.11312706193192, n:10, std:0.5});
+      ////arrAddress.push({country:'France', homeTown:'Paris', currency:'EUR', x:129.6294241989214, y:88.07406456193192, n:10, std:0.5});
+      ////arrAddress.push({country:'Italy', homeTown:'Rom', currency:'EUR', x:136.8811346138079, y:95.13470489701334, n:10, std:0.5});
+      ////arrAddress.push({country:'Spain', homeTown:'Madrid', currency:'EUR', x:125.37955748049507, y:96.54275866022407, n:10, std:0.5});
+      //arrAddress.push({country:'USA', homeTown:'NY', currency:'USD', x:75.39355286293579, y:96.21422827476029, n:10, std:0.5});
+      ////arrAddress.push({country:'USA', homeTown:'Chicago', currency:'USD', x:65.67872790747845, y:95.16096079575951, n:10, std:0.5});
+      //arrAddress.push({country:'USA', homeTown:'LA', currency:'USD', x:43.95576759128889, y:102.2555423122189, n:10, std:0.5});
+      //arrAddress.push({country:'Japan', homeTown:'Tokyo', currency:'JPY', x:227.3887757633159, y:100.80702770236107, n:10, std:0.5});
+      //arrAddress.push({country:'China', homeTown:'Beijing', currency:'CNY', x:210.7708451431501, y:96.99141526807438, n:10, std:0.5});
+      //arrAddress.push({country:'India', homeTown:'Mumbai', currency:'INR', x:179.7837377942387, y:114.25584433021675, n:10, std:0.5});
+      //arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 135.5377777777778, y: 1.46571534506883, n:10, std:20});
+      arrAddress.push({country:'ACountry', homeTown:'ATown', currency:'USD', x: 128, y: 128, n:10, std:64});
+    
+    }
+    var arrBucket=[]; // To make users from big cities more likely to appear than users from small cities
+    for(var i=0;i<arrAddress.length;i++){
+      var objT=arrAddress[i];
+      //arrBucket=array_mergeM(arrBucket,array_fill(objT.n,i.toString()));
+      var arrT=Array(objT.n).fill(i)
+      arrBucket=arrBucket.concat(arrT);
+    }
+    this.arrBucket=arrBucket;
   }
-  //merProj.fromLatLngToPoint({lat:54.6, lng:10.6})
-  
-  var arrBucket=[]; // To make users from big cities more likely to appear than users from small cities
-  for(var i=0;i<arrAddress.length;i++){
-    var objT=arrAddress[i];
-    arrBucket=array_mergeM(arrBucket,array_fill(objT.n,i.toString()));
-  }
-  var getRandomPostAddress=function(){
+  getRandomPostAddress(){
+    var {arrAddress, arrBucket}=this;
     var key=arrBucket[randomInt(0, arrBucket.length-1)];
     var AddressT=extend({}, arrAddress[key]);
     AddressT.x=bound(AddressT.x+gauss_ms(0,AddressT.std),0,256-wcResolution); AddressT.y=bound(AddressT.y+gauss_ms(0,AddressT.std),0,256-wcResolution);
@@ -2206,6 +2224,30 @@ app.SetupSql.prototype.createDummies=async function(siteName){
     AddressT.geoHash=bigIntGeoHash;
     return AddressT;
   }
+}
+
+
+app.SetupSql.prototype.createDummy=async function(siteName){
+  var nData=this.n||1;
+  var site=Site[siteName];
+  var {TableName, ViewName, ORole}=site;
+
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
+  //var {histView}=site.ViewName;
+  
+
+  var StrPlugInNArg=site.StrPlugInNArg, StrPlugIn=[];
+  // for(var i=0;i<StrPlugInNArg.length;i++){
+  //   var strTmp=StrPlugInNArg[i], n=strTmp.length, charLast=strTmp[n-1];
+  //   if(charLast=='B' || charLast=='S') { strTmp=strTmp.substr(0,n-1); }
+  //   StrPlugIn.push(strTmp); 
+  // }
+
+  var SEK2CUR={SEK:1,USD:0.14,GBP:0.1,EUR:0.12,CNY:0.72,JPY:14.37,INR:7.35,DKK:1,NOK:1}
+        
+  
+  //merProj.fromLatLngToPoint({lat:54.6, lng:10.6})
+
 
   
   var makeEnumRandF=function(name){  var enumT=PropBucket[name].Enum; return enumT[randomInt(0, enumT.length-1)];  };
@@ -2216,86 +2258,24 @@ app.SetupSql.prototype.createDummies=async function(siteName){
   var makeFixedF=function(name){ return PropBucket[name].FixedData; };
 
 
+  
   var PropBucket={
-    vehicleType:{Enum:['sedan']},
-    
-    brand:{Enum:['Volvo','Saab','VW','Toyota','Ford','Hyundai','Mercedes','Fiat','Dodge','Mazda','BMW','Audi','Lloyd','Opel','Skoda','Ferrari','Lamborgini','Seat','Chrysler','Chevrolet','Scania','Aston Martin','Bentley','Jaguar','Land Rover','Honda','Nissan','Rolls Royce']},
-    link:{Enum:['example.com','www.example.com','locatabl.com','gavott.com','example.com','']},
-    nPassengers:{Enum:range(2,20,1)},
-    nChildSeat:{Enum:[0,1,2]}, nExtraSeat:{Enum:[0,1,2]}, nWheelChairPlaces:{Enum:[0,1,2]},
-    idTeam:{Enum:[1,2,3]}, idTeamWanted:{Enum:[1,2,3]},
-    strUnitDist:{Enum:["km","mile"]},
-    payload:{Enum:range(0,15,0.5)},
-    cuttingWidth:{Enum:range(30,150,2)},
-    otherLang:{Enum:['','Matlab','Babyloninan','D']},
-
     tCreated:{dateSpan:-2*8760*3600},
-    tPos:{dateSpan:-12*3600},
-    tLastWriteOfTA:{dateSpan:0},
-    //terminationDate:{dateSpan:4*30*24*3600},
-    tLastPriceChange:{dateSpan:-30*24*3600},
-    shiftEnd:{dateSpan:12*3600},
-
-    donatedAmount:{RandSpanData:[0, 1000]},
-    tAccumulated:{RandSpanData:[0, 2*8760*3600]},
-    priceStart:{RandSpanDataPrice:[20,45]},
-    pricePerDist:{RandSpanDataPrice:[10,20]},
-    //pricePerTravelHour:{RandSpanDataPrice:[200,400]},
-    pricePerHour:{RandSpanDataPrice:[200,400]},
-    idDriverGovernment:{RandSpanData:[1000,2000]},
-    
-    hideTimer:{FixedData:3600*24*365},
-    //boShow:{Enum:[0,1]},
-    boShow:{FixedData:0},
-    histActive:{FixedData:1},
-    coordinatePrecisionM:{FixedData:1},
-    //tHide:{FixedData:""},
-    
-    otherContainer:{Enum:[0,1]},
-    boBuyerHasEquipment:{Enum:[0,1]},
-    nWindows:{Enum:range(1,30,1)},
-    area:{Enum:range(1,1000,1)},
-    boRoad:{Enum:[0,1]},
-    boDriveWay:{Enum:[0,1]},
-    boRoof:{Enum:[0,1]},
-    fruit:{Enum:['apple', 'strawberry', 'cabbage']},
-    database:{Enum:['mysql', 'neo4j', 'redis']},
-    language:{Enum:['c', 'javascript', 'java']},
-    distStartToGoal:{RandSpanData:[1000,20000]},
-    price:{RandSpanDataPrice:[100,200]},
-    //compassPoint,
-    destination:{Enum:['Göteborg', 'Umeå', 'Oslo']},
-    fixedPricePerUnit:{RandSpanDataPrice:[100,200]},
-    fixedPricePerUnitUnit:{Enum:["apple","kg"]},
-    //compassPoint:{Enum:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']},
-    //standingByMethod:{Enum:['inCar','atHome','5min','10min']}
-  };
-
-  var site=Site[siteName];
-  var {TableName, ViewName, ORole}=site;
-  for(var iRole=0;iRole<ORole.length;iRole++){
-    var Prop=ORole[iRole].Prop;
-    for(var name in Prop){
-      var prop=Prop[name];
-      if(!(name in PropBucket)){
-        PropBucket[name]={};
-        if('Enum' in prop) PropBucket[name].Enum=prop.Enum.concat([]);
-      }
-    }
+    donatedAmount:{RandSpanData:[0, 1000]}
   }
-  
-  var {sellerTab, sellerTeamTab, sellerTeamImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
-  //var {histView}=site.ViewName;
-  
+
+
+  var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'strUnitDist', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang', 'compassPoint', 'destination', 'fixedPricePerUnitUnit', 'fruit', 'database', 'language', 'other'];
+
   var Sql=[];
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
+  Sql.push(`SELECT count(*) AS n FROM ${userTab};`);
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   var {n:nStart}=results[0];
-  
+
+  var addressMachine=new AddressMachine();
 
   var Sql=[];
-  var StringData=['displayName', 'tel', 'link', 'homeTown', 'currency', 'vehicleType', 'strUnitDist', 'standingByMethod', 'idDriverGovernment', 'brand', 'otherLang', 'compassPoint', 'destination', 'fixedPricePerUnitUnit', 'fruit', 'database', 'language', 'other'];
         
 
     //
@@ -2309,49 +2289,99 @@ app.SetupSql.prototype.createDummies=async function(siteName){
     let strName="dummy"+id, strNameUC=ucfirst(strName), email=strName+'@example.com', donatedAmount=makeRandSpanF('donatedAmount'), iRoleActive=i%2; 
     arrUser[i]={idFB:strName, email, displayName:strNameUC, tel:"07000000"+id, iRoleActive};
  
-    //var SqlT=[id, 'null', 'null', "'"+strNameUC+"'", "'"+email+"'", "'"+strNameUC+"'", "''", "'"+strNameUC+"'", donatedAmount];
+    //var SqlT=[id, 'null', 'null', `'${strNameUC}'`, `'${email}'`, `'${strNameUC}'`, "''", `'${strNameUC}'`, donatedAmount];
     //SqlAllU[i]="("+SqlT.join(', ')+")";
     var SqlT=[id, null, null, strNameUC, email, strNameUC, "", strNameUC, donatedAmount, iRoleActive];
     var SqlT=DB.default.pool.escape(SqlT);
-    SqlAllU[i]="("+SqlT+")";
+    SqlAllU[i]=`(${SqlT})`;
 
-    arrUser[i]=extend(arrUser[i],getRandomPostAddress());
+    arrUser[i]=extend(arrUser[i],addressMachine.getRandomPostAddress());
   }
   var tmp=SqlAllU.join(",\n");
-  Sql.push("INSERT INTO "+userTab+" (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, donatedAmount, iRoleActive) VALUES \n"+tmp);
+  Sql.push(`INSERT INTO ${userTab} (idUser, idFB, idIdPlace, idOpenId, email, nameIP, image, displayName, donatedAmount, iRoleActive) VALUES \n${tmp}`);
   
   
-    // Insert into complaintTab
-  var IdComplainer=[2, 3, 4];
-  var StrComplaint=['He never answered the phone', 'No good', 'Bad bad bad'];
-  var StrAns=['I was on the toilet', "Sorry, it was my first time.", ''];
-  var nComplainer=IdComplainer.length;
-  for(var j=0;j<10;j++){ //loop through drivers
-    for(var i=0;i<nComplainer;i++){
-      var idRep=IdComplainer[i], iRep=(i+j)%nComplainer, strRep=StrComplaint[iRep], iAns=(i+2*j)%nComplainer, strAns=StrAns[iAns];
-      Sql.push("INSERT INTO "+complaintTab+" (idComplainee, idComplainer, comment, answer, tCreated, tCommentModified, tAnswerModified) SELECT idUser, "+idRep+", \""+strRep+"\", \""+strAns+"\", now(), now(), now() FROM "+userTab+" WHERE idUser%10="+j+" AND idUser>"+nStart);
-    }
-  }
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
+
+
+  // Columns in userTab:
+  //   idUser, tCreated, idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW, imTag, boUseIdPImg, displayName, donatedAmount, keyRemoteControl, iSeq, nComplaint, nComplaintCum, nComplaintGiven, nComplaintGivenCum, boWebPushOK, iRoleActive 
   
-    // Update nComplaint, nComplaintCum, nComplaintGiven and nComplaintGivenCum
-  Sql.push(`DROP TABLE IF EXISTS tmp`);
-  Sql.push(`CREATE TEMPORARY TABLE tmp AS SELECT idComplainee, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainee`);
-  Sql.push(`UPDATE `+userTab+` u JOIN tmp ON u.idUser=tmp.idComplainee SET u.nComplaint = n, u.nComplaintCum = n`);
-  
-  Sql.push(`DROP TABLE IF EXISTS tmp`);
-  Sql.push(`CREATE TEMPORARY TABLE tmp AS SELECT idComplainer, COUNT(*) AS n FROM `+complaintTab+` c GROUP BY c.idComplainer`);
-  Sql.push(`UPDATE `+userTab+` u JOIN tmp ON u.idUser=tmp.idComplainer SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
-  
-    // Insert into roleTabs
-  var StrPlugInNArg=site.StrPlugInNArg;
-  var StrPlugIn=[];
-  for(var i=0;i<StrPlugInNArg.length;i++){var strTmp=StrPlugInNArg[i], n=strTmp.length, charLast=strTmp[n-1]; if(charLast=='B' || charLast=='S') { strTmp=strTmp.substr(0,n-1); } StrPlugIn.push(strTmp); }
-  
+
+
+
+    // Roles
+
+
   for(var iRole=0;iRole<ORole.length;iRole++){
     var oRole=ORole[iRole];
     var {Prop, charRole, charRoleUC}=oRole;
     var roleTab=charRole=='b'?buyerTab:sellerTab;
 
+    var PropBucket={
+      //vehicleType:{Enum:['sedan']},
+      vehicleType:{Enum:Prop.vehicleType?.Enum??['sedan']},
+      
+      brand:{Enum:['Volvo','Saab','VW','Toyota','Ford','Hyundai','Mercedes','Fiat','Dodge','Mazda','BMW','Audi','Lloyd','Opel','Skoda','Ferrari','Lamborgini','Seat','Chrysler','Chevrolet','Scania','Aston Martin','Bentley','Jaguar','Land Rover','Honda','Nissan','Rolls Royce']},
+      link:{Enum:['example.com','www.example.com','locatabl.com','gavott.com','example.com','']},
+      nPassengers:{Enum:range(2,20,1)},
+      nChildSeat:{Enum:[0,1,2]}, nExtraSeat:{Enum:[0,1,2]}, nWheelChairPlaces:{Enum:[0,1,2]},
+      idTeam:{Enum:[1,2,3]}, idTeamWanted:{Enum:[1,2,3]},
+      strUnitDist:{Enum:["km","mile"]},
+      payload:{Enum:range(0,15,0.5)},
+      cuttingWidth:{Enum:range(30,150,2)},
+      otherLang:{Enum:['','Matlab','Babyloninan','D']},
+  
+      tCreated:{dateSpan:-2*8760*3600},
+      tPos:{dateSpan:-12*3600},
+      tLastWriteOfTA:{dateSpan:0},
+      //terminationDate:{dateSpan:4*30*24*3600},
+      tLastPriceChange:{dateSpan:-30*24*3600},
+      shiftEnd:{dateSpan:12*3600},
+  
+      tAccumulated:{RandSpanData:[0, 2*8760*3600]},
+      priceStart:{RandSpanDataPrice:[20,45]},
+      pricePerDist:{RandSpanDataPrice:[10,20]},
+      //pricePerTravelHour:{RandSpanDataPrice:[200,400]},
+      pricePerHour:{RandSpanDataPrice:[200,400]},
+      idDriverGovernment:{RandSpanData:[1000,2000]},
+      
+      hideTimer:{FixedData:3600*24*365},
+      //boShow:{Enum:[0,1]},
+      boShow:{FixedData:0},
+      histActive:{FixedData:1},
+      coordinatePrecisionM:{FixedData:1},
+      //tHide:{FixedData:""},
+      
+      otherContainer:{Enum:[0,1]},
+      boBuyerHasEquipment:{Enum:[0,1]},
+      nWindows:{Enum:range(1,30,1)},
+      area:{Enum:range(1,1000,1)},
+      boRoad:{Enum:[0,1]},
+      boDriveWay:{Enum:[0,1]},
+      boRoof:{Enum:[0,1]},
+      fruit:{Enum:['apple', 'strawberry', 'cabbage']},
+      database:{Enum:['mysql', 'neo4j', 'redis']},
+      language:{Enum:['c', 'javascript', 'java']},
+      distStartToGoal:{RandSpanData:[1000,20000]},
+      price:{RandSpanDataPrice:[100,200]},
+      //compassPoint,
+      destination:{Enum:['Göteborg', 'Umeå', 'Oslo']},
+      fixedPricePerUnit:{RandSpanDataPrice:[100,200]},
+      fixedPricePerUnitUnit:{Enum:["apple","kg"]},
+      //compassPoint:{Enum:['-', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']},
+      //standingByMethod:{Enum:['inCar','atHome','5min','10min']}
+    };
+
+      // If there are things that are not assigned in the above "PropBucket" then assign them from the prop.
+    for(var name in Prop){
+      var prop=Prop[name];
+      if(!(name in PropBucket)){
+        PropBucket[name]={};
+        if('Enum' in prop) PropBucket[name].Enum=prop.Enum.concat([]);
+      }
+    }
 
 
     var arrAssign=[]; // arrAssign: as in draw a random number from a bucket
@@ -2456,40 +2486,91 @@ app.SetupSql.prototype.createDummies=async function(siteName){
         else if('FixedData' in PropBucket[name]){ value=makeFixedF(name);  }
         if(name in Prop && 'roleUpdF' in prop){ [QMark]=prop.roleUpdF.call(Prop,name,value);  }
         var valT=QMark.replace(/\?/,value);     
-        if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
+        if(in_array(name,StringData) && value!==null){ valT=`'${valT}'`;}
         
-        StrName.push("`"+name+"`");
+        StrName.push(`\`${name}\``);
         StrIns.push(valT);
       }
       var strName=StrName.join(', ');
       var strIns=StrIns.join(', ');  
 
-      var sqlCurRole="("+id+", "+strIns+")";
+      var sqlCurRole=`(${id}, ${strIns})`;
 
       SqlAllRole[i]=sqlCurRole;
       
     }
 
+    var Sql=[];
     var tmp=SqlAllRole.join(",\n");
-    Sql.push("INSERT INTO "+roleTab+" (idUser, "+strName+") VALUES \n"+tmp);
+    Sql.push(`INSERT INTO ${roleTab} (idUser, ${strName}) VALUES \n${tmp}`);
+
+
+    var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+    var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
 
 
   } // end of loop through ORole
   
-  Sql.push(`UPDATE `+buyerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount, r.boShow=(u.iRoleActive=0)`);
-  Sql.push(`UPDATE `+sellerTab+` r JOIN `+userTab+` u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount, r.boShow=(u.iRoleActive=1)`);
+
+  var Sql=[];
+  Sql.push(`UPDATE ${buyerTab} r JOIN ${userTab} u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount, r.boShow=(u.iRoleActive=0)`);
+  Sql.push(`UPDATE ${sellerTab} r JOIN ${userTab} u ON r.idUser=u.idUser SET r.nComplaint=u.nComplaint, r.nComplaintCum=u.nComplaintCum,  r.nComplaintGiven=u.nComplaintGiven, r.nComplaintGivenCum=u.nComplaintGivenCum, r.donatedAmount=u.donatedAmount, r.boShow=(u.iRoleActive=1)`);
   
   var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
   var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
   return [null];
 }
 
+app.SetupSql.prototype.addDummyComplaints=async function(siteName){
+  var site=Site[siteName];
+  var {TableName, ViewName, ORole}=site;
+  var {sellerTab, sellerTeamTab, sellerTeamImageTab, buyerTab, buyerTeamTab, buyerTeamImageTab, userImageTab, complaintTab, adminTab, settingTab, userTab}=TableName;
+  
+  var nStart=0;
+  var Sql=[]
+    // Insert into complaintTab
+  var IdComplainer=[2, 3, 4];
+  var StrComplaint=['He never answered the phone', 'No good', 'Bad bad bad'];
+  var StrAns=['I was on the toilet', "Sorry, it was my first time.", ''];
+  var nComplainer=IdComplainer.length;
+  for(var j=0;j<10;j++){ //loop through drivers
+    for(var i=0;i<nComplainer;i++){
+      var idComplainer=IdComplainer[i], iComplaint=(i+j)%nComplainer, strRep=StrComplaint[iComplaint], iAns=(i+2*j)%nComplainer, strAns=StrAns[iAns];
+      Sql.push(`INSERT INTO ${complaintTab} (idComplainee, idComplainer, comment, answer, tCreated, tCommentModified, tAnswerModified) SELECT idUser, ${idComplainer}, "${strRep}", "${strAns}", now(), now(), now() FROM ${userTab} WHERE idUser%10=${j} AND idUser>${nStart}`);
+    }
+  }
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
+  
+  var Sql=[]
+    // Update nComplaint, nComplaintCum, nComplaintGiven and nComplaintGivenCum
+  Sql.push(`DROP TABLE IF EXISTS tmp`);
+  Sql.push(`CREATE TEMPORARY TABLE tmp AS SELECT idComplainee, COUNT(*) AS n FROM ${complaintTab} c GROUP BY c.idComplainee`);
+  Sql.push(`UPDATE ${userTab} u JOIN tmp ON u.idUser=tmp.idComplainee SET u.nComplaint = n, u.nComplaintCum = n`);
+  Sql.push(`UPDATE ${buyerTab} u JOIN tmp ON u.idUser=tmp.idComplainee SET u.nComplaint = n, u.nComplaintCum = n`);
+  Sql.push(`UPDATE ${sellerTab} u JOIN tmp ON u.idUser=tmp.idComplainee SET u.nComplaint = n, u.nComplaintCum = n`);
+  
+  Sql.push(`DROP TABLE IF EXISTS tmp`);
+  Sql.push(`CREATE TEMPORARY TABLE tmp AS SELECT idComplainer, COUNT(*) AS n FROM ${complaintTab} c GROUP BY c.idComplainer`);
+  Sql.push(`UPDATE ${userTab} u JOIN tmp ON u.idUser=tmp.idComplainer SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
+  Sql.push(`UPDATE ${buyerTab} u JOIN tmp ON u.idUser=tmp.idComplainer SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
+  Sql.push(`UPDATE ${sellerTab} u JOIN tmp ON u.idUser=tmp.idComplainer SET u.nComplaintGiven = n, u.nComplaintGivenCum = n`);
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=await this.myMySql.query(sql, Val);  if(err) {  return [err]; }
+  return [null];
+  
+}
 
-
-app.SetupSql.prototype.truncate=async function(siteName){
+app.SetupSql.prototype.truncate=
+app.SetupSql.prototype.truncateAllExceptSetting=async function(siteName){
+  var {sql}=this;
+  var boSkippSetting=sql=='truncateAllExceptSetting';
   var site=Site[siteName];
   
   var Sql=[];
+  var TableNameTmp=extend({}, site.TableName);
+  if(boSkippSetting) delete TableNameTmp.settingTab;
 
   var StrTabName=object_values(site.TableName);
 
@@ -2502,7 +2583,7 @@ app.SetupSql.prototype.truncate=async function(siteName){
   Sql.push(tmp);
   for(var i=0;i<StrTabName.length;i++){
     Sql.push("DELETE FROM "+StrTabName[i]);
-    Sql.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
+    Sql.push(`ALTER TABLE ${StrTabName[i]} AUTO_INCREMENT = 1`);
   }
   Sql.push('UNLOCK TABLES');
   Sql.push('SET FOREIGN_KEY_CHECKS=1');
@@ -2518,8 +2599,8 @@ app.SetupSql.prototype.populateSetting=async function(siteName){
   var Sql=[];
   var {TableName}=site, {settingTab}=TableName;
 
-  Sql.push(`INSERT INTO `+settingTab+` VALUES
-  ('tLastWriteOfHA', floor( UNIX_TIMESTAMP(now())/`+sPerDay+` )),
+  Sql.push(`INSERT INTO ${settingTab} VALUES
+  ('tLastWriteOfHA', floor( UNIX_TIMESTAMP(now())/${sPerDay} )),
   ('tLastWriteOfBoShow', 0),
   ('boAllowEmailAccountCreation', '0')`); 
   //('boShowTeam', '0'),
@@ -2534,32 +2615,34 @@ app.SetupSql.prototype.populateSetting=async function(siteName){
 
 
   // Called when --sql command line option is used
-app.SetupSql.prototype.doQuery=async function(strCreateSql){
-  if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); return [new ErrorWLab('erraticInput', tmp)]; }
-  var Match=RegExp("^(drop|create)?(.*?)$").exec(strCreateSql);
-  if(!Match) { debugger;  return [Error("!Match")]; }
+app.SetupSql.prototype.doQuery=async function(){
+  var {sql}=this, strMeth=sql;
   
-  var boDropOnly=false, strMeth=Match[2];
-  if(Match[1]=='drop') { boDropOnly=true; strMeth='create'+strMeth;}
-  else if(Match[1]=='create')  { strMeth='create'+strMeth; }
-  
-  if(strMeth=='createFunction'){ 
-    var [err]=await this.funcGen(boDropOnly); if(err){  return [err]; }  // Create common functions
+  if(strMeth=='createFunction' || strMeth=='dropFunction'){ 
+    var [err]=await this.funcGen(); if(err){  return [err]; }  // Create common functions
   }
+
+  var strDummyCmd='createDummy', l=strDummyCmd.length;
+  if(strMeth.slice(0,l)==strDummyCmd){ 
+    this.n=parseInt(strMeth.slice(l)||'1'); strMeth=strDummyCmd;
+  }
+
+  if(StrValidSqlCalls.indexOf(strMeth)==-1){var tmp=strMeth+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); return [new ErrorWLab('erraticInput', tmp)]; }
+
   for(var iSite=0;iSite<SiteName.length;iSite++){
     var siteName=SiteName[iSite];
     console.log(siteName);
-    var [err]=await this[strMeth](siteName, boDropOnly);  if(err){  return [err]; }
+    var [err]=await this[strMeth](siteName);  if(err){  return [err]; }
   }
   return [null];
 }
 
 var writeMessTextOfMultQuery=function(Sql, err, results){
   var nSql=Sql.length, nResults='(single query)'; if(results instanceof Array) nResults=results.length;
-  console.log('nSql='+nSql+', nResults='+nResults);
+  console.log(`nSql=${nSql}, nResults=${nResults}`);
   var StrMess=[];
   if(err){
-    StrMess.push('err.index: '+err.index+', err: '+err);
+    StrMess.push(`err.index: ${err.index}, err: ${err}`);
     if(nSql==nResults){
       var tmp=Sql.slice(bound(err.index-1,0,nSql), bound(err.index+2,0,nSql)),  sql=tmp.join('\n');
       StrMess.push('Since "Sql" and "results" seem correctly aligned (has the same size), then 3 queries are printed (the preceding, the indexed, and following query (to get a context)):\n'+sql); 
@@ -2578,7 +2661,7 @@ app.createDumpCommand=function(){
     }
     strCommand+='          '+StrTab.join(' ');
   }
-  strCommand="mysqldump mmm --user=root -p --no-create-info --hex-blob"+strCommand+'          >tracker.sql';
+  strCommand=`mysqldump mmm --user=root -p --no-create-info --hex-blob${strCommand}          >tracker.sql`;
 
   return strCommand;
 }

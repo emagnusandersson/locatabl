@@ -198,8 +198,8 @@ FilterTitle:'Filter (hide uninteresting users)',
 ToggleBetweenBuyerAndSeller:'Toggle between buyers and <span nom="sellers">sellers</span>',
 
 //toManyMess:'To many <span nom="sellers">sellers</span> for listing details, zoom in, or use filter to reduce the number below '+maxList,
-//toManyMess:'Max '+maxList+' <span nom="sellers">sellers</span> to see the comparisson table, zoom in, or use filter to reduce the number.',
-toManyMess:'Disabled when the number of filtered <span nom="sellers">sellers</span> are above '+maxList+'',
+//toManyMess:`Max ${maxList} <span nom="sellers">sellers</span> to see the comparisson table, zoom in, or use filter to reduce the number.`,
+toManyMess:`Disabled when the number of filtered <span nom="sellers">sellers</span> are above ${maxList}`,
 
 
 // Help-popup-texts:

@@ -231,7 +231,7 @@ window.rowButtExtend=function(el, Prop, Filt, Hist, vBoHasRem, StrOrderFilt, obj
       var butt=arrButt[i].css({'background-color':colButt,color:colFont}).show();  butt.myVal=vAll[i];
       var span=arrSpan[i];
       
-      if(boThisIsRem) span.myText('('+langHtml.histsRem+')');
+      if(boThisIsRem) span.myText(`(${langHtml.histsRem})`);
       else {
         if('setFilterButtF' in prop) {prop.setFilterButtF(span,vAll[i],boOn);}
         else{  // Text-data
@@ -395,7 +395,7 @@ filterDivICreator.tmpPrototype.createDivs=function(){
     var divT=createElement('div').attr('name',strName);
     
     if(strName in el.helpBub){ var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,el.helpBub[strName]);    }  //.css({'vertical-align':'top'})
-    var strUnit=''; if(strName in el.Unit) strUnit=' ['+el.Unit[strName]+']';
+    var strUnit=''; if(strName in el.Unit) strUnit=` [${el.Unit[strName]}]`;
     if(feat.kind[0]=='B') { 
       h=createElement('div').myAppend(calcLabel(el.Label,strName),strUnit,': ',imgH); //.css({'margin':'0.3em 0em 0em'})
       var p=createElement('p').css({'padding':'0.3em 0em 0em','font-size': '85%'}); 
@@ -423,7 +423,7 @@ filterDivICreator.tmpPrototype.createDivs=function(){
 
   for(var i=0;i<el.StrGroup.length;i++){
     var h=createElement('div').css({'font-size':'130%','font-weight':'bold', 'margin-top':'1em'}).myText(langHtml[el.StrGroup[i]]+':');
-    el.querySelector('div[name='+el.StrGroupFirst[i]+']').before(h);
+    el.querySelector(`div[name=${el.StrGroupFirst[i]}]`).before(h);
   }
 }
 filterDivICreator.tmpPrototype.interpretHistPHP=function(HistPHP){

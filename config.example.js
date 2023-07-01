@@ -34,7 +34,7 @@ var createUrlAuthIdPlace=function(strIdPlace="idplace",portIdPlace=5000){
     // Note !!! no ending slash
   var UrlIdplace={
     local:"http://localhost:"+portIdPlace,
-    "192":"http://"+www192+":"+portIdPlace,
+    "192":`http://${www192}:${portIdPlace}`,
     testgavott:"https://testgavott.herokuapp.com",
     idplaceherokuapp:"https://idplace.herokuapp.com",
     idplaceorg:"https://idplace.org"
@@ -103,7 +103,7 @@ if(process.env.strInfrastructure=='heroku'){
   RegRedir=[
   function(req){
     var Str=RegExp('^([^\\.]+)\\.tracker\\.center$').exec(req.headers.host);
-    if(Str) {    return 'https://'+Str[1]+'locatabl.com/'+req.url;   }
+    if(Str) {    return `https://${Str[1]}locatabl.com/${req.url}`;   }
     return null;
   }
   ];
@@ -132,7 +132,7 @@ if(process.env.strInfrastructure=='heroku'){
   RegRedir=[
   function(req){
     var Str=RegExp('^([^\\.]+)\\.tracker\\.center$').exec(req.headers.host);
-    if(Str) {    return 'https://'+Str[1]+'locatabl.com/'+req.url;   }
+    if(Str) {    return `https://${Str[1]}locatabl.com/${req.url}`;   }
     return null;
   }
   ];
@@ -230,9 +230,9 @@ if(!wwwCommon) {var keys=Object.keys(Site), nKey=keys.length; wwwCommon=Site[key
 // Endpoint urls for the IdP.
 //
 strFBVersion="v9.0"
-UrlOAuth={fb:"https://www.facebook.com/"+strFBVersion+"/dialog/oauth", google:"https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace}
-UrlToken={fb:"https://graph.facebook.com/"+strFBVersion+"/oauth/access_token", google:"https://accounts.google.com/o/oauth2/token", idplace:urlAuthIdplace+"/access_token"}
-UrlGraph={fb:"https://graph.facebook.com/"+strFBVersion+"/me", google:"https://www.googleapis.com/plus/v1/people/me", idplace:urlAuthIdplace+"/me"};
+UrlOAuth={fb:`https://www.facebook.com/${strFBVersion}/dialog/oauth`, google:"https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace}
+UrlToken={fb:`https://graph.facebook.com/${strFBVersion}/oauth/access_token`, google:"https://accounts.google.com/o/oauth2/token", idplace:urlAuthIdplace+"/access_token"}
+UrlGraph={fb:`https://graph.facebook.com/${strFBVersion}/me`, google:"https://www.googleapis.com/plus/v1/people/me", idplace:urlAuthIdplace+"/me"};
 response_type='token';    
 response_type='code';
 

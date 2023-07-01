@@ -58,11 +58,11 @@ app.createSiteSpecificClientJSAll=async function() {
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i];
     var buf=createSiteSpecificClientJS(siteName);
-    var keyCache='/'+siteName+'_'+leafSiteSpecific;
+    var keyCache=`/${siteName}_${leafSiteSpecific}`;
     var [err]=await CacheUri.set(keyCache, buf, 'js', true, true);
 
     var buf=createManifest(siteName);
-    var keyCache='/'+siteName+'_'+leafManifest;
+    var keyCache=`/${siteName}_${leafManifest}`;
     var [err]=await CacheUri.set(keyCache, buf, 'json', true, true);
   }
 }
@@ -82,10 +82,10 @@ app.createSiteSpecificClientJS=function(siteName) {
 
   var Str=[];
 //   Str.push(`globalThis.assignSiteSpecific=function(){
-// var tmp=`+serialize(objOut)+`;
+// var tmp=${serialize(objOut)};
 // extend(window, tmp);
 // }`);
-  Str.push(`globalThis.objSiteSpecific=`+serialize(objOut)+`;`);
+  Str.push(`globalThis.objSiteSpecific=${serialize(objOut)};`);
 
   var str=Str.join('\n');
   return str;
@@ -105,7 +105,7 @@ app.createManifest=function(siteName){
 app.createManifestNStoreToCache=async function(siteName){
   var strT=createManifest(siteName);
   var buf=Buffer.from(strT, 'utf8');
-  var [err]=await CacheUri.set('/'+siteName+'_'+leafManifest, buf, 'json', true, false);   if(err) return [err];
+  var [err]=await CacheUri.set(`/${siteName}_${leafManifest}`, buf, 'json', true, false);   if(err) return [err];
   return [null];
 }
 app.createManifestNStoreToCacheMult=async function(SiteName){

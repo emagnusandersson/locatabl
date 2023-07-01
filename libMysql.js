@@ -52,8 +52,8 @@ app.RHide=async function(objArg){  // writing needSession
 
      // Get iRole
   var Sql=[];
-  //Sql.push("SELECT iRoleActive FROM "+userTab+" WHERE idUser=?"); var Val=[idUser];
-  Sql.push("SELECT iRoleActive AS iRole, idUser FROM "+userTab+" WHERE "+columnT+"=?"); var Val=[idT];
+  //Sql.push(`SELECT iRoleActive FROM ${userTab} WHERE idUser=?`); var Val=[idUser];
+  Sql.push(`SELECT iRoleActive AS iRole, idUser FROM ${userTab} WHERE ${columnT}=?`); var Val=[idT];
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err, {}];
   if(results.length==0) { return [Error('No such idUser in the database'), {}];}
@@ -63,9 +63,9 @@ app.RHide=async function(objArg){  // writing needSession
   var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
 
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
-  Sql.push("UPDATE "+roleTab+" SET tPos=0, tHide=0, histActive=histActive|1, boShow=0 WHERE idUser=?;");
-  Sql.push(`SELECT `+site.SqlColSelOne[iRole]+` FROM (`+roleTab+` ro LEFT JOIN `+roleTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=?;`);
+  Sql.push(`CALL ${siteName}TimeAccumulatedUpdOne(?);`); 
+  Sql.push(`UPDATE ${roleTab} SET tPos=0, tHide=0, histActive=histActive|1, boShow=0 WHERE idUser=?;`);
+  Sql.push(`SELECT ${site.SqlColSelOne[iRole]} FROM (${roleTab} ro LEFT JOIN ${roleTeamTab} tea on tea.idUser=ro.idTeam) WHERE ro.idUser=?;`);
   Val=[idUser,idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err, {}];
@@ -84,15 +84,15 @@ app.accountMerge=async function(objArg){
   var {idUser, idFB, idIdPlace, idOpenId, email, nameIP, image}=objArg, Ou={idUser:null};
   var StrMes=[];
   var donatedAmount=0, nComplaint=0, nComplaintCum=0, nComplaintGiven=0, nComplaintGivenCum=0; 
-  var sql="SELECT * FROM "+userTab+" WHERE idUser=? OR idFB=? OR idIdPlace=? OR idOpenId=? OR email=? ORDER BY tCreated";
+  var sql=`SELECT * FROM ${userTab} WHERE idUser=? OR idFB=? OR idIdPlace=? OR idOpenId=? OR email=? ORDER BY tCreated`;
   var Val=[idUser, idFB, idIdPlace, idOpenId, email];
   var [err, resultsU]=await this.myMySql.query(sql, Val); if(err) return [err];
   var nU=resultsU.length;
   //if(nU==0) {
     //if(objArg.boCreate){
       //var Sql=[];
-      //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) );");
-      //Sql.push("SELECT LAST_INSERT_ID() AS idUser;");
+      //Sql.push(`INSERT INTO ${userTab} (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()) );`);
+      //Sql.push(`SELECT LAST_INSERT_ID() AS idUser;`);
       //var sql=Sql.join('\n'), Val=[idFB, idIdPlace, idOpenId, email, nameIP, image];
       //var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
       //Ou.idUser=results[1][0].idUser;
@@ -100,7 +100,7 @@ app.accountMerge=async function(objArg){
   //}else
   if(nU==1) {
     var rowT=resultsU[0];
-    var sql="UPDATE "+userTab+" SET idFB=IF(? IS NULL, idFB, ?), idIdPlace=IF(? IS NULL, idIdPlace, ?), idOpenId=IF(? IS NULL, idOpenId, ?), email=IF(? IS NULL, email, ?), nameIP=IF(? IS NULL, nameIP, ?), image=IF(? IS NULL, image, ?) WHERE idUser=?;";
+    var sql=`UPDATE ${userTab} SET idFB=IF(? IS NULL, idFB, ?), idIdPlace=IF(? IS NULL, idIdPlace, ?), idOpenId=IF(? IS NULL, idOpenId, ?), email=IF(? IS NULL, email, ?), nameIP=IF(? IS NULL, nameIP, ?), image=IF(? IS NULL, image, ?) WHERE idUser=?;`;
     var Val=[idFB, idFB, idIdPlace, idIdPlace, idOpenId, idOpenId, email, email, nameIP, nameIP, image, image,   rowT.idUser]; 
     var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
     Ou.idUser=rowT.idUser;
@@ -121,15 +121,15 @@ app.accountMerge=async function(objArg){
       var {charRole, strRole}=ORole[j];
       var roleTab=charRole=='b'?buyerTab:sellerTab;
       var strQMark=array_fill(nU,'?').join(', ');
-      var sql="SELECT idUser, coordinatePrecisionM, tCreated, histActive, tAccumulated FROM "+roleTab+" WHERE idUser IN("+strQMark+");";
+      var sql=`SELECT idUser, coordinatePrecisionM, tCreated, histActive, tAccumulated FROM ${roleTab} WHERE idUser IN(${strQMark});`;
       var [err, resultsR]=await this.myMySql.query(sql, ValU); if(err) return [err];
       var nR=resultsR.length;
       if(nR==1) {
         var rowT=resultsR[0];
         if(idUserUBest!=rowT.idUser) {
-          var sql="UPDATE "+roleTab+" SET idUser=? WHERE idUser=?;";  var Val=[idUserUBest, rowT.idUser];
+          var sql=`UPDATE ${roleTab} SET idUser=? WHERE idUser=?;`;  var Val=[idUserUBest, rowT.idUser];
           var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
-          var c=results.affectedRows; StrMes.push(c+" rows from "+strRole+"Tab changed idUser.");
+          var c=results.affectedRows; StrMes.push(`${c} rows from ${strRole}Tab changed idUser.`);
         }
       } else if(nR>1) {
           // Select one roleTab-row, delete the others, update the selected row, change the rows idUser to idUserUBest
@@ -146,14 +146,14 @@ app.accountMerge=async function(objArg){
         Val.splice(iBest,1);
         
         var strQMark=array_fill(nR-1,'?').join(', ');
-        var sql="DELETE FROM "+roleTab+" WHERE idUser IN("+strQMark+");";
+        var sql=`DELETE FROM ${roleTab} WHERE idUser IN(${strQMark});`;
         var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
-        var c=results.affectedRows; StrMes.push(c+" rows from "+strRole+"Tab deleted.");
+        var c=results.affectedRows; StrMes.push(`${c} rows from ${strRole}Tab deleted.`);
         
-        var sql="UPDATE "+roleTab+" SET idUser=?, tCreated=?, coordinatePrecisionM=? WHERE idUser=?;";
+        var sql=`UPDATE ${roleTab} SET idUser=?, tCreated=?, coordinatePrecisionM=? WHERE idUser=?;`;
         var Val=[idUserUBest, tCreated, coordinatePrecisionM, idUserVBest];
         var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
-        var c=results.affectedRows; StrMes.push(c+" rows from "+strRole+"Tab updated.");
+        var c=results.affectedRows; StrMes.push(`${c} rows from ${strRole}Tab updated.`);
       }
     }
       
@@ -181,11 +181,11 @@ app.accountMerge=async function(objArg){
       
       // Update nComplaint and nComplaintGiven
     var Sql=[];
-    Sql.push('SELECT @n:=COUNT(*) FROM '+complaintTab+' WHERE idComplainee=?;');
-    Sql.push('SELECT @nW:=COUNT(*) FROM '+complaintTab+' WHERE idComplainer=?;');
-    Sql.push('UPDATE '+userTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
-    Sql.push('UPDATE '+buyerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
-    Sql.push('UPDATE '+sellerTab+' SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;');
+    Sql.push(`SELECT @n:=COUNT(*) FROM ${complaintTab} WHERE idComplainee=?;`);
+    Sql.push(`SELECT @nW:=COUNT(*) FROM ${complaintTab} WHERE idComplainer=?;`);
+    Sql.push(`UPDATE ${userTab} SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;`);
+    Sql.push(`UPDATE ${buyerTab} SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;`);
+    Sql.push(`UPDATE ${sellerTab} SET nComplaint=@n, nComplaintGiven=@nW WHERE idUser=?;`);
     var sql=Sql.join('\n'), Val=Array(5).fill(idUserUBest);
     var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
     
@@ -193,18 +193,18 @@ app.accountMerge=async function(objArg){
       // As there are multiple user-rows, then delete the surplus ones and update the one to keep.
     ValUObs.splice(iBestU,1);
     var strQMark=array_fill(ValUObs.length,'?').join(', ');
-    var sql="DELETE FROM "+userTab+" WHERE idUser IN("+strQMark+");";
+    var sql=`DELETE FROM ${userTab} WHERE idUser IN(${strQMark});`;
     var [err, results]=await this.myMySql.query(sql, ValUObs); if(err) return [err];
-    var c=results.affectedRows; StrMes.push(c+" rows from userTab deleted.");
+    var c=results.affectedRows; StrMes.push(`${c} rows from userTab deleted.`);
     
     var Sql=[];
-    Sql.push("UPDATE "+userTab+" SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=?, donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;"); // , nComplaint=?, nComplaintGiven=?
+    Sql.push(`UPDATE ${userTab} SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=?, donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;`); // , nComplaint=?, nComplaintGiven=?
     var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image, donatedAmount, nComplaintCum, nComplaintGivenCum, idUserUBest];  // , nComplaint, nComplaintGiven
-    Sql.push("UPDATE "+buyerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
-    Sql.push("UPDATE "+sellerTab+" SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;");
+    Sql.push(`UPDATE ${buyerTab} SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;`);
+    Sql.push(`UPDATE ${sellerTab} SET donatedAmount=?, nComplaintCum=?, nComplaintGivenCum=? WHERE idUser=?;`);
     var sql=Sql.join('\n'), arrT=[donatedAmount, nComplaintCum, nComplaintGivenCum, idUserUBest];  Val.push(...arrT,...arrT);
     var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
-    var c=results[0].affectedRows; StrMes.push(c+" rows from userTab updated.");
+    var c=results[0].affectedRows; StrMes.push(`${c} rows from userTab updated.`);
     Ou.idUser=idUserUBest;
   }
   return [null,Ou];

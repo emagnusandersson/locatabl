@@ -42,7 +42,7 @@ var divLoginInfoExtend=function(el){
     var boShow=Boolean(arrKind.length);
     if(boShow){
       spanName.myText(userInfoFrDB.user.nameIP);
-      var strTmp=arrKind.join(', '); if(strTmp) strTmp='('+strTmp+')';
+      var strTmp=arrKind.join(', '); if(strTmp) strTmp=`(${strTmp})`;
       spanKind.myText(strTmp);
       el.show();
     }else {
@@ -242,7 +242,7 @@ app.boIOS= /iPhone|iPad|iPod/i.test(uaLC);
 
 var strScheme='http'+(boTLS?'s':''),    strSchemeLong=strScheme+'://',    uSite=strSchemeLong+wwwSite,     uCommon=strSchemeLong+wwwCommon,    uBE=uSite+"/"+leafBE;
 
-var wseImageFolder='/'+flImageFolder+'/';
+var wseImageFolder=`/${flImageFolder}/`;
 //var uImageFolder=uCommon+wseImageFolder;
 
 var wsHelpFile=wseImageFolder+'help.png';

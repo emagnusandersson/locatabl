@@ -61,10 +61,10 @@ app.nHash=1000;
 app.lenHistActive=30;
 var maskHistActive=(1<<lenHistActive)-1;
 app.sqlMaskHistActive="& "+maskHistActive; if(lenHistActive==64) sqlMaskHistActive='';
-var sqlDayDiff="floor( UNIX_TIMESTAMP(now())/"+sPerDay+" )  -  floor( UNIX_TIMESTAMP(tPos)/"+sPerDay+" )";
-var sqlHistActiveCol="histActive<<"+sqlDayDiff+"  "+sqlMaskHistActive;
-//sqlHistActiveColUpd="histActive= (histActive<<"+sqlDayDiff+" | 1) "+sqlMaskHistActive; // "<<" has higher precedence than "|"
-var sqlHistActiveColCount="BIT_COUNT("+sqlHistActiveCol+")";
+var sqlDayDiff=`floor( UNIX_TIMESTAMP(now())/${sPerDay} )  -  floor( UNIX_TIMESTAMP(tPos)/${sPerDay} )`;
+var sqlHistActiveCol=`histActive<<${sqlDayDiff}  ${sqlMaskHistActive}`;
+//sqlHistActiveColUpd=`histActive= (histActive<<${sqlDayDiff} | 1) ${sqlMaskHistActive}`; // "<<" has higher precedence than "|"
+var sqlHistActiveColCount=`BIT_COUNT(${sqlHistActiveCol})`;
 
 //sqlBoBeforeHiding="UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(tPos)<hideTimer"; // "-" has higher precedence than "<"
 //sqlBoBeforeHiding="UNIX_TIMESTAMP(now())<UNIX_TIMESTAMP(tHide)"; // "-" has higher precedence than "<"
@@ -84,11 +84,11 @@ app.m2wc=1/wc2m;
 
 //Enum=[];
 var selEnumF=function(name){  return name+"-1";  };
-var selTimeF=function(name){  return "UNIX_TIMESTAMP("+name+")";  };
+var selTimeF=function(name){  return `UNIX_TIMESTAMP(${name})`;  };
 //updEnumBoundF=function(name,v){ v=bound( v, 0, Enum[name].length-1)+1;   return ['?', v];  };
 var updEnumBoundF=function(name,v){ v=bound( v, 0, this[name].Enum.length-1)+1;   return ['?', v];  };
 var updTimeF=function(name,v){  return [  'FROM_UNIXTIME(?)', v ];  };
-//updPriceF=function(name,v){  return [  "tLastPriceChange= IF("+name+"="+v+",tLastPriceChange,now()), "+name+"="+v, v ];  };
+//updPriceF=function(name,v){  return [  `tLastPriceChange= IF(${name}=${v},tLastPriceChange,now()), ${name}=${v}`, v ];  };
 
 
 
@@ -220,20 +220,20 @@ PluginF.general=function(site){
   //PropTmp.nComplaintGiven.pre='u.';
   //PropTmp.nComplaintGivenCum.pre='u.';
 
-  //PropTmp.tPos.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" HOUR)"; return name+"<="+val;};
-  //PropTmp.tCreated.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+"<="+val;};
-  PropTmp.tPos.cond0F=function(name, val){  return "UNIX_TIMESTAMP("+name+")<=UNIX_TIMESTAMP(now())-"+val; };
-  PropTmp.tCreated.cond0F=function(name, val){  return "UNIX_TIMESTAMP("+name+")<=UNIX_TIMESTAMP(now())-"+val; };
+  //PropTmp.tPos.cond0F=function(name, val){  val=`DATE_SUB(now(), INTERVAL ${val} HOUR)`; return name+"<="+val;};
+  //PropTmp.tCreated.cond0F=function(name, val){  val=`DATE_SUB(now(), INTERVAL ${val} MONTH)`; return name+"<="+val;};
+  PropTmp.tPos.cond0F=function(name, val){  return `UNIX_TIMESTAMP(${name})<=UNIX_TIMESTAMP(now())-${val}`; };
+  PropTmp.tCreated.cond0F=function(name, val){  return `UNIX_TIMESTAMP(${name})<=UNIX_TIMESTAMP(now())-${val}`; };
   PropTmp.histActive.cond0F=function(name, val){ return sqlHistActiveColCount+">="+val;};
-  //PropTmp.tAccumulated.cond0F=function(name, val){ return "FLOOR(tAccumulated/"+sPerMonth+")>="+val;};
+  //PropTmp.tAccumulated.cond0F=function(name, val){ return `FLOOR(tAccumulated/${sPerMonth})>=${val}`;};
   PropTmp.tAccumulated.cond0F=function(name, val){ return "tAccumulated>="+val;};
 
-  //PropTmp.tPos.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" HOUR)"; return name+">"+val;};
-  //PropTmp.tCreated.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+">"+val;};
-  PropTmp.tPos.cond1F=function(name, val){ return "UNIX_TIMESTAMP("+name+")>UNIX_TIMESTAMP(now())-"+val; };
-  PropTmp.tCreated.cond1F=function(name, val){ return "UNIX_TIMESTAMP("+name+")>UNIX_TIMESTAMP(now())-"+val; };
+  //PropTmp.tPos.cond1F=function(name, val){ val=`DATE_SUB(now(), INTERVAL ${val} HOUR)`; return name+">"+val;};
+  //PropTmp.tCreated.cond1F=function(name, val){ val=`DATE_SUB(now(), INTERVAL ${val} MONTH)`; return name+">"+val;};
+  PropTmp.tPos.cond1F=function(name, val){ return `UNIX_TIMESTAMP(${name})>UNIX_TIMESTAMP(now())-${val}`; };
+  PropTmp.tCreated.cond1F=function(name, val){ return `UNIX_TIMESTAMP(${name})>UNIX_TIMESTAMP(now())-${val}`; };
   PropTmp.histActive.cond1F=function(name, val){ return sqlHistActiveColCount+"<"+val;};
-  //PropTmp.tAccumulated.cond1F=function(name, val){ return "FLOOR(tAccumulated/"+sPerMonth+")<"+val;};
+  //PropTmp.tAccumulated.cond1F=function(name, val){ return `FLOOR(tAccumulated/${sPerMonth})<${val}`;};
   PropTmp.tAccumulated.cond1F=function(name, val){ return "tAccumulated<"+val;};
 
   PropTmp.tCreated.selOneF=function(){ return "UNIX_TIMESTAMP(ro.tCreated)";};
@@ -260,13 +260,13 @@ PluginF.general=function(site){
   PropTmp.tPos.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tPos)";};
   PropTmp.tCreated.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(ro.tCreated)";};
   PropTmp.histActive.histCondF=function(name){return sqlHistActiveColCount;};
-  //PropTmp.tAccumulated.histCondF=function(name){ return "floor(tAccumulated/"+sPerMonth+")";};
+  //PropTmp.tAccumulated.histCondF=function(name){ return `floor(tAccumulated/${sPerMonth})`;};
   PropTmp.tAccumulated.histCondF=function(name){ return "tAccumulated";};
 
   PropTmp.idTeamWanted.roleUpdF=function(name,value){ var v=value.length==0?0:Number(value);  return ['?',v];};
   PropTmp.tCreated.roleUpdF=PropTmp.tPos.roleUpdF=PropTmp.tLastWriteOfTA.roleUpdF=PropTmp.tLastPriceChange.roleUpdF=updTimeF;  // =PropTmp.terminationDate.roleUpdF
   //PropTmp.tHide.roleUpdF=function(){return ["FROM_UNIXTIME(UNIX_TIMESTAMP(tPos)+hideTimer)"];}
-  PropTmp.tHide.roleUpdF=function(){return ["FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(tPos)+hideTimer,"+intMax+"))"];}
+  PropTmp.tHide.roleUpdF=function(){return [`FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(tPos)+hideTimer,${intMax}))`];}
 
   extend(oS.Prop, PropTmp);
   extend(oB.Prop, PropTmp);  delete oB.Prop.experience;
@@ -391,10 +391,10 @@ PluginF.shiftEnd=function(site){
     shiftEnd:            {b:'111110101',type:'TIMESTAMP', default:0, feat:{kind:'S10',min:arrShiftEndMin, bucketLabel:arrShiftEndLabel}}
   };
   extend(Prop,PropTmp);
-  //Prop.shiftEnd.cond0F=function(name, val){   val="GREATEST(DATE_ADD(now(), INTERVAL "+val+" HOUR),0)";   return name+">="+val;};
-  //Prop.shiftEnd.cond1F=function(name, val){   val="GREATEST(DATE_ADD(now(), INTERVAL "+val+" HOUR),0)";   return name+"<"+val;};
-  Prop.shiftEnd.cond0F=function(name, val){   return "UNIX_TIMESTAMP("+name+")>=GREATEST(UNIX_TIMESTAMP(now())+"+val+", 0)";  };
-  Prop.shiftEnd.cond1F=function(name, val){   return "UNIX_TIMESTAMP("+name+")<GREATEST(UNIX_TIMESTAMP(now())+"+val+", 0)";   };
+  //Prop.shiftEnd.cond0F=function(name, val){   val=`GREATEST(DATE_ADD(now(), INTERVAL ${val} HOUR),0)`;   return name+">="+val;};
+  //Prop.shiftEnd.cond1F=function(name, val){   val=`GREATEST(DATE_ADD(now(), INTERVAL ${val} HOUR),0)`;   return name+"<"+val;};
+  Prop.shiftEnd.cond0F=function(name, val){   return `UNIX_TIMESTAMP(${name})>=GREATEST(UNIX_TIMESTAMP(now())+${val}, 0)`;  };
+  Prop.shiftEnd.cond1F=function(name, val){   return `UNIX_TIMESTAMP(${name})<GREATEST(UNIX_TIMESTAMP(now())+${val}, 0)`;   };
   Prop.shiftEnd.selOneF=selTimeF; Prop.shiftEnd.selF=selTimeF;
   //Prop.shiftEnd.histCondF=function(name){return "floor((UNIX_TIMESTAMP(ro.shiftEnd)-UNIX_TIMESTAMP(now()))/3600)";};
   //Prop.shiftEnd.histCondF=function(name){return "floor(UNIX_TIMESTAMP(ro.shiftEnd)-UNIX_TIMESTAMP(now()))";};
@@ -865,8 +865,8 @@ var siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calcu
     var arrCol=[];
     for(var j=0;j<KeySel.length;j++) {
       var key=KeySel[j], prop=Prop[key], pre=prop.pre||preDefault;
-      var tmp; if('selF' in prop) { tmp=prop.selF(pre+key);  }   else tmp=pre+"`"+key+"`";
-      arrCol.push(tmp+" AS "+"`"+key+"`");
+      var tmp; if('selF' in prop) { tmp=prop.selF(pre+key);  }   else tmp=`${pre}\`${key}\``;
+      arrCol.push(`${tmp} AS \`${key}\``);
     }
     oRole.sqlColList=arrCol.join(', ');
   }
@@ -961,8 +961,8 @@ app.SiteExtend=function(){
         var name=KeyPropTmp[k], prop=oR.Prop[name], b=prop.b;
         if(Number(b[oR.bFlip.DBSelOne]))  {   
           var tmp;
-          if('selOneF' in prop){tmp=prop.selOneF(name)+" AS `"+name+"`";}
-          else {const pre=prop.pre||preDefault; tmp=pre+"`"+name+"`"; }
+          if('selOneF' in prop){tmp=`${prop.selOneF(name)} AS \`${name}\``;}
+          else {const pre=prop.pre||preDefault; tmp=`${pre}\`${name}\``; }
           arrCol.push(tmp);
         }
       }

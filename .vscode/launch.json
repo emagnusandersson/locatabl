@@ -16,9 +16,6 @@
             ],
             "type": "pwa-node"
         },
-        
-        
-        
         {
             "type": "node",
             "request": "launch",
@@ -41,6 +38,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "dropFunction",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "dropFunction"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "createTable",
             "skipFiles": [
                 "<node_internals>/**"
@@ -57,6 +64,56 @@
             ],
             "program": "${workspaceFolder}/script.js",
             "args": ["--sql", "dropTable"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "truncate",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "truncate"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "truncateAllExceptSetting",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "truncateAllExceptSetting"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "createDummy",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "createDummy"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "createDummyN",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "createDummy10"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "addDummyComplaints",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/script.js",
+            "args": ["--sql", "addDummyComplaints"]
         },
         {
             "type": "node",

@@ -1,7 +1,3 @@
-:root {
-  /* --bg-color:lightgrey;
-  --bg-colorEmp:darkgrey; */
-}
 
 
 /*Emp=emphasis*/
@@ -21,9 +17,9 @@
       --border-color:#123;
       --link-external:#36b;
       --link-external-visited:#636;
+      --invert:0;
       --bg-seller:lightblue;
       --bg-buyer:pink;
-      --invert:0;
   }
   .boxShadowOn {box-shadow:0 0 0 0.2em lightgreen inset; background-color:#eee; color:limegreen}
   .boxShadowOff {box-shadow:0 0 0 0.2em darkgrey inset; background-color:#ddd}
@@ -31,9 +27,9 @@
 @media (prefers-color-scheme:dark) {
   :root {
       color-scheme:dark;
-      --bg-colorRoot:#202020;
-      --bg-color:#303030;
-      --bg-colorEmp:#3f3f3f;
+      --bg-colorRoot:#303030;
+      --bg-color:#404040;
+      --bg-colorEmp:#505050; /*Emp=emphasis*/
       --bg-colorImg:#005470;
       --bg-green:#007300;
       --bg-red:#c00020;
@@ -44,9 +40,9 @@
       --border-color:#dddddd;
       --link-external:#5487df;
       --link-external-visited:#b477b4;
+      --invert:1;
       --bg-seller:#1e8aad;
       --bg-buyer:#d8566b;
-      --invert:1;
   }
   a:link{color:#368cff}
   a:visited{color:#de41ff}
@@ -58,25 +54,24 @@
 }
 :root {
   color-scheme:light dark;
-  background:var(--bg-colorRoot)
+  background:var(--bg-colorRoot);
+  /* color:var(--text-color) */
 }
 
 
-
 * {box-sizing:border-box}
-html, body { -webkit-overflow-scrolling:touch}
+html, body {-webkit-overflow-scrolling:touch}
 body {overscroll-behavior:contain}
 
   /* Is there really a difference using this. Tested values "100%" and "none" (Used by Chrome, Edge. Not used by Safari, Firefox) */
-/* body { -webkit-text-size-adjust:none} */
+/* body {-webkit-text-size-adjust:none} */
 
   /* -webkit-appearance:none is required to make disabled buttons have grey text on Safari. */
-html, body {-webkit-appearance:none}
+html, body {-webkit-appearance:none; appearance:none}
 select, button, input, input[type=file]::file-selector-button {color:inherit} /* Removing blue text in buttons ... on Safari */
 :disabled {color:grey}
-input, button, textarea, select { font:inherit}  /* Preventing zoom, especially on Safari. */
+input, button, textarea, select {font:inherit}  /* Preventing zoom, especially on Safari. */
  
-
 
 button::-moz-focus-inner {padding:0; border:0} /*Making firefox buttons behave like other browsers (doesn't appear to do any difference)*/
 button {appearance:none; border:solid 1px; border-radius:2px; user-select:none; padding:0 3px}
@@ -113,18 +108,18 @@ body {padding:0px; text-align:center}
 
 
 table {border:1px solid; border-collapse:collapse; font-size:inherit}
-td,th {border-width:inherit; border-style:inherit }
+td,th {border-width:inherit; border-style:inherit}
 .tableDiv {border:0px}
 .tableDiv td, .tableDiv th {box-shadow:0 0 0.3em 0.1em var(--border-color) inset} /*background:lightgrey*/
 .tableDiv th {position:sticky; position:-webkit-sticky; top:0px; background:var(--bg-color); z-index:1; font-weight:normal; font-size:90%}
-tr {border-width:inherit; border-style:inherit }
-tbody,thead {border-width:inherit; border-style:inherit }
+tr {border-width:inherit; border-style:inherit}
+tbody,thead {border-width:inherit; border-style:inherit}
 thead {opacity:0.9}
 
-input, textarea, keygen, select, button, isindex  {font-family:arial, verdana, helvetica; font-size:inherit}
+input, textarea, keygen, select, button, isindex {font-family:arial, verdana, helvetica; font-size:inherit}
 
 
-input[type=email]:not(:placeholder-shown):invalid { color:red; outline-color:red}
+input[type=email]:not(:placeholder-shown):invalid {color:red; outline-color:red}
 
 
 .contDiv {
@@ -143,7 +138,7 @@ input[type=email]:not(:placeholder-shown):invalid { color:red; outline-color:red
   align-items:center;
   justify-content:space-between
 }
-.footDivLabel { display:block; position:absolute; top:.0em; width:100%; text-align:center}
+.footDivLabel {display:block; position:absolute; top:.0em; width:100%; text-align:center}
 
 .footDivGrid {margin:0em auto;
   max-width:var(--maxWidth);
@@ -157,13 +152,6 @@ input[type=email]:not(:placeholder-shown):invalid { color:red; outline-color:red
 
 .myRadio {border:0px; border-radius:0px; padding:1px 6px; margin:0em 0.2em}
 
-/* button {
-border-radius:2px;
-border:solid 1px grey;
-margin:2px;
-padding:1px 6px;
-background:#ddd;
-} */
 
 .btn-round {
   text-align:center;
@@ -191,10 +179,10 @@ background:#ddd;
 
 button.flexWidth{padding-left:0.7em; padding-right:0.7em; height:1.8rem}
 button.fixWidth{width:2rem; height:1.8rem}
-.rowButtonFeat  span { vertical-align:bottom}
-.rowButtonFeat button, .rowButtonFeat select { min-height:1.5em; font-size:0.8em; margin:0.5 0.5; padding:0 0.2em; font-size:inherit; vertical-align:bottom; border-radius:0.4em}
-.rowButtonFeat button > span:first-child { vertical-align:baseline; line-height:2.3em}
-.rowButtonFeat button > span:nth-child(2) { vertical-align:baseline; line-height:2.3em}
+.rowButtonFeat span {vertical-align:bottom}
+.rowButtonFeat button, .rowButtonFeat select {min-height:1.5em; font-size:0.8em; margin:0.5 0.5; padding:0 0.2em; font-size:inherit; vertical-align:bottom; border-radius:0.4em}
+.rowButtonFeat button > span:first-child {vertical-align:baseline; line-height:2.3em}
+.rowButtonFeat button > span:nth-child(2) {vertical-align:baseline; line-height:2.3em}
 
 .popupHover {
   position:absolute;
@@ -222,7 +210,7 @@ button.fixWidth{width:2rem; height:1.8rem}
 
 
 
-.Center-Container-Flex { position:fixed; left:0px; top:0px; width:100%; height:100%; display:flex; z-index:9001;}
+.Center-Container-Flex {position:fixed; left:0px; top:0px; width:100%; height:100%; display:flex; z-index:9001}
 .Center-Flex {
   max-width:95%;
   max-height:98%;
@@ -274,7 +262,7 @@ button.fixWidth{width:2rem; height:1.8rem}
 }
 
  /* (Optional) Apply a "closed-hand" cursor during drag operation. */
-.grabbable:active { 
+.grabbable:active {
   cursor:grabbing;
   cursor:-moz-grabbing;
   cursor:-webkit-grabbing;

@@ -340,19 +340,19 @@ app.setAccessControlAllowOrigin=function(req, res, RegAllowed){
 globalThis.makeTHead=function(StrHead){
   if(!StrHead) return "";
   var strD=''; 
-  for(var i=0; i<StrHead.length; i++){var d=StrHead[i]; strD+="<th>"+d+"</th>";}
-  var strR="<tr>"+strD+"</tr>";
-  return "<thead>"+strR+"</thead>";
+  for(var i=0; i<StrHead.length; i++){var d=StrHead[i]; strD+=`<th>${d}</th>`;}
+  var strR=`<tr>${strD}</tr>`;
+  return `<thead>${strR}</thead>`;
 }
 globalThis.makeTBody=function(arrObj, StrHead){
   var strR='', boUseStrHead=Boolean(StrHead), nHead=StrHead?StrHead.length:-1; 
   for(var j=0;j<arrObj.length;j++){
     var r=arrObj[j];
     var strD='', nColOut=boUseStrHead?nHead:r.length;
-    for(var i=0;i<nColOut;i++){ var k=boUseStrHead?StrHead[i]:i; var d=r[k]; strD+="<td>"+d+"</td>";}
-    strR+="<tr>"+strD+"</tr>";
+    for(var i=0;i<nColOut;i++){ var k=boUseStrHead?StrHead[i]:i; var d=r[k]; strD+=`<td>${d}</td>`;}
+    strR+=`<tr>${strD}</tr>`;
   }
-  return "<tbody>"+strR+"</tbody>";
+  return `<tbody>${strR}</tbody>`;
 }
 globalThis.makeTable=function(arrObj, StrHead=null){
   if(arrObj.length && !StrHead) StrHead=Object.keys(arrObj[0]);

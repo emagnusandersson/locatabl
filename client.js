@@ -218,7 +218,10 @@ app.CreatorPlugin.general=function(){
       // currency
     var tmpf=function(){
       var c=createElement('select'); //.prop('id','currency');
-      for(var i=0;i<currencies[0].length;i++){    var opt=createElement('option').myText(currencies[1][i]+' ('+currencies[0][i]+')').prop('value',currencies[1][i]); c.append(opt);    }
+      for(var i=0;i<currencies[0].length;i++){
+        var cur=currencies[1][i], country=currencies[0][i];
+        var opt=createElement('option').myText(`${cur} (${country})`).prop('value',cur); c.append(opt);
+      }
       var optT=c.querySelector("option[value='USD']");    optT.prop('selected', 'selected');
       return c;
     }
@@ -335,7 +338,7 @@ app.CreatorPlugin.general=function(){
       var c=createElement('select'); for(var i=0;i<arrCoordinatePrecisionM.length;i++){ var v=arrCoordinatePrecisionM[i], op=createElement('option').prop('value',v).myText(approxDist(v)); c.append(op); }   return c;
     }
     var tmpSet=function(){  var [bestVal, iBest]=closest2Val(arrCoordinatePrecisionM, userInfoFrDB[ORole[this.iRole].strRole].coordinatePrecisionM); this.value=bestVal;  }
-    var tmpSetB=r=>{var n=r.coordinatePrecisionM, str=n<1000?"±"+n+" meter":"±"+n/1000+" km"; return str;};
+    var tmpSetB=r=>{var n=r.coordinatePrecisionM, str=n<1000?`±${n} meter`:`±${n/1000} km`; return str;};
     var tmpPropProt={strType:'select', crInp:tmpCr, setInp:tmpSet, setInfo:tmpSetB, setTabF:tmpSetB, setMapF:tmpSetB, setMapMF:tmpSetB};
     for(let i=0;i<ORole.length;i++){ extend(ORole[i].Prop.coordinatePrecisionM, tmpPropProt);  }
     
@@ -433,7 +436,7 @@ app.CreatorPlugin.vehicleType=function(charRoleUC){
 
     // images
   var strPlugin='vehicleType';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
   app.wsVehicleType=wseSpecImageFolder+'vehicleType.png';
   app.wsVehicleTypeW=wseSpecImageFolder+'vehicleTypeW.png';
   //wsVehicleTypeZ=wseSpecImageFolder+'vehicleTypeZ.png';
@@ -442,7 +445,7 @@ app.CreatorPlugin.vehicleType=function(charRoleUC){
   app.wsDummy=wseSpecImageFolder+'dummy.png';
   app.wsSleepy=wseSpecImageFolder+'carSleepy.png';
 
-  //elBody.css({background:'url('+wseSpecImageFolder+'tsBackgroundWW.png)'});
+  //elBody.css({background:`url(${wseSpecImageFolder}tsBackgroundWW.png)`});
 
   var objSpriteVehProt={
     item:{
@@ -552,7 +555,7 @@ app.CreatorPlugin.distNTimePrice=function(){
       inpDist.value=comparePrice.dist;
       inpUnit.value=strUnitDist;
       inpTime.value=comparePrice.time;
-      labTime.firstChild.nodeValue=langHtml.Time+' ('+langHtml.timeUnit[strUnitTime][1][1]+'): ';
+      labTime.firstChild.nodeValue=`${langHtml.Time} (${langHtml.timeUnit[strUnitTime][1][1]}): `;
       mess.firstChild.nodeValue='';
       if(typeof extraSaveFuncT!='undefined') extraSaveFunc=extraSaveFuncT; else extraSaveFunc=null;
       doHistPush({strView:'viewComparePriceDataPop'});
@@ -672,7 +675,7 @@ app.CreatorPlugin.distNTimePrice=function(){
       var setUpUnits=function(){
         var arrStr=['dist','comparePrice','pricePerDist'], iMTab=ListCtrlDiv[oS.ind].tr.iMTab;  //,'strUnitDist'
         for(var i=0;i<arrStr.length;i++){
-          var ele=viewInfoS.divCont.querySelector('div>span[name='+arrStr[i]+']');
+          var ele=viewInfoS.divCont.querySelector(`div>span[name=${arrStr[i]}]`);
           var strName=ele.attr('name'), prop=(strName in oS.Prop)?oS.Prop[strName]:{};
           const rowMTab=oS.MTab[iMTab];
           extend(ele,{strName, iRole:oS.ind});
@@ -715,7 +718,10 @@ app.CreatorPlugin.distNTimePrice=function(){
       // pricePerHour
     extend(oS.Prop.pricePerHour, { strType:'number',inpW:4 });
       // strUnitDist
-    var tmpSetUnitDist=function(rowMTab){this.querySelector('button').firstChild.nodeValue='('+Number(comparePrice.dist).toFixed(2)+' '+strUnitDist+', '+comparePrice.time+' '+langHtml.timeUnit.m[1][1]+')';};
+    var tmpSetUnitDist=function(rowMTab){
+      this.querySelector('button').firstChild.nodeValue=
+      `(${Number(comparePrice.dist).toFixed(2)} ${strUnitDist}, ${comparePrice.time} ${langHtml.timeUnit.m[1][1]})`;
+    };
     extend(oS.Prop.strUnitDist, {
       strType:'select',
       crInp:function(){  return createElement('select').myAppend(  createElement('option').myText('km').prop('value',0), createElement('option').myText('mile').prop('value',1)  );  },
@@ -799,7 +805,10 @@ app.CreatorPlugin.transportBuyer=function(){
   var {StrTransportBuyer}=oB; // ['distStartToGoal','compassPoint','destination']
   this.rewriteObj=function(){
       // distStartToGoal
-    var tmpSet=function(rowMTab){  const strCompass=langHtml.compassPointL[Number(  rowMTab.compassPoint  )]; return rowMTab.distStartToGoal+' km ('+strCompass+')'; }
+    var tmpSet=function(rowMTab){
+      const strCompass=langHtml.compassPointL[Number(  rowMTab.compassPoint  )];
+      return `${rowMTab.distStartToGoal} km (${strCompass})`;
+    }
     extend(oB.Prop.distStartToGoal, { inpW:4, setInfo:tmpSet, setTabF:tmpSet, setMapF:tmpSet, setMapMF:tmpSet });
       // compassPoint
     var tmpSet=function(rowMTab){  return langHtml.compassPointL[Number(  rowMTab.compassPoint  )]; }
@@ -874,7 +883,7 @@ app.CreatorPlugin.shiftEnd=function(){
         });
         //if(typeof userInfoFrDB.seller=='array' && 'shiftEnd' in userInfoFrDB.seller) {   // If there is a saved value for 'shiftEnd' then try set it as selected
         if(userInfoFrDB.seller instanceof Array && 'shiftEnd' in userInfoFrDB.seller) {   // If there is a saved value for 'shiftEnd' then try set it as selected
-          var tmp="option[value='"+userInfoFrDB.seller.shiftEnd+"']";
+          var tmp=`option[value='${userInfoFrDB.seller.shiftEnd}']`;
           //var opttmp=this.querySelector(tmp);   if(opttmp.length==1) opttmp.prop('selected', 'selected');
           this.querySelector(tmp).prop('selected', 'selected');
         }
@@ -992,7 +1001,7 @@ app.CreatorPlugin.taxi=function(){
 
     // images
   var strPlugin='taxi';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
   app.wsExtraSeat=wseSpecImageFolder+'extraSeat.png';
   app.wsChildSeat=wseSpecImageFolder+'childSeat.jpg';
   app.wsChildSeat2=wseSpecImageFolder+'childSeat2.jpg';
@@ -1110,7 +1119,7 @@ app.CreatorPlugin.transport=function(){
 
     // images
   var strPlugin='transport';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
   app.wsDummy=wseSpecImageFolder+'dummy.png';
   app.wsSleepy=wseSpecImageFolder+'carSleepy.png';
 
@@ -1306,7 +1315,7 @@ app.CreatorPlugin.cleaner=function(){
 
     // images
   var strPlugin='cleaner';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
 
   this.rewriteLang=function(){
     rewriteLangBuyerToCustomer();
@@ -1377,7 +1386,7 @@ app.CreatorPlugin.windowcleaner=function(){
 
     // images
   var strPlugin='windowcleaner';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
 
   this.rewriteLang=function(){
     rewriteLangBuyerToCustomer();
@@ -1448,7 +1457,7 @@ app.CreatorPlugin.lawnmowing=function(){
 
     // images
   var strPlugin='lawnmowing';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
   app.wsDummy=wseSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
@@ -1524,7 +1533,7 @@ app.CreatorPlugin.snowremoval=function(){
 
     // images
   var strPlugin='snowremoval';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
   app.wsDummy=wseSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
@@ -1594,7 +1603,7 @@ app.CreatorPlugin.fruitpicker=function(){
   
     // images
   var strPlugin='fruitpicker';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
 
   this.rewriteLang=function(){
     //langHtml.sellerRewritten=langHtml.picker;
@@ -1670,7 +1679,7 @@ app.CreatorPlugin.programmer=function(){
 
     // images
   var strPlugin='programmer';
-  var wseSpecImageFolder='/pluginLib/'+strPlugin+'/';
+  var wseSpecImageFolder=`/pluginLib/${strPlugin}/`;
   //wsDummy=wseSpecImageFolder+'dummy.png';
 
   this.rewriteLang=function(){
@@ -1909,7 +1918,7 @@ app.selSpriteCreator=function(objSprite){
     var i=spriteOnButt.iCur;
     divMenu.show();
     divMenu.cssChildren(colOff);
-    divMenu.querySelector('div:nth-of-type('+(i+1)+')').css(colOn);
+    divMenu.querySelector(`div:nth-of-type(${i+1})`).css(colOn);
   }
   el.closeFunc=function() {
     divMenu.hide();
@@ -2073,7 +2082,7 @@ var agreementStartCreator=function(){
 
 var trackConv=function(google_conversion_id,google_conversion_label) {
   var image = new Image(1,1);
-  image.src = "https://www.googleadservices.com/pagead/conversion/"+google_conversion_id+"/?label="+google_conversion_label+"&script=0";
+  image.src = `https://www.googleadservices.com/pagead/conversion/${google_conversion_id}/?label=${google_conversion_label}&script=0`;
 }
 
 
@@ -2372,7 +2381,7 @@ var viewCreateUserCreator=function(){
     resetMess();
     var strPassword=inpPass.value.trim();
     if(strPassword!==inpPassB.value.trim()) { var tmp='Password-fields are not equal'; setMess(tmp, 5); return; }
-    if(strPassword.length<lPWMin) { var tmp='The password must be at least '+lPWMin+' characters long'; setMess(tmp, 5); return; }
+    if(strPassword.length<lPWMin) { var tmp=`The password must be at least ${lPWMin} characters long`; setMess(tmp, 5); return; }
 
     var strName=inpName.value.trim();
     var strEmail=inpEmail.value.trim(); if(/\S+@\S+/.test(strEmail)) ; else {setMess('Invalid email', 5); return;}
@@ -2417,7 +2426,7 @@ var viewCreateUserCreator=function(){
   var inpPass=formCreateAccount.querySelector("input[name='password']").css({'max-width':'100%'});
   var inpPassB=formCreateAccount.querySelector("input[name='passwordB']").css({'max-width':'100%'});
   [...formCreateAccount.querySelectorAll('input[type=text],[type=email],[type=number],[type=password]')].forEach( ele=>ele.css({display:'block', 'margin-bottom':'0.5em'}) );
-  inpPass.attr("placeholder", 'at least '+lPWMin+' characters');
+  inpPass.attr("placeholder", `at least ${lPWMin} characters`);
 
   el.divDisclaimerW=createElement('div').css({'margin':'0em', 'padding':'0em'});
 
@@ -2451,7 +2460,7 @@ var viewChangePWPopCreator=function(){
     resetMess();
     messDiv.myText('');
     if(inpPass.value.trim()!==inpPassB.value.trim()) { setMess('The new password fields are not equal', 5); return; }
-    var lTmp=boDbg?2:6; if(inpPass.value.trim().length<lTmp) { setMess('The password must be at least '+lTmp+' characters long', 5); return; }
+    var lTmp=boDbg?2:6; if(inpPass.value.trim().length<lTmp) { setMess(`The password must be at least ${lTmp} characters long`, 5); return; }
     if(typeof SHA1 == 'undefined') { setMess(strSha1NotLoaded); return;}
 
     var hashPWO=inpPassOld.value.trim()+strSalt; for(var i=0;i<nHash;i++) hashPWO=SHA1(hashPWO);
@@ -2558,8 +2567,8 @@ var viewConvertIDCreator=function(){
   var cancelMess=createElement('span').hide().myText(langHtml.cancelMessLogin);
 
   var headA=createElement('h2').myText('This site has changed ID-provider').css({'margin-top':'0.5em'});
-  var headB=createElement('div').myAppend('<p>Before '+strIPAltLong+' was used as ID-provider now '+strIPPrimLong+' is used instead. Sorry if you think its an inconvenience.<p>Login with '+strIPPrimLong+' (You\'ll be asked to create an account if you don\'t have one).').css({'margin-top':'0.5em'});
-  var headC=createElement('div').myAppend('<p>After that login with your old ('+strIPAltLong+') ID to convert reputation and comments to the '+strIPPrimLong+' ID.').css({'margin-top':'0.5em'});
+  var headB=createElement('div').myAppend(`<p>Before ${strIPAltLong} was used as ID-provider now ${strIPPrimLong} is used instead. Sorry if you think its an inconvenience.<p>Login with ${strIPPrimLong} (You\'ll be asked to create an account if you don\'t have one).`).css({'margin-top':'0.5em'});
+  var headC=createElement('div').myAppend(`<p>After that login with your old (${strIPAltLong}) ID to convert reputation and comments to the ${strIPPrimLong} ID.`).css({'margin-top':'0.5em'});
 
   var timerClosePoll;
 
@@ -2633,7 +2642,7 @@ var viewFilterCreator=function(){
   el.setUp=function() {
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     divFoot.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(` (${strTmp})`);
     roleToggler.setStat(charRole);
     ElRole[indRole].show(); //.setUp();
     ElRole[1-indRole].hide();
@@ -2948,7 +2957,7 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   
   var divHead=createElement('div').css({'margin-bottom':'0.5em','font-weight':'bold'});  divHead.myText('Data from Id-provider (IdP) (Facebook): ')
 
-  var wsImagePrim=window['ws'+ucfirst(strIPPrim)+'22'];
+  var wsImagePrim=window[`ws${ucfirst(strIPPrim)}22`];
   var buttRefetch=createElement('img').prop({src:wsImagePrim, alt:"IdP"}).css({'vertical-align':'middle'}).on('click', async function(e){
     e.stopPropagation();
     var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
@@ -3085,7 +3094,7 @@ var settingCreator=function(oRole){
       // Add labels
     for(var i=0;i<StrGroup.length;i++){
       var h=createElement('span').myText(langHtml[StrGroup[i]]+':').css({'font-size':'120%','font-weight':'bold', display:'block'});
-      var tmp=el.querySelector('[name='+StrGroupFirst[i]+']').parentNode; tmp.insertAdjacentElement('beforebegin', createElement('hr').css('clear','both')); tmp.insertAdjacentElement('beforebegin', h);
+      var tmp=el.querySelector(`[name=${StrGroupFirst[i]}]`).parentNode; tmp.insertAdjacentElement('beforebegin', createElement('hr').css('clear','both')); tmp.insertAdjacentElement('beforebegin', h);
     }
   }
   el.setUp=function(){
@@ -3328,7 +3337,7 @@ var divLoginInfoCreator=function(){
     }
     if(boIn){
       spanName.firstChild.nodeValue=userInfoFrDB.user.nameIP;
-      var strTmp=arrKind.join(', '); if(strTmp) strTmp='('+strTmp+')';
+      var strTmp=arrKind.join(', '); if(strTmp) strTmp=`(${strTmp})`;
       spanKind.firstChild.nodeValue=strTmp;
       //el.css({visibility:''});
       el.show();
@@ -3389,7 +3398,7 @@ var viewEntryCreator=function(oRole){
   var pSeeAlso=createElement('p').myAppend(aTOS);
 
 
-  var buttLoginTeam=createElement('button').myText(langHtml.SignInAs+' ('+langHtml.TeamAdmin+')').css({display:'block'}).on('click', async function(e){
+  var buttLoginTeam=createElement('button').myText(`${langHtml.SignInAs} (${langHtml.TeamAdmin})`).css({display:'block'}).on('click', async function(e){
     e.stopPropagation();
     var [err, code]=await getOAuthCode(); if(err) {setMess(err); return;}
     var oT={IP:strIPPrim, fun:'teamFun', strRole, caller:'index', code};
@@ -3416,7 +3425,7 @@ var viewEntryCreator=function(oRole){
   var aMoreAboutWhyAnIdPIsUsed=createElement('a').prop({href:'https://info.locatabl.com/WhyIsAnIdPUsed'}).myText(langHtml.MoreAboutWhyAnIdPIsUsed).css({display:'block'});
 
   
-  el.teamApprovedMess=createElement('div').css({display:'block'}).myText('Team/brand not approved, Contact '+domainName+' to become approved.');
+  el.teamApprovedMess=createElement('div').css({display:'block'}).myText(`Team/brand not approved, Contact ${domainName} to become approved.`);
   var Divs=[divOrdinal, divLoginSelector, pWiki, buttLoginTeam, el.teamApprovedMess];
   Divs.forEach(ele=>ele.css({})); //'margin':'1em 0em 1em 0.6em'
   
@@ -3817,7 +3826,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
     if(boMTab) ListCtrlDiv[oRole.ind].mySet(iMTab);
     el.listCtrlDivW.toggle(boMTab);
     spanRole.myText(langHtml[ucfirst(oRole.strRole)]);
-    span.myText('Complaints on a user ('+langHtml[oRole.strRole]+')');
+    span.myText(`Complaints on a user (${langHtml[oRole.strRole]})`);
     divFoot.css({background:oRole.strColor}); // divFoot label
   }
   el.getLoadArg=function(){ return {offset, rowCount, idComplainee:el.idComplainee};   }
@@ -3874,7 +3883,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
 
     if(nTot>offset+tab.length) butNext.prop({disabled:false}); else butNext.prop({disabled:1});
     if(offset>0) butPrev.prop({disabled:false}); else butPrev.prop({disabled:1});
-    spanOffsetInfo.myText('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
+    spanOffsetInfo.myText(`Row: ${offset+1}-${nCur+offset}, tot: ${nTot}`);
     resetMess(10);
   }
   var complaintCommentButtClick=async function(){
@@ -3889,7 +3898,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
   var oRole;
   el.listCtrlDivW=createElement('span').css({'float':'right'});
   
-  var complaintCommentButt=createElement('button').myText(langHtml.vote.writeComment+' ('+langHtml.IdProviderNeeded+')').css({'margin-right':'1em'}).on('click', complaintCommentButtClick);
+  var complaintCommentButt=createElement('button').myText(`${langHtml.vote.writeComment} (${langHtml.IdProviderNeeded})`).css({'margin-right':'1em'}).on('click', complaintCommentButtClick);
   var topDiv=createElement('div').myAppend(complaintCommentButt, el.listCtrlDivW).css({'margin-top':'1em',overflow:'hidden'});
   
   var offset=0,rowCount=20;
@@ -3973,7 +3982,7 @@ var viewComplainerCreator=function(){  // Complaints from a certain Complainer
 
     if(nTot>offset+tab.length) butNext.prop({disabled:false}); else butNext.prop({disabled:1});
     if(offset>0) butPrev.prop({disabled:false}); else butPrev.prop({disabled:1});
-    spanOffsetInfo.myText('Row: '+(offset+1)+'-'+(nCur+offset)+', tot: '+nTot);
+    spanOffsetInfo.myText(`Row: ${offset+1}-${nCur+offset}, tot: ${nTot}`);
     resetMess(10);
   }
 
@@ -4021,8 +4030,8 @@ var mapThumbCreator=function(){  // Little map
 
     canvas.width=widthBox;   canvas.height=heightBox;
 
-    //var iMTab=viewTable.ElRole[oRole.ind].tBody.children('tr:nth-of-type('+(iRow+1)+')').data('iMTab');
-    var iMTab=viewTable.ElRole[oRole.ind].tBody.querySelector('tr:nth-of-type('+(iRow+1)+')').iMTab;
+    //var iMTab=viewTable.ElRole[oRole.ind].tBody.children(`tr:nth-of-type(${iRow+1})`).data('iMTab');
+    var iMTab=viewTable.ElRole[oRole.ind].tBody.querySelector(`tr:nth-of-type(${iRow+1})`).iMTab;
 
     arrInd.length=0; for(var i=0;i<oRole.nMTab;i++) arrInd[i]=i;  arrValRemove(arrInd,iMTab);   arrInd.push(iMTab);  // Put iMTab last
 
@@ -4056,9 +4065,9 @@ var mapThumbCreator=function(){  // Little map
       var tileXR=pixXR[i]/256, tileYR=pixYR[i]/256,   tileX=Math.floor(tileXR), tileY=Math.floor(tileYR);
       if(i==0) { tileXRZ=tileXR; tileYRZ=tileYR;}
       var lef=-(tileXRZ-tileX)*128, to=-(tileYRZ-tileY)*128;
-      var srcTmp=uMapSourceDir+'/'+zoomThumb+'/'+tileX+'/'+tileY+'.png';
+      var srcTmp=`${uMapSourceDir}/${zoomThumb}/${tileX}/${tileY}.png`;
       //if(zoomThumb<0) {srcTmp=window['wsMapm'+-Number(zoomThumb)]; }
-      if(zoomThumb<0) {srcTmp=wseImageFolder+'/mapm'+(-Number(zoomThumb))+'.png'; }
+      if(zoomThumb<0) {srcTmp=`${wseImageFolder}/mapm${(-Number(zoomThumb))}.png`; }
       arrImage[i].prop({src:srcTmp}).css({left:lef+'px',top:to+'px'});
       var tmpName=lef+' '+to;
       if(arrtmp.indexOf(tmpName)==-1) {arrImage[i].show(); arrtmp.push(tmpName);} else arrImage[i].hide();
@@ -4122,7 +4131,7 @@ var listCtrlCreator=function(oRole){ // The little map and up/down arrows
     }
     else {
       trt=trCur.previousElementSibling;
-      if(trt===null) trt=trCur.parentNode.querySelector('tr:nth-of-type('+oRole.nMTab+')');
+      if(trt===null) trt=trCur.parentNode.querySelector(`tr:nth-of-type(${oRole.nMTab})`);
     }
     var iTmp=trt.iMTab;
     ViewInfo[oRole.ind].setContainers(iTmp);
@@ -4174,7 +4183,7 @@ var viewInfoCreator=function(oRole){ // All the detailed info of a user.
 
     for(var i=0;i<StrGroup.length;i++){
       var h=createElement('span').css({'font-size':'120%','font-weight':'bold', display:'block'}).myAppend(langHtml[StrGroup[i]]+':');
-      var tmp=el.divCont.querySelector('div[name='+StrGroupFirst[i]+']'); tmp.myBefore(createElement('hr')).myBefore(h); 
+      var tmp=el.divCont.querySelector(`div[name=${StrGroupFirst[i]}]`); tmp.myBefore(createElement('hr')).myBefore(h); 
     }
   }
   el.divCont=createElement('div').addClass('contDiv');
@@ -4284,7 +4293,7 @@ var mapDivCreator=function(){
       var dXScreen=xavg-xavgL;    leftCur+=dXScreen;
       var dYScreen=yavg-yavgL;    topCur+=dYScreen;
       boundTransformVariables();
-      elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+      elBoard.css({transform:`matrix(${zCur},0,0,${zCur},${leftCur},${topCur})`});
     }else if(mode==2){
 
       var doub=calcTwoTouchCenterNDist(Tou);
@@ -4303,7 +4312,7 @@ var mapDivCreator=function(){
 
  
       boundTransformVariables();
-      elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+      elBoard.css({transform:`matrix(${zCur},0,0,${zCur},${leftCur},${topCur})`});
       elDivPivotDbg.css({left:brdTilePiv.x+'px',top:brdTilePiv.y+'px'}); // little black square
     }
     else if(mode==0){ // boEnd
@@ -4318,7 +4327,7 @@ var mapDivCreator=function(){
       [leftCur,topCur]=calcLeftTop(widthBox/2, heightBox/2, zCur, brdTilePiv);
 
       boundTransformVariables();
-      elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+      elBoard.css({transform:`matrix(${zCur},0,0,${zCur},${leftCur},${topCur})`});
 
         // Converting to pWCC
       var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
@@ -4382,7 +4391,7 @@ var mapDivCreator=function(){
     [leftCur,topCur]=calcLeftTop(xavg-leftContainer, yavg-topContainer, zCur, brdTilePiv);
 
     boundTransformVariables();
-    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    elBoard.css({transform:`matrix(${zCur},0,0,${zCur},${leftCur},${topCur})`});
 
       // Converting to pWCC; (might seem unnecessary, in a future version the amount of statevariables might be reduced) See comment below on state variables
     var brdTilePiv=calcBrdTilePiv(widthBox/2, heightBox/2, zCur, leftCur, topCur);
@@ -4400,9 +4409,9 @@ var mapDivCreator=function(){
     var dXScreen=xavg-xavgL;    leftCur=leftCur+dXScreen;
     var dYScreen=yavg-yavgL;    topCur=topCur+dYScreen;
     boundTransformVariables();
-    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    elBoard.css({transform:`matrix(${zCur},0,0,${zCur},${leftCur},${topCur})`});
     
-    if(boDbg) setMess('topCur: '+round(topCur-dYScreen)+', dYScreen: '+round(dYScreen)+', topCur: '+round(topCur));
+    if(boDbg) setMess(`topCur: ${round(topCur-dYScreen)}, dYScreen: ${round(dYScreen)}, topCur: ${round(topCur)}`);
     xavgL=xavg; yavgL=yavg;
   }
   var myMousedown=function(e){
@@ -4419,7 +4428,7 @@ var mapDivCreator=function(){
     elGlas.css({cursor:''});
     e.preventDefault();
     boundTransformVariables();
-    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    elBoard.css({transform:`matrix(${zCur},0,0,${zCur},${leftCur},${topCur})`});
     //pixC=calcPixC();
     pWCC=pixMult(calcPixC(),1/zoomFacW);
     //var zFac=round(zCur)*zoomFacW, zLev=log2(zFac);
@@ -4535,9 +4544,9 @@ var mapDivCreator=function(){
           else if(nCorrectionY>0) {srcTmp=wseImageFolder+'white256.png'; srcTmp2=wseImageFolder+'white512.png' }//wseImageFolder+'southPole.png';
           else {
             if(zoomLevPlusDRLev>=0) {
-              srcTmp=uMapSourceDir+'/'+zoomLevPlusDRLev+'/'+iTile+'/'+jTile+'.png';
-              srcTmp2=uMapSourceDir2+'/'+zoomLevPlusDRLev+'/'+iTile+'/'+jTile+'.png';
-            } else { srcTmp=wseImageFolder+'mapm'+(-zoomLevPlusDRLev)+'.png'; }
+              srcTmp=`${uMapSourceDir}/${zoomLevPlusDRLev}/${iTile}/${jTile}.png`;
+              srcTmp2=`${uMapSourceDir2}/${zoomLevPlusDRLev}/${iTile}/${jTile}.png`;
+            } else { srcTmp=`${wseImageFolder}mapm${(-zoomLevPlusDRLev)}.png`; }
             //else if(zoomLev==-1) srcTmp='mapm1.png';
             //else if(zoomLev==-2) srcTmp='mapm2.png';
             //else if(zoomLev==-3) srcTmp='mapm3.png';
@@ -4553,8 +4562,8 @@ var mapDivCreator=function(){
           if(TileStack.length) elTile=TileStack.pop(); 
           else { elTile=createElement('img').css({position:'absolute',opacity:0.7}).prop({alt:"tile"});  } //,border:'solid 1px grey'
           //elTile.src=srcTmp;
-          elTile.srcset=srcTmp+" 1x, "+srcTmp2+" 2x ";
-          elTile.css({left:left+'px',top:top+'px', 'transform-origin':'left top', transform:'scale('+1/dr+')'});
+          elTile.srcset=`${srcTmp} 1x, ${srcTmp2} 2x `;
+          elTile.css({left:left+'px',top:top+'px', 'transform-origin':'left top', transform:`scale(${1/dr})`});
           if(boDbgCheckered) elTile.css({opacity:floatOpacity});
           elBoard.append(elTile);
         }
@@ -4563,7 +4572,7 @@ var mapDivCreator=function(){
     }else{
     }
     zCur=1;
-    elBoard.css({'transform':'matrix('+zCur+',0,0,'+zCur+','+leftCur+','+topCur+')'});
+    elBoard.css({transform:`matrix(${zCur},0,0,${zCur},${leftCur},${topCur})`});
     return boRefresh;
   }
 
@@ -4730,8 +4739,8 @@ var mapDivCreator=function(){
       obj=elMark.makeMultiRowIconObj(i);
       elMark.dataObjMarkerMultCache=obj;
     }
-    var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y, strTrans='-'+xTrans+'px, -'+yTrans+'px';
-    elMark.elImg.src=obj.url; elMark.css({width:'', height:'', background:'', transform:'translate('+strTrans+')', 'z-index':maxZ, border:''}); 
+    var xTrans=Math.round(obj.anchor.x), yTrans=obj.anchor.y, strTrans=`-${xTrans}px, -${yTrans}px`;
+    elMark.elImg.src=obj.url; elMark.css({width:'', height:'', background:'', transform:`translate(${strTrans})`, 'z-index':maxZ, border:''}); 
     //arrDivUnCertain[i].css({opacity:flUncertainOpacityOn});
     elMark.elDivUnCertain.css({opacity:flUncertainOpacityOn});
     return false;
@@ -4761,15 +4770,15 @@ var mapDivCreator=function(){
       var {url, origin, zoom, size, anchor, boUseFrame}=obj;
       strSrc=url;
       if(origin){
-        var strScale='scale('+zoom+')';
+        var strScale=`scale(${zoom})`;
         strWidth=size.width+'px'; strHeight=size.height+'px';
         var lef=-origin.x, to=-origin.y;
-        strSrc=wsOnePixTransparent; strBackground='url('+url+') '+lef+'px '+to+'px ';
+        strSrc=wsOnePixTransparent; strBackground=`url(${url}) ${lef}px ${to}px `;
       }
       if(boUseFrame) strBorder='solid 1px '+this.oRole.strColor;
-      if(anchor){  var xTrans=Math.round(anchor.x), yTrans=anchor.y; strTrans='-'+xTrans+'px, -'+yTrans+'px';  }
+      if(anchor){  var xTrans=Math.round(anchor.x), yTrans=anchor.y; strTrans=`-${xTrans}px, -${yTrans}px`;  }
     }
-    elMark.css({transform:'translate('+strTrans+') '+strScale, border:strBorder, width:strWidth, height:strHeight, background:strBackground});
+    elMark.css({transform:`translate(${strTrans}) ${strScale}`, border:strBorder, width:strWidth, height:strHeight, background:strBackground});
     elMark.elImg.src=strSrc;
   }
   
@@ -4846,7 +4855,7 @@ var mapDivCreator=function(){
   var elGlasBack=elGlas.cloneNode(true);
   
   //var srcsetMe="markerMe.gif 1x, markerMe_2.gif 2x, markerMe_3.gif 3x";
-  var srcsetMe=wsMarkerMe+" 1x, "+wsMarkerMe2+" 2x";
+  var srcsetMe=`${wsMarkerMe} 1x, ${wsMarkerMe2} 2x`;
   var elImgMe=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':1}).prop({srcset:srcsetMe, alt:"me"});  // , src:wsMarkerMe
   el.elImgOpponent=createElement('img').css({transform:'translate(-50%, -100%)', position:'absolute','z-index':2}).prop({src:wsMarkerOpponent, alt:"opponent"}).on('click',function(){
     var {objSender, message, tSent, latlngSender}=this.myData;
@@ -5140,7 +5149,7 @@ var markSelectorCreator=function(oRole){
   var el=createElement('div');
   var {charRoleUC}=oRole;
   var {StrProp, StrGroup, StrGroupFirst}=oRole.Main;
-  el.setUp=function() {  tBody.querySelector('input[type=radio][value='+oRole.colOneMark+']').prop({checked:true});  }
+  el.setUp=function() {  tBody.querySelector(`input[type=radio][value=${oRole.colOneMark}]`).prop({checked:true});  }
 
   var saveRB=function(colOneMarkNew) {
     if(colOneMarkNew!=oRole.colOneMark){
@@ -5168,7 +5177,7 @@ var markSelectorCreator=function(oRole){
     for(var i=0;i<StrGroup.length;i++){
       var th=createElement('th').myText(langHtml[StrGroup[i]]+':').css({'font-size':'120%','text-align':'center',background:'var(--bg-colorEmp)'}).attr('colspan',2);
       var h=createElement('tr').myAppend(th);
-      el.querySelector('tr[name='+StrGroupFirst[i]+']').insertAdjacentElement('beforebegin', h);
+      el.querySelector(`tr[name=${StrGroupFirst[i]}]`).insertAdjacentElement('beforebegin', h);
     }
   }
   var tBody=createElement('tbody');  el.tBody=tBody;
@@ -5184,7 +5193,7 @@ var viewMarkSelectorCreator=function(){
   el.setUp=function() {  
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     divFoot.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(` (${strTmp})`);
     roleToggler.setStat(charRole);
     ElRole[indRole].show().setUp();
     ElRole[1-indRole].hide();
@@ -5268,7 +5277,7 @@ var columnSelectorCreator=function(oRole){
       var strName=StrGroup[i], strLab=langHtml[strName]; //??strName;
       var th=createElement('th').myText(strLab+':').attr('colspan',2).css({'font-size':'120%','text-align':'center'});
       var h=createElement('tr').myAppend(th);
-      el.querySelector('tr[name='+StrGroupFirst[i]+']').insertAdjacentElement('beforebegin', h);
+      el.querySelector(`tr[name=${StrGroupFirst[i]}]`).insertAdjacentElement('beforebegin', h);
     }
   }
   var arrCB=Array(StrProp.length);
@@ -5287,7 +5296,7 @@ var viewColumnSelectorCreator=function(){
   el.setUp=function() {
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     divFoot.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(` (${strTmp})`);
     roleToggler.setStat(charRole);
     ElRole[indRole].show().setUp();
     ElRole[1-indRole].hide();
@@ -5381,7 +5390,7 @@ var dragSorterCreator=function(cbMouseup){
       if(y>yNextOff+hNext/2) { tmp.insertAdjacentElement('afterend', movedRow); }
     }
     var yCurOff=movedRow.offsetTop;
-    movedRow.css({'transform':'translateY('+(yMouseOff-yCurOff)+'px)'});
+    movedRow.css({transform:`translateY(${yMouseOff-yCurOff}px)`});
   };
 
   el.myAdd=function(arrName,arrLabel){
@@ -5394,7 +5403,7 @@ var dragSorterCreator=function(cbMouseup){
   }
   el.getMovedRow=function(){return movedRow;}
   el.setUp=function(arrName,arrLabel){    el.empty();    el.myAdd(arrName,arrLabel);  }
-  el.myRemove=function(arrName){  for(var i=0;i<arrName.length;i++){ el.querySelector('[name='+arrName[i]+']').remove(); }  }
+  el.myRemove=function(arrName){  for(var i=0;i<arrName.length;i++){ el.querySelector(`[name=${arrName[i]}]`).remove(); }  }
   el.myGet=function(arrO=[]){  arrO.length=0;  [...el.childNodes].forEach(function(ele,i){ arrO[i]=ele.attr("name"); }); return arrO;   }
 
   el.addClass('unselectable');
@@ -5413,7 +5422,7 @@ var viewColumnSorterCreator=function(){
     arrLabel.length=0;  for(var i=0;i<oRole.ColsShow.length;i++){ arrLabel[i]=calcLabel(langHtml.prop, oRole.ColsShow[i]);  }
     dragSorter.setUp(oRole.ColsShow,arrLabel);
     divFoot.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(` (${strTmp})`);
     roleToggler.setStat(oRole.charRole);
   }
 
@@ -5456,7 +5465,7 @@ var tHeadLabelCreator=function(oRole){
     arrImgSort.forEach(function(ele){ele.prop({src:wsUnsorted}); });
     //viewSortImages.prop({src:wsUnsorted});
     var tmp=boAsc?wsIncreasing:wsDecreasing;
-    r.querySelector('th[name='+strName+']').querySelector('img[data-type=sort]').prop({src:tmp});
+    r.querySelector(`th[name=${strName}]`).querySelector('img[data-type=sort]').prop({src:tmp});
   }
 
   el.setUpCurrencyInfo=function(){
@@ -5553,9 +5562,9 @@ var tableCreator=function(oRole){
       var strName=oRole.ColsShow[i];
       for(var j=0;j<arrRow.length;j++){
         var tr=arrRow[j];
-        var td=tr.querySelector('td[name='+strName+']');  td.show(); td.parentNode.prepend(td);
+        var td=tr.querySelector(`td[name=${strName}]`);  td.show(); td.parentNode.prepend(td);
       }
-      var td=tHeadLabel.children[0].querySelector('th[name='+strName+']'); td.show(); td.parentNode.prepend(td);
+      var td=tHeadLabel.children[0].querySelector(`th[name=${strName}]`); td.show(); td.parentNode.prepend(td);
     }
       // Hide the columns not in ColsShow
     var StrTmp=StrProp.concat([]); AMMinusB(StrTmp, oRole.ColsShow);
@@ -5563,29 +5572,29 @@ var tableCreator=function(oRole){
       var strName=StrTmp[i];
       for(var j=0;j<arrRow.length;j++){
         var tr=arrRow[j];
-        var td=tr.querySelector('td[name='+strName+']');  td.hide();
+        var td=tr.querySelector(`td[name=${strName}]`);  td.hide();
       }
-      var td=tHeadLabel.children[0].querySelector('th[name='+strName+']');  td.hide();
+      var td=tHeadLabel.children[0].querySelector(`th[name=${strName}]`);  td.hide();
     }
   }
   el.colToggle=function(strName,boOn){
-    //viewTHeadLabel.find('tr>th[name='+strName+']').toggle(boOn);
-    var tr=tHeadLabel.children[0]; tr.querySelector('th[name='+strName+']').toggle(boOn);
-    for(var i=0;i<arrRow.length;i++){ arrRow[i].querySelector('td[name='+strName+']').toggle(boOn); }
+    //viewTHeadLabel.find(`tr>th[name=${strName}]`).toggle(boOn);
+    var tr=tHeadLabel.children[0]; tr.querySelector(`th[name=${strName}]`).toggle(boOn);
+    for(var i=0;i<arrRow.length;i++){ arrRow[i].querySelector(`td[name=${strName}]`).toggle(boOn); }
   }
   el.colMove=function(strName,ind){
-    var tr=tHeadLabel.children[0], tdMove=tr.querySelector('th[name='+strName+']');
+    var tr=tHeadLabel.children[0], tdMove=tr.querySelector(`th[name=${strName}]`);
     if(ind==0) { tr.prepend(tdMove); }
     else {
-      var tdRef=tr.querySelector('th[name='+oRole.ColsShow[ind-1]+']');
+      var tdRef=tr.querySelector(`th[name=${oRole.ColsShow[ind-1]}]`);
       tdRef.insertAdjacentElement('afterend',tdMove);
     }
 
     for(var i=0;i<arrRow.length;i++){
-      var tr=arrRow[i], tdMove=tr.querySelector('td[name='+strName+']');
+      var tr=arrRow[i], tdMove=tr.querySelector(`td[name=${strName}]`);
       if(ind==0) { tr.prepend(tdMove); }
       else {
-        var tdRef=tr.querySelector('td[name='+oRole.ColsShow[ind-1]+']');
+        var tdRef=tr.querySelector(`td[name=${oRole.ColsShow[ind-1]}]`);
         tdRef.insertAdjacentElement('afterend',tdMove);
       }
     }
@@ -5665,7 +5674,7 @@ var viewTableCreator=function(){
   el.setUp=function(){
     var indRole=Number(charRole=='s'), oRole=ORole[indRole];  elRole=ElRole[indRole];
     divFoot.css({background:oRole.strColor});
-    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(' ('+strTmp+')');
+    var strTmp=langHtml[indRole?'Sellers':'Buyers']; spanRole.myText(` (${strTmp})`);
     roleToggler.setStat(charRole);
     ElRole[indRole].show(); //.setUp();
     ElRole[1-indRole].hide();
@@ -5782,7 +5791,7 @@ var viewChatCreator=function(){
     idUser=idUserT; //iRole=iRoleT;
     butSendMess.prop({disabled:Boolean(strGeoErrCode)});
     var strMess='';
-    if(strGeoErrCode) strMess='Geolocation must be enabled and work. ('+strGeoErrCode+', '+strGeoErrMessage+')';
+    if(strGeoErrCode) strMess=`Geolocation must be enabled and work. (${strGeoErrCode}, ${strGeoErrMessage})`;
     divDisabledMess.toggle(Boolean(strGeoErrCode)).myText(strMess);
     divRemember.toggle(!myWebPush.boSubscribed)
   }
@@ -6043,7 +6052,7 @@ var getGroupListRet=function(data){
       mapDiv.ElImgGroupOverlay[i].hideGroupOverlay();
     }
   }
-  var tmp=boGroupBoth?('\n ('+langHtml.toManyMess+')'):'';
+  var tmp=boGroupBoth?`\n (${langHtml.toManyMess})`:'';
   viewFront.tableButton.prop({disabled:boGroupBoth, title:langHtml.ComparisonTable+tmp});  viewFront.tableButton.querySelector('img').css({opacity:boGroupBoth?0.4:1});
   
   mapDiv.drawMe();
@@ -6133,7 +6142,7 @@ var strTable='<span style="transform:scaleX(1.5); display:inline-block; position
 var boHistoryOK=1, tmp='';
 if(!('pushState' in history)) { boHistoryOK=0; }
 if(!('state' in history)) { boHistoryOK=0; tmp=".state"; }
-if(!boHistoryOK) {tmp="This browser doesn't support the history"+tmp+" object, and this is really killing me.... aaahhhhhggggg....";  alert(tmp); return;}
+if(!boHistoryOK) {tmp=`This browser doesn't support the history${tmp} object, and this is really killing me.... aaahhhhhggggg....`;  alert(tmp); return;}
 
 if(!navigator.geolocation) { alert('This browers does not support geolocation '); return;}
 
@@ -6176,7 +6185,7 @@ app.uEmptyImage='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs%3D'; 
 app.uUserImage=uSite+'/image/u';
 app.URoleTeamImageProt=[uSite+'/image/b', uSite+'/image/s'];
 
-app.wseImageFolder='/'+flImageFolder+'/';
+app.wseImageFolder=`/${flImageFolder}/`;
 //app.uImageFolder=uCommon+wseImageFolder;
 app.wsSleepy=wseImageFolder+'sleepy.png';
 app.wsDummy=wseImageFolder+'dummy.png';
@@ -6197,7 +6206,7 @@ app.wsUnsorted="";//uEmptyImage
 app.wsBusy=wseImageFolder+'busy.gif';
 app.wsBusyLarge=wseImageFolder+'busyLarge.gif';
 app.wsList16=wseImageFolder+'list16.png';  
-app.srcsetList=wsList16+" 1x, "+wsList16+" 2x, "+wsList16+" 3x ";
+app.srcsetList=`${wsList16} 1x, ${wsList16} 2x, ${wsList16} 3x `;
 //app.wsList32=wseImageFolder+'list32.png';
 //app.wsList48=wseImageFolder+'list48.png';
 //app.wsSetting1=wseImageFolder+'setting1.png';
@@ -6397,7 +6406,7 @@ for(var i=0;i<PlugIn.length;i++){  var tmp=PlugIn[i].rewriteLang; if(tmp) tmp();
 
 var regNom=new RegExp("<span nom=\"([^\"]+)\">.*?</span>",'g');
 var nomFunc=function(m,n){return langHtml[n]};
-//var nomFunc=function(m,n){return "<span nom="+n+">"+langHtml[n]+"</span>"};
+//var nomFunc=function(m,n){return `<span nom=${n}>${langHtml[n]}</span>`};
 var replaceNom=function(parent,strName){
   parent[strName]=parent[strName].replace(regNom,nomFunc);
 }
@@ -6545,7 +6554,7 @@ app.arrDivAdditionalCurrency=[];
 
 
 var pa=createElement('p').myText(langHtml.WaitingForYourPosition);
-var pb=createElement('p').myText('('+langHtml.WaitingForYourPositionHelp+')');
+var pb=createElement('p').myText(`(${langHtml.WaitingForYourPositionHelp})`);
 var startPop=createElement('div').myAppend(pa,pb);
 if(!boTouch) startPop=startPopExtend(startPop); else  startPop=startPopExtendTouch(startPop);
 var startPopTimer=null;
@@ -6880,10 +6889,10 @@ var geoError=function(errObj) {
       if(boIOS && !boPermAPI) geoCBFirst(posApprox);
     }else if(errObj.code==errObj.POSITION_UNAVAILABLE){
       strCode='POSITION_UNAVAILABLE';
-      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
+      str=`getCurrentPosition failed: ${strCode}, ${errObj.message}`;
     }else if(errObj.code==errObj.TIMEOUT){
       strCode='TIMEOUT';
-      str="getCurrentPosition failed: "+strCode+', '+errObj.message;
+      str=`getCurrentPosition failed: ${strCode}, ${errObj.message}`;
     }
     //boGeoOK=false; setItem('boGeoOK',boGeoOK);
   }

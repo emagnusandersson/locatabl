@@ -191,13 +191,13 @@ if(!String.format){
 
   // Trim functions that can trim for other characters than whitespace
 app.myTrimStart=function(str,charlist=String.raw`\s`){
-  return str.replace(new RegExp("^[" + charlist + "]+"), "");
+  return str.replace(new RegExp(`^[${charlist}]+`), "");
 };
 app.myTrimEnd=function(str,charlist=String.raw`\s`){
-  return str.replace(new RegExp("[" + charlist + "]+$"), "");
+  return str.replace(new RegExp(`[${charlist}]+$`), "");
 };
 // app.myTrim=function(str,charlist=String.raw`\s`){
-//   return str.replace(new RegExp("^[" + charlist + "]+([^" + charlist + "]*)[" + charlist + "]+$"), function(m,n){return n;});
+//   return str.replace(new RegExp(`^[${charlist}]+([^${charlist}]*)[${charlist}]+$`), function(m,n){return n;});
 // }
 
 //app.pad2=function(n){ return ('0'+n).slice(-2);}
@@ -368,7 +368,7 @@ app.mySleepMS=async function(t){      await new Promise(resolve=>{setTimeout(res
 
 Date.prototype.toUnix=function(){return Math.round(this.valueOf()/1000);}
 Date.prototype.toISOStringMy=function(){return this.toISOString().substr(0,19);}
-app.swedDate=function(tmp){ if(tmp){tmp=UTC2JS(tmp);  tmp=tmp.getFullYear()+'-'+pad2(tmp.getMonth()+1)+'-'+pad2(tmp.getDate());}  return tmp;}
+app.swedDate=function(tmp){ if(tmp){tmp=UTC2JS(tmp);  tmp=`${tmp.getFullYear()}-${pad2(tmp.getMonth()+1)}-${pad2(tmp.getDate())}`;}  return tmp;}
 app.UTC2JS=function(utcTime){ var tmp=new Date(Number(utcTime)*1000);  return tmp;  }
 app.UTC2Readable=function(utcTime){ var tmp=new Date(Number(utcTime)*1000);   return tmp.toLocaleString();  }
 //myISODATE=function(d){ return d.toISOString().substr(0,19);}
@@ -422,7 +422,7 @@ app.tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['a
 }
 
 app.deserialize=function(serializedJavascript){
-  return eval('(' + serializedJavascript + ')');
+  return eval(`(${serializedJavascript})`);
 }
 
 app.parseQS=function(str){
@@ -635,6 +635,6 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
 //
 /*
 reload=function(){ confirm('reload'); window.location.reload(); }
-getColor = function(val, range){  var s=100, l=50, a=1,    h = 240-Math.round((240 / range) * val);      return "hsla("+h+","+s+"%,"+l+"%,"+a+")";    };
+getColor = function(val, range){  var s=100, l=50, a=1,    h = 240-Math.round((240 / range) * val);      return `hsla(${h},${s}%,${l}%,${a})`;    };
 */
 

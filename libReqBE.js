@@ -93,7 +93,7 @@
 
 
   // Session variables
-//'str'+ucfirst(strAppName)+'Md5Config'
+//`str${ucfirst(strAppName)}Md5Config`
 
 //req.sessionID+'_CSRFCode'+ucfirst(caller)
    //libReqBE->go, libReq->reqKeyRemoteControlSave  --->  libReqBE->go
@@ -187,7 +187,7 @@ ReqBE.prototype.mesEO=function(e, statusCode=500){
   if(typeof e=='string'){strEBrowser=e; StrELog.push(e);}
   else if(typeof e=='object'){
     if('syscal' in e) StrELog.push('syscal: '+e.syscal);
-    if(e instanceof Error) {strEBrowser='name: '+e.name+', code: '+e.code+', message: ' + e.message; }
+    if(e instanceof Error) {strEBrowser=`name: ${e.name}, code: ${e.code}, message: ${e.message}`; }
     else { strEBrowser=e.toString(); StrELog.push(strEBrowser); }
   }
     
@@ -212,7 +212,7 @@ ReqBE.prototype.go=async function(){
   var {req, res}=this, {site}=req;
   
   var strT=req.headers['sec-fetch-site'];
-  if(strT && strT!='same-origin') { this.mesEO(Error("sec-fetch-site header is not 'same-origin' ("+strT+")"));  return;}
+  if(strT && strT!='same-origin') { this.mesEO(Error(`sec-fetch-site header is not 'same-origin' (${strT})`));  return;}
   
 
   if('x-requested-with' in req.headers){
@@ -221,7 +221,7 @@ ReqBE.prototype.go=async function(){
 
   if('referer' in req.headers) {
     var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length, referer=req.headers.referer, lMin=Math.min(lTmp, referer.length);
-    if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(Error('Referer does not match,  got: '+referer+', expected: '+urlT));  return;  }
+    if(referer.slice(0,lMin)!=urlT.slice(0,lMin)) { this.mesEO(Error(`Referer does not match,  got: ${referer}, expected: ${urlT}`));  return;  }
   } else { this.mesEO(Error("Referer not set"));  return; }
   
   if(req.method!='POST'){ this.mesO('send me a POST'); return; }
@@ -352,7 +352,7 @@ ReqBE.prototype.sendLoginLink=async function(inObj){
   var email=inObj.email;
 
   var Sql=[], Val=[];
-  Sql.push("SELECT email FROM "+userTab+" WHERE email=?;");
+  Sql.push(`SELECT email FROM ${userTab} WHERE email=?;`);
   Val.push(email);
 
   var sql=Sql.join('\n');
@@ -364,12 +364,12 @@ ReqBE.prototype.sendLoginLink=async function(inObj){
   var tmp=await setRedis(redisVar, email, expirationTime);
   
   var wwwSite=req.wwwSite;
-  var uLink=req.strSchemeLong+wwwSite+'/'+leafLoginWLink+'?code='+code;
+  var uLink=`${req.strSchemeLong}${wwwSite}/${leafLoginWLink}?code=${code}`;
   
-  var strTxt=`<h3>Login link to `+wwwSite+`</h3>
-<p>Someone (maybe you) uses `+wwwSite+` and wants to login using `+email+`. Is this you, then click this link to login: <a href="`+uLink+`">`+uLink+`</a> .</p>
+  var strTxt=`<h3>Login link to ${wwwSite}</h3>
+<p>Someone (maybe you) uses ${wwwSite} and wants to login using ${email}. Is this you, then click this link to login: <a href="${uLink}">${uLink}</a> .</p>
 <p>Otherwise ignore this message.</p>`;
-//<p>Note! The link stops working `+expirationTime/60+` minutes after the email was sent.</p>`;
+//<p>Note! The link stops working ${expirationTime/60} minutes after the email was sent.</p>`;
   
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Login link',  html:strTxt};
@@ -392,10 +392,10 @@ ReqBE.prototype.loginWEmail=async function(inObj){
   var {userTab}=site.TableName;
   var Sql=[], Val=[];
   var StrRequired=['email', 'password'];
-  for(var i=0; i<StrRequired.length; i++){      var tmp=StrRequired[i]; if(!(tmp in inObj)) { return [new ErrorClient('The parameter: '+tmp+' is required')]; }     }
+  for(var i=0; i<StrRequired.length; i++){      var tmp=StrRequired[i]; if(!(tmp in inObj)) { return [new ErrorClient(`The parameter: ${tmp} is required`)]; }     }
   
 
-  Sql.push("SELECT idUser, hashPW AS password FROM "+userTab+" WHERE email=?");
+  Sql.push(`SELECT idUser, hashPW AS password FROM ${userTab} WHERE email=?`);
   Val.push(inObj.email);
 
   var sql=Sql.join('\n');
@@ -433,7 +433,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
   
     // Check if email exists
   var Sql=[], Val=[];
-  Sql.push("SELECT * FROM "+userTab+" WHERE email=?;");
+  Sql.push(`SELECT * FROM ${userTab} WHERE email=?;`);
   Val.push(email);
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -449,12 +449,12 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
 
     // Send email
   var wwwSite=req.wwwSite;
-  var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailNCreateUserReturn+'?code='+code;
-  var strTxt=`<h3>Email verification / account creation on `+wwwSite+`</h3>
-<p>Someone (maybe you) uses `+wwwSite+` and claims that `+email+` is their email address and they want to become a user. Is this you? If so use the link below to create an account.</p>
+  var uVerification=`${req.strSchemeLong}${wwwSite}/${leafVerifyEmailNCreateUserReturn}?code=${code}`;
+  var strTxt=`<h3>Email verification / account creation on ${wwwSite}</h3>
+<p>Someone (maybe you) uses ${wwwSite} and claims that ${email} is their email address and they want to become a user. Is this you? If so use the link below to create an account.</p>
 <p>Otherwise ignore this message.</p>
-<p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
-//<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+<p><a href=${uVerification}>${uVerification}</a></p>`;
+//<p>Note! The links stops working ${expirationTime/60} minutes after the email was sent.</p>`;
   
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Email verification / account creation', html:strTxt };
@@ -489,10 +489,10 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
   //if(!/\S+@\S+/.test(inObj.email)) return [new ErrorClient('Invalid email')]; 
   
   //var Sql=[]; 
-  //Sql.push("INSERT INTO "+userTab+" SET email=?, nameIP=?, password=?, tCreated=now();");
+  //Sql.push(`INSERT INTO ${userTab} SET email=?, nameIP=?, password=?, tCreated=now();`);
   //var Val=[myJSEscape(inObj.email), myJSEscape(inObj.name), inObj.password];
   //Sql.push("SELECT LAST_INSERT_ID() AS idUser;");
-  ////Sql.push("UPDATE "+userTab+" SET imageHash=LAST_INSERT_ID()%32 WHERE idUser=LAST_INSERT_ID();");
+  ////Sql.push(`UPDATE ${userTab} SET imageHash=LAST_INSERT_ID()%32 WHERE idUser=LAST_INSERT_ID();`);
 
   //var sql=Sql.join('\n');
   //var [err, results]=await this.myMySql.query(sql, Val); 
@@ -524,10 +524,10 @@ ReqBE.prototype.changePW=async function(inObj){
   var passwordNew=inObj.passwordNew;
 
   var Sql=[], Val=[];
-  //Sql.push("UPDATE "+userTab+" SET hashPW=? WHERE hashPW=? AND idUser=?;");
+  //Sql.push(`UPDATE ${userTab} SET hashPW=? WHERE hashPW=? AND idUser=?;`);
   //Val.push(inObj.password, inObj.passwordOld, idUser);
   Sql.push("START TRANSACTION;");
-  Sql.push("CALL "+siteName+"setPassword(?,?,?);"); Val.push(idUser, passwordOld, passwordNew);
+  Sql.push(`CALL ${siteName}setPassword(?,?,?);`); Val.push(idUser, passwordOld, passwordNew);
   Sql.push("COMMIT;");
 
   var sql=Sql.join('\n');
@@ -556,7 +556,7 @@ ReqBE.prototype.verifyEmail=async function(inObj){
   var Ou={};
 
   var Sql=[], Val=[];
-  Sql.push("SELECT email FROM "+userTab+" WHERE idUser=?;");
+  Sql.push(`SELECT email FROM ${userTab} WHERE idUser=?;`);
   Val.push(idUser);
 
   var sql=Sql.join('\n');
@@ -565,12 +565,12 @@ ReqBE.prototype.verifyEmail=async function(inObj){
   if(results.length==0) { this.mes('No such idUser in the database'); return [null, [Ou]];}
   var email=results[0].email;
   var wwwSite=req.wwwSite;
-  var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyEmailReturn+'?code='+code;
-  var strTxt=`<h3>Email verification on `+wwwSite+`</h3>
-<p>Someone (maybe you) uses `+wwwSite+` and claims that `+email+` is their email address. Is this you? If so use the link below to verify that you are the owner of this email address.</p>
+  var uVerification=`${req.strSchemeLong}${wwwSite}/${leafVerifyEmailReturn}?code=${code}`;
+  var strTxt=`<h3>Email verification on ${wwwSite}</h3>
+<p>Someone (maybe you) uses ${wwwSite} and claims that ${email} is their email address. Is this you? If so use the link below to verify that you are the owner of this email address.</p>
 <p>Otherwise ignore this message.</p>
-<p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
-//<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+<p><a href=${uVerification}>${uVerification}</a></p>`;
+//<p>Note! The links stops working ${expirationTime/60} minutes after the email was sent.</p>`;
 
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Email verification', html:strTxt };
@@ -592,11 +592,11 @@ ReqBE.prototype.verifyPWReset=async function(inObj){
   var {userTab}=site.TableName;
   var Ou={boOK:0};
 
-  var tmp='email'; if(!(tmp in inObj)) { this.mes('The parameter '+tmp+' is required'); return [null, [Ou]];}
+  var tmp='email'; if(!(tmp in inObj)) { this.mes(`The parameter ${tmp} is required`); return [null, [Ou]];}
   var email=inObj.email;
 
   var Sql=[], Val=[];
-  Sql.push("SELECT email FROM "+userTab+" WHERE email=?;");
+  Sql.push(`SELECT email FROM ${userTab} WHERE email=?;`);
   Val.push(email);
 
   var sql=Sql.join('\n');
@@ -611,13 +611,13 @@ ReqBE.prototype.verifyPWReset=async function(inObj){
   var tmp=await setRedis(redisVar, email, expirationTime);
 
   var wwwSite=req.wwwSite;
-  var uVerification=req.strSchemeLong+wwwSite+'/'+leafVerifyPWResetReturn+'?code='+code;
-  var strTxt=`<h3>Password reset request on `+wwwSite+`</h3>
-<p>Someone (maybe you) tries to reset the password for this email (`+email+`) on `+wwwSite+`.</p>
+  var uVerification=`${req.strSchemeLong}${wwwSite}/${leafVerifyPWResetReturn}?code=${code}`;
+  var strTxt=`<h3>Password reset request on ${wwwSite}</h3>
+<p>Someone (maybe you) tries to reset the password for this email (${email}) on ${wwwSite}.</p>
 <p>Is this you, then use the link below to have a new password generated and sent to you.</p>
 <p>Otherwise ignore this message.</p>
-<p><a href=`+uVerification+`>`+uVerification+`</a></p>`;
-//<p>Note! The links stops working '+expirationTime/60+' minutes after the email was sent.</p>';
+<p><a href=${uVerification}>${uVerification}</a></p>`;
+//<p>Note! The links stops working ${expirationTime/60} minutes after the email was sent.</p>`;
   
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset request', html:strTxt };
@@ -672,7 +672,7 @@ ReqBE.prototype.loginGetGraph=async function(inObj){
   this.objGraph=objGraph;
 
     // interpretGraph
-  if('error' in objGraph) {var {type,message}=objGraph.error, tmp='Error accessing data from ID provider: '+type+' '+message+'\n';  return [Error(tmp)]; }
+  if('error' in objGraph) {var {type,message}=objGraph.error, tmp=`Error accessing data from ID provider: ${type} ${message}\n`;  return [Error(tmp)]; }
 
   var idFB, idIdPlace, idOpenId;
   if(strIP=='fb'){ 
@@ -715,13 +715,13 @@ ReqBE.prototype.sellerFun=async function(){
   
   //var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   //var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
-  //Sql.push(`INSERT INTO `+userTab+` (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND()))
+  //Sql.push(`INSERT INTO ${userTab} (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND()))
   //ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;`);
   
   //if(inObj.strRole=='buyer'){
-    //Sql.push("INSERT INTO "+buyerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
+    //Sql.push(`INSERT INTO ${buyerTeamTab} (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);`);
   //}else{
-    //Sql.push("INSERT INTO "+sellerTeamTab+" (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);");
+    //Sql.push(`INSERT INTO ${sellerTeamTab} (idUser,tCreated) VALUES (LAST_INSERT_ID(),now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);`);
   //}
   //var sql=Sql.join('\n');
   //var [err, results, fields]=await this.myMySql.query(sql, Val);  if(err) return [err];
@@ -735,9 +735,9 @@ ReqBE.prototype.adminFun=async function(){
   
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image,      idFB, idIdPlace, idOpenId, email, nameIP, image];
-  Sql.push(`INSERT INTO `+userTab+` (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND()))
+  Sql.push(`INSERT INTO ${userTab} (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW) VALUES (?,?,?,?,?,?,?, MD5(RAND()))
   ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), idFB=IF(?,?,idFB), idIdPlace=IF(?,?,idIdPlace), idOpenId=IF(?,?,idOpenId), email=IF(email,email,?), nameIP=?, image=?;`);
-  Sql.push(`INSERT INTO `+adminTab+` VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);`);
+  Sql.push(`INSERT INTO ${adminTab} VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE tCreated=VALUES(tCreated);`);
   var sql=Sql.join('\n');
   var [err, results, fields]=await this.myMySql.query(sql, Val);  if(err) return [err];
   return [null, Ou];
@@ -750,7 +750,7 @@ ReqBE.prototype.refetchFun=async function(){
   var idUser=this.sessionUserInfoFrDB.user.idUser;
   var Sql=[], {idFB, idIdPlace, idOpenId, email, nameIP, image}=this.sessionLoginIdP;
   var Val=[idFB, idIdPlace, idOpenId, email, nameIP, image, idUser];
-  Sql.push(`UPDATE `+userTab+` SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=? WHERE idUser=?;`);
+  Sql.push(`UPDATE ${userTab} SET idFB=?, idIdPlace=?, idOpenId=?, email=?, nameIP=?, image=? WHERE idUser=?;`);
   var sql=Sql.join('\n');
   var [err, results, fields]=await this.myMySql.query(sql, Val);  if(err) return [err];
   return [null, Ou];
@@ -776,7 +776,7 @@ ReqBE.prototype.setupById=async function(inObj){ //check  idFB (or idUser) again
   //if(!idUser) { var [err,idUser]=await getRedis(req.sessionID+'_LoginIdUser'); }
     
   var Sql=[], Val=[idUser, idFB, idIdPlace, idOpenId, BoTest.buyer, BoTest.seller, BoTest.buyerTeam, BoTest.sellerTeam, BoTest.admin, BoTest.complainer, BoTest.complainee];
-  Sql.push("CALL "+siteName+"GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+  Sql.push(`CALL ${siteName}GetUserInfo(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`);
   var sql=Sql.join('\n');
   
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -808,14 +808,14 @@ ReqBE.prototype.VSetPosCond=async function(inObj){  // writing needSession
     var {idUser,coordinatePrecisionM}=seller;
     //var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
     var [xtmp,ytmp]=roundNObscure(coordinatePrecisionM, x, y, lat);
-    var sql="UPDATE "+sellerTab+" SET x=?, y=?, geoHash=? WHERE idUser=? ", Val=[xtmp,ytmp,bigIntGeoHash,idUser];
+    var sql=`UPDATE ${sellerTab} SET x=?, y=?, geoHash=? WHERE idUser=? `, Val=[xtmp,ytmp,bigIntGeoHash,idUser];
     var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   }
   if(buyer){
     var {idUser,coordinatePrecisionM}=buyer;
     //var [xtmp,ytmp]=roundXY(coordinatePrecisionM, x, y, lat);
     var [xtmp,ytmp]=roundNObscure(coordinatePrecisionM, x, y, lat);
-    var sql="UPDATE "+buyerTab+" SET x=?, y=?, geoHash=? WHERE idUser=? ", Val=[xtmp,ytmp,bigIntGeoHash,idUser];
+    var sql=`UPDATE ${buyerTab} SET x=?, y=?, geoHash=? WHERE idUser=? `, Val=[xtmp,ytmp,bigIntGeoHash,idUser];
     var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   }
   return [null, [Ou]];
@@ -856,25 +856,25 @@ ReqBE.prototype.setUp=async function(inObj){  // Set up some properties etc.  (V
   var zoom=Number(inObj.zoom), boCalcZoom=!('zoom' in inObj);
   this.VPSize=inObj.VPSize;  
   this.pC=inObj.pC; var xC=Number(this.pC.x), yC=Number(this.pC.y), wVP=Number(this.VPSize[0]), hVP=Number(this.VPSize[1]); 
-  //Sql.push("SET @xC="+xC+"; SET @yC="+yC+"; SET @wVP="+wVP+"; SET @hVP="+hVP+";
+  //Sql.push(`SET @xC=${xC}; SET @yC=${yC}; SET @wVP=${wVP}; SET @hVP=${hVP}`;
   
-  Sql.push("CALL "+siteName+"IFunPoll("+timeOutAccumulatedUpdate+");"); 
+  Sql.push(`CALL ${siteName}IFunPoll(${timeOutAccumulatedUpdate});`); 
 
   if(boCalcZoom){  
-    //Sql.push("SELECT count(u.idUser) AS nBuyerReal FROM "+userTab+" u JOIN "+buyerTab+" ro ON u.idUser=ro.idUser;");
-    //Sql.push("SELECT count(u.idUser) AS nSellerReal FROM "+userTab+" u JOIN "+sellerTab+" ro ON u.idUser=ro.idUser;");
-    //Sql.push("SELECT count(*) AS nBuyerReal FROM "+buyerTab+";");
-    //Sql.push("SELECT count(*) AS nSellerReal FROM "+sellerTab+";");
-    Sql.push('SELECT AUTO_INCREMENT AS idAutoIncrement FROM information_schema.TABLES WHERE TABLE_SCHEMA = "mmm" AND TABLE_NAME = "'+userTab+'";');
+    //Sql.push(`SELECT count(u.idUser) AS nBuyerReal FROM ${userTab} u JOIN ${buyerTab} ro ON u.idUser=ro.idUser;`);
+    //Sql.push(`SELECT count(u.idUser) AS nSellerReal FROM ${userTab} u JOIN ${sellerTab} ro ON u.idUser=ro.idUser;`);
+    //Sql.push(`SELECT count(*) AS nBuyerReal FROM ${buyerTab};`);
+    //Sql.push(`SELECT count(*) AS nSellerReal FROM ${sellerTab};`);
+    Sql.push(`SELECT AUTO_INCREMENT AS idAutoIncrement FROM information_schema.TABLES WHERE TABLE_SCHEMA = "mmm" AND TABLE_NAME = "${userTab}";`);
     
  
     var WhereTmpB=this.OQueryPart[0].Where.concat("boShow=1", "now()<tHide"),  strCondB=array_filter(WhereTmpB).join(' AND ');
     var WhereTmpS=this.OQueryPart[1].Where.concat("boShow=1", "now()<tHide"),  strCondS=array_filter(WhereTmpS).join(' AND ');
     
-    var xOpp, xAddTerm; if(xC>128) {xOpp=xC-128; xAddTerm="IF(x<"+xOpp+",256,0)";}  else {xOpp=xC+128;  xAddTerm="IF(x>"+xOpp+",-256,0)"; } // xOpp : x of opposite side of planet
-    var tmp="MIN(GREATEST(ABS(x+"+xAddTerm+"-"+xC+"),ABS(y-"+yC+")))";
-    Sql.push("SELECT "+tmp+" AS distMin FROM "+buyerTab+" ro WHERE "+strCondB+";");
-    Sql.push("SELECT "+tmp+" AS distMin FROM "+sellerTab+" ro WHERE "+strCondS+";");
+    var xOpp, xAddTerm; if(xC>128) {xOpp=xC-128; xAddTerm=`IF(x<${xOpp},256,0)`;}  else {xOpp=xC+128;  xAddTerm=`IF(x>${xOpp},-256,0)`; } // xOpp : x of opposite side of planet
+    var tmp=`MIN(GREATEST(ABS(x+${xAddTerm}-${xC}),ABS(y-${yC})))`;
+    Sql.push(`SELECT ${tmp} AS distMin FROM ${buyerTab} ro WHERE ${strCondB};`);
+    Sql.push(`SELECT ${tmp} AS distMin FROM ${sellerTab} ro WHERE ${strCondS};`);
   }
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -900,10 +900,10 @@ ReqBE.prototype.setUp=async function(inObj){  // Set up some properties etc.  (V
 }
 
 //dydx=hVP/wVP;
-//Sql.push("SELECT x, y FROM "+buyerTab+" ro WHERE geoHash<=? AND "+strCondB+" UNION ");
-//Sql.push("SELECT x, y FROM "+sellerTab+" ro WHERE geoHash<=? AND "+strCondS+" UNION ");
-//Sql.push("SELECT x, y FROM "+buyerTab+" ro WHERE geoHash>? AND "+strCondB+" UNION ");
-//Sql.push("SELECT x, y FROM "+sellerTab+" ro WHERE geoHash>? AND "+strCondS+";");
+//Sql.push(`SELECT x, y FROM ${buyerTab} ro WHERE geoHash<=? AND ${strCondB} UNION `);
+//Sql.push(`SELECT x, y FROM ${sellerTab} ro WHERE geoHash<=? AND ${strCondS} UNION `);
+//Sql.push(`SELECT x, y FROM ${buyerTab} ro WHERE geoHash>? AND ${strCondB} UNION `);
+//Sql.push(`SELECT x, y FROM ${sellerTab} ro WHERE geoHash>? AND ${strCondS};`);
   //var sql=Sql.join('\n'), Val=[strGeoHash, strGeoHash, strGeoHash, strGeoHash];
   //var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   //var fitBest=Infinity, xBest, yBest;
@@ -932,8 +932,9 @@ ReqBE.prototype.getList=async function(inObj){
     //var xl=bound(xl,0,256), xh=bound(xh,0), yl=bound(yl,0,256), yh=bound(yh,0);
   }
   xho=xh;yho=yh; if(xh==256) xho=wcUpperLim;  if(yh==256) yho=wcUpperLim;
-  var strXCond=(xl<xh)?("x>="+xl+" AND x<"+xh):("(x>="+xl+" OR x<"+xh+")");
-  this.whereMap="y>="+yl+" AND y<"+yh+" AND "+strXCond;
+  //var strXCond=(xl<xh)?(`x>=${xl} AND x<${xh}`):(`(x>=${xl} OR x<${xh})`);
+  var strXCond=(xl<xh)?`x>=${xl} AND x<${xh}`:`(x>=${xl} OR x<${xh})`;
+  this.whereMap=`y>=${yl} AND y<${yh} AND ${strXCond}`;
   
   
     // Add geoHash condition
@@ -943,11 +944,12 @@ ReqBE.prototype.getList=async function(inObj){
   var WhereGeoHash=[]
   for(var i=0;i<arrRangeHash.length;i++){
     var {IntStart:{x:xSta,y:ySta},IntEnd:{x:xEnd,y:yEnd}}=arrRange[i];
-    //var nPad=10;  console.log(xSta.toString().padStart(nPad)+','+ySta.toString().padStart(nPad)+' '+xEnd.toString().padStart(nPad)+','+yEnd.toString().padStart(nPad));
-    //console.log(arrRangeHash[i].join(',')+': '+arrBigIntHashSta[i].toString().padStart(20)+' '+arrBigIntHashEnd[i].toString().padStart(20));
-    WhereGeoHash.push('(geoHash>='+arrBigIntHashSta[i] + ' AND ' + 'geoHash<='+(arrBigIntHashEnd[i]) + ')');
+    //var nPad=10;  console.log(`${xSta.toString().padStart(nPad)},${ySta.toString().padStart(nPad)} ${xEnd.toString().padStart(nPad)},${yEnd.toString().padStart(nPad)}`);
+    //console.log(`${arrRangeHash[i].join(',')}: ${arrBigIntHashSta[i].toString().padStart(20)} ${arrBigIntHashEnd[i].toString().padStart(20)}`);
+    //WhereGeoHash.push(`(geoHash>=${arrBigIntHashSta[i]} AND geoHash<=${arrBigIntHashEnd[i]})`);
+    WhereGeoHash.push(`(geoHash>=${arrBigIntHashSta[i]} AND geoHash<=${arrBigIntHashEnd[i]})`);
   }
-  var whereGeoHash=WhereGeoHash.join(' OR '); if(WhereGeoHash.length>1) whereGeoHash='( '+whereGeoHash+' )';
+  var whereGeoHash=WhereGeoHash.join(' OR '); if(WhereGeoHash.length>1) whereGeoHash=`( ${whereGeoHash} )`;
   this.whereMap+=' AND '+whereGeoHash;
   
   var Sql=[];
@@ -959,12 +961,12 @@ ReqBE.prototype.getList=async function(inObj){
     var WhereTmp=this.OQueryPart[i].Where.concat(this.whereMap, "boShow=1", "now()<tHide"),  strCond=array_filter(WhereTmp).join(' AND ');
     //var strColT=this.OQueryPart[i].strCol;
     var sqlColT=oRole.sqlColList;
-//Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strColT+" FROM (("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam) LEFT JOIN "+complaintTab+" rb ON rb.idComplainee=ro.idUser WHERE "+strCond+" GROUP BY ro.idUser ORDER BY tPos DESC LIMIT 0, "+maxList+";");
-    Sql.push("SELECT SQL_CALC_FOUND_ROWS "+sqlColT+" FROM ("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam  WHERE "+strCond+" LIMIT 0, "+maxList+";"); // ORDER BY tPos DESC GROUP BY ro.idUser
+//Sql.push(`SELECT SQL_CALC_FOUND_ROWS ${strColT} FROM ((${roleTab} ro JOIN ${userTab} u ON ro.idUser=u.idUser) LEFT JOIN ${roleTeamTab} tea on tea.idUser=ro.idTeam) LEFT JOIN ${complaintTab} rb ON rb.idComplainee=ro.idUser WHERE ${strCond} GROUP BY ro.idUser ORDER BY tPos DESC LIMIT 0, ${maxList};`);
+    Sql.push(`SELECT SQL_CALC_FOUND_ROWS ${sqlColT} FROM (${roleTab} ro JOIN ${userTab} u ON ro.idUser=u.idUser) LEFT JOIN ${roleTeamTab} tea on tea.idUser=ro.idTeam  WHERE ${strCond} LIMIT 0, ${maxList};`); // ORDER BY tPos DESC GROUP BY ro.idUser
     Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
 
     var WhereTmp=[this.whereMap, "boShow=1", "now()<tHide"],  strCond=array_filter(WhereTmp).join(' AND ');
-    Sql.push("SELECT count(*) AS n FROM "+roleTab+" ro WHERE "+strCond+";"); // nUnFiltered
+    Sql.push(`SELECT count(*) AS n FROM ${roleTab} ro WHERE ${strCond};`); // nUnFiltered
   }
   
   
@@ -997,7 +999,7 @@ ReqBE.prototype.getSingleUser=async function(inObj){  // Not really used: Used i
     
     //var strColT=this.OQueryPart[i].strCol;
     var sqlColT=oRole.sqlColList;
-    Sql.push("SELECT SQL_CALC_FOUND_ROWS "+sqlColT+" FROM ("+roleTab+" ro JOIN "+userTab+" u ON ro.idUser=u.idUser) LEFT JOIN "+roleTeamTab+" tea on tea.idUser=ro.idTeam  WHERE u.idUser=? ;"); Val.push(idUser);
+    Sql.push(`SELECT SQL_CALC_FOUND_ROWS ${sqlColT} FROM (${roleTab} ro JOIN ${userTab} u ON ro.idUser=u.idUser) LEFT JOIN ${roleTeamTab} tea on tea.idUser=ro.idTeam  WHERE u.idUser=? ;`); Val.push(idUser);
   }
   
   var sql=Sql.join('\n');
@@ -1021,7 +1023,7 @@ ReqBE.prototype.getGroupList=async function(inObj){
       var WhereTmp=this.OQueryPart[i].Where.concat([this.whereMap, "boShow=1", "now()<tHide"]),  strCond=array_filter(WhereTmp).join(' AND ');
       var roleTab=i?sellerTab:buyerTab;
       var strTableRef=roleTab+' ro';
-      Sql.push("SELECT round(x*"+zoomFac+")/"+zoomFac+" AS roundX, round(y*"+zoomFac+")/"+zoomFac+" AS roundY, count(*) AS n FROM "+strTableRef+" WHERE "+strCond+" GROUP BY roundX, roundY;");
+      Sql.push(`SELECT round(x*${zoomFac})/${zoomFac} AS roundX, round(y*${zoomFac})/${zoomFac} AS roundY, count(*) AS n FROM ${strTableRef} WHERE ${strCond} GROUP BY roundX, roundY;`);
     } else Sql.push("SELECT 1 FROM DUAL;");
   }
   var sql=Sql.join('\n'), Val=[];
@@ -1077,7 +1079,7 @@ ReqBE.prototype.UUpdate=async function(inObj){  // writing needSession
   
   var Sql=[], Val=[];
   Val.push(myJSEscape(inObj.displayName), idUser);
-  Sql.push("UPDATE "+userTab+" SET displayName=? WHERE idUser=?;");
+  Sql.push(`UPDATE ${userTab} SET displayName=? WHERE idUser=?;`);
   
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -1095,7 +1097,7 @@ ReqBE.prototype.USetIRoleActive=async function(inObj){  // writing needSession
   
   var Sql=[], Val=[];
   Val.push(iRoleActive, idUser);
-  Sql.push("UPDATE "+userTab+" SET iRoleActive=? WHERE idUser=?;");
+  Sql.push(`UPDATE ${userTab} SET iRoleActive=? WHERE idUser=?;`);
   
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -1113,14 +1115,14 @@ ReqBE.prototype.UDelete=async function(inObj){  // writing needSession
   var idUser=user.idUser; 
   
   var Sql=[], Val=[];
-  Sql.push("DELETE FROM "+userTab+" WHERE idUser=?;"); Val.push(idUser);
+  Sql.push(`DELETE FROM ${userTab} WHERE idUser=?;`); Val.push(idUser);
   
   this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);    await setRedis(req.sessionID+'_UserInfoFrDB', this.sessionUserInfoFrDB, maxUnactivity);
   extend(this.GRet.userInfoFrDBUpd, userInfoFrDBZero); 
 
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+  Sql.push(`SELECT count(*) AS n FROM ${userTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   site.boGotNewSellers=1; site.boGotNewBuyers=1;
@@ -1164,21 +1166,21 @@ ReqBE.prototype.RIntroCB=async function(inObj){ // writing needSession
   
     // An entry in userTab may exist (if the user is a complainer). However an entry in roleTab is something one can assume does not exist.
   var Sql=[], Val=[];
-  //Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK=?, nameIP, image, hashPW, displayName, boUseIdPImg) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, boWebPushOK=?, nameIP=?, image=?;");
+  //Sql.push(`"INSERT INTO ${userTab} (idFB, idIdPlace, idOpenId, email, boWebPushOK=?, nameIP, image, hashPW, displayName, boUseIdPImg) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, boWebPushOK=?, nameIP=?, image=?;`);
   //Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   //Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boUseIdPImg,   email, boWebPushOK, nameIP, image);
   
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, hashPW, displayName, boUseIdPImg, iRoleActive) VALUES (?, ?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=email, boWebPushOK=boWebPushOK, nameIP=nameIP, image=image, iRoleActive=iRoleActive"+sqlSetMetaExtra+";");
+  Sql.push(`INSERT INTO ${userTab} (idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, hashPW, displayName, boUseIdPImg, iRoleActive) VALUES (?, ?, ?, ?, ?, ?, ?, MD5(RAND()), ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=email, boWebPushOK=boWebPushOK, nameIP=nameIP, image=image, iRoleActive=iRoleActive${sqlSetMetaExtra};`);
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Val.push(idFB, idIdPlace, idOpenId, email, boWebPushOK, nameIP, image, displayName, boUseIdPImg, iRole);
-  Sql.push("INSERT INTO "+roleTab+" (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency, displayEmail, boWebPushOK) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser, boWebPushOK=boWebPushOK;");
+  Sql.push(`INSERT INTO ${roleTab} (idUser, tCreated, tLastPriceChange, tPos, tLastWriteOfTA, histActive, tel, currency, displayEmail, boWebPushOK) VALUES (@idUser, now(), now(), now(), now(), 1, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE idUser=idUser, boWebPushOK=boWebPushOK;`);
   Val.push(tel, currency, displayEmail, boWebPushOK);
   //Sql.push("SET OboInserted=(ROW_COUNT()=1);");  Sql.push("SELECT @boInserted AS boInserted;");
   Sql.push("SELECT @boInserted:=(ROW_COUNT()=1) AS boInserted;");
 
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+buyerTab+";");
-  Sql.push("SELECT count(*) AS n FROM "+sellerTab+";");
+  Sql.push(`SELECT count(*) AS n FROM ${userTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${buyerTab};`);
+  Sql.push(`SELECT count(*) AS n FROM ${sellerTab};`);
 
   if(!boUseIdPImg){
       // base64Img
@@ -1186,12 +1188,12 @@ ReqBE.prototype.RIntroCB=async function(inObj){ // writing needSession
     console.log('bufImg.length: '+bufImg.length);
     if(bufImg.length==0) return [Error('bufImg.length==0')];
     if(bufImg.length>10000) return [Error('bufImg.length>10000 !?!, aborting!')];
-    Sql.push("REPLACE INTO "+userImageTab+" (idUser,data) VALUES (@idUser,?);"); Val.push(bufImg);
+    Sql.push(`REPLACE INTO ${userImageTab} (idUser,data) VALUES (@idUser,?);`); Val.push(bufImg);
   }
   
   if(boWebPushOK){
-    Sql.push("REPLACE INTO "+webPushSubscriptionTab+" VALUES (@idUser, ?);");  Val.push(strSubscription);
-  } else { Sql.push("DELETE FROM "+webPushSubscriptionTab+" WHERE idUser=@idUser;");   }
+    Sql.push(`REPLACE INTO ${webPushSubscriptionTab} VALUES (@idUser, ?);`);  Val.push(strSubscription);
+  } else { Sql.push(`DELETE FROM ${webPushSubscriptionTab} WHERE idUser=@idUser;`);   }
   
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -1254,7 +1256,7 @@ ReqBE.prototype.RUpdate=async function(inObj){ // writing needSession
     if('roleUpdF' in prop) { var [strQ,value]=prop.roleUpdF.call(oRole.Prop, name, value);  }
 
     objVar[name]=value;
-    SqlVar.push("`"+name+"`="+strQ);
+    SqlVar.push(`\`${name}\`=${strQ}`);
     ValVar.push(value);
   }
  
@@ -1268,7 +1270,7 @@ ReqBE.prototype.RUpdate=async function(inObj){ // writing needSession
   var Sql=[], Val=[];
   if(SqlUpd.length) {
     var tmp=SqlUpd.join(', ').trim();
-    Sql.push("UPDATE "+roleTab+" SET "+tmp+" WHERE idUser=?;");
+    Sql.push(`UPDATE ${roleTab} SET ${tmp} WHERE idUser=?;`);
     Val=Val.concat(ValUpd, idUser);
   }
 
@@ -1289,7 +1291,7 @@ ReqBE.prototype.RShow=async function(inObj){  // writing needSession
   // var charRole=inObj.charRole; if('bs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
   // var iRole=charRole=='s'?1:0;
   var Sql=[];
-  Sql.push("SELECT iRoleActive FROM "+userTab+" WHERE idUser=?"); var Val=[idUser];
+  Sql.push(`SELECT iRoleActive FROM ${userTab} WHERE idUser=?`); var Val=[idUser];
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   if(results.length==0) { this.mes('No such idUser in the database'); return [null, [Ou]];}
@@ -1307,10 +1309,10 @@ ReqBE.prototype.RShow=async function(inObj){  // writing needSession
 
 
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
+  Sql.push(`CALL ${siteName}TimeAccumulatedUpdOne(?);`); 
   Sql.push("SET @hideTimer=?;"); 
-  Sql.push("UPDATE "+roleTab+" SET x=?, y=?, geoHash=?, boShow=1, tPos=now(), hideTimer=IF(@hideTimer=0,hideTimer,@hideTimer), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,"+intMax+")), histActive=histActive|1 WHERE idUser=?;");
-  Sql.push("UPDATE "+roleTabAlt+" SET tPos=0, tHide=0, histActive=histActive|boShow, boShow=0 WHERE idUser=?;");
+  Sql.push(`UPDATE ${roleTab} SET x=?, y=?, geoHash=?, boShow=1, tPos=now(), hideTimer=IF(@hideTimer=0,hideTimer,@hideTimer), tHide=FROM_UNIXTIME(  LEAST(UNIX_TIMESTAMP(now())+hideTimer,${intMax})), histActive=histActive|1 WHERE idUser=?;`);
+  Sql.push(`UPDATE ${roleTabAlt} SET tPos=0, tHide=0, histActive=histActive|boShow, boShow=0 WHERE idUser=?;`);
   Val=[idUser,hideTimer,x,y,bigIntGeoHash,idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -1328,7 +1330,7 @@ ReqBE.prototype.RHide=async function(inObj){  // writing needSession
   // var charRole=inObj.charRole; if('bs'.indexOf(charRole)==-1) { this.mes('No such charRole'); return [null, [Ou,'errFunc']];}
   // var iRole=charRole=='s'?1:0;
   var Sql=[];
-  Sql.push("SELECT iRoleActive FROM "+userTab+" WHERE idUser=?"); var Val=[idUser];
+  Sql.push(`SELECT iRoleActive FROM ${userTab} WHERE idUser=?`); var Val=[idUser];
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   if(results.length==0) { this.mes('No such idUser in the database'); return [null, [Ou]];}
@@ -1337,9 +1339,9 @@ ReqBE.prototype.RHide=async function(inObj){  // writing needSession
   var roleTeamTab=iRole?sellerTeamTab:buyerTeamTab;
 
   var Sql=[], Val=[];
-  Sql.push("CALL "+siteName+"TimeAccumulatedUpdOne(?);"); 
-  Sql.push("UPDATE "+roleTab+" SET tPos=0, tHide=0, histActive=histActive|1, boShow=0 WHERE idUser=?;");
-  Sql.push(`SELECT `+site.SqlColSelOne[iRole]+` FROM (`+roleTab+` ro LEFT JOIN `+roleTeamTab+` tea on tea.idUser=ro.idTeam) WHERE ro.idUser=?;`);
+  Sql.push(`CALL ${siteName}TimeAccumulatedUpdOne(?);`); 
+  Sql.push(`UPDATE ${roleTab} SET tPos=0, tHide=0, histActive=histActive|1, boShow=0 WHERE idUser=?;`);
+  Sql.push(`SELECT ${site.SqlColSelOne[iRole]} FROM (${roleTab} ro LEFT JOIN ${roleTeamTab} tea on tea.idUser=ro.idTeam) WHERE ro.idUser=?;`);
   Val=[idUser,idUser,idUser];
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -1389,19 +1391,19 @@ ReqBE.prototype.complaintUpdateComment=async function(inObj){
 
   var Sql=[], Val=[];
   Val.push(idFB, idIdPlace, idOpenId, email, nameIP, image, nameIP,   email, nameIP, image);
-  Sql.push("INSERT INTO "+userTab+" (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW, displayName) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ? ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;");
+  Sql.push(`INSERT INTO ${userTab} (idFB, idIdPlace, idOpenId, email, nameIP, image, hashPW, displayName) VALUES (?, ?, ?, ?, ?, ?, MD5(RAND()), ? ) ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser), email=?, nameIP=?, image=?;`);
   
   Sql.push("SELECT @idUser:=LAST_INSERT_ID() AS idUser;");
   Sql.push("SELECT @idComplainer:=LAST_INSERT_ID() AS idUser;");
   
-  //Sql.push("INSERT INTO "+complaintTab+" (idComplainee,idComplainer,comment,tCreated) VALUES (?,@idComplainer,?,now()) ON DUPLICATE KEY UPDATE comment=?, tCommentModified=now();");
+  //Sql.push(`INSERT INTO ${complaintTab} (idComplainee,idComplainer,comment,tCreated) VALUES (?,@idComplainer,?,now()) ON DUPLICATE KEY UPDATE comment=?, tCommentModified=now();`);
   //Val.push(idComplainee,comment,comment);
-  //Sql.push("DELETE FROM "+complaintTab+" WHERE comment IS NULL AND answer IS NULL;");
-  //Sql.push("SELECT count(*) AS n FROM "+complaintTab+" WHERE idComplainer=@idComplainer;"); 
+  //Sql.push(`DELETE FROM ${complaintTab} WHERE comment IS NULL AND answer IS NULL;`);
+  //Sql.push(`SELECT count(*) AS n FROM ${complaintTab} WHERE idComplainer=@idComplainer;`); 
   
   
   Val.push(idComplainee,comment);
-  Sql.push("CALL "+siteName+"UpdateComplaint(?, @idComplainer, ?);");
+  Sql.push(`CALL ${siteName}UpdateComplaint(?, @idComplainer, ?);`);
   
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -1432,12 +1434,12 @@ ReqBE.prototype.complaintUpdateAnswer=async function(inObj){
   var answer=inObj.answer;  answer=answer.substr(0,10000); answer=myJSEscape(answer);
   if(answer.length==0) answer=null;
   var Sql=[], Val=[];
-  //Sql.push("UPDATE "+complaintTab+" SET answer=? WHERE idComplainee=? AND idComplainer=?;");
+  //Sql.push(`UPDATE ${complaintTab} SET answer=? WHERE idComplainee=? AND idComplainer=?;`);
   //Val.push(answer,idComplainee,idComplainer);
-  //Sql.push("DELETE FROM "+complaintTab+" WHERE  comment IS NULL AND answer IS NULL;");
+  //Sql.push(`DELETE FROM ${complaintTab} WHERE  comment IS NULL AND answer IS NULL;`);
   
   Val.push(idComplainee, idComplainer, answer);
-  Sql.push("CALL "+siteName+"UpdateAnswer(?, ?, ?);");
+  Sql.push(`CALL ${siteName}UpdateAnswer(?, ?, ?);`);
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var StrMes=[];
@@ -1459,8 +1461,8 @@ ReqBE.prototype.complaintOneGet=async function(inObj){
   if('idComplainer' in inObj) idComplainer=inObj.idComplainer;  else if(user) idComplainer=user.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   if('idComplainee' in inObj) idComplainee=inObj.idComplainee; else if(user) idComplainee=user.idUser; else{ this.mes('Not Logged in'); return [null, [Ou]]; }
   
-  //var sql="SELECT comment, answer FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainee=? AND idComplainer=? "; 
-  var sql="SELECT comment, answer FROM "+complaintTab+" WHERE idComplainee=? AND idComplainer=? "; 
+  //var sql=`SELECT comment, answer FROM ${userTab} u JOIN ${complaintTab} co ON u.idUser=co.idComplainee WHERE idComplainee=? AND idComplainer=? `; 
+  var sql=`SELECT comment, answer FROM ${complaintTab} WHERE idComplainee=? AND idComplainer=? `; 
   var Val=[idComplainee,idComplainer];
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var c=results.length; 
@@ -1476,7 +1478,7 @@ ReqBE.prototype.getComplaintsOnComplainee=async function(inObj){
   
   var idComplainee=inObj.idComplainee;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS idComplainer, IF(boUseIdPImg,image,'') AS image, displayName, boUseIdPImg, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+complaintTab+" co JOIN "+userTab+" u ON co.idComplainer=u.idUser WHERE idComplainee=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push(`SELECT SQL_CALC_FOUND_ROWS idComplainer, IF(boUseIdPImg,image,'') AS image, displayName, boUseIdPImg, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM ${complaintTab} co JOIN ${userTab} u ON co.idComplainer=u.idUser WHERE idComplainee=? ORDER BY co.tCreated DESC LIMIT ${offset},${rowCount};`); 
   Val.push(idComplainee);
   Sql.push("SELECT FOUND_ROWS() AS n;");
   var sql=Sql.join("\n ");
@@ -1493,7 +1495,7 @@ ReqBE.prototype.getComplaintsFromComplainer=async function(inObj){
 
   var idComplainer=inObj.idComplainer;
   var Sql=[], Val=[];
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS u.idUser AS idUser, IF(boUseIdPImg,image,'') AS image, displayName, boUseIdPImg, imTag, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM "+userTab+" u JOIN "+complaintTab+" co ON u.idUser=co.idComplainee WHERE idComplainer=? ORDER BY co.tCreated DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push(`SELECT SQL_CALC_FOUND_ROWS u.idUser AS idUser, IF(boUseIdPImg,image,'') AS image, displayName, boUseIdPImg, imTag, comment, answer, UNIX_TIMESTAMP(co.tCreated) AS tCreated FROM ${userTab} u JOIN ${complaintTab} co ON u.idUser=co.idComplainee WHERE idComplainer=? ORDER BY co.tCreated DESC LIMIT ${offset},${rowCount};`); 
   Val.push(idComplainer); 
   Sql.push("SELECT FOUND_ROWS() AS n;"); 
   var sql=Sql.join("\n ");
@@ -1526,7 +1528,7 @@ ReqBE.prototype.teamSaveName=async function(inObj){  // writing needSession
   
   var boOK=validator.isURL(link, {protocols: ['http','https']}); if(!boOK) return [new ErrorClient('Link url is not approved')];
   
-  var sql="UPDATE "+roleTeamTab+" SET link=? WHERE idUser=?;", Val=[link, idUser];
+  var sql=`UPDATE ${roleTeamTab} SET link=? WHERE idUser=?;`, Val=[link, idUser];
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   this.mes('Data saved');
   return [null, [Ou]];
@@ -1545,7 +1547,7 @@ ReqBE.prototype.teamSave=async function(inObj){  // writing needSession
   if(!roleTeam.boApproved){ this.mes('Team not approved'); return [null, [Ou]];}
   
   var idUser=Number(idUser),   boOn=Number(boOn); 
-  var sql="UPDATE "+roleTab+" SET idTeam=IF(?,idTeamWanted,0) WHERE idUser=?;", Val=[boOn,idUser];
+  var sql=`UPDATE ${roleTab} SET idTeam=IF(?,idTeamWanted,0) WHERE idUser=?;`, Val=[boOn,idUser];
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   this.mes('Data saved');
   return [null, [Ou]];
@@ -1567,13 +1569,13 @@ ReqBE.prototype.teamLoad=async function(inObj){  // writing needSession
   //copySome(Ou, roleTeam, ['idUser', 'imTag', 'link']);
 
   var TmpCol=['u.idUser', 'nameIP', 'idTeam', 'image', 'imTag', 'boUseIdPImg'];
-  //for(var i=0;i<TmpCol.length;i++){TmpCol[i]+=" AS '"+i+"'";} 
+  //for(var i=0;i<TmpCol.length;i++){TmpCol[i]+=` AS '${i}'`;} 
   var strCol=TmpCol.join(', ');
-  var sql="SELECT "+strCol+" FROM "+roleTab+" r JOIN "+userTab+" u ON r.idUser=u.idUser WHERE idTeamWanted=?";
+  var sql=`SELECT ${strCol} FROM ${roleTab} r JOIN ${userTab} u ON r.idUser=u.idUser WHERE idTeamWanted=?`;
   var Val=[idUser];
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var nRow=results.length;
-  if(nRow==0) { this.mes('No '+strRole+'s connected');  }
+  if(nRow==0) { this.mes(`No ${strRole}s connected`);  }
   else{
     Ou.tabWannaBe=arrObj2TabNStrCol(results);
     //Ou.tab=[];
@@ -1595,7 +1597,7 @@ ReqBE.prototype.keyRemoteControlSave=async function(inObj){
   var Ou={};
   var {user}=this.sessionUserInfoFrDB; if(!user) { this.mes('No session'); return [null, [Ou]];}
   //var idUser=user.idUser, keyRemoteControl=inObj.keyRemoteControl;
-  var sql="UPDATE "+userTab+" SET keyRemoteControl=?, iSeq=0 WHERE idUser=?",   Val=[myJSEscape(inObj.keyRemoteControl),  user.idUser];
+  var sql=`UPDATE ${userTab} SET keyRemoteControl=?, iSeq=0 WHERE idUser=?`,   Val=[myJSEscape(inObj.keyRemoteControl),  user.idUser];
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var boOK=0, nUpd=results.affectedRows, mestmp; 
   //if(nUpd==1) {boOK=1; mestmp="Key inserted"; } else if(nUpd==2) {boOK=1; mestmp="Key updated";} else {boOK=1; mestmp="Nothing changed (same key as before)";}
@@ -1681,8 +1683,8 @@ ReqBE.prototype.uploadImage=async function(inObj){
   if(data.length==0) return [Error('data.length==0')];
   
   var Sql=[], Val=[];
-  Sql.push("REPLACE INTO "+tabImage+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
-  Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); Val.push(idUser);
+  Sql.push(`REPLACE INTO ${tabImage} (idUser,data) VALUES (?,?);`); Val.push(idUser,data);
+  Sql.push(`UPDATE ${tabMeta} SET ${sqlSetExtra}imTag=imTag+1 WHERE idUser=?;`); Val.push(idUser);
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
 
@@ -1719,17 +1721,17 @@ ReqBE.prototype.uploadImageB64=async function(inObj){
   if(data.length==0) return [Error('data.length==0')];
   if(data.length>10000) return [Error('data.length>10000 !?!, aborting!')];
 
-  Sql.push("REPLACE INTO "+tabImage+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data);
+  Sql.push(`REPLACE INTO ${tabImage} (idUser,data) VALUES (?,?);`); Val.push(idUser,data);
   if(kind=='u'){
-    Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); 
+    Sql.push(`UPDATE ${tabMeta} SET ${sqlSetExtra}imTag=imTag+1 WHERE idUser=?;`); 
     if(sqlSetExtra) Val.push(boUseIdPImg);      Val.push(idUser);
-    Sql.push("SELECT imTag, boUseIdPImg FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
+    Sql.push(`SELECT imTag, boUseIdPImg FROM ${tabMeta} WHERE idUser=?;`); Val.push(idUser);
     var sql=Sql.join('\n');
     var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
     copySome(Ou,results[2][0],["imTag","boUseIdPImg"]);
   }else{
-    Sql.push("UPDATE "+tabMeta+" SET "+sqlSetExtra+"imTag=imTag+1 WHERE idUser=?;"); Val.push(idUser);
-    Sql.push("SELECT imTag FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
+    Sql.push(`UPDATE ${tabMeta} SET ${sqlSetExtra}imTag=imTag+1 WHERE idUser=?;`); Val.push(idUser);
+    Sql.push(`SELECT imTag FROM ${tabMeta} WHERE idUser=?;`); Val.push(idUser);
     var sql=Sql.join('\n');
     var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
     copySome(Ou,results[2][0],["imTag"]);
@@ -1749,8 +1751,8 @@ ReqBE.prototype.clearUserImage=async function(inObj){
   var idUser=user.idUser, tabImage=userImageTab, tabMeta=userTab;
   
   var Sql=[], Val=[];
-  Sql.push("DELETE FROM "+tabImage+" WHERE idUser=?;"); Val.push(idUser);
-  Sql.push("UPDATE "+tabMeta+" SET boUseIdPImg=1 WHERE idUser=?;"); Val.push(idUser);
+  Sql.push(`DELETE FROM ${tabImage} WHERE idUser=?;`); Val.push(idUser);
+  Sql.push(`UPDATE ${tabMeta} SET boUseIdPImg=1 WHERE idUser=?;`); Val.push(idUser);
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var nDel=results[0].affectedRows; 
@@ -1776,9 +1778,9 @@ ReqBE.prototype.clearTeamImage=async function(inObj){
     var idUser=sellerTeam.idUser, tabImage=sellerTeamImageTab, tabMeta=sellerTeamTab;;
   } else return [new ErrorClient("kind="+kind)];
 
-  Sql.push("DELETE FROM "+tabImage+" WHERE idUser=?;"); Val.push(idUser);
-  Sql.push("UPDATE "+tabMeta+" SET imTag=imTag+1 WHERE idUser=?;"); Val.push(idUser);
-  Sql.push("SELECT imTag FROM "+tabMeta+" WHERE idUser=?;"); Val.push(idUser);
+  Sql.push(`DELETE FROM ${tabImage} WHERE idUser=?;`); Val.push(idUser);
+  Sql.push(`UPDATE ${tabMeta} SET imTag=imTag+1 WHERE idUser=?;`); Val.push(idUser);
+  Sql.push(`SELECT imTag FROM ${tabMeta} WHERE idUser=?;`); Val.push(idUser);
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
   var c=results[0].affectedRows
@@ -1806,16 +1808,16 @@ ReqBE.prototype.setWebPushSubcription=async function(inObj){
   var hashSubScription=''; if(boWebPushOK) hashSubScription=md5(strSubscription);
 
   var Sql=[], Val=[];
-  //Sql.push("REPLACE INTO "+tab+" (idUser,data) VALUES (?,?);"); Val.push(idUser,data)
-  Sql.push("UPDATE "+userTab+" SET boWebPushOK=? WHERE idUser=?;");
-  Sql.push("UPDATE "+buyerTab+" SET boWebPushOK=? WHERE idUser=?;");
-  Sql.push("UPDATE "+sellerTab+" SET boWebPushOK=? WHERE idUser=?;");
+  //Sql.push(`REPLACE INTO ${tab} (idUser,data) VALUES (?,?);`); Val.push(idUser,data)
+  Sql.push(`UPDATE ${userTab} SET boWebPushOK=? WHERE idUser=?;`);
+  Sql.push(`UPDATE ${buyerTab} SET boWebPushOK=? WHERE idUser=?;`);
+  Sql.push(`UPDATE ${sellerTab} SET boWebPushOK=? WHERE idUser=?;`);
   var arrT=[boWebPushOK, idUser]; Val.push(...arrT,...arrT,...arrT);
   if(boWebPushOK){
-    Sql.push("REPLACE INTO "+webPushSubscriptionTab+" VALUES (?, ?);");  Val.push(idUser, strSubscription);
-  } else { Sql.push("DELETE FROM "+webPushSubscriptionTab+" WHERE idUser=?;");  Val.push(idUser); }
-  //else if(kind=='b'){     Sql.push("UPDATE "+buyerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
-  //else if(kind=='s'){     Sql.push("UPDATE "+sellerTeamTab+" SET imTag=imTag+1 WHERE idUser=?;");  Val.push(idUser); }
+    Sql.push(`REPLACE INTO ${webPushSubscriptionTab} VALUES (?, ?);`);  Val.push(idUser, strSubscription);
+  } else { Sql.push(`DELETE FROM ${webPushSubscriptionTab} WHERE idUser=?;`);  Val.push(idUser); }
+  //else if(kind=='b'){     Sql.push(`UPDATE ${buyerTeamTab} SET imTag=imTag+1 WHERE idUser=?;`);  Val.push(idUser); }
+  //else if(kind=='s'){     Sql.push(`UPDATE ${sellerTeamTab} SET imTag=imTag+1 WHERE idUser=?;`);  Val.push(idUser); }
   
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
@@ -1834,8 +1836,8 @@ ReqBE.prototype.sendNotification=async function(inObj){
   
   
   var Sql=[], Val=[];
-  Sql.push("SELECT strSubscription FROM "+webPushSubscriptionTab+" WHERE idUser=?;"); Val.push(idReceiver);
-  Sql.push("SELECT * FROM "+userTab+" WHERE idUser=?;"); Val.push(idUser);
+  Sql.push(`SELECT strSubscription FROM ${webPushSubscriptionTab} WHERE idUser=?;`); Val.push(idReceiver);
+  Sql.push(`SELECT * FROM ${userTab} WHERE idUser=?;`); Val.push(idUser);
   
   var sql=Sql.join('\n');
   var [err, results]=await this.myMySql.query(sql, Val); if(err) return [err];
