@@ -9,7 +9,7 @@ Promise.prototype.toNBP=function(){   return this.then(a=>{return [null,a];}).ca
 // Object
 //
 
-app.extend=Object.assign;
+globalThis.extend=Object.assign;
 app.copySome=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; a[name]=b[name]; } return a; }
 app.copyIfExist=function(a,b,Str){for(var i=0;i<Str.length;i++) { var name=Str[i]; if(name in b) a[name]=b[name]; } return a; }
 app.object_values=function(obj){

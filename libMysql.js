@@ -7,7 +7,9 @@
 app.MyMySql=function(pool){ this.pool=pool; this.connection=null;  }
 MyMySql.prototype.getConnection=async function(){
   var [err, connection]= await new Promise(resolve=>{   this.pool.getConnection((...arg)=>resolve(arg));    });
-  this.connection=connection; return [err];
+  this.connection=connection; 
+  //console.log(`MyMySql.getConnection threadId: ${connection.threadId}`)
+  return [err];
 }
 MyMySql.prototype.startTransaction=async function(){
   if(!this.connection) {var [err]=await this.getConnection(); if(err) return [err];}
@@ -28,14 +30,16 @@ MyMySql.prototype.rollbackNRelease=async function(){  await new Promise(resolve=
 MyMySql.prototype.commitNRelease=async function(){
   var err=await new Promise(resolve=>{this.connection.commit(eT=>resolve(eT));  });  this.connection.release();  return [err];
 }
-// MyMySql.prototype.isConnectionFree=function(){   return this.pool._freeConnections.indexOf(this.connection)!=-1;  }
-// MyMySql.prototype.fin=function(){
-//   if(this.connection) { 
-//     if(this.isConnectionFree()) this.connection.release();
-//     this.connection=null;
-//   };
-// }
-MyMySql.prototype.fin=function(){   if(this.connection) { this.connection.destroy();this.connection=null;};  }
+MyMySql.prototype.isConnectionFree=function(){   return this.pool._freeConnections.indexOf(this.connection)!=-1;  }
+MyMySql.prototype.fin=function(){
+  if(this.connection) { 
+    //if(this.isConnectionFree()) this.connection.release();
+    this.connection.release();
+    //this.connection.destroy();
+    this.connection=null;
+  };
+}
+//MyMySql.prototype.fin=function(){   if(this.connection) { this.connection.destroy();this.connection=null;};  }
 
 
 

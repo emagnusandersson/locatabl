@@ -58,15 +58,9 @@
 // LoginWithEmail, forgottPassword, login (and maybe others): send email regardless if email was found in db.
 // "If the email was in the database, an email was sent."
 
-//["'] *\+ *([a-zA-Z0-9-\.\(\)\[\]_/\+ ]+) *\+ *['"]      ${$1}
-//[`] *\+ *([a-zA-Z0-9-\.\(\)\[\]_/\+]+) *\+ *[`]        ${$1}
-//` *\+ *([a-zA-Z0-9-\.\[\]_/\+]+)               ${$1}`
-//` *\+ *([a-zA-Z0-9-\.\(\)\[\]_/\+]+)           ${$1}`
-//([a-zA-Z0-9-\.\[\]_/\+]+) *\+ *[`]             `${$1}
-//([a-zA-Z0-9-\.\(\)\[\]_/\+]+) *\+ *[`]         `${$1}
+// locatabl must use flex box because ios overscrolls if one don't have overflow:hidden, and if one have overflow:hidden then any view using fix foot will not scroll.
 
-// \$\{([^\+\}]+)\+                 }${
-
+// Push notifications should perhaps be called notifications (with out "push")
 
 // After googling "node.js connect debugger to running process" I found:
 //   kill -USR1 <node-pid>   // starts debugger
@@ -76,6 +70,12 @@
 
 
 // How to get an alias of an gmail-address: abc+1@gmail.com
+
+//  Places with mariadb configuration files
+// /etc/my.cnf /etc/mysql/my.cnf ~/.my.cnf
+// /etc/mysql/mariadb.cnf
+// /etc/mysql/conf.d/*.cnf
+// /etc/mysql/mariadb.conf.d/*.cnf
 
 /******************************************************************************
  * reqCurlEnd
@@ -320,8 +320,11 @@ app.reqDataDelete=async function(){  //
 
 app.reqDataDeleteStatus=async function(){
   var {req, res}=this, {site, objQS, uSite}=req;
-  var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
-  var confirmation_code=objQS.confirmation_code||'';
+  //var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
+  //var confirmation_code=objQS.confirmation_code||'';
+  debugger
+  var objUrl=new URL(req.url), objQS=objUrl.searchParams;
+  var confirmation_code=objQS.get('confirmation_code')||'';
   var [err,mess]=await getRedis(confirmation_code+'_DeleteRequest'); 
   if(err) {var mess=err.message;}
   else if(mess==null) {
@@ -583,8 +586,8 @@ h1.mainH1 { box-sizing:border-box; margin:0em auto; width:100%; border:solid 1px
   Str.push(`<script>
 //var StrMainProt=[];
 //var StrMainProtRole=[];
-var MainDiv=[];
-var arrViewPop=[];
+var MainDivFull=[];
+var MainDivPop=[];
 </script>`);
 
   var keyTmp=`/${siteName}_${leafManifest}`, vTmp=boDbgT?0:CacheUri[keyTmp].eTag;
@@ -693,6 +696,10 @@ app.reqLoginWLink=async function(){
   //var [err,tmp]=await setRedis(req.sessionID+'_LoginIdUser',idUser, maxLoginUnactivity);
 
   res.end("You are now logged in, close this tab, go back the web app and reload.");
+  //  ==Authentication Successful==
+  // You can close this tab and return to your command line.
+
+
 }
 
 

@@ -996,7 +996,7 @@ app.DBExtend=function(){
       queueLimit:nDBQueueLimit,
       flags:'-FOUND_ROWS'
     });
-    pool.on('error',function(e){debugger});
+    pool.on('error',function(e){ console.error('Mysql pool error event: e='+e); debugger});
     DB[name].pool=pool;
   }
 }

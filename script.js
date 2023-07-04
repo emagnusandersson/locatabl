@@ -309,6 +309,8 @@ const handler=async function(req, res){
 
     // Extract qs, objQS
   var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
+  //var objUrlNew=new URL(req.url);
+  //var objQSNew=objUrlNew.searchParams;
 
     // Extract siteName, wwwSite, boCommon, pathName
   var domainName=req.headers.host; 
