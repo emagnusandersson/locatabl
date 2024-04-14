@@ -7,7 +7,7 @@
 app.MyMySql=function(pool){ this.pool=pool; this.connection=null;  }
 MyMySql.prototype.getConnection=async function(){
   var [err, connection]= await new Promise(resolve=>{   this.pool.getConnection((...arg)=>resolve(arg));    });
-  this.connection=connection; 
+  this.connection=connection;
   //console.log(`MyMySql.getConnection threadId: ${connection.threadId}`)
   return [err];
 }
@@ -26,9 +26,16 @@ MyMySql.prototype.rollback=async function(){  await new Promise(resolve=>{this.c
 MyMySql.prototype.commit=async function(){
   var err=await new Promise(resolve=>{   this.connection.commit(eT=>resolve(eT));   });   return [err];
 }
-MyMySql.prototype.rollbackNRelease=async function(){  await new Promise(resolve=>{this.connection.rollback(()=>resolve())});  this.connection.release(); }
+MyMySql.prototype.rollbackNRelease=async function(){
+  await new Promise(resolve=>{this.connection.rollback(()=>resolve())});
+  this.connection.release();
+  this.connection=null;
+}
 MyMySql.prototype.commitNRelease=async function(){
-  var err=await new Promise(resolve=>{this.connection.commit(eT=>resolve(eT));  });  this.connection.release();  return [err];
+  var err=await new Promise(resolve=>{this.connection.commit(eT=>resolve(eT));  });
+  this.connection.release();
+  this.connection=null;
+  return [err];
 }
 MyMySql.prototype.isConnectionFree=function(){   return this.pool._freeConnections.indexOf(this.connection)!=-1;  }
 MyMySql.prototype.fin=function(){

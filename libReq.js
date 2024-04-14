@@ -65,6 +65,11 @@
 // After googling "node.js connect debugger to running process" I found:
 //   kill -USR1 <node-pid>   // starts debugger
 
+// Uncertainity squares (around the seller/buyer on map) will hide the map when there are too many.
+// chauffeur, handyman
+// Skriv om BLB (where?!?!?)
+// 2FA with 6 figures
+
 //https://192.168.0.5:5000/dataDelete?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 //https://192.168.0.5:5000/deAuthorize?signed_request=YzebdCqzGfhnx3LQHtvNEuqq5DkLFIpi18CgZfZuc6A.eyJ1c2VyX2lkIjoiMTAwMDAyNjQ2NDc3OTg1In0
 
@@ -76,6 +81,8 @@
 // /etc/mysql/mariadb.cnf
 // /etc/mysql/conf.d/*.cnf
 // /etc/mysql/mariadb.conf.d/*.cnf
+
+// New Mysql interface in libMysql.js (in locatabl) should be used in idPlace and the other apps too (if it works, that is))
 
 /******************************************************************************
  * reqCurlEnd
@@ -180,11 +187,13 @@ app.reqCurlEnd=async function(){
  ******************************************************************************/
 app.reqKeyRemoteControlSave=async function(){
   var {req, res}=this, {site, objQS, uSite}=req, {siteName}=site;
+  
+  var boSecFetch='sec-fetch-site' in req.headers
+  if(boSecFetch){
+    var strT=req.headers['sec-fetch-mode'];
+    if(!(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
+  }
 
-  
-  var strT=req.headers['sec-fetch-mode'];
-  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
-  
   //this.mesO=mesOMake('\n');
   
   var keyRemoteControl=objQS.keyRemoteControl||'';
@@ -195,7 +204,7 @@ app.reqKeyRemoteControlSave=async function(){
   Str.push(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" id="viewportMy" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="viewport" id="viewportMy" content="width=device-width, initial-scale=1, minimum-scale=1, interactive-widget=resizes-content" />
 <meta name="robots" content="noindex">
 </head>
 <body>`); //, interactive-widget=resizes-content
@@ -370,9 +379,13 @@ app.reqDeAuthorize=async function(){  //
  ******************************************************************************/
 app.reqPrev=async function() {
   var {req, res}=this;
-  
-  var strT=req.headers['sec-fetch-mode'];
-  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
+
+  var boSecFetch='sec-fetch-site' in req.headers
+  if(boSecFetch){
+    var strT=req.headers['sec-fetch-mode'];
+    if(!(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
+  }
+
   
   res.end(`<!DOCTYPE html>
 <html lang="en"><head>
@@ -396,9 +409,19 @@ app.reqPrev=async function() {
 app.reqIndex=async function() {
   var {req, res}=this, {site, wwwSite, objQS, uSite}=req, {siteName}=site;
   
-  var strT=req.headers['sec-fetch-mode'];
-  if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
-  
+  var boSecFetch='sec-fetch-site' in req.headers
+  if(boSecFetch){
+    var strT=req.headers['sec-fetch-mode'];
+    if(!(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
+  }
+
+
+    // Set sessionIDStrict
+  var sessionIDStrict=randomHash();
+  var [err,tmp]=await setRedis(sessionIDStrict+'_Strict', 1, maxUnactivity);
+  //reqMy.outCookies.sessionIDStrict=sessionIDStrict+strCookiePropStrict
+  res.replaceCookie("sessionIDStrict="+sessionIDStrict+strCookiePropLax);
+
 
   var ip='';
     // AppFog ipClient
@@ -473,7 +496,7 @@ xmlns:fb="http://www.facebook.com/2008/fbml">
   Str.push(`<link rel="apple-touch-icon" href="${srcIcon114}"/>`);
 
 
-  Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1'/>");
+  Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1, interactive-widget=resizes-content'/>");
   Str.push('<meta name="theme-color" content="#ff0"/>');
 
   await import(`./lang/${strLang}.js`);  langServerFunc();
@@ -749,40 +772,34 @@ app.reqImage=async function() {
 
 // 20230207 checking
 // So response_type can be "code" or "token". "code" is the default
-// locatable and idplace specifically uses "code"
+// locatabl and idplace specifically uses "code"
 // nsVote and syncameeting doesn't specify, so the default ("code") is used
 
-/******************************************************************************
- * reqLogin
- ******************************************************************************/
-app.reqLogin=async function(){
-  var {req, res}=this, {objQS, uDomain, rootDomain}=req;
-  var sessionIDLogin=randomHash();
-  var state=randomHash(); //CSRF protection
-  var {IP,caller="index"}=objQS,    objT={state, IP, caller};
-  var [err]=await setRedis(sessionIDLogin+'_Login', objT, 300);   if(err) res.out500(err);
-  res.replaceCookie("sessionIDLogin="+sessionIDLogin+StrSessionIDLoginProp[1])
-  var uLoginBack=uDomain+"/"+leafLoginBack;
-  var arrQ=["client_id="+site.client_id[IP], "redirect_uri="+encodeURIComponent(uLoginBack), "state="+state, 'display=popup', "response_type="+response_type];
-  var uTmp=`${UrlOAuth.fb}?client_id=${rootDomain.fb.id}&redirect_uri=${encodeURIComponent(uLoginBack)}&state=${state}&display=popup`;
-  var uTmp=UrlOAuth[IP]+"?"+arrQ.join('&');
-  res.writeHead(302, {'Location': uTmp}); res.end();
-}
 
+// This setup with reqLoginBack and reqLoginBackB is incase the IdP only supports one return-url, which causes problem given subdomains are used to differentiate sites (taxi, transport ...) (only from the right (sub-) domain can send messages to the original tab.)
+// reqLoginBack is made on the return-url stored on the IdP  
+// reqLoginBackB is made on the site (subdomain) that the user is logging in to.
+// FB now works with multiple return-url, so one could use this instead.
+// However I have in the config.js-file wwwLoginRet set to the taxi-app. (Who knows all of a sudden it might not work)
+
+// Note! when using localhost, uSiteLogin-cookie is not sent allong!! Use 192... instead to make it work (And make sure the specific return-url (like 192.168.0.9 (or whatever)) is approved on developer.facebook.com)
 
 /******************************************************************************
  * reqLoginBack
  ******************************************************************************/
 app.reqLoginBack=async function(){
   var {req, res}=this, {cookies}=req;
-  
-  var strT=req.headers['sec-fetch-mode'];
-  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
-  console.log('sec-fetch-mode: '+strT);
+    
+  var boSecFetch='sec-fetch-site' in req.headers
+  if(boSecFetch){
+    var strT=req.headers['sec-fetch-mode'];
+    if(!(strT=='navigate')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
+  }
+
   
   //var {sessionIDLogin}=cookies; if(!sessionIDLogin) { res.out500("!sessionIDLogin"); return; }
-  //var redisVar=sessionIDLogin+'_Login'; 
-  //var [err, sessionLogin]=await getRedis(redisVar,1); if(err) { res.out500(err); return; }
+  //var keyR=sessionIDLogin+'_Login'; 
+  //var [err, sessionLogin]=await getRedis(keyR,1); if(err) { res.out500(err); return; }
   //if(!sessionLogin) { res.out500('!sessionLogin');  return; }
 
   //var wwwLoginScopeTmp=req.site.wwwLoginScope??null;
@@ -793,6 +810,8 @@ app.reqLoginBack=async function(){
 <html lang="en"><head><meta name='robots' content='noindex'></head>
 <body>
 <script>
+var {search:strQS, hash:strHash}=location;
+
 const getCookie=(c_name)=>{
   var arr=document.cookie.split(";");
   for (var i=0;i<arr.length;i++){
@@ -805,15 +824,18 @@ var uSiteLogin=getCookie('uSiteLogin');
 //var strBroadcastChannel='broadcastChannel_0123456789abcdef0123456789abcdef';
 //var strBroadcastChannel=sessionStorage.getItem('strBroadcastChannel');
 //var uSiteLogin=location.origin;
-var {search:strQS, hash:strHash}=location;
-debugger
 //console.log('window.opener: '+window.opener)
 //console.log('uSiteLogin: '+uSiteLogin)
 //console.log('strBroadcastChannel: '+strBroadcastChannel)
 //window.opener.postMessage(strQS, uSiteLogin);
 //new BroadcastChannel(strBroadcastChannel).postMessage(strQS);
 //window.close();
+//debugger
 window.location.href=uSiteLogin+'/${leafLoginBackB}'+strQS+strHash;
+
+
+//localStorage.strMyLoginReturn=strQS;
+//window.close();
 </script>
 </body></html>
 `);
@@ -824,13 +846,15 @@ window.location.href=uSiteLogin+'/${leafLoginBackB}'+strQS+strHash;
 app.reqLoginBackB=async function(){
   var {req, res}=this, {cookies}=req;
   
-  var strT=req.headers['sec-fetch-mode'];
-  //if(strT && !(strT=='navigate' || strT=='same-origin')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
-  console.log('sec-fetch-mode: '+strT);
+  var boSecFetch='sec-fetch-site' in req.headers
+  if(boSecFetch){
+    var strT=req.headers['sec-fetch-mode'];
+    if(!(strT=='navigate')) { res.outCode(400, `sec-fetch-mode header not allowed (${strT})`); return;}
+  }
   
   //var {sessionIDLogin}=cookies; if(!sessionIDLogin) { res.out500("!sessionIDLogin"); return; }
-  //var redisVar=sessionIDLogin+'_Login'; 
-  //var [err, sessionLogin]=await getRedis(redisVar,1); if(err) { res.out500(err); return; }
+  //var keyR=sessionIDLogin+'_Login'; 
+  //var [err, sessionLogin]=await getRedis(keyR,1); if(err) { res.out500(err); return; }
   //if(!sessionLogin) { res.out500('!sessionLogin');  return; }
 
   //var wwwLoginScopeTmp=req.site.wwwLoginScope??null;
@@ -841,6 +865,8 @@ app.reqLoginBackB=async function(){
 <html lang="en"><head><meta name='robots' content='noindex'></head>
 <body>
 <script>
+var {search:strQS, hash:strHash}=location;
+
 const getCookie=(c_name)=>{
   var arr=document.cookie.split(";");
   for (var i=0;i<arr.length;i++){
@@ -849,17 +875,20 @@ const getCookie=(c_name)=>{
   }
 }
 //var uSiteLogin=getCookie('uSiteLogin');
-var strBroadcastChannel=getCookie('strBroadcastChannel');
 //var strBroadcastChannel='broadcastChannel_0123456789abcdef0123456789abcdef';
 //var strBroadcastChannel=sessionStorage.getItem('strBroadcastChannel');
 //var uSiteLogin=location.origin;
-var {search:strQS, hash:strHash}=location;
-debugger
+
 //console.log('window.opener: '+window.opener)
 //console.log('uSiteLogin: '+uSiteLogin)
 //console.log('strBroadcastChannel: '+strBroadcastChannel)
 //window.opener.postMessage(strQS, uSiteLogin);
-new BroadcastChannel(strBroadcastChannel).postMessage(strQS);
+
+//var strBroadcastChannel=getCookie('strBroadcastChannel');
+//new BroadcastChannel(strBroadcastChannel).postMessage(strQS);
+
+localStorage.strMyLoginReturn=strQS;
+
 window.close();
 </script>
 </body></html>

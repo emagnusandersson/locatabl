@@ -192,19 +192,6 @@ app.delRedis=async function(arr){
 app.existsRedis=async function(strVar){  return await redis.exists(strVar).toNBP();  }
   
 
-    // locatabl
-  //var StrSuffix=['_Main', '_LoginIdP', '_LoginIdUser', '_UserInfoFrDB', '_Counter'];  var StrCaller=['index'], for(var i=0;i<StrCaller.length;i++){  StrSuffix.push('_CSRFCode'+ucfirst(StrCaller[i])); }
-  //var err=await changeSessionId.call(this, sessionIDNew, StrSuffix);
-app.changeSessionId=async function(sessionIDNew, StrSuffix){
-  for(var i=0;i<StrSuffix.length;i++){
-    var strSuffix=StrSuffix[i];
-    var redisVarO=this.req.sessionID+strSuffix, redisVarN=sessionIDNew+strSuffix; 
-    var [err,value]=await cmdRedis('rename', [redisVarO, redisVarN]); //if(err) return err;
-  }
-  this.req.sessionID=sessionIDNew;
-  return null;
-}
-
 
 app.getIP=function(req){
   var ipClient='', Match;
@@ -362,7 +349,7 @@ globalThis.makeTable=function(arrObj, StrHead=null){
 
 
 
-app.arrayifyCookiePropObj=function(obj){
+app.arrayifyCookiePropObj=function(obj){  // Ex: {a:1, b:2} => ["a=1", "b=2"]
   var K=Object.keys(obj);
   var O=K.map(k=>{
     var v=obj[k];

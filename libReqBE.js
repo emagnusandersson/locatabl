@@ -211,9 +211,20 @@ ReqBE.prototype.mesEO=function(e, statusCode=500){
 ReqBE.prototype.go=async function(){
   var {req, res}=this, {site}=req;
   
-  var strT=req.headers['sec-fetch-site'];
-  if(strT && strT!='same-origin') { this.mesEO(Error(`sec-fetch-site header is not 'same-origin' (${strT})`));  return;}
+  var boSecFetch='sec-fetch-site' in req.headers
+  if(boSecFetch){
+    var strT=req.headers['sec-fetch-site'];
+    if(strT!='same-origin') { this.mesEO(Error(`sec-fetch-site header is not 'same-origin' (${strT})`));  return;}
+    
+    var strT=req.headers['sec-fetch-dest'];
+    if(strT!='empty') { this.mesEO(Error(`sec-fetch-dest header is not 'empty' (${strT})`));  return;}
   
+    var strT=req.headers['sec-fetch-user'];
+    if(strT && strT=='?1') { this.mesEO(Error(`sec-fetch-user header equals '?1'`));  return;}
+    
+    var strT=req.headers['sec-fetch-mode'], boT=strT=='no-cors' || strT=='cors';
+    if(!boT) { this.mesEO(Error(`sec-fetch-mode header is neither 'no-cors' or 'cors' (${strT})`));  return;}
+  }
 
   if('x-requested-with' in req.headers){
     var str=req.headers['x-requested-with'];   if(str!=="XMLHttpRequest") { this.mesEO(Error("x-requested-with: "+str));  return; }
@@ -241,6 +252,14 @@ ReqBE.prototype.go=async function(){
     this.mesEO(Error('Cookie not set'));  return
   } // Should check for boCookieStrictOK but iOS seem not to send it when the ajax-request comes from javascript called from a cross-tab call (from a popup-window) (The problem occurs when loginGetGraph is called)
   // Hmm!! When tested 20211010 on the idPlace app (on IOS), it worked to log in (and that javascript is also called from a popup-window). So perhaps the iOS sends the strict cookie now.
+  // 20240619 entered the below section.
+
+    // Check that sessionIDStrict cookie exists and is valid.
+  if(!('sessionIDStrict' in req.cookies)) {this.mesEO('no sessionIDStrict cookie'); return}
+  var sessionIDStrict=req.cookies.sessionIDStrict;
+  var [err, val]=await redis.myGetNExpire(sessionIDStrict+'_Strict', maxUnactivity).toNBP();
+  if(!val) {this.mesEO('sessionIDStrict cookie not valid'); return}
+
   
   var [err,val]=await getRedis(req.sessionID+'_UserInfoFrDB', true); if(err) { this.mesEO(err);  return; }   this.sessionUserInfoFrDB=val;
   //var [err,value]=await getRedis(req.sessionID+'_UserInfoFrDB'); this.sessionUserInfoFrDB=JSON.parse(value);
@@ -304,16 +323,16 @@ ReqBE.prototype.go=async function(){
 
   }else {debugger; }
 
-    // cecking/set CSRF-code
-  var redisVar=req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode;
+    // Check/set CSRF-code
+  var keyR=req.sessionID+'_CSRFCode'+ucfirst(caller), CSRFCode;
   if(boCheckCSRF){
-    if(!CSRFIn){ this.mesO('CSRFCode not set (try reload page)'); return;}
-    var [err, CSRFStored]=await getRedis(redisVar); if(err) { this.mesEO(err);  return; }
-    if(CSRFIn!==CSRFStored){ this.mesO('CSRFCode err (try reload page)'); return;}
+    // if(!CSRFIn){ this.mesO('CSRFCode not set (try reload page)'); return;}
+    // var [err, CSRFStored]=await getRedis(keyR); if(err) { this.mesEO(err);  return; }
+    // if(CSRFIn!==CSRFStored){ this.mesO('CSRFCode err (try reload page)'); return;}
   }
   if(boSetNewCSRF){
     var CSRFCode=randomHash();
-    var tmp=await setRedis(redisVar, CSRFCode, maxUnactivity);
+    var tmp=await setRedis(keyR, CSRFCode, maxUnactivity);
     this.GRet.CSRFCode=CSRFCode;
   }
 
@@ -360,8 +379,8 @@ ReqBE.prototype.sendLoginLink=async function(inObj){
   if(results.length==0) { return [new ErrorClient('No such email in the database')];}
   
   var code=randomHash();
-  var redisVar=code+'_LoginWLink';
-  var tmp=await setRedis(redisVar, email, expirationTime);
+  var keyR=code+'_LoginWLink';
+  var tmp=await setRedis(keyR, email, expirationTime);
   
   var wwwSite=req.wwwSite;
   var uLink=`${req.strSchemeLong}${wwwSite}/${leafLoginWLink}?code=${code}`;
@@ -443,8 +462,8 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
     // Store temporarily
   var expirationTime=20*60;
   var code=randomHash()+randomHash();
-  var redisVar=code+'_verifyEmailNCreateUser';
-  var tmp=await setRedis(redisVar, {email, password, name, iRole}, expirationTime);
+  var keyR=code+'_verifyEmailNCreateUser';
+  var tmp=await setRedis(keyR, {email, password, name, iRole}, expirationTime);
   var Ou={};
 
     // Send email
@@ -551,8 +570,8 @@ ReqBE.prototype.verifyEmail=async function(inObj){
   var expirationTime=20*60;
 
   var code=randomHash()+randomHash();
-  var redisVar=code+'_verifyEmail';
-  var tmp=await setRedis(redisVar, idUser, expirationTime);
+  var keyR=code+'_verifyEmail';
+  var tmp=await setRedis(keyR, idUser, expirationTime);
   var Ou={};
 
   var Sql=[], Val=[];
@@ -607,8 +626,8 @@ ReqBE.prototype.verifyPWReset=async function(inObj){
   var expirationTime=20*60;
 
   var code=randomHash()+randomHash();
-  var redisVar=code+'_verifyPWReset';
-  var tmp=await setRedis(redisVar, email, expirationTime);
+  var keyR=code+'_verifyPWReset';
+  var tmp=await setRedis(keyR, email, expirationTime);
 
   var wwwSite=req.wwwSite;
   var uVerification=`${req.strSchemeLong}${wwwSite}/${leafVerifyPWResetReturn}?code=${code}`;
@@ -622,9 +641,12 @@ ReqBE.prototype.verifyPWReset=async function(inObj){
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset request', html:strTxt };
 
-  if(err) {console.log(err); return [new ErrorClient(err.body)]; }
+  let sendResult=await smtpTransport.sendMail(msg)
+  this.mes(sendResult.response);
+  //if(err) {console.log(err); return [new ErrorClient(err.body)]; }
 
-  this.mes('Email sent'); Ou.boOK=1;
+  //this.mes('Email sent'); 
+  Ou.boOK=1;
   return [null, [Ou]];
 }
 
@@ -824,9 +846,10 @@ ReqBE.prototype.VSetPosCond=async function(inObj){  // writing needSession
 
 ReqBE.prototype.logout=async function(inObj){
   var {req}=this, Ou={};
-  var [err,tmp]=await delRedis(req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser');
+  var [err,tmp]=await delRedis([req.sessionID+'_UserInfoFrDB', req.sessionID+'_LoginIdP', req.sessionID+'_LoginIdUser']); //, req.sessionID+'_Main'
   this.sessionLoginIdP={};  this.sessionUserInfoFrDB=extend({}, userInfoFrDBZero);  this.GRet.userInfoFrDBUpd=extend({},userInfoFrDBZero);
-  this.mes('Logged out'); return [null, [Ou]];
+  var strMess=`Logged out`;if(boDbg) strMess+=`, ${tmp} session variables deleted`
+  this.mes(strMess); return [null, [Ou]];
 }
 
 ReqBE.prototype.setUpCond=async function(inObj){

@@ -394,7 +394,7 @@ filterDivICreator.tmpPrototype.createDivs=function(){
     var strName=el.StrOrderFilt[i], feat=el.Prop[strName].feat;
     var divT=createElement('div').attr('name',strName);
     
-    if(strName in el.helpBub){ var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,el.helpBub[strName]);    }  //.css({'vertical-align':'top'})
+    if(strName in el.helpBub){ var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,el.helpBub[strName]);    }  //.css({'vertical-align':'top'})
     var strUnit=''; if(strName in el.Unit) strUnit=` [${el.Unit[strName]}]`;
     if(feat.kind[0]=='B') { 
       h=createElement('div').myAppend(calcLabel(el.Label,strName),strUnit,': ',imgH); //.css({'margin':'0.3em 0em 0em'})
