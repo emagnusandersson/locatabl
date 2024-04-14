@@ -406,7 +406,7 @@ app.CreatorPlugin.general=function(){
     var tmpSetInp=function(){ this.querySelector('span').mySet(); }
     var tmpSaveInp=function(){ return [null, JSON.stringify(myWebPush.subscription)]; }
     var tmpCrInfo=function(){
-      var butT=createElement('button').css({'font-size':'85%'}).myText(langHtml.SendAPushNotification).on('click', function(){  
+      var butT=createElement('button').css({'font-size':'85%', height:'1.5rem'}).myText(langHtml.SendAPushNotification).on('click', function(){  
         if(!userInfoFrDB.user){ setMess('You need to be logged in to send a message.', 2); return; }
         viewChat.setUp(this.idUser, this.iRole); viewChat.setVis();
         doHistPush({strView:'viewChat'});
@@ -558,7 +558,7 @@ app.CreatorPlugin.distNTimePrice=function(){
       inpUnit.value=strUnitDist;
       inpTime.value=comparePrice.time;
       labTime.firstChild.nodeValue=`${langHtml.Time} (${langHtml.timeUnit[strUnitTime][1][1]}): `;
-      mess.firstChild.nodeValue='';
+      mess.firstChild.nodeValue=''; mess.hide()
       if(typeof extraSaveFuncT!='undefined') extraSaveFunc=extraSaveFuncT; else extraSaveFunc=null;
       doHistPush({strView:'viewComparePriceDataPop'});
       el.setVis();
@@ -566,8 +566,8 @@ app.CreatorPlugin.distNTimePrice=function(){
     el.setVis=function(){ el.show(); return true;  }
     var saveFunc=function() {
       var dist=Number(inpDist.value), unit=inpUnit.value, time=Number(inpTime.value);
-      if(isNaN(dist)) {mess.firstChild.nodeValue='input not valid'; return;}
-      if(isNaN(time)) {mess.firstChild.nodeValue='input not valid'; return;}
+      if(isNaN(dist)) {mess.firstChild.nodeValue='input not valid'; mess.show(); return;}
+      if(isNaN(time)) {mess.firstChild.nodeValue='input not valid'; mess.show(); return;}
       strUnitDist=unit; comparePrice.dist=dist; comparePrice.time=time;
       setItem('comparePriceData',{dist, time});
       setItem('strUnitDist',strUnitDist);
@@ -603,13 +603,13 @@ app.CreatorPlugin.distNTimePrice=function(){
     var secTime=createElement('section').myAppend(labTime, inpTime);
 
     var buttDefault=createElement('button').myText(langHtml.Default).css({}).on('click', function() { 
-      inpDist.value=comparePrice.dataDefault.inpDist; inpUnit.value=strUnitDistDefault; inpTime.value=comparePrice.dataDefault.time;
+      inpDist.value=comparePrice.dataDefault.dist; inpUnit.value=strUnitDistDefault; inpTime.value=comparePrice.dataDefault.time;
     });
     var buttCancel=createElement('button').on('click', historyBack).myText(langHtml.Cancel);
     var buttonSave=createElement('button').on('click', saveFunc).myText(langHtml.Done);
     var foot=createElement('div').myAppend(buttCancel, buttDefault, buttonSave).css({display:'flex', gap:'0.4em', 'justify-content':'space-between'});
 
-    var mess=createElement('div').myText('.').css({'min-height':'1em'});
+    var mess=createElement('div').myText('.').css({'min-height':'1em'}); mess.show();
     var Div=[mess, secDist, secTime, foot];
 
     el.css({'text-align':'left'});
@@ -1741,52 +1741,61 @@ app.funLoad= async function(){
   // themeOS ∈ ['dark','light']
   // themeChoise ∈ ['dark','light','system']
   // themeCalc ∈ ['dark','light']
-window.analysColorSchemeSettings=function(){
-  var themeOS=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"
-  var themeChoise=localStorage.getItem("themeChoise")??"system";
+globalThis.analysColorSchemeSettings=function(){
+  var themeOS=globalThis.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"
+  //var themeChoise=localStorage.getItem("themeChoise")??"system";
+  var themeChoise=localStorage.getItem("themeChoise")||"system";  // Safari 12 can't handle Nullish coalescing operator (??)
   var arrThemeChoise=['dark','light','system'];
   var ind=arrThemeChoise.indexOf(themeChoise);  if(ind==-1) ind=2;
   var themeChoise=arrThemeChoise[ind]
   var themeCalc=themeChoise=="system"?themeOS:themeChoise
+  console.log(`OS: ${themeOS}, choise: ${themeChoise}, calc: ${themeCalc}`)
   return {themeOS, themeChoise, themeCalc}
 }
 
 var setThemeClass=function(theme){
+  if(typeof theme=='undefined'){ var {themeOS, themeChoise, themeCalc}=analysColorSchemeSettings(); theme=themeCalc; }
   if(theme=='dark') elHtml.setAttribute('data-theme', 'dark'); else elHtml.removeAttribute('data-theme');
   var strT=theme; if(theme!='dark' && theme!='light') strT='light dark'
   elHtml.css({'color-scheme':strT});
 }
 
-  // Initial setup of selectorOfTheme
-// var selectorOfTheme=selThemeCreate()
-// elBody.myAppend(selectorOfTheme)
-
-// var {themeOS, themeChoise, themeCalc}=analysColorSchemeSettings();
-// console.log(`OS: ${themeOS}, choise: ${themeChoise}, calc: ${themeCalc}`)
-// setThemeClass(themeCalc)
-// selectorOfTheme.value=themeChoise
-
   // Listen to prefered-color changes on the OS
-window.colorSchemeQueryListener = window.matchMedia('(prefers-color-scheme: dark)');
-colorSchemeQueryListener.addEventListener('change', function(e) {
-  var {themeOS, themeChoise, themeCalc}=analysColorSchemeSettings();
-  console.log(`OS: ${themeOS}, choise: ${themeChoise}, calc: ${themeCalc}`)
-  setThemeClass(themeCalc)
-});
-
-window.selThemeCreate=function(){
-  var optSystem=createElement('option').myText('Same as OS').prop({value:'system'})
-  var optLight=createElement('option').myText('Light').prop({value:'light'})
-  var optDark=createElement('option').myText('Dark').prop({value:'dark'})
-  var Opt=[optSystem, optLight, optDark]
-  var el=createElement('select').myAppend(...Opt).on('change',function(e){
-    localStorage.setItem('themeChoise', this.value);
-    var {themeOS, themeChoise, themeCalc}=analysColorSchemeSettings();
-    console.log(`OS: ${themeOS}, choise: ${themeChoise}, calc: ${themeCalc}`)
-    setThemeClass(themeCalc)
-  })
-  return el
+globalThis.colorSchemeQueryListener = globalThis.matchMedia('(prefers-color-scheme: dark)');
+if(colorSchemeQueryListener.addEventListener){ // Safari 12 does not support addEventlistner
+  colorSchemeQueryListener.addEventListener('change', function(e) {
+    setThemeClass()
+  });
 }
+
+globalThis.SelThemeCreate={
+  setValue:function(){ 
+    var {themeOS, themeChoise, themeCalc}=analysColorSchemeSettings();
+    this.value=themeChoise
+    //var [optSystem, optLight, optDark]=this.querySelectorAll('option');
+    //var charLight=themeCalc=='light'?'◻':'◼', charDark=themeCalc=='light'?'◼':'◻'
+    //optLight.myText(charLight+' '+SelThemeCreate.strLight)
+    //optDark.myText(charDark+' '+SelThemeCreate.strDark)
+  },
+  strOS:'Same theme as OS', strLight:'Light theme', strDark:'Dark theme',
+  factory:function(){
+    var {strOS, strLight, strDark}=SelThemeCreate
+    var optSystem=createElement('option').myHtml('◩&nbsp;&nbsp;&nbsp;'+strOS).prop({value:'system'})  //⛅
+    var optLight=createElement('option').myHtml('☼&nbsp;&nbsp;&nbsp;'+strLight).prop({value:'light'})  //☼☀☀️◻◨
+    var optDark=createElement('option').myHtml('☽&nbsp;&nbsp;&nbsp;'+strDark).prop({value:'dark'})  //☾☽◼☁️🌙🌒 🌒
+    var Opt=SelThemeCreate.Opt=[optSystem, optLight, optDark]
+    var el=createElement('select').myAppend(...Opt).on('change',function(e){
+      localStorage.setItem('themeChoise', this.value);
+      setThemeClass();
+      this.setValue()
+    })
+    el.prop({title:"Change color theme"})
+
+    var Key=Object.keys(SelThemeCreate); Key=AMinusB(Key, ['extendClass', 'factory']); copySome(el, SelThemeCreate, Key);
+    return el;
+  }
+}
+
 
 /*******************************************************************************************************************
  *******************************************************************************************************************
@@ -1980,8 +1989,9 @@ app.selSpriteCreator=function(objSprite){
     //var {offsetWidth:wEl, offsetHeight:hEl, offsetLeft:xl, offsetTop:yt}=el, {} //, xr=xl+wEl, xc=xl+wEl/2, yb=yt+hEl, yc=yt+hEl/2
     //var {scrollX, scrollY}=window
     var {x:xl, width:wEl, right:xr, y:yt, height:hEl, bottom:yb}=rect, xc=xl+wEl/2, yc=yt+hEl/2
-    if(xc>wPar/2) divMenu.css({left:'', right:0}); else divMenu.css({left:xl, right:''});  //wPar-xr
-    if(yc>hPar/2) divMenu.css({top:'', bottom:hEl+'px'}); else divMenu.css({top:yb, bottom:''});
+    if(xc>wPar/2) divMenu.css({left:'', right:0}); else divMenu.css({left:0, right:''});  //wPar-xr
+    //if(yc>hPar/2) divMenu.css({top:'', bottom:hEl+'px'}); else divMenu.css({top:yb, bottom:''});
+    if(yc<hPar/2) divMenu.css({top:'', bottom:''}); else divMenu.css({top:'', bottom:hEl+'px'});  // This will make the menu go downwards if it fits neither
   }
   el.closeFunc=function() {
     divMenu.hide();
@@ -2003,7 +2013,7 @@ app.selSpriteCreator=function(objSprite){
   el.img=spriteOnButt.img; // Incase one wants to do css operations on the img
 
   var button=createElement('button').myAppend(spriteOnButt).on('click', function(e){   if(el.isOpen()) { el.closeFunc();}  else { openFunc(e);}  });
-  var divMenu=createElement('div').css({position:'absolute',border:'1px solid',background:'#fff',left:0+'px',top:28+'px'}); //,'z-index':1
+  var divMenu=createElement('div').css({position:'absolute',border:'1px solid',background:'#fff',left:0+'px',top:28+'px', 'z-index':1}); //,'z-index':1
   el.append(button,divMenu);
 
   for(var i=0;i<objSprite.order.length;i++){
@@ -2158,8 +2168,10 @@ var roleTogglerCreator=function(viewTarget){
     var strCol=charRoleAlt=='s'?'var(--bg-seller)':'var(--bg-buyer)';
     var strRoleUC=charRoleAlt=='s'?'Sellers':'Buyers';
     el.css({'background':strCol}).myText(langHtml[strRoleUC]);
+    el.dataset.charRole=charRoleAlt
   }
-  el.getStat=function(){  return el.style.background=='var(--bg-seller)'?'b':'s';   }
+  //el.getStat=function(){  return el.style.background=='var(--bg-seller)'?'b':'s';   }
+  el.getStat=function(){  return el.dataset.charRole=='s'?'b':'s';   }
   el.prop('title', langHtml.ToggleBetweenBuyerAndSeller).on('click',function(){
     charRole=el.getStat();
     charRole=charRole=='b'?'s':'b';
@@ -2271,13 +2283,15 @@ var getOAuthCode=async function(boReauthenticate=false){
     var ind=hostname.indexOf('.');  if(ind!=-1) uDomainSite=hostname.substr(ind+1);  
   }
   objCookieSite.domain=uDomainSite;
-  var strCookieSite=objToQueryArr(objCookieSite).join(';');   document.cookie=strCookieSite
-  var strCookieCh=objToQueryArr(objCookieCh).join(';');   document.cookie=strCookieCh
+  var strCookieSite=objToQueryArr(objCookieSite).join(';');   
+  var strCookieCh=objToQueryArr(objCookieCh).join(';');   
   var URLLoginRet=new URL(uLoginRet);
+  document.cookie=strCookieSite;
+  //document.cookie=strCookieCh
 
   //setItemS('strBroadcastChannel',strBroadcastChannel);
   //sessionStorage.strBroadcastChannel=strBroadcastChannel
-  extend(sessionStorage, {strBroadcastChannel});
+  //extend(sessionStorage, {strBroadcastChannel});
 
   window.open(uPop); //, '_blank', 'popup', 'width=580,height=400'
   //var {strQS,strHash}=await new Promise(resolve=>{ window.loginReturn=resolve; });
@@ -2289,13 +2303,25 @@ var getOAuthCode=async function(boReauthenticate=false){
   // });
 
 
-  var broadcastChannel=new BroadcastChannel(strBroadcastChannel);
+  // var broadcastChannel=new BroadcastChannel(strBroadcastChannel);
+  // var strQS=await new Promise(resolve=>{
+  //   broadcastChannel.on('message', function(e){
+  //     resolve(e.data)
+  //   })
+  // });
+  // broadcastChannel.close()
+
+
   var strQS=await new Promise(resolve=>{
-    broadcastChannel.on('message', function(e){
-      resolve(e.data)
-    })
+    var cbStorageEv=function(ev){
+      window.removeEventListener("storage", cbStorageEv);
+      var strQS=ev.newValue; resolve(strQS)
+    }
+    window.addEventListener("storage", cbStorageEv);
   });
-  broadcastChannel.close()
+  localStorage.removeItem('strMyLoginReturn')
+
+
   var strParams=response_type=='code'?strQS:strHash;
 
   var params=parseQS(strParams.substring(1));
@@ -2354,10 +2380,10 @@ var viewFormLoginCreator=function(){
 
   var messDiv=createElement('div').css({color:'red'});
   var buttForgot=createElement('a').prop({href:''}).myText('Forgot your password?').on('click', function(e){  viewForgottPWPop.openFunc(); e.preventDefault(); });
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH, createElement('div').myText("A new password is generated and sent to the email address."));
+  var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH, createElement('div').myText("A new password is generated and sent to the email address."));
   var divForgot=createElement('div').myAppend(buttForgot, imgH);
   var butSendLink=createElement('a').prop({href:''}).myText('Login with email link').on('click', sendEmail);
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH, createElement('div').myText("An email is sent with a link which will log you in. Your password is not changed."));
+  var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH, createElement('div').myText("An email is sent with a link which will log you in. Your password is not changed."));
   var divSendLink=createElement('div').myAppend(butSendLink, imgH);
 
   var hr=createElement('hr').css({width:'100%'})
@@ -2426,7 +2452,7 @@ var divLoginSelectorCreator=function(oRole){
     doHistPush({strView:'viewFormLogin'});
     viewFormLogin.setVis();
   });
-  var divLeft=createElement('div').css(cssCol).css({'text-align':'center'}).myAppend(imgFb); divLeft.insertAdjacentHTML('beforeend', '<p>Email, name and image are used, although not shown publicly unless you want to.</p><p>Nothing is written to your Facebook flow.</p>' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
+  var divLeft=createElement('div').css(cssCol).css({'text-align':'left'}).myAppend(imgFb); divLeft.insertAdjacentHTML('beforeend', '<p>Used data:</p><p><b>Name</b>, <b>image</b> (can be changed in the settings)</p><p><b>Email</b> (Not shown to the public)</p><p>Nothing is written to your Facebook flow.</p>' ); // <p>You can delete your account at any time., '(recommended)' <br>(fewer passwords to remember) (no new password to remember)
   //<p>Facebook is used to encourage uniqness.</p>
   var divRight=createElement('div').css(cssCol).css({'border-left':'2px solid', 'text-align':'center'}).myAppend( buttonViaEmail);        divRight.hide();
   if(boAllowEmailLogin) {divRight.show();}
@@ -2861,14 +2887,12 @@ var viewSettingEntryCreator=function(){
 
 
     // Initial setup of selectorOfTheme
-  var selectorOfTheme=selThemeCreate()
-  //elBody.myAppend(selectorOfTheme)
-  var divThemeSelector=createElement('div').myAppend('Theme (Background colors): ', selectorOfTheme);
+  //var selectorOfTheme=selThemeCreate(); initialSetupOfSelectorOfTheme(selectorOfTheme)
+  var selectorOfTheme=SelThemeCreate.factory();  setThemeClass(); selectorOfTheme.setValue();
+  //selectorOfTheme.css({color:'black', background:'lightgrey'});
+  
+  var divThemeSelector=createElement('div').myAppend('Color theme: ', selectorOfTheme);
 
-  var {themeOS, themeChoise, themeCalc}=analysColorSchemeSettings();
-  console.log(`OS: ${themeOS}, choise: ${themeChoise}`)
-  setThemeClass(themeCalc)
-  selectorOfTheme.value=themeChoise
 
   
     // Settings for logged in users
@@ -2970,7 +2994,7 @@ var viewUserSettingCreator=function(){
     // boGeoWatch
   var strHelp='For continuous tracking to work on mobile devices, the device must be prevented from going to sleep, and the browser must be in the foreground.';
   var strHelp='Note on mobile devices: If the screen goes black (or the webpage leaves forground) then continuous tracking will stop working';
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
+  var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
   var cbBoGeoWatch=createElement('input').prop({type:'checkbox'}).on('click',function(){
     boGeoWatch=this.checked;
   });
@@ -2978,7 +3002,7 @@ var viewUserSettingCreator=function(){
 
     // keyRemoteControl
   var strHelp="Copy this to the remote controller.";
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
+  var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'0.6em'}); popupHover(imgH,createElement('div').myText(strHelp));
   //var aLink=createElement('a').myText('link to trackerControl').prop({href:'https://emagnusandersson.github.io/trackerControl/'});
   var spanKeyRemoteControl=createElement('textarea').attr({readonly:1}).css({'font-size':'0.8em', 'padding':'0.1em', 'user-select':'none', width:'100%', display:'block', overflow:'hidden', resize:'none'});
   var inpKeyRemoteControl=createElement('input')
@@ -3007,7 +3031,7 @@ var viewUserSettingCreator=function(){
   //var divRemoteControl=createElement('div').myAppend(divKeyRemoteControl).css({background:'lightgrey'});
   
       // deleteDiv
-  //var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
+  //var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({strView:'viewDeleteAccountPop'}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete); //,imgH
 
@@ -3071,7 +3095,7 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
 
   var spanEmail=createElement('span');
   var bub=createElement('div').myText("This email is not shown to the public. (Go into Seller/Buyer settings to enter emails displayed to they public)");
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,bub);
+  var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,bub);
   var divEmail=createElement('div').myAppend('Email: ', spanEmail, imgH);
 
     // change PW
@@ -3079,7 +3103,7 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   var divPW=createElement('div').myText('Change password: ').myAppend(buttChangePW);
 
       // deleteDiv
-  //var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
+  //var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em'}); popupHover(imgH,createElement('div').myText(langHtml.deleteBox));
   var butDelete=createElement('button').myText(langHtml.DeleteAccount).css({'margin-right':'1em'}).on('click', function(){doHistPush({strView:'viewDeleteAccountPop'}); viewDeleteAccountPop.setVis();});
   var deleteDiv=createElement('div').myAppend(butDelete);
 
@@ -3144,7 +3168,7 @@ var settingCreator=function(oRole){
   el.createDivs=function(){
     for(var i=0;i<StrProp.length;i++){
       var strName=StrProp[i];
-      var imgH=''; if(strName in oRole.helpBub ) {    var imgH=imgHelp.cloneNode(1).css({'margin-right':'0.4em', flex:'0 0 auto'});   popupHover(imgH,oRole.helpBub[strName]);         }
+      var imgH=''; if(strName in oRole.helpBub ) {    var imgH=hovHelp.cloneNode(1).css({'margin-right':'0.4em', flex:'0 0 auto'});   popupHover(imgH,oRole.helpBub[strName]);         }
 
       //var strLabel=ucfirst(strName)+': '; if(strName in langHtml.prop) strLabel=langHtml.prop[strName].label+': ';
       var strLabel=calcLabel(langHtml.prop, strName);
@@ -3243,7 +3267,7 @@ var viewSettingCreator=function(){
 
   el.myAppend(divCont, divFoot);
 
-  el.addClass('viewDivFix').css({'overflow':'scroll'});; // .css({'text-align':'left'}); //, display:"flex","flex-direction":"column"
+  el.addClass('viewDivFix').css({'overflow-y':'scroll'});; // .css({'text-align':'left'}); //, display:"flex","flex-direction":"column"
   return el;
 }
 
@@ -3377,7 +3401,7 @@ var viewTeamCreator=function(oRole){
   var hLink=createElement('div').myText('A link to any other site of yours.');
   var hList=createElement('div').myText('A list of users who wants to belong to your team. Mark those who you approve.');
 
-  var hImg0=imgHelp.cloneNode(1).css({'margin-left':'1em'}), hImg1=imgHelp.cloneNode(1).css({'margin-left':'1em'}), hImg2=imgHelp.cloneNode(1).css({'margin-left':'1em'});
+  var hImg0=hovHelp.cloneNode(1).css({'margin-left':'1em'}), hImg1=hovHelp.cloneNode(1).css({'margin-left':'1em'}), hImg2=hovHelp.cloneNode(1).css({'margin-left':'1em'});
   popupHover(hImg0,hId);   popupHover(hImg1,hLink);   popupHover(hImg2,hList);
   var divA=createElement('div').myAppend('Team-Id: ',elId,',',hImg0);
   //var divB=createElement('div').myAppend('Thumb image: ',thumb,' ',buttUploadImage,' (will be shrunk to fit a 50 x 50 pixel square)');
@@ -3604,7 +3628,7 @@ var viewIntroCreator=function(oRole){
 
   
   var helpPopup=createElement('div').myText('You may want to use a separate phone if you use this service often.');
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'1em'});   popupHover(imgH,helpPopup);
+  var imgH=hovHelp.cloneNode(1).css({'margin-left':'1em'});   popupHover(imgH,helpPopup);
          
   var head=createElement('h3').myText(langHtml['introHead'+charRoleUC]).css({margin:0});
   //var pBread=createElement('p').myText("These data are shown to everyone. You may want to use a separate phone if you use this service often.");
@@ -4013,7 +4037,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
   var tab=[], imgComplainee=createElement('img').prop({alt:"complainee"}).css({'vertical-align':'middle'}), nameSpan=createElement('span'), spanRole=createElement('span');
   var complaineeInfo=createElement('div').myAppend(spanRole,': ',imgComplainee,' ',nameSpan).css({'margin':'0.5em',display:'inline-block', 'float':'right'});
   var bub=createElement('div').myText(langHtml.writeComplaintPopup);
-  var imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,bub);
+  var imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em'});  popupHover(imgH,bub);
 
   var tBody=createElement('tbody'),   table=createElement('table').myAppend(tBody).css({'width':'100%'});
 
@@ -4247,8 +4271,8 @@ var listCtrlCreator=function(oRole){ // The little map and up/down arrows
     //if(viewComplainee.is(':visible')){viewComplainee.setUp(oRole, oRole.MTab[iTmp].idUser); viewComplainee.load(); }
     if(viewComplainee.style.display!='none'){viewComplainee.setUp(oRole, oRole.MTab[iTmp]); viewComplainee.load(); }
   }
-  var buttonPrev=createElement('button').myText('▲').css({display:'block','margin':'0em'}).on('click', function(){tmpf(-1);})
-  var buttonNext=createElement('button').myText('▼').css({display:'block','margin':'1.5em 0em 0em'}).on('click', function(){tmpf(1);})
+  var buttonPrev=createElement('button').myText('▲').css({display:'block','margin':'0em', height:'unset'}).on('click', function(){tmpf(-1);})
+  var buttonNext=createElement('button').myText('▼').css({display:'block','margin':'1.5em 0em 0em', height:'unset'}).on('click', function(){tmpf(1);})
   var arrowSpan=createElement('span').css({display:'inline-block'}); arrowSpan.append(buttonPrev,buttonNext);
   var arrowDiv=createElement('div').css({display:'inline-block','margin':'0em 1.5em 0em 0em'}); arrowDiv.append(tableThumb,arrowSpan);
   el.append(mapThumbDiv,arrowDiv);
@@ -4279,7 +4303,7 @@ var viewInfoCreator=function(oRole){ // All the detailed info of a user.
   el.createContainers=function(){
     for(var i=0;i<StrProp.length;i++){
       var strName=StrProp[i], prop=(strName in Prop)?Prop[strName]:{}, b=prop.b;
-      var imgH=''; if(strName in oRole.helpBub && Number(b[oRole.bFlip.help])) { imgH=imgHelp.cloneNode(1).css({margin:'0em 0.3em 0em 0.4em'});   popupHover(imgH,oRole.helpBub[strName]); }
+      var imgH=''; if(strName in oRole.helpBub && Number(b[oRole.bFlip.help])) { imgH=hovHelp.cloneNode(1).css({margin:'0em 0.3em 0em 0.4em'});   popupHover(imgH,oRole.helpBub[strName]); }
 
       var strDisp,strMargRight,strWW; if(Number(b[oRole.bFlip.block])) {strDisp='block'; strMargRight='0em'; strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
 
@@ -5142,8 +5166,8 @@ var divPromptGeoLocationCreator=function(el){
     viewFront.divPromptGeoLocation.hide();
     el.cbCancel();
   });
-  var label=createElement('div').myAppend('Use the device location?')
-  var divPrompt=createElement('div').myAppend(label, butOK, butCancel).css({display:'flex', gap:'0.5em', 'justify-content':'center'}).hide();
+  var label=createElement('div').myAppend('Use device location?')
+  var divPrompt=createElement('div').myAppend(label, butOK, butCancel).css({display:'flex', gap:'0.5em', 'justify-content':'center', 'align-items':'center'}).hide();
   var divDenied=createElement('div').myAppend('Geolocation has been denied.').hide();
   el.myAppend(divPrompt, divDenied).addClass('divGeoLocationStatus');
   return el;
@@ -5215,7 +5239,7 @@ var quickDivCreator=function(){
 
   var spanDragMess=createElement('span').myText(langHtml.DragOrZoom).css({'font-size':'75%',position:'absolute',top:'-1.15em',left:'50%', transform:'translate(-50%, 0)', 'white-space':'nowrap'}).hide();
   
-  var imgH=imgHelp.cloneNode(1).css({'margin-right':'auto', flex:'0 0 auto'});   popupHover(imgH,createElement('div').myHtml(langHtml.quickHelp).css({'text-align':'left'}));
+  var imgH=hovHelp.cloneNode(1).css({'margin-right':'auto', flex:'0 0 auto'});   popupHover(imgH,createElement('div').myHtml(langHtml.quickHelp).css({'text-align':'left'}));
  
     // butTog
   var DivInButTog=Array(2);
@@ -5279,7 +5303,7 @@ var markSelectorCreator=function(oRole){
       //var cssTmp; if(i%2) cssTmp={'margin-left':'2em'}; else cssTmp={'margin-right':'2em'};  rb.css(cssTmp);
       //if(boAndroid) rb.css({'-webkit-transform':'scale(2,2)'}); else rb.css({width:'1.4em',height:'1.4em'});
       rb.css({width:'1.4em', height:'1.4em', margin:'0.6em 1.2em'});
-      var imgH=''; if(strName in oRole.helpBub) { imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'1em'});  popupHover(imgH,oRole.helpBub[strName]);  }
+      var imgH=''; if(strName in oRole.helpBub) { imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'1em'});  popupHover(imgH,oRole.helpBub[strName]);  }
       var tdL=createElement('td').myAppend(calcLabel(langHtml.prop, strName),' ',imgH), tdRB=createElement('td').myAppend(rb);
       var r=createElement('tr').myAppend(tdL,tdRB).attr({name:strName});
       //if(i%2) r.css({background:'lightgrey'});
@@ -5293,7 +5317,7 @@ var markSelectorCreator=function(oRole){
     }
   }
   var tBody=createElement('tbody');  el.tBody=tBody;
-  var table=createElement('table').css({'margin':'0.3em 0em 0.8em',border:'1px'}).myAppend(tBody);
+  var table=createElement('table').css({'margin':'0.3em auto 0.8em',border:'1px'}).myAppend(tBody);
   el.myAppend(table);
   return el;
 }
@@ -5380,7 +5404,7 @@ var columnSelectorCreator=function(oRole){
       //if(boAndroid) cb.css({'-webkit-transform':'scale(2,2)'}); else cb.css({width:'1.4em',height:'1.4em'});
       cb.css({width:'1.4em',height:'1.4em'});
       cb.value=strName;  arrCB[i]=cb;
-      var imgH=''; if(strName in oRole.helpBub) { imgH=imgHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'1em'});  popupHover(imgH,oRole.helpBub[strName]);  }
+      var imgH=''; if(strName in oRole.helpBub) { imgH=hovHelp.cloneNode(1).css({'margin-left':'0.6em', 'margin-right':'1em'});  popupHover(imgH,oRole.helpBub[strName]);  }
       var tdL=createElement('td').myAppend(calcLabel(langHtml.prop, strName),' ',imgH), tdCB=createElement('td').myAppend(cb);
       var r=createElement('tr').myAppend(tdL,tdCB).attr({name:strName});
       tBody.append(r);
@@ -5400,7 +5424,8 @@ var columnSelectorCreator=function(oRole){
   var tHead=createElement('thead');
   var tBody=createElement('tbody');  el.tBody=tBody; tBody.css({'accent-color':oRole.strColor})
   var table=createElement('table').css({'margin':'0.3em auto 0.8em',border:'1px'});
-  el.myAppend(tHead, tBody);
+  table.myAppend(tHead, tBody);
+  el.myAppend(table);
   return el;
 }
 
@@ -5492,21 +5517,27 @@ var dragSorterCreator=function(cbMouseup){
     var hCur=movedRow.offsetHeight, yMouseOff=y-hCur/2;
 
     var len=el.children.length;
+    var boMoved=false
 
     if(iCur>0) {  //Check if previous is better
-      var tmp=movedRow.previousElementSibling;
-      var yPrevOff=tmp.getBoundingClientRect().top;
-      var hPrev=tmp.offsetHeight;
-      if(y<yPrevOff+hPrev/2) { tmp.insertAdjacentElement('beforebegin', movedRow); }
+      var rowT=movedRow.previousElementSibling;
+      var yPrevOff=rowT.getBoundingClientRect().top;
+      var hPrev=rowT.offsetHeight;
+      if(y<yPrevOff+hPrev/2) { rowT.insertAdjacentElement('beforebegin', movedRow); boMoved=true }
     }
-    if(iCur<len-1) { //Check if next is better
-      var tmp=movedRow.nextElementSibling;
-      var yNextOff=tmp.getBoundingClientRect().top;
-      var hNext=tmp.offsetHeight;
-      if(y>yNextOff+hNext/2) { tmp.insertAdjacentElement('afterend', movedRow); }
+    if(!boMoved && iCur<len-1) { //Check if next is better
+      var rowT=movedRow.nextElementSibling;
+      var yNextOff=rowT.getBoundingClientRect().top;
+      var hNext=rowT.offsetHeight;
+      if(y>yNextOff+hNext/2) { rowT.insertAdjacentElement('afterend', movedRow); }
     }
-    var yCurOff=movedRow.offsetTop;
-    movedRow.css({transform:`translateY(${yMouseOff-yCurOff}px)`});
+    // var yCurOff=movedRow.offsetTop;
+    // movedRow.css({transform:`translateY(${yMouseOff-yCurOff}px)`});
+
+    var yCurOff=movedRow.getBoundingClientRect().top
+    var strYTrans=movedRow.style.transform; strYTrans=strYTrans.slice(11,-3); var yTrans=Number(strYTrans)
+    var yCurOrgOff=yCurOff-yTrans
+    movedRow.css({'transform':'translateY('+(yMouseOff-yCurOrgOff)+'px)'});
   };
 
   el.myAdd=function(arrName,arrLabel){
@@ -5632,7 +5663,7 @@ var tHeadLabelCreator=function(oRole){
       var divLab=createElement('div').myAppend(colText)
       if(strName in langHtml.prop && langHtml.prop[strName].boRot) divLab.css({'writing-mode':'vertical-rl', transform:'rotate(-180deg)'});
     
-      var imgH=''; if(strName in oRole.helpBub) { var imgH=imgHelp.cloneNode(1).css({'margin-top':'0.2em'});  popupHover(imgH,oRole.helpBub[strName]); }
+      var imgH=''; if(strName in oRole.helpBub) { var imgH=hovHelp.cloneNode(1).css({'margin-top':'0.2em'});  popupHover(imgH,oRole.helpBub[strName]); }
       var imgSort=createElement('img').attr('data-type','sort').prop({src:wsUnsorted}).css({display:'block',transform:'scale(1.5)','margin':'auto','margin-top':'0.3em','margin-bottom':'0.3em'}); //, alt:"sort"
       arrImgSort[i]=imgSort;
       var h=createElement("th").attr('name',strName).css({cursor:'pointer'}).addClass('unselectable').on('click', thClick).myAppend(divLab,imgH,imgSort);
@@ -6283,7 +6314,8 @@ if(err) { console.log(mess+':\n'+err); alert(mess+':\n'+err); return; }
 //assignSiteSpecific();
 extend(app, objSiteSpecific);
 
-app.boAllowEmailLogin=site.boAllowEmailLogin??false
+//app.boAllowEmailLogin=site.boAllowEmailLogin??false
+app.boAllowEmailLogin=site.boAllowEmailLogin||false // // Safari 12 can't handle Nullish coalescing operator (??)
 
 console.log('boDbg='+boDbg);
 
@@ -6482,7 +6514,8 @@ var setMyState=function(state){
   view.setVis();  // state.arg
   if(history.funOverRule) {history.funOverRule(); history.funOverRule=null;}
   else if(state.fun) {state.fun(state); }
-  else{ view.funPopped?.(state); }
+  //else{ view.funPopped?.(state); }  
+  else{ if(view.funPopped) view.funPopped(state); } // Safari 12 can't handle Optional chaining (?.)
 }
 
 window.on('pagehide', function(){ 
@@ -6649,10 +6682,8 @@ app.merProj=new MercatorProjection();
 var tmp=getItem('boFirstVisit'),  boFirstVisit=tmp===null;      setItem('boFirstVisit',0);
 
 // ❓?
-//app.imgHelp=createElement('img').prop({src:wsHelpFile, alt:"help"}).css({'vertical-align':'-0.4em', 'margin-left':'0.6em', height:'fit-content'});
-app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButton').css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'}); //on('click', function(){return false;})    //'pointer-events':'none',
-app.imgHelp=hovHelpMy;
-//elBody.append(hovHelpMy);
+//app.hovHelp=createElement('img').prop({src:wsHelpFile, alt:"help"}).css({'vertical-align':'-0.4em', 'margin-left':'0.6em', height:'fit-content'});
+app.hovHelp=createElement('span').myText('❓').addClass('btn-round', 'helpButton').css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'}); //on('click', function(){return false;})    //'pointer-events':'none',
 
 for(var i=0;i<ORole.length;i++){
   var KeyTmp=Object.keys(ORole[i].Prop);

@@ -9,10 +9,13 @@ strBTC='1abcdefghijklmnopqrstuvwxyzABCDEFG'; // Bitcoin address
 ppStoredButt="ABCDEFGHIJKLM";  // Paypal-stored-button
 
 
-intDDOSMax=200; // intDDOSMax: How many requests before DDOSBlocking occurs. 
-tDDOSBan=5; // tDDOSBan: How long in seconds til the blocking is lifted
-intDDOSIPMax=100; // intDDOSIPMax: How many requests before DDOSBlocking occurs. 
-tDDOSIPBan=10; // tDDOSIPBan: How long in seconds til the blocking is lifted
+app=globalThis
+
+app.intDDOSMax=200; // intDDOSMax: How many requests before DDOSBlocking occurs. 
+app.tDDOSBan=5; // tDDOSBan: How long in seconds till the blocking is lifted
+app.intDDOSIPMax=100; // intDDOSIPMax: How many requests before DDOSBlocking occurs. 
+app.tDDOSIPBan=10; // tDDOSIPBan: How long in seconds till the blocking is lifted
+
 
 boUseDBIndex=0;
 timeOutAccumulatedUpdate=3600; // How long to wait before updating tAccumulated in buyer/seller tabs
@@ -229,7 +232,7 @@ if(!wwwCommon) {var keys=Object.keys(Site), nKey=keys.length; wwwCommon=Site[key
 //
 // Endpoint urls for the IdP.
 //
-strFBVersion="v9.0"
+strFBVersion="v20.0"
 UrlOAuth={fb:`https://www.facebook.com/${strFBVersion}/dialog/oauth`, google:"https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace}
 UrlToken={fb:`https://graph.facebook.com/${strFBVersion}/oauth/access_token`, google:"https://accounts.google.com/o/oauth2/token", idplace:urlAuthIdplace+"/access_token"}
 UrlGraph={fb:`https://graph.facebook.com/${strFBVersion}/me`, google:"https://www.googleapis.com/plus/v1/people/me", idplace:urlAuthIdplace+"/me"};
