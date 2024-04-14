@@ -114,7 +114,8 @@ var loginDivExtend=function(el){
     if('error' in params) { setMess(params.error); }
     else{
       if('code' in params) { 
-        var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller, code:params.code};
+        //var oT={IP:OAuth.IP, fun:OAuth.fun, caller:OAuth.caller, code:params.code};
+        var oT=copySome({}, OAuth, ["IP", "fun", "caller", "code"])
         var vec=[ ['loginGetGraph', oT], ['setupById', null, function(data){
           if(typeof loginReturnC!=='undefined' && loginReturnC) {loginReturnC(); loginReturnC=null;}
         }]];   majax(oAJAX,vec);
@@ -132,7 +133,7 @@ var loginDivExtend=function(el){
   var mess=createElement('span').css({"margin-left":"0.3em"});
   var strButtonSize='2em';
   var fbIm=createElement('img').on('click', function(){popupWin(strIPPrim);}).prop({src:srcLoginImage}).css({position:'relative',top:'0.4em',heigth:strButtonSize}); //width:strButtonSize
-  //var fbHelp=imgHelp.cloneNode(1).css({margin:'0 0 0 1em'}),  bub=createElement('div').myText(langHtml.helpLoginSeller);     popupHover(fbHelp,bub);  
+  //var fbHelp=hovHelp.cloneNode(1).css({margin:'0 0 0 1em'}),  bub=createElement('div').myText(langHtml.helpLoginSeller);     popupHover(fbHelp,bub);  
 
   var label=createElement('span').myText('Login first, then click yes: ').css({'font-size':'1.3em','font-weight':'bold'});
   el.append(label,fbIm,mess); //,fbHelp
@@ -254,9 +255,8 @@ var wsBusy=wseImageFolder+'busy.gif';
 
 
 var imgBusy=createElement('img').attr({src:wsBusy});
-var imgHelp=createElement('img').prop({src:wsHelpFile}).css({'vertical-align':'-0.4em'});
-app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButton').css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'}); //on('click', function(){return false;})    //'pointer-events':'none',
-imgHelp=hovHelpMy;
+//var imgHelp=createElement('img').prop({src:wsHelpFile}).css({'vertical-align':'-0.4em'});
+app.hovHelp=createElement('span').myText('❓').addClass('btn-round', 'helpButton').css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'}); //on('click', function(){return false;})    //'pointer-events':'none',
 
 var sessionLoginIdP={};
 var userInfoFrDB=extend({}, userInfoFrDBZero);
@@ -283,7 +283,7 @@ var divKey=createElement('div').myText(keyRemoteControl).hide().css({'font-weigh
 var headA=createElement('div').myAppend('You are now on ',tmpB, '.').css({'margin-top':'0.5em'});  // ,buttonShowKey, divKey
 
 
-var imgTmp=imgHelp.cloneNode(1).css({margin:'0 0 0 0em'}),  bub=createElement('div').myHtml("• Position (latitude/longitude)<br>• Visibility (on/off)<br>• hideTimer").css({'text-align':'left'});     popupHover(imgTmp,bub);  
+var imgTmp=hovHelp.cloneNode(1).css({margin:'0 0 0 0em'}),  bub=createElement('div').myHtml("• Position (latitude/longitude)<br>• Visibility (on/off)<br>• hideTimer").css({'text-align':'left'});     popupHover(imgTmp,bub);  
 //var headB=createElement('div').myAppend('Those who created the link that brought you here (those who know the other key-half) will be able change certain data. (Your "visibility" (on/off), position and hideTimer.)');
 var headB=createElement('div').myAppend('Those who created the link that brought you here will be able to write some data ', imgTmp,' on this site. (If you click yes below.)');
 var headC=createElement('div').myAppend('Do you want to store the supplied key?'); //key-half

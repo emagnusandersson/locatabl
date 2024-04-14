@@ -539,7 +539,7 @@ app.resM2resWC=function(resMEquator,lat){
 // GeoHash
 //
 
-app.createBMOne=function(i) {    var imod=i%32, a;     if(imod==31) a=0x80000000; else  a=1<<imod;     if(i>=32) a=a*0x100000000;     return a;  }  // 0≤i. Ex: i=5 => 0000 0000 0000 0000  0000 0000 0010 0000
+app.createBMOne=function(i) {    var imod=i%32, a;     if(imod==31) a=0x8000_0000; else  a=1<<imod;     if(i>=32) a=a*0x1_0000_0000;     return a;  }  // i≥0. Ex: i=5 => 0b0000_0000_0000_0000_0000_0000_0010_0000
 app.floorLowerBits=function(a,n=0){
   if(n==0) return a;
   var div=Math.pow(2,n);
@@ -554,14 +554,14 @@ app.zipperMergeInt=function(a,b){ // The bits of two integers (uint32) a and b a
   var c=arrT.join('');
   return c;
 }
-app.wc2uint32=function(x){ return Math.floor(x*0x1000000); }
+app.wc2uint32=function(x){ return Math.floor(x*0x100_0000); }
 
 app.GeoHash={}
 GeoHash.pWC2GeoHash=function(pWC){ var intX=wc2uint32(pWC.x), intY=wc2uint32(pWC.y),   strGeoHash=zipperMergeInt(intX, intY);      return strGeoHash;  }
 GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
   
-  if(intX1<0) intX1+=0x100000000; if(intY1<0) intY1+=0x100000000;
-  var intX1Corrected=intX1>intX0?intX1:intX1+0x100000000;
+  if(intX1<0) intX1+=0x1_0000_0000; if(intY1<0) intY1+=0x1_0000_0000;
+  var intX1Corrected=intX1>intX0?intX1:intX1+0x1_0000_0000;
   var intDX=intX1Corrected-intX0, strDX=intDX.toString(2), intDY=intY1-intY0, strDY=intDY.toString(2);
   
   
@@ -609,12 +609,16 @@ GeoHash.getRectangleSelection=function(intX0, intX1, intY0, intY1){
   var intX0Edge=floorLowerBits(intX0, intPotSizeLev0), intY0Edge=floorLowerBits(intY0, intPotSizeLev1)
 
     // Create an array of pots
-  var arrRange=[], arrRangeHash=[], arrRangeStr=[], arrBigIntHashSta=new BigUint64Array(nW*nH), arrBigIntHashEnd=new BigUint64Array(nW*nH), arrBigIntHash=[];
+      // Searching for an intermittent bug
+  if(intPotSizeLev0>52) {debugger; console.error(Error(`intPotSizeLev0=${intPotSizeLev0}`)); } // Number.MAX_SAFE_INTEGER
+  if(intPotSizeLev1>52) {debugger; console.error(Error(`intPotSizeLev1=${intPotSizeLev1}`)); } // Number.MAX_SAFE_INTEGER
+  var nTmp=nW*nH; if(typeof nTmp !='number' || nTmp<0) {debugger; console.error(Error(`nW=${nW}, nH=${nH}`)); } 
+  var arrRange=[], arrRangeHash=[], arrRangeStr=[], arrBigIntHashSta=new BigUint64Array(nTmp), arrBigIntHashEnd=new BigUint64Array(nTmp), arrBigIntHash=[];
   for(var i=0;i<nH;i++){
     var yStart=intY0Edge+i*intPotSizeY, yEnd=yStart+intPotSizeY-1;
     for(var j=0;j<nW;j++){
       var xStart=intX0Edge+j*intPotSizeX, xEnd=xStart+intPotSizeX-1;
-      var uintLim=0x100000000; if(xStart>=uintLim) {xStart-=uintLim; xEnd-=uintLim;}
+      var uintLim=0x10000_0000; if(xStart>=uintLim) {xStart-=uintLim; xEnd-=uintLim;}
       if(xEnd>=uintLim) {console.log('xEnd>=uintLim'); debugger;}
       var IntStart={x:xStart,y:yStart}, IntEnd={x:xEnd,y:yEnd};
       arrRange.push({IntStart, IntEnd});
