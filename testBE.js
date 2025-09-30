@@ -4,14 +4,13 @@
 globalThis.app=globalThis;
 
 import http from "http";
-import url from "url";
+//import url from "url";
 import path from "path";
 import fs, {promises as fsPromises} from "fs";
 import mysql from 'mysql';
 import concat from 'concat-stream';
 import redis from "redis";
 import UglifyJS from "uglify-js";
-import sgMail from '@sendgrid/mail';
 import ip from 'ip';
 import gmTmp from 'gm';
 app.gm=gmTmp.subClass({ imageMagick: true });

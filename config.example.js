@@ -54,9 +54,13 @@ var urlAuthIdplace=createUrlAuthIdPlace('idplaceorg');  // Which idplace (local 
 strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
 strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
-//apiKeySendGrid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-objSendinblueAuth={ user:"noreply@example.com", pass:"XXXXXXXXXXXXXX" }
-emailRegisterdUser=objSendinblueAuth.user;
+app.objMailAuth={
+  host:'YOURSMTPHOST', // smtp-relay.brevo.com, smtp.zoho.com ...
+  port:587,
+  auth:{ user:"noreply@example.com", pass:"XXXXXXXXXXXXXX" }
+}
+emailRegisterdUser=objMailAuth.auth.user;
+
 
 
 
@@ -232,7 +236,7 @@ if(!wwwCommon) {var keys=Object.keys(Site), nKey=keys.length; wwwCommon=Site[key
 //
 // Endpoint urls for the IdP.
 //
-strFBVersion="v20.0"
+strFBVersion="v26.0"
 UrlOAuth={fb:`https://www.facebook.com/${strFBVersion}/dialog/oauth`, google:"https://accounts.google.com/o/oauth2/v2/auth", idplace:urlAuthIdplace}
 UrlToken={fb:`https://graph.facebook.com/${strFBVersion}/oauth/access_token`, google:"https://accounts.google.com/o/oauth2/token", idplace:urlAuthIdplace+"/access_token"}
 UrlGraph={fb:`https://graph.facebook.com/${strFBVersion}/me`, google:"https://www.googleapis.com/plus/v1/people/me", idplace:urlAuthIdplace+"/me"};
