@@ -294,7 +294,10 @@ app.deleteOne=async function(site,user_id){  //
 app.reqDataDelete=async function(){  //
   var {req, res}=this, {objQS, uSite, site}=req, {siteName}=site
 
-  //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
+  //if(req.method=='GET' && boDbg){ 
+  //  var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; 
+  //  var objUrl=new URL('http://trash.com'+req.url), strData=objUrl.search.slice(1);
+  //} else 
   if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
   else {res.outCode(400, "Post request wanted"); return; }
   
@@ -331,8 +334,7 @@ app.reqDataDeleteStatus=async function(){
   var {req, res}=this, {site, objQS, uSite}=req;
   //var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
   //var confirmation_code=objQS.confirmation_code||'';
-  debugger
-  var objUrl=new URL(req.url), objQS=objUrl.searchParams;
+  var objUrl=new URL('http://trash.com'+req.url), objQS=objUrl.searchParams;
   var confirmation_code=objQS.get('confirmation_code')||'';
   var [err,mess]=await getRedis(confirmation_code+'_DeleteRequest'); 
   if(err) {var mess=err.message;}
@@ -347,7 +349,10 @@ app.reqDataDeleteStatus=async function(){
 app.reqDeAuthorize=async function(){  //
   var {req, res}=this, {objQS, uSite, site}=req, {siteName}=site
 
-  //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
+  //if(req.method=='GET' && boDbg){ 
+  //  var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; 
+  //  var objUrl=new URL('http://trash.com'+req.url), strData=objUrl.search.slice(1);
+  //} else 
   if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
   else {res.outCode(400, "Post request wanted"); return; }
 
@@ -957,7 +962,8 @@ app.reqVerifyPWResetReturn=async function() {
   // if(err) {res.out500(err); return; }
   // res.end("A new password has been generated and sent to your email address.");
   let sendResult=await smtpTransport.sendMail(msg)
-  res.end(sendResult.response);
+  res.setHeader('Content-Type', MimeType.html);
+  res.end(`<p style="font-size:larger">New password sent to your email.</p><p>Response from email server (for debugging only):</p><div style="background:lightgrey;width:fit-content">${sendResult.response}</div>`);
 }
 
 app.reqVerifyEmailNCreateUserReturn=async function() {
