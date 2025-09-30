@@ -76,9 +76,9 @@ window.loginReturnC=function(data){
 }
 
 window.loginReturn=function(strQS, strHash){
-  var params=parseQS(strQS.substring(1));
-  if(!('state' in params) || params.state !== OAuth.nonce) {    alert('Invalid state parameter.'); return;  } 
-  OAuth.cb(params);
+  var objQS=parseQS(strQS.substring(1));
+  if(!('state' in objQS) || objQS.state !== OAuth.nonce) {    alert('Invalid state parameter.'); return;  } 
+  OAuth.cb(objQS);
 }
 
 var OAuthT=function(){
