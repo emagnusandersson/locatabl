@@ -2324,11 +2324,11 @@ var getOAuthCode=async function(boReauthenticate=false){
 
   var strParams=response_type=='code'?strQS:strHash;
 
-  var params=parseQS(strParams.substring(1));
-  if(!('state' in params) || params.state !== nonce) {   return ['Invalid state parameter: '+params.state]; }
-  if('error' in params) { return [params.error]; }
-  if(!('code' in params)) { return ['No "code" parameter in response from IdP']; }
-  return [null, params.code];
+  var objQS=parseQS(strParams.substring(1));
+  if(!('state' in objQS) || objQS.state !== nonce) {   return ['Invalid state parameter: '+objQS.state]; }
+  if('error' in objQS) { return [objQS.error]; }
+  if(!('code' in objQS)) { return ['No "code" parameter in response from IdP']; }
+  return [null, objQS.code];
 }
 
 

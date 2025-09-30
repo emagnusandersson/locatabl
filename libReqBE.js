@@ -209,7 +209,7 @@ ReqBE.prototype.mesEO=function(e, statusCode=500){
 
 
 ReqBE.prototype.go=async function(){
-  var {req, res}=this, {site}=req;
+  var {req, res}=this, {site, objUrl, objQS}=req;
   
   var boSecFetch='sec-fetch-site' in req.headers
   if(boSecFetch){
@@ -228,7 +228,10 @@ ReqBE.prototype.go=async function(){
 
   if('x-requested-with' in req.headers){
     var str=req.headers['x-requested-with'];   if(str!=="XMLHttpRequest") { this.mesEO(Error("x-requested-with: "+str));  return; }
-  } else {  this.mesEO(Error("x-requested-with not set"));  return;  }
+  } else {  
+    console.error(objUrl.searchParams);
+    this.mesEO(Error("x-requested-with not set"));  return;
+  }
 
   if('referer' in req.headers) {
     var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length, referer=req.headers.referer, lMin=Math.min(lTmp, referer.length);
