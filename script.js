@@ -169,9 +169,12 @@ app.SiteName=Object.keys(Site);
   // Set up mail
 //sgMail.setApiKey(apiKeySendGrid);
 app.smtpTransport=nodemailer.createTransport({
-  host:'smtp-relay.sendinblue.com',
-  port:587,
-  auth:objSendinblueAuth
+  host:'smtp.zoho.com', // (Note: smtp.zoho.eu does not work)
+  secure: true,
+  port: 465,
+  //port:587,
+  //secure: false, // true for 465, false for other ports
+  auth:objZohoAuth
 })
 
   // Set up webPush
@@ -311,13 +314,16 @@ const handler=async function(req, res){
   
 
     // Extract qs, objQS
-  var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
-  //var objUrlNew=new URL(req.url);
-  //var objQSNew=objUrlNew.searchParams;
+  //var objUrlO=url.parse(req.url), pathNameOrgO=objUrlO.pathname, qsO=objUrlO.query||'';
+  var objUrl=new URL(`https://${req.headers.host}${req.url}`), pathNameOrg=objUrl.pathname, qs=objUrl.search;  
+  //var objQS=objUrl.searchParams; // searchParams requires you to use the "get"-method
+  //if(pathNameOrgO!=pathNameOrg) {debugger}
+  //if(qsO!=qs.slice(1)) {debugger}
+  var objQS=parseQS(qs)
+
 
     // Extract siteName, wwwSite
   var domainName=req.headers.host; 
-  var pathNameOrg=objUrl.pathname;
   var wwwReq=domainName+pathNameOrg;
 
   var boCommon=domainName===wwwCommon;
@@ -407,7 +413,7 @@ const handler=async function(req, res){
   var strScheme='http'+(boTLS?'s':''),   strSchemeLong=strScheme+'://';
   var uSite=strSchemeLong+wwwSite;
 
-  extend(req, {qs, objQS, boTLS, strSchemeLong, uSite, wwwSite, site, pathName, siteName, sessionID, rootDomain:RootDomain[site.strRootDomain]});
+  extend(req, {objUrl, objQS, boTLS, strSchemeLong, uSite, wwwSite, site, pathName, siteName, sessionID, rootDomain:RootDomain[site.strRootDomain]}); //qs, 
 
 
   var objReqRes={req, res};

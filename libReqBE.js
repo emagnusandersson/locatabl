@@ -209,7 +209,7 @@ ReqBE.prototype.mesEO=function(e, statusCode=500){
 
 
 ReqBE.prototype.go=async function(){
-  var {req, res}=this, {site}=req;
+  var {req, res}=this, {site, objUrl, objQS}=req;
   
   var boSecFetch='sec-fetch-site' in req.headers
   if(boSecFetch){
@@ -228,7 +228,10 @@ ReqBE.prototype.go=async function(){
 
   if('x-requested-with' in req.headers){
     var str=req.headers['x-requested-with'];   if(str!=="XMLHttpRequest") { this.mesEO(Error("x-requested-with: "+str));  return; }
-  } else {  this.mesEO(Error("x-requested-with not set"));  return;  }
+  } else {  
+    console.error(objUrl.searchParams);
+    this.mesEO(Error("x-requested-with not set"));  return;
+  }
 
   if('referer' in req.headers) {
     var urlT=req.strSchemeLong+req.wwwSite, lTmp=urlT.length, referer=req.headers.referer, lMin=Math.min(lTmp, referer.length);
@@ -397,7 +400,7 @@ ReqBE.prototype.sendLoginLink=async function(inObj){
   // if(err) {console.log(err); return [new ErrorClient(err.body)]; }
   // this.mes('Email sent');
 
-  let sendResult=await smtpTransport.sendMail(msg)
+  var [err, sendResult]=await smtpTransport.sendMail(msg).toNBP(); if(err) return [err];
   this.mes(sendResult.response);
   
   Ou.boOK=1;
@@ -482,7 +485,7 @@ ReqBE.prototype.sendVerifyEmailNCreateUserMessage=async function(inObj){
   // if(err) {console.log(err); return [new ErrorClient(err.body)]; }
   // this.mes('Email sent');
 
-  let sendResult=await smtpTransport.sendMail(msg)
+  var [err, sendResult]=await smtpTransport.sendMail(msg).toNBP(); if(err) return [err];
   this.mes(sendResult.response);
 
   Ou.boOK=1;
@@ -598,7 +601,7 @@ ReqBE.prototype.verifyEmail=async function(inObj){
   // if(err) {console.log(err); return [new ErrorClient(err.body)]; }
   // this.mes('Email sent');
 
-  let sendResult=await smtpTransport.sendMail(msg)
+  var [err, sendResult]=await smtpTransport.sendMail(msg).toNBP(); if(err) return [err];
   this.mes(sendResult.response);
 
   Ou.boOK=1;
@@ -641,7 +644,7 @@ ReqBE.prototype.verifyPWReset=async function(inObj){
   if(boDbg) wwwSite="locatabl.com";
   const msg = { to:email, from:emailRegisterdUser, subject:'Password reset request', html:strTxt };
 
-  let sendResult=await smtpTransport.sendMail(msg)
+  var [err, sendResult]=await smtpTransport.sendMail(msg).toNBP(); if(err) return [err];
   this.mes(sendResult.response);
   //if(err) {console.log(err); return [new ErrorClient(err.body)]; }
 

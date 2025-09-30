@@ -1780,9 +1780,9 @@ globalThis.SelThemeCreate={
   strOS:'Same theme as OS', strLight:'Light theme', strDark:'Dark theme',
   factory:function(){
     var {strOS, strLight, strDark}=SelThemeCreate
-    var optSystem=createElement('option').myHtml('◩&nbsp;&nbsp;&nbsp;'+strOS).prop({value:'system'})  //⛅
-    var optLight=createElement('option').myHtml('☼&nbsp;&nbsp;&nbsp;'+strLight).prop({value:'light'})  //☼☀☀️◻◨
-    var optDark=createElement('option').myHtml('☽&nbsp;&nbsp;&nbsp;'+strDark).prop({value:'dark'})  //☾☽◼☁️🌙🌒 🌒
+    var optSystem=createElement('option').myHtml('◩&nbsp;&nbsp;&nbsp;&nbsp;'+strOS).prop({value:'system'})  //⛅
+    var optLight=createElement('option').myHtml('☼&nbsp;&nbsp;&nbsp;&nbsp;'+strLight).prop({value:'light'})  //☼☀☀️◻◨
+    var optDark=createElement('option').myHtml('☽&nbsp;&nbsp;&nbsp;&nbsp;'+strDark).prop({value:'dark'})  //☾☽◼☁️🌙🌒 🌒
     var Opt=SelThemeCreate.Opt=[optSystem, optLight, optDark]
     var el=createElement('select').myAppend(...Opt).on('change',function(e){
       localStorage.setItem('themeChoise', this.value);
@@ -2324,11 +2324,11 @@ var getOAuthCode=async function(boReauthenticate=false){
 
   var strParams=response_type=='code'?strQS:strHash;
 
-  var params=parseQS(strParams.substring(1));
-  if(!('state' in params) || params.state !== nonce) {   return ['Invalid state parameter: '+params.state]; }
-  if('error' in params) { return [params.error]; }
-  if(!('code' in params)) { return ['No "code" parameter in response from IdP']; }
-  return [null, params.code];
+  var objQS=parseQS(strParams.substring(1));
+  if(!('state' in objQS) || objQS.state !== nonce) {   return ['Invalid state parameter: '+objQS.state]; }
+  if('error' in objQS) { return [objQS.error]; }
+  if(!('code' in objQS)) { return ['No "code" parameter in response from IdP']; }
+  return [null, objQS.code];
 }
 
 
@@ -2363,7 +2363,9 @@ var viewFormLoginCreator=function(){
     return false;
   }
   var sendEmail=function(e){
-    var vec=[['sendLoginLink',{email:inpEmail.value}]];   majax(vec);  e.preventDefault();
+    e.preventDefault();
+    if(inpEmail.value.length==0) {alert('Email field is empty'); return}
+    var vec=[['sendLoginLink',{email:inpEmail.value}]];   majax(vec);  
   }
 
   var divHead=createElement('h3').myText('Sign in using email / password').css({'text-align':'center', margin:0});
@@ -3059,9 +3061,10 @@ var divIPSettingCreator=function(){  // Div in userSettingDiv
   var el=createElement('div');
   el.setUp=function(){
     var tmp=userInfoFrDB.user;
+    if(boVideo) tmp=userInfoFrDBUpdVideo.user
     //spanIdUser.myText(tmp.idUser);   spanIdFB.myText(tmp.idFB);  spanIdIdPlace.myText(tmp.idIdPlace);  spanIdOpenId.myText(tmp.idOpenId);
     //spanIdUser.firstChild.nodeValue=tmp.idUser||' ';   spanIdFB.firstChild.nodeValue=tmp.idFB||' ';  spanIdIdPlace.firstChild.nodeValue=tmp.idIdPlace||' ';  spanIdOpenId.firstChild.nodeValue=tmp.idOpenId||' ';
-    spanIdUser.myText(tmp.idUser);   spanIdFB.myText(tmp.idFB);  spanIdIdPlace.myText(tmp.idIdPlace);  spanIdOpenId.myText(tmp.idOpenId);
+    spanIdUser.myText(tmp.idUser);   spanIdFB.myText(tmp.idFB); spanIdIdPlace.myText(tmp.idIdPlace);  spanIdOpenId.myText(tmp.idOpenId);
     imgImage.prop({src:tmp.image});
     //spanNameIP.myText(tmp.nameIP);  spanEmail.myText(tmp.email);
     //spanNameIP.firstChild.nodeValue=tmp.nameIP||' ';  spanEmail.firstChild.nodeValue=tmp.email||' ';
@@ -4029,7 +4032,7 @@ var viewComplaineeCreator=function(){    // Complaints on a certain complainee
   var oRole;
   el.listCtrlDivW=createElement('span').css({'float':'right'});
   
-  var complaintCommentButt=createElement('button').myText(`${langHtml.vote.writeComment} (${langHtml.IdProviderNeeded})`).css({'margin-right':'1em'}).on('click', complaintCommentButtClick);
+  var complaintCommentButt=createElement('button').myText(`${langHtml.vote.writeComment} (${langHtml.IdRequired})`).css({'margin-right':'1em'}).on('click', complaintCommentButtClick);
   var topDiv=createElement('div').myAppend(complaintCommentButt, el.listCtrlDivW).css({'margin-top':'1em',overflow:'hidden'});
   
   var offset=0,rowCount=20;
@@ -6280,9 +6283,14 @@ window.interpretHashVariables=function(){
   app.boDbg=Number(parsedHash.get('boDbg'));
   var idTeamB=parsedHash.get('idTeamB'), idTeamS=parsedHash.get('idTeamS');  if(idTeamB!==null) idTeamB=Number(idTeamB); if(idTeamS!==null) idTeamS=Number(idTeamS);
   app.StartFilter=[idTeamB, idTeamS];
-  var boVideo=parsedHash.get('boVideo');
-  if(boVideo===null) boVideo=getItemS('boVideo'); else if(boVideo==2) setItemS('boVideo', 1); else if(boVideo==0) setItemS('boVideo', null);
-  app.boVideo=Boolean(Number(boVideo));
+  app.boVideo=parsedHash.get('boVideo');
+  if(boVideo===null) boVideo=getItem('boVideo'); 
+  else {
+    boVideo=Number(boVideo)
+    if(boVideo==1) setItem('boVideo', 1); else if(boVideo==0) setItem('boVideo', null);
+  }
+    
+  boVideo=Boolean(Number(boVideo));
   app.objMess={}; var jsonMess=parsedHash.get('jsonMess');  if(jsonMess) {   try {objMess=JSON.parse(jsonMess);} catch(e){ alert(e);  return; }   }
   console.log("boDbg="+boDbg);
 }

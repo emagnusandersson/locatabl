@@ -424,13 +424,10 @@ app.tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['a
 app.deserialize=function(serializedJavascript){
   return eval(`(${serializedJavascript})`);
 }
-
-app.parseQS=function(str){
-  var params = {},      regex = /([^&=]+)=([^&]*)/g, m;
-  while (m = regex.exec(str)) {
-    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-  }
-  return params;
+app.parseQS=function(qs){
+  var objQS={}, objTmp=new URLSearchParams(qs);
+  for(const [name, value] of objTmp) {  objQS[name]=value;  }
+  return objQS;
 }
 
 app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for each strKey. Create an array with all strKey where Prop[strKey].b[iBit] is true.
@@ -461,11 +458,6 @@ app.blobToBase64=function(blob) {
   });
 }
 
-app.parseQS2=function(qs){
-  var objQS={}, objTmp=new URLSearchParams(qs);
-  for(const [name, value] of objTmp) {  objQS[name]=value;  }
-  return objQS;
-}
 
 //
 // Escaping data

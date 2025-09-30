@@ -246,7 +246,7 @@ SignInAs:'Sign in as',
 helpLoginCommenter:'Detta är för att förhindra att folk skaffar sig mer än ett konto.<p>Din integritet har högsta prioritet. Ingen data sänds till ID utgivaren. Du kan när som helst ta bort dina kommentarer och därmed alla referenser till dig.',
 
 LoginSingInAsSeller:'Logga in / Komma igång som <span nom="seller">seller</span>',
-IdProviderNeeded:'ID-leverantör behövs',
+IdRequired:'ID behövs',
 anIdentityIsNeeded:'En identitet behövs...',
 pendingMessLogin:'Loggar in',
 cancelMessLogin:'Inloggning avbruten',

@@ -55,8 +55,10 @@ strIPPrim='idplace';  strIPAlt='fb';  // Which IdP?
 strIPPrim='fb';  strIPAlt='idplace';  // Which IdP?
 
 //apiKeySendGrid="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-objSendinblueAuth={ user:"noreply@example.com", pass:"XXXXXXXXXXXXXX" }
-emailRegisterdUser=objSendinblueAuth.user;
+//objBrevoAuth={ user:"noreply@example.com", pass:"XXXXXXXXXXXXXX" }
+app.objZohoAuth={user:"noreply@example.com", pass:"XXXXXXXXXXXXXX"}
+emailRegisterdUser=objZohoAuth.user;
+
 
 
 

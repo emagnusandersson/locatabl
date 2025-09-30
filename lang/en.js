@@ -242,7 +242,7 @@ SignInAs:'Sign in as',
 //helpLoginCommenter:'<p>This is to prevent that people tries to appear as more than one person.<p>Your integrity has the highest priority. No data is sent to the ID provider. You can at any time remove your comments an thereby all references to you',
 
 LoginSingInAsSeller:'Login / Sign in as <span nom="seller">seller</span>',
-IdProviderNeeded:'ID-provider needed',
+IdRequired:'ID required',
 anIdentityIsNeeded:'An identity is needed...',
 pendingMessLogin:'Signing you in',
 cancelMessLogin:'Sign-in canceled',

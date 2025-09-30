@@ -1,6 +1,7 @@
 
 "use strict"
 
+
 //When using a device with a small screen such as iphone 5 it was impossible to login because some buttons didn't fit into the screen. I'm guessing this was the problem.
 //So now I have made sure one can use it down to a 280x280 screen.
 
@@ -83,6 +84,7 @@
 // /etc/mysql/mariadb.conf.d/*.cnf
 
 // New Mysql interface in libMysql.js (in locatabl) should be used in idPlace and the other apps too (if it works, that is))
+
 
 /******************************************************************************
  * reqCurlEnd
@@ -292,9 +294,12 @@ app.deleteOne=async function(site,user_id){  //
   return [null, c];
 }
 app.reqDataDelete=async function(){  //
-  var {req, res}=this, {objQS, uSite, site}=req, {siteName}=site
+  var {req, res}=this, {objQS, objUrl, uSite, site}=req, {siteName}=site
 
-  //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
+  //if(req.method=='GET' && boDbg){ 
+  //  var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; 
+  //  var objUrl=new URL('http://trash.com'+req.url), strData=objUrl.search.slice(1);
+  //} else 
   if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
   else {res.outCode(400, "Post request wanted"); return; }
   
@@ -328,12 +333,13 @@ app.reqDataDelete=async function(){  //
 }
 
 app.reqDataDeleteStatus=async function(){
-  var {req, res}=this, {site, objQS, uSite}=req;
-  //var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS2(qs);
+  var {req, res}=this, {site, objQS, objUrl, uSite}=req;
+  //var objUrl=url.parse(req.url), qs=objUrl.query||'', objQS=parseQS(qs);
   //var confirmation_code=objQS.confirmation_code||'';
+  //var objQS=objUrl.searchParams;
   debugger
-  var objUrl=new URL(req.url), objQS=objUrl.searchParams;
-  var confirmation_code=objQS.get('confirmation_code')||'';
+  //var confirmation_code=objQS.get('confirmation_code')||'';
+  var {confirmation_code}=objQS;
   var [err,mess]=await getRedis(confirmation_code+'_DeleteRequest'); 
   if(err) {var mess=err.message;}
   else if(mess==null) {
@@ -347,7 +353,10 @@ app.reqDataDeleteStatus=async function(){
 app.reqDeAuthorize=async function(){  //
   var {req, res}=this, {objQS, uSite, site}=req, {siteName}=site
 
-  //if(req.method=='GET' && boDbg){ var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; } else 
+  //if(req.method=='GET' && boDbg){ 
+  //  var objUrl=url.parse(req.url), qs=objUrl.query||'', strData=qs; 
+  //  var objUrl=new URL('http://trash.com'+req.url), strData=objUrl.search.slice(1);
+  //} else 
   if(req.method=='POST'){var strData=await app.getPost.call(this, req);}
   else {res.outCode(400, "Post request wanted"); return; }
 
@@ -703,7 +712,7 @@ app.reqLoginWLink=async function(){
   var {req, res}=this, {site, objQS}=req; //this.pool=DB[site.db].pool;
   var {userTab}=site.TableName;
   var tmp='code'; if(!(tmp in objQS)) { res.out200(`The parameter ${tmp} is required`); return;}
-  var code=objQS.code;
+  var {code}=objQS;
   //var email=await getRedis(code+'_LoginWLink');
   var [err,email]=await getRedis(code+'_LoginWLink'); 
   if(!email) {  res.out200('No such code'); return;  }
@@ -718,7 +727,7 @@ app.reqLoginWLink=async function(){
   await setRedis(req.sessionID+'_LoginIdUser', idUser, maxLoginUnactivity);
   //var [err,tmp]=await setRedis(req.sessionID+'_LoginIdUser',idUser, maxLoginUnactivity);
 
-  res.end("You are now logged in, close this tab, go back the web app and reload.");
+  res.end("You are now logged in.  Close this tab, then go back the web app and reload.");
   //  ==Authentication Successful==
   // You can close this tab and return to your command line.
 
@@ -956,8 +965,18 @@ app.reqVerifyPWResetReturn=async function() {
   //var [err]=await sgMail.send(msg).toNBP();
   // if(err) {res.out500(err); return; }
   // res.end("A new password has been generated and sent to your email address.");
-  let sendResult=await smtpTransport.sendMail(msg)
-  res.end(sendResult.response);
+  var [err, sendResult]=await smtpTransport.sendMail(msg).toNBP();
+  if(err) { 
+    if(boDbg) {res.out500(err)}
+    else { console.error(err); res.out500(Error('Error sending email, Error message written to log.'));}
+    return;
+  }
+  res.setHeader('Content-Type', MimeType.html);
+  var strMess=`<p style="font-size:larger">New password sent to your email.</p>
+    <p>Close this tab and login with your new password in the orignal tab.</p>`
+  if(boDbg) strMess+=`\n<p style="font-size:small">Response from email server (for debugging only):</p>
+    <div style="background:lightgrey;width:fit-content;font-size:small">${sendResult.response}</div>`
+  res.end(strMess);
 }
 
 app.reqVerifyEmailNCreateUserReturn=async function() {
@@ -1040,6 +1059,7 @@ app.reqStatic=async function() {
     var [err]=await readFileToCache(filename);
     if(err) {
       if(err.code=='ENOENT') {res.out404(); return;}
+      if(err.code=='EISDIR') {res.out400('EISDIR'); return;}
       if('host' in req.headers) console.error(`Faulty request to ${req.headers.host} (${pathName})`);
       if('Referer' in req.headers) console.error('Referer:'+req.headers.Referer);
       res.out500(err); return;
@@ -1450,7 +1470,7 @@ app.SetupSql.prototype.dropTable=async function(siteName){
   idOpenId varchar(128) CHARSET utf8 NULL, 
   email varchar(65) CHARSET utf8 NOT NULL DEFAULT '', 
   nameIP varchar(128) CHARSET utf8 NOT NULL DEFAULT '', 
-  image varchar(512) CHARSET utf8 NOT NULL DEFAULT '', 
+  image varchar(1024) CHARSET utf8 NOT NULL DEFAULT '', 
   hashPW char(40) NOT NULL DEFAULT '', 
   imTag int(4) NOT NULL DEFAULT 0, 
   boUseIdPImg tinyint(1) NOT NULL DEFAULT 0, 
